@@ -11,114 +11,39 @@ nscodData
 \format{
   The format is:
 List of 33
- $ noFleets                 : int 3
- $ fleetTypes               : num [1:3] 0 2 2
- $ sampleTimes              : num [1:3] 0 0.125 0.625
- $ noYears                  : num 53
- $ years                    : int [1:53] 1963 1964 1965 1966 1967 1968 1969 1970 1971 1972 ...
- $ nobs                     : int 569
- $ idx1                     : num [1:53] 0 6 12 18 24 30 36 42 48 54 ...
- $ idx2                     : num [1:53] 5 11 17 23 29 35 41 47 53 59 ...
- $ obs                      : num [1:569, 1:4] 1963 1963 1963 1963 1963 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:569] "2" "54" "106" "158" ...
-  .. ..$ : chr [1:4] "year" "fleet" "age" "obs"
- $ propMat                  : num [1:53, 1:6] 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:53] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ stockMeanWeight          : num [1:53, 1:6] 0.314 0.357 0.312 0.313 0.326 0.327 0.417 0.449 0.314 0.3 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:53] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ catchMeanWeight          : num [1:52, 1:6] 0.314 0.357 0.312 0.313 0.326 0.327 0.417 0.449 0.314 0.3 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:52] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ natMor                   : num [1:53, 1:6] 1.22 1.22 1.22 1.22 1.22 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:53] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ landFrac                 : num [1:52, 1:6] 0.165 0.383 0.138 0.143 0.176 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:52] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ disMeanWeight            : num [1:52, 1:6] 0.27 0.27 0.269 0.269 0.269 0.269 0.268 0.268 0.268 0.268 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:52] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ landMeanWeight           : num [1:52, 1:6] 0.538 0.496 0.581 0.579 0.59 0.64 0.544 0.626 0.579 0.616 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:52] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ propF                    : int [1:53, 1:6] 0 0 0 0 0 0 0 0 0 0 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:53] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ propM                    : int [1:53, 1:6] 0 0 0 0 0 0 0 0 0 0 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : chr [1:53] "1963" "1964" "1965" "1966" ...
-  .. ..$ : chr [1:6] "1" "2" "3" "4" ...
- $ minAge                   : int [1, 1] 1
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ maxAge                   : int [1, 1] 6
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ maxAgePlusGroup          : int [1, 1] 1
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyLogFsta               : num [1:3, 1:6] 0 -1 -1 1 -1 -1 2 -1 -1 3 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ corFlag                  : int [1, 1] 2
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyLogFpar               : num [1:3, 1:6] -1 0 5 -1 1 6 -1 2 7 -1 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyQpow                  : num [1:3, 1:6] -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyVarF                  : num [1:3, 1:6] 0 -1 -1 1 -1 -1 1 -1 -1 1 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyVarLogN               : num [1, 1:6] 0 1 1 1 1 1
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyVarObs                : num [1:3, 1:6] 0 3 5 1 4 6 2 4 6 2 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ stockRecruitmentModelCode: int [1, 1] 0
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ noScaledYears            : int [1, 1] 13
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyScaledYears           : int [1, 1:13] 1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ keyParScaledYA           : num [1:13, 1:6] 0 1 2 3 4 5 6 7 8 9 ...
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
- $ fbarRange                : int [1, 1:2] 2 4
-  ..- attr(*, "dimnames")=List of 2
-  .. ..$ : NULL
-  .. ..$ : NULL
+ $ noFleets    
+ $ fleetTypes  
+ $ sampleTimes 
+ $ noYears     
+ $ years       
+ $ nobs        
+ $ idx1        
+ $ idx2        
+ $ obs         
+ $ propMat   
+ $ stockMeanWeight          
+ $ catchMeanWeight          
+ $ natMor                   
+ $ landFrac                 
+ $ disMeanWeight            
+ $ landMeanWeight           
+ $ propF                    
+ $ propM                    
+ $ minAge                   
+ $ maxAge                   
+ $ maxAgePlusGroup          
+ $ keyLogFsta               
+ $ corFlag                  
+ $ keyLogFpar               
+ $ keyQpow                  
+ $ keyVarF                  
+ $ keyVarLogN               
+ $ keyVarObs                
+ $ stockRecruitmentModelCode
+ $ noScaledYears            
+ $ keyScaledYears           
+ $ keyParScaledYA           
+ $ fbarRange                
 }
 \details{
 ...

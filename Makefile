@@ -24,6 +24,10 @@ vignette-update: $(PACKAGE)/vignettes/*.Rnw
 	 mv $(PACKAGE)/vignettes/SAM.pdf $(PACKAGE)/inst/doc
 	@touch vignette-update
 
+namespace-update :: $(PACKAGE)/NAMESPACE
+$(PACKAGE)/NAMESPACE: $(PACKAGE)/R/*.R
+	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\",roclets = c(\"namespace\"))" | $(R) --slave
+
 build-package: $(TARBALL)
 $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC)
 	$(R) CMD build --resave-data=no $(PACKAGE)
