@@ -24,10 +24,6 @@ vignette-update: $(PACKAGE)/vignettes/*.Rnw
 	 mv $(PACKAGE)/vignettes/SAM.pdf $(PACKAGE)/inst/doc
 	@touch vignette-update
 
-namespace-update :: $(PACKAGE)/NAMESPACE
-$(PACKAGE)/NAMESPACE: $(PACKAGE)/R/*.R
-	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\",roclets = c(\"namespace\"))" | $(R) --slave
-
 build-package: $(TARBALL)
 $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC)
 	$(R) CMD build --resave-data=no $(PACKAGE)
@@ -36,11 +32,11 @@ install: $(TARBALL)
 	$(R) CMD INSTALL --preclean $<
 	@touch $@
 
-quick-install: enum-update $(PACKAGE)/src/sam.so
+quick-install: $(PACKAGE)/src/SAM.so
 	$(R) CMD INSTALL $(PACKAGE)
 
-$(PACKAGE)/src/sam.so: $(PACKAGE)/src/sam.cpp
-	cd $(PACKAGE)/src; echo "library(TMB); compile('sam.cpp','-O0 -g')" | $(R) --slave
+$(PACKAGE)/src/SAM.so: $(PACKAGE)/src/SAM.cpp
+	cd $(PACKAGE)/src; echo "library(TMB); compile('SAM.cpp','-O0 -g')" | $(R) --slave
 
 unexport TEXINPUTS
 pdf: $(PACKAGE).pdf
