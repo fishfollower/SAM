@@ -213,3 +213,177 @@ read.ices<-function(filen){
     return(read.surveys(filen))  
   }
 }
+
+##' Combine the data sources to SAM readable object  
+##' @param too many to list now
+##' @details ...
+##' @export
+setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
+                           prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
+                           dis.mean.weight=NULL, land.mean.weight=NULL, 
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL){
+  # Function to write records in state-space assessment format and create 
+  # collected data object for future use 
+  fleet.idx<-0
+  type<-NULL
+  time<-NULL
+  dat<-data.frame(year=NA,fleet=NA,age=NA,obs=NA)
+  doone<-function(m){
+    year<-rownames(m)[row(m)]
+    fleet.idx<<-fleet.idx+1
+    fleet<-rep(fleet.idx,length(year))
+    age<-colnames(m)[col(m)]
+    obs<-as.vector(m)
+    dat<<-rbind(dat,data.frame(year,fleet,age,obs))
+  }
+  if(!is.null(residual.fleet)){
+    doone(residual.fleet)
+    type<-c(type,0)
+    time<-c(time,0)
+  }
+  if(!is.null(fleets)){
+    if(is.data.frame(fleets)|is.matrix(fleets)){
+      doone(fleets)
+      type<-c(type,1)
+      time<-c(time,0)
+    }else{
+      dummy<-lapply(fleets,doone)
+      type<-c(type,rep(1,length(fleets)))
+      time<-c(time,rep(0,length(fleets)))
+    }
+  }
+  if(!is.null(surveys)){
+    if(is.data.frame(surveys)|is.matrix(surveys)){
+      doone(surveys)
+      type<-c(type,2)
+      time<-c(time,mean(attr(surveys,'time')))
+    }else{
+      dummy<-lapply(surveys,doone)
+      type<-c(type,rep(2,length(surveys)))
+      time<-c(time,unlist(lapply(surveys, function(x)mean(attr(x,'time')))))
+    }
+  }
+  if(is.null(land.frac)){
+    land.frac<-matrix(1,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) # should be pure 1 
+  }
+  if(is.null(dis.mean.weight)){
+    dis.mean.weight<-catch.mean.weight
+  }
+  if(is.null(land.mean.weight)){
+    land.mean.weight<-catch.mean.weight
+  }
+  if(is.null(prop.f)){
+    prop.f<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
+  }
+  if(is.null(prop.m)){
+    prop.m<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
+  }
+  dat<-dat[complete.cases(dat),]
+  dat<-dat[dat$obs>0,]
+  o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
+  attr(dat,'type')<-type
+  names(time)<-NULL
+  attr(dat,'time')<-time
+  dat<-dat[o,]
+  newyear<-min(as.numeric(dat$year)):max(as.numeric(dat$year))
+  idx1<-sapply(newyear, function(y){idx<-which(as.numeric(dat$year)==y);ifelse(length(idx)==0,-1,min(idx))}) ###which(!duplicated(dat$year))
+  idx2<-sapply(newyear, function(y){idx<-which(as.numeric(dat$year)==y);ifelse(length(idx)==0,-1,max(idx))}) ###c(idx1[-1]-1,nrow(dat))
+  attr(dat,'idx1')<-idx1
+  attr(dat,'idx2')<-idx2
+  attr(dat,'year')<-newyear
+  attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
+  cutY<-function(x)x[rownames(x)%in%newyear,]
+  attr(dat,'prop.mature')<-cutY(prop.mature)
+  attr(dat,'stock.mean.weight')<-cutY(stock.mean.weight)
+  attr(dat,'catch.mean.weight')<-cutY(catch.mean.weight)
+  attr(dat,'dis.mean.weight')<-cutY(dis.mean.weight)
+  attr(dat,'land.mean.weight')<-cutY(land.mean.weight)
+  attr(dat,'natural.mortality')<-cutY(natural.mortality)
+  attr(dat,'prop.f')<-cutY(prop.f)
+  attr(dat,'prop.m')<-cutY(prop.m)
+  attr(dat,'land.frac')<-cutY(land.frac)
+  ret<-list(
+    noFleets=length(attr(dat,'type')),
+    fleetTypes=attr(dat,'type'),
+    sampleTimes=attr(dat,'time'),
+    noYears=attr(dat,'nyear'),
+    years=attr(dat,'year'),
+    nobs=nrow(dat),
+    idx1=attr(dat,'idx1'),
+    idx2=attr(dat,'idx2'),
+    obs=data.matrix(dat),
+    propMat=attr(dat,'prop.mature'),
+    stockMeanWeight=attr(dat,'stock.mean.weight'),
+    catchMeanWeight=attr(dat,'catch.mean.weight'),
+    natMor=attr(dat,'natural.mortality'),
+    landFrac=attr(dat,'land.frac'),
+    disMeanWeight=attr(dat,'dis.mean.weight'),
+    landMeanWeight=attr(dat,'land.mean.weight'),
+    propF=attr(dat,'prop.f'),
+    propM=attr(dat,'prop.m')
+  )
+  return(ret)
+}
+
+##' Setup basic minimal configuration for sam assessment
+##' @param dat sam data object 
+##' @details ...
+##' @export
+defcon<-function(dat){
+  fleetTypes<-dat$fleetTypes
+  ages<-do.call(rbind,tapply(dat$obs[,3], INDEX=dat$obs[,2], FUN=range))
+  minAge<-min(ages)
+  maxAge<-max(ages)
+  nAges<-maxAge-minAge+1
+  nFleets<-nrow(ages)
+  ret<-list()
+  ret$minAge <- minAge
+  ret$maxAge <- maxAge
+  ret$maxAgePlusGroup <- 1
+  x<-matrix(0, nrow=nFleets, ncol=nAges)
+  lastMax<-0
+  for(i in 1:nrow(x)){
+    if(fleetTypes[i]==0){
+      x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)]<-setSeq(ages[i,1],ages[i,2])+lastMax
+      lastMax<-max(x)
+    }
+  }  
+  ret$keyLogFsta <- x
+  ret$corFlag <- 0
+  x<-matrix(0, nrow=nFleets, ncol=nAges)
+  lastMax<-0
+  for(i in 1:nrow(x)){
+    if(fleetTypes[i]%in%c(1,2)){
+      x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)]<-setSeq(ages[i,1],ages[i,2])+lastMax
+      lastMax<-max(x)
+    }
+  }  
+  ret$keyLogFpar <- x 
+  ret$keyQpow <- matrix(0, nrow=nFleets, ncol=nAges)
+  x<-matrix(0, nrow=nFleets, ncol=nAges)
+  lastMax<-0
+  for(i in 1:nrow(x)){
+    if(fleetTypes[i]==0){
+      x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)]<-lastMax+1
+      lastMax<-max(x)
+    }
+  }  
+  ret$keyVarF <- x
+  ret$keyVarLogN <- c(1,rep(2,nAges-1))
+  x<-matrix(0, nrow=nFleets, ncol=nAges)
+  lastMax<-0
+  for(i in 1:nrow(x)){
+    if(fleetTypes[i]%in%c(0,1,2)){
+      x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)]<-lastMax+1
+      lastMax<-max(x)
+    }
+  }  
+  ret$keyVarObs <- x
+  ret$stockRecruitmentModelCode <- 0
+  ret$noScaledYears <- 0
+  ret$keyScaledYears <- numeric(0)
+  ret$keyParScaledYA <- numeric(0)
+  ret$fbarRange <- ages[fleetTypes==0,]
+
+  return(ret)
+}
