@@ -9,6 +9,6 @@ mo<-read.ices("mo.dat")
 pf<-read.ices("pf.dat")
 pm<-read.ices("pm.dat")
 sw<-read.ices("sw.dat")
-surveys<-surveys.ices("survey.dat")
+surveys<-read.ices("survey.dat")
 
 
