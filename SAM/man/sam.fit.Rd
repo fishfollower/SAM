@@ -4,10 +4,12 @@
 \alias{sam.fit}
 \title{Fit SAM model}
 \usage{
-sam.fit(data, parameters)
+sam.fit(data, conf, parameters)
 }
 \arguments{
 \item{data}{...}
+
+\item{conf}{...}
 
 \item{parameters}{...}
 }
@@ -19,7 +21,8 @@ Fit SAM model
 }
 \examples{
 data(nscodData)
+data(nscodConf)
 data(nscodParameters)
-fit <- sam.fit(nscodData, nscodParameters)
+fit <- sam.fit(nscodData, nscodConf, nscodParameters)
 }
 

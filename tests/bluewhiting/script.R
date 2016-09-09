@@ -24,5 +24,7 @@ dat<-setup.sam.data(surveys=surveys,
                     natural.mortality=nm, 
                     land.frac=lf)
 
-
+conf<-defcon(dat)
+par<-defpar(dat,conf) 
+#sam.fit(dat,conf,par)
 

@@ -66,4 +66,5 @@ ex-test:
 	echo "library(SAM); example(SAM)" | $(R) --slave
 
 clean:
-	\rm -f install doc-update
+	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/SAM.so $(PACKAGE)/src/SAM.o
+

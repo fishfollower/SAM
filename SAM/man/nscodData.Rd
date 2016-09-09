@@ -10,7 +10,6 @@ nscodData
 \usage{data("nscodData")}
 \format{
   The format is:
-List of 33
  $ noFleets    
  $ fleetTypes  
  $ sampleTimes 
@@ -29,21 +28,6 @@ List of 33
  $ landMeanWeight           
  $ propF                    
  $ propM                    
- $ minAge                   
- $ maxAge                   
- $ maxAgePlusGroup          
- $ keyLogFsta               
- $ corFlag                  
- $ keyLogFpar               
- $ keyQpow                  
- $ keyVarF                  
- $ keyVarLogN               
- $ keyVarObs                
- $ stockRecruitmentModelCode
- $ noScaledYears            
- $ keyScaledYears           
- $ keyParScaledYA           
- $ fbarRange                
 }
 \details{
 ...

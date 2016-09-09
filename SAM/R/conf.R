@@ -1,16 +1,21 @@
+##' small helper function
+##' @param min
+##' @param max
+##' @details ...
+setSeq<-function(min,max){
+  if(min==max){
+    ret<-1
+  }else{
+    ret<-c(1:(max-min),max-min)
+  }
+  return(ret)
+}
+
 ##' Setup basic minimal configuration for sam assessment
 ##' @param dat sam data object 
 ##' @details ...
 ##' @export
 defcon<-function(dat){
-  setSeq<-function(min,max){
-    if(min==max){
-      ret<-1
-    }else{
-      ret<-c(1:(max-min),max-min)
-    }
-    return(ret)
-  }
   fleetTypes<-dat$fleetTypes
   ages<-do.call(rbind,tapply(dat$obs[,3], INDEX=dat$obs[,2], FUN=range))
   minAge<-min(ages)
@@ -29,7 +34,7 @@ defcon<-function(dat){
       lastMax<-max(x)
     }
   }  
-  ret$keyLogFsta <- x
+  ret$keyLogFsta <- x - 1
   ret$corFlag <- 0
   x<-matrix(0, nrow=nFleets, ncol=nAges)
   lastMax<-0
@@ -39,8 +44,8 @@ defcon<-function(dat){
       lastMax<-max(x)
     }
   }  
-  ret$keyLogFpar <- x 
-  ret$keyQpow <- matrix(0, nrow=nFleets, ncol=nAges)
+  ret$keyLogFpar <- x - 1 
+  ret$keyQpow <- matrix(-1, nrow=nFleets, ncol=nAges)
   x<-matrix(0, nrow=nFleets, ncol=nAges)
   lastMax<-0
   for(i in 1:nrow(x)){
@@ -49,8 +54,8 @@ defcon<-function(dat){
       lastMax<-max(x)
     }
   }  
-  ret$keyVarF <- x
-  ret$keyVarLogN <- c(1,rep(2,nAges-1))
+  ret$keyVarF <- x - 1
+  ret$keyVarLogN <- c(1,rep(2,nAges-1)) - 1 
   x<-matrix(0, nrow=nFleets, ncol=nAges)
   lastMax<-0
   for(i in 1:nrow(x)){
@@ -59,12 +64,12 @@ defcon<-function(dat){
       lastMax<-max(x)
     }
   }  
-  ret$keyVarObs <- x
+  ret$keyVarObs <- x - 1
   ret$stockRecruitmentModelCode <- 0
   ret$noScaledYears <- 0
   ret$keyScaledYears <- numeric(0)
-  ret$keyParScaledYA <- numeric(0)
+  ret$keyParScaledYA <- array(0,c(0,0))
   ret$fbarRange <- ages[fleetTypes==0,]
 
-  return(ret)
+  return(ret) 
 }

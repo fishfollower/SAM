@@ -66,12 +66,12 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyLogFpar);
   DATA_IARRAY(keyQpow);
   DATA_IARRAY(keyVarF);
-  DATA_IARRAY(keyVarLogN); 
+  DATA_IVECTOR(keyVarLogN); 
   DATA_IARRAY(keyVarObs); 
   DATA_INTEGER(stockRecruitmentModelCode);
   DATA_INTEGER(noScaledYears);
   DATA_IVECTOR(keyScaledYears);
-  DATA_IMATRIX(keyParScaledYA);
+  DATA_IARRAY(keyParScaledYA);
   DATA_IVECTOR(fbarRange);
 
   PARAMETER_VECTOR(logFpar); 
@@ -171,7 +171,7 @@ Type objective_function<Type>::operator() ()
   matrix<Type> nvar(stateDimN,stateDimN);
   for(int i=0; i<stateDimN; ++i){
     for(int j=0; j<stateDimN; ++j){
-      if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(keyVarLogN(0,i));}
+      if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(keyVarLogN(i));}
     }
   }
   MVNORM_t<Type> neg_log_densityN(nvar);

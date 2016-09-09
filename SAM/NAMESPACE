@@ -2,6 +2,7 @@
 
 S3method(plot,sam)
 export(defcon)
+export(defpar)
 export(read.ices)
 export(sam.fit)
 export(setup.sam.data)
