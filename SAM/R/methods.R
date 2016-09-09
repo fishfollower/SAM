@@ -1,8 +1,8 @@
 ##' Plot SAM model 
-##' @param  ... ... 
+##' @param  fit ... 
 ##' @details ...
 ##' @export
-plot.sam<-function(x,...){
+plot.sam<-function(fit,...){
  .plotit <-function (what, x=fit$data$years, ylab=what, xlab="Years", trans=function(x)x ,...){
     idx<-names(fit$sdrep$value)==what
     y<-fit$sdrep$value[idx]

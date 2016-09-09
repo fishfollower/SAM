@@ -81,7 +81,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdLogObs); 
   PARAMETER_VECTOR(rec_loga); 
   PARAMETER_VECTOR(rec_logb); 
-  PARAMETER(logit_rho); 
+  PARAMETER_VECTOR(logit_rho); 
   PARAMETER_VECTOR(logScale); 
   PARAMETER_VECTOR(logScaleSSB); 
   PARAMETER_VECTOR(logPowSSB); 
@@ -91,7 +91,6 @@ Type objective_function<Type>::operator() ()
   int timeSteps=logF.dim[1];
   int stateDimF=logF.dim[0];
   int stateDimN=logN.dim[0];
-  Type rho=f(logit_rho);
   vector<Type> sdLogFsta=exp(logSdLogFsta);
   vector<Type> varLogN=exp(logSdLogN*Type(2.0));
   vector<Type> varLogObs=exp(logSdLogObs*Type(2.0));
@@ -120,7 +119,7 @@ Type objective_function<Type>::operator() ()
   if(corFlag==1){
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        fcor(i,j)=rho;
+        fcor(i,j)=f(logit_rho(0));
         fcor(j,i)=fcor(i,j);
       }
     } 
@@ -129,7 +128,7 @@ Type objective_function<Type>::operator() ()
   if(corFlag==2){
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        fcor(i,j)=pow(rho,abs(Type(i-j)));
+        fcor(i,j)=pow(f(logit_rho(0)),abs(Type(i-j)));
         fcor(j,i)=fcor(i,j);
       }
     } 

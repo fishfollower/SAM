@@ -14,7 +14,7 @@ surveys<-read.ices("survey.dat")
 
 dat<-setup.sam.data(surveys=surveys,
                     residual.fleet=cn, 
-                    prop.mature=pm, 
+                    prop.mature=mo, 
                     stock.mean.weight=sw, 
                     catch.mean.weight=cw, 
                     dis.mean.weight=dw, 
@@ -26,5 +26,5 @@ dat<-setup.sam.data(surveys=surveys,
 
 conf<-defcon(dat)
 par<-defpar(dat,conf) 
-#sam.fit(dat,conf,par)
-
+fit<-sam.fit(dat,conf,par)
+plot(fit)
