@@ -27,4 +27,5 @@ dat<-setup.sam.data(surveys=surveys,
 conf<-defcon(dat)
 par<-defpar(dat,conf) 
 fit<-sam.fit(dat,conf,par)
-plot(fit)
+cat(fit$opt$objective,"\n", file="res.out")
+#plot(fit)
