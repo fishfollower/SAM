@@ -81,7 +81,7 @@ read.surveys<-function(filen){
   onemat<-function(i){
     lin.local<-gsub('^[[:blank:]]*','',lin[(idx1[i]+4):idx2[i]])
     nr<-idx2[i]-idx1[i]-3
-    ret<-matrix(as.numeric(unlist((strsplit(lin.local,'[[:space:]]+')))),nrow=nr, byrow=TRUE)   #[,1:(2+ages[i,2]-ages[i,1]),drop=FALSE]
+    ret<-matrix(as.numeric(unlist((strsplit(lin.local,'[[:space:]]+')))),nrow=nr, byrow=TRUE)[,,drop=FALSE]   #[,1:(2+ages[i,2]-ages[i,1]),drop=FALSE]
     if(nrow(ret)!=(years[i,2]-years[i,1]+1)){
       stop(paste("In file",filen, ": Year range specified does not match number of rows for survey fleet number",i))
     } 
@@ -93,7 +93,7 @@ read.surveys<-function(filen){
     }
     ret<-as.matrix(ret[,-1]/ret[,1])
     rownames(ret)<-years[i,1]:years[i,2]
-    ret<-ret[,1:length(ages[i,1]:ages[i,2])]
+    ret<-ret[,1:length(ages[i,1]:ages[i,2]),drop=FALSE]
     colnames(ret)<-ages[i,1]:ages[i,2]
     attr(ret,'time')<-times[i,]
     ret[ret<0]<-NA

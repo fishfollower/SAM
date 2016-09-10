@@ -4,7 +4,7 @@
 \alias{sam.fit}
 \title{Fit SAM model}
 \usage{
-sam.fit(data, conf, parameters)
+sam.fit(data, conf, parameters, ...)
 }
 \arguments{
 \item{data}{...}
