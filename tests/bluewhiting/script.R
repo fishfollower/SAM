@@ -25,6 +25,7 @@ dat<-setup.sam.data(surveys=surveys,
                     land.frac=lf)
 
 conf<-defcon(dat)
+conf$fbarRange<-c(3,5)
 par<-defpar(dat,conf) 
 fit<-sam.fit(dat,conf,par)
 cat(fit$opt$objective,"\n", file="res.out")
