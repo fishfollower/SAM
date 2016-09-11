@@ -10,7 +10,7 @@
    grid(col="black")
  }
 
-##' Plot SAM Fbar plot 
+##' SAM Fbar plot 
 ##' @param  fit ...
 ##' @param  partial ...
 ##' @details ...
@@ -25,4 +25,14 @@ fbarplot<-function(fit,partial=TRUE,...){
   if(partial){
     matplot(fit$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
   }  
+}
+
+
+##' SAM SSB plot 
+##' @param  fit ...
+##' @param  partial ...
+##' @details ...
+##' @export
+ssbplot<-function(fit,...){
+  .plotit("logssb", ylab="SSB", trans=exp)
 }
