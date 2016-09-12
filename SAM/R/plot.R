@@ -43,5 +43,6 @@ ssbplot<-function(fit,...){
 ##' @details ...
 ##' @export
 recplot<-function(fit,...){
-  .plotit("logR", ylab="Recruits", trans=exp,...)
+   lab<-paste("Recruits (age ", fit$conf$minAge, ")", sep="")
+  .plotit("logR", ylab=lab, trans=exp,...)
 }
