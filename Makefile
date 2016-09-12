@@ -9,6 +9,10 @@ ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
 CPP_SRC := $(PACKAGE)/src/*.cpp
 
+SUBDIRS := $(wildcard tests/*/.)
+
+.PHONY: test all $(SUBDIRS)
+
 all:
 	make doc-update
 	make build-package
@@ -57,9 +61,6 @@ check: $(TARBALL)
 check-cran: $(TARBALL)
 	$(R) CMD check --as-cran $(TARBALL)
 
-test:
-	echo "devtools::test('SAM')" | $(R) --slave
-
 quick-check: quick-install ex-test
 
 ex-test:
@@ -67,4 +68,11 @@ ex-test:
 
 clean:
 	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/SAM.so $(PACKAGE)/src/SAM.o
+
+test: $(SUBDIRS)
+$(SUBDIRS):
+	@echo -n $@
+	@echo -n ".. "
+	@$(MAKE) -s -C $@
+
 
