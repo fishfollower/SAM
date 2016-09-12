@@ -63,7 +63,7 @@ test:
 quick-check: quick-install ex-test
 
 ex-test:
-	echo "library(SAM); example(SAM)" | $(R) --slave
+	echo "library(SAM); example(sam.fit)" | $(R) --slave
 
 clean:
 	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/SAM.so $(PACKAGE)/src/SAM.o

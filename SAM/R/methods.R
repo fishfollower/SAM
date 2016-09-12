@@ -4,7 +4,8 @@
 ##' @export
 plot.sam<-function(fit,...){
   par(mfrow=c(3,1))
-  .plotit("logssb", ylab="SSB", trans=exp)
-  .plotit("logfbar", ylab="Fbar", trans=exp)
-  .plotit("logR", ylab="R", trans=exp)
+  ssbplot(fit,...)
+  fbarplot(fit,...)
+  recplot(fit,...)
+  par(mfrow=c(1,1))
 }

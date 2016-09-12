@@ -21,7 +21,7 @@ fbarplot<-function(fit,partial=TRUE,...){
   fmat<-fit$pl$logF[fit$conf$keyLogFsta[1,]+1,]
   idx<-which(fit$conf$minAge:fit$conf$maxAge %in% fbarRange[1]:fbarRange[2])
   exx <- if(partial){exp(fmat[idx,])}else{numeric(0)}
-  .plotit("logfbar", ylab=fbarlab, trans=exp, ex=exx)
+  .plotit("logfbar", ylab=fbarlab, trans=exp, ex=exx,...)
   if(partial){
     matplot(fit$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
   }  
@@ -34,5 +34,14 @@ fbarplot<-function(fit,partial=TRUE,...){
 ##' @details ...
 ##' @export
 ssbplot<-function(fit,...){
-  .plotit("logssb", ylab="SSB", trans=exp)
+  .plotit("logssb", ylab="SSB", trans=exp,...)
+}
+
+##' SAM Recruits plot 
+##' @param  fit ...
+##' @param  partial ...
+##' @details ...
+##' @export
+recplot<-function(fit,...){
+  .plotit("logR", ylab="Recruits", trans=exp,...)
 }
