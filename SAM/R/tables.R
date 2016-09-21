@@ -20,6 +20,15 @@ ssbtable<-function(fit,...){
    return(ret)
 }
 
+##' TSB table 
+##' @param  fit ... 
+##' @details ...
+##' @export
+tsbtable<-function(fit,...){
+   ret<-.tableit("logtsb", trans=exp, ...) 
+   return(ret)
+}
+
 ##' Fbar table 
 ##' @param  fit ... 
 ##' @details ...

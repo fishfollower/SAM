@@ -8,8 +8,6 @@ recplot(fit, ...)
 }
 \arguments{
 \item{fit}{...}
-
-\item{partial}{...}
 }
 \description{
 SAM Recruits plot

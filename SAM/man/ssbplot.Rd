@@ -5,16 +5,22 @@
 \title{SAM SSB plot}
 \usage{
 ssbplot(fit, ...)
+
+ssbplot(fit, ...)
 }
 \arguments{
 \item{fit}{...}
 
-\item{partial}{...}
+\item{fit}{...}
 }
 \description{
 SAM SSB plot
+
+SAM TSB plot
 }
 \details{
+...
+
 ...
 }
 
