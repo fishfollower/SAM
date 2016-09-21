@@ -8,6 +8,8 @@ defpar(dat, conf)
 }
 \arguments{
 \item{dat}{sam data object}
+
+\item{conf}{configuration list}
 }
 \description{
 Setup minimal initial parameters

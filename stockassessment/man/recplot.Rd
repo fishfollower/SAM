@@ -7,7 +7,9 @@
 recplot(fit, ...)
 }
 \arguments{
-\item{fit}{...}
+\item{fit}{the object returned from sam.fit}
+
+\item{...}{extra arguments transferred to plot}
 }
 \description{
 SAM Recruits plot

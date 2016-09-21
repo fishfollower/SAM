@@ -7,7 +7,9 @@
 is.whole.positive.number(x, tol = .Machine$double.eps^0.5)
 }
 \arguments{
-\item{x}{}
+\item{x}{number}
+
+\item{tol}{precision}
 }
 \description{
 Function to test if x is ...

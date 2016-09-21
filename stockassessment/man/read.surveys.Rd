@@ -7,7 +7,7 @@
 read.surveys(filen)
 }
 \arguments{
-\item{filen}{}
+\item{filen}{the file}
 }
 \description{
 Function to read ices survey format

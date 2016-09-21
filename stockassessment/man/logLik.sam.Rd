@@ -4,10 +4,12 @@
 \alias{logLik.sam}
 \title{Log likelihood SAM fit}
 \usage{
-\method{logLik}{sam}(fit, ...)
+\method{logLik}{sam}(object, ...)
 }
 \arguments{
-\item{fit}{...}
+\item{object}{...}
+
+\item{...}{extra arguments}
 }
 \description{
 Log likelihood SAM fit

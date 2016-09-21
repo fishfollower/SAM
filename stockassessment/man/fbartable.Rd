@@ -4,7 +4,7 @@
 \alias{fbartable}
 \title{Fbar table}
 \usage{
-fbartable(fit, ...)
+fbartable(fit)
 }
 \arguments{
 \item{fit}{...}

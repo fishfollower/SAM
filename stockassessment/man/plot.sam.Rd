@@ -4,10 +4,12 @@
 \alias{plot.sam}
 \title{Plot SAM model}
 \usage{
-\method{plot}{sam}(fit, ...)
+\method{plot}{sam}(x, ...)
 }
 \arguments{
-\item{fit}{...}
+\item{x}{...}
+
+\item{...}{extra arguments}
 }
 \description{
 Plot SAM model

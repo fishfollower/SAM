@@ -237,7 +237,7 @@ Type objective_function<Type>::operator() ()
       break;
   
       case 1:
-  	std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
         return(0);
       break;
   
@@ -253,32 +253,32 @@ Type objective_function<Type>::operator() ()
       break;
   
       case 3:
-  	std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
         return 0;
       break;
   
       case 4:
-  	std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
         return 0;
       break;
   
       case 5:
-  	std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
         return 0;
       break;
   
       case 6:
-  	std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
         return 0;
       break;
   
       case 7:
-  	std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
         return 0;
       break;
   
       default:
-  	std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
         return 0 ;
       break;
     }    

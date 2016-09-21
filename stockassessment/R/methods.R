@@ -1,30 +1,33 @@
 ##' Plot SAM model 
-##' @param  fit ... 
+##' @param  x ...
+##' @param  ... extra arguments
 ##' @details ...
 ##' @export
-plot.sam<-function(fit,...){
+plot.sam<-function(x, ...){
   par(mfrow=c(3,1))
-  ssbplot(fit,...)
-  fbarplot(fit,...)
-  recplot(fit,...)
+  ssbplot(x,...)
+  fbarplot(x,...)
+  recplot(x,...)
   par(mfrow=c(1,1))
 }
 
 ##' Print SAM fit 
-##' @param  fit ... 
+##' @param  x ...
+##' @param  ... extra arguments
 ##' @details ...
 ##' @export
-print.sam<-function(fit,...){
- cat("SAM model: log likelihood is", logLik(fit,...),"Convergence", ifelse(0==fit$opt$convergence, "OK\n", "failed\n"))
+print.sam<-function(x, ...){
+ cat("SAM model: log likelihood is", logLik(x,...),"Convergence", ifelse(0==x$opt$convergence, "OK\n", "failed\n"))
 }
 
 ##' Log likelihood SAM fit 
-##' @param  fit ... 
+##' @param  object ...
+##' @param  ... extra arguments
 ##' @details ...
 ##' @export
-logLik.sam<-function(fit,...){
- ret<- -fit$opt$objective
- attr(ret,"df")<-length(fit$opt$par)
+logLik.sam<-function(object, ...){
+ ret<- -object$opt$objective
+ attr(ret,"df")<-length(object$opt$par)
  class(ret)<-"logLik"
  ret
 }

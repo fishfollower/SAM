@@ -4,7 +4,7 @@
 \alias{ssbtable}
 \title{SSB table}
 \usage{
-ssbtable(fit, ...)
+ssbtable(fit)
 }
 \arguments{
 \item{fit}{...}

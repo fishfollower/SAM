@@ -12,6 +12,8 @@ sam.fit(data, conf, parameters, ...)
 \item{conf}{...}
 
 \item{parameters}{...}
+
+\item{...}{extra arguments to MakeADFun}
 }
 \description{
 Fit SAM model

@@ -7,9 +7,9 @@
 setSeq(min, max)
 }
 \arguments{
-\item{min}{}
+\item{min}{from}
 
-\item{max}{}
+\item{max}{to}
 }
 \description{
 small helper function

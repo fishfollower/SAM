@@ -1,6 +1,6 @@
 ##' small helper function
-##' @param min
-##' @param max
+##' @param min from 
+##' @param max to 
 ##' @details ...
 setSeq<-function(min,max){
   if(min==max){

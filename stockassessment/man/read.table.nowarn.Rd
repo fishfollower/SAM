@@ -7,7 +7,7 @@
 read.table.nowarn(...)
 }
 \arguments{
-\item{...}{}
+\item{...}{arguments}
 }
 \description{
 Function to supress incomplete final line warning

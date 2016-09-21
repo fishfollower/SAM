@@ -6,13 +6,13 @@ Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.d
 	    person("Casper","Berg",role="aut"),
             person("Kasper","Kristensen",role="aut"))
 Description: Fitting SAM...
-License: BSD
+License: GPL-2
 Imports:
     TMB,
     Matrix,
     nlme
 LinkingTo: TMB, RcppEigen
-Suggests:
+Suggests: knitr
 VignetteBuilder: knitr
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE

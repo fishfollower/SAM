@@ -1,5 +1,6 @@
 ##' Function to supress incomplete final line warning
-##' @param ...
+##' @param ... arguments
+##' @importFrom utils read.table
 ##' @details ...
 read.table.nowarn<-function(...){
   tryCatch.W.E <- function(expr)
@@ -17,14 +18,15 @@ read.table.nowarn<-function(...){
 }
 
 ##' Function to test if x is ...
-##' @param x
+##' @param x number
+##' @param tol precision 
 ##' @details ...
 is.whole.positive.number <- function(x, tol = .Machine$double.eps^0.5){
   (abs(x - round(x)) < tol)&(x>=0)
 }
 
 ##' Function to read ices survey format
-##' @param filen
+##' @param filen the file
 ##' @details ...
 read.surveys<-function(filen){
   # Function to read ices survey file 
@@ -215,7 +217,18 @@ read.ices<-function(filen){
 }
 
 ##' Combine the data sources to SAM readable object  
-##' @param too many to list now
+##' @param fleets comm fleets vith effort (currently unimplemented)
+##' @param surveys surveys
+##' @param residual.fleet total catch minus commercial 
+##' @param prop.mature pm
+##' @param stock.mean.weight sw
+##' @param catch.mean.weight cw
+##' @param dis.mean.weight dw
+##' @param land.mean.weight lw
+##' @param natural.mortality nm
+##' @param prop.f ...
+##' @param prop.m ...
+##' @param land.frac ...
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 

@@ -5,22 +5,16 @@
 \title{SAM SSB plot}
 \usage{
 ssbplot(fit, ...)
-
-ssbplot(fit, ...)
 }
 \arguments{
-\item{fit}{...}
+\item{fit}{the object returned from sam.fit}
 
-\item{fit}{...}
+\item{...}{extra arguments transferred to plot}
 }
 \description{
 SAM SSB plot
-
-SAM TSB plot
 }
 \details{
-...
-
 ...
 }
 

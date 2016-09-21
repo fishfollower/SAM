@@ -4,10 +4,12 @@
 \alias{print.sam}
 \title{Print SAM fit}
 \usage{
-print.sam(fit, ...)
+print.sam(x, ...)
 }
 \arguments{
-\item{fit}{...}
+\item{x}{...}
+
+\item{...}{extra arguments}
 }
 \description{
 Print SAM fit

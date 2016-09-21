@@ -1,7 +1,7 @@
 ##' Table helper 
-##' @param  fit ... 
+##' @param  fit ...
 ##' @details ...
-.tableit <-function (what, x=fit$data$years, ylab=what, trans=function(x)x ,...){
+.tableit <-function (what, x=fit$data$years, ylab=what, trans=function(x)x){
    idx<-names(fit$sdrep$value)==what
    y<-fit$sdrep$value[idx]
    ci<-y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -9,14 +9,14 @@
    rownames(ret)<-x
    colnames(ret)<-c("Estimate","Low","Hig")
    return(ret)
- }
+}
 
 ##' SSB table 
-##' @param  fit ... 
+##' @param  fit ...
 ##' @details ...
 ##' @export
-ssbtable<-function(fit,...){
-   ret<-.tableit("logssb", trans=exp, ...) 
+ssbtable<-function(fit){
+   ret<-.tableit("logssb", trans=exp) 
    return(ret)
 }
 
@@ -24,8 +24,8 @@ ssbtable<-function(fit,...){
 ##' @param  fit ... 
 ##' @details ...
 ##' @export
-tsbtable<-function(fit,...){
-   ret<-.tableit("logtsb", trans=exp, ...) 
+tsbtable<-function(fit){
+   ret<-.tableit("logtsb", trans=exp) 
    return(ret)
 }
 
@@ -33,8 +33,8 @@ tsbtable<-function(fit,...){
 ##' @param  fit ... 
 ##' @details ...
 ##' @export
-fbartable<-function(fit,...){
-   ret<-.tableit("logfbar", trans=exp, ...) 
+fbartable<-function(fit){
+   ret<-.tableit("logfbar", trans=exp) 
    return(ret)
 }
 
@@ -42,8 +42,8 @@ fbartable<-function(fit,...){
 ##' @param  fit ... 
 ##' @details ...
 ##' @export
-rectable<-function(fit,...){
-   ret<-.tableit("logR", trans=exp, ...) 
+rectable<-function(fit){
+   ret<-.tableit("logR", trans=exp) 
    return(ret)
 }
 

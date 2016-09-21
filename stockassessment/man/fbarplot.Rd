@@ -7,9 +7,11 @@
 fbarplot(fit, partial = TRUE, ...)
 }
 \arguments{
-\item{fit}{...}
+\item{fit}{the object returned from sam.fit}
 
-\item{partial}{...}
+\item{partial}{true if included partial F's are to be plotted}
+
+\item{...}{extra arguments transferred to plot}
 }
 \description{
 SAM Fbar plot

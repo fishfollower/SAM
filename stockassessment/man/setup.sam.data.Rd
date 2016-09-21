@@ -11,7 +11,29 @@ setup.sam.data(fleets = NULL, surveys = NULL, residual.fleet = NULL,
   land.frac = NULL)
 }
 \arguments{
-\item{too}{many to list now}
+\item{fleets}{comm fleets vith effort (currently unimplemented)}
+
+\item{surveys}{surveys}
+
+\item{residual.fleet}{total catch minus commercial}
+
+\item{prop.mature}{pm}
+
+\item{stock.mean.weight}{sw}
+
+\item{catch.mean.weight}{cw}
+
+\item{dis.mean.weight}{dw}
+
+\item{land.mean.weight}{lw}
+
+\item{natural.mortality}{nm}
+
+\item{prop.f}{...}
+
+\item{prop.m}{...}
+
+\item{land.frac}{...}
 }
 \description{
 Combine the data sources to SAM readable object

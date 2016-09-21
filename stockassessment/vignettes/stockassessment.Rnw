@@ -1,0 +1,42 @@
+\documentclass{article}
+%% vignette index specifications need to be *after* \documentclass{}
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{basic examples of stockassessment usage}
+%\VignettePackage{stockassessment}
+%\usepackage{lineno}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[american]{babel}
+\newcommand{\R}{{\sf R}}
+\newcommand{\fixme}[1]{\textbf{\color{red} fixme: #1}}
+\newcommand{\notimpl}[1]{\emph{\color{magenta} #1}}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{alltt}
+\newcommand{\code}[1]{{\tt #1}}
+\usepackage{fancyvrb}
+\usepackage{natbib}
+\VerbatimFootnotes
+\bibliographystyle{chicago}
+
+\title{Getting started with the \code{stockassessment} package}
+\author{Anders Nielsen}
+\date{\today}
+\begin{document}
+\maketitle
+
+%\linenumbers
+
+<<setopts,echo=FALSE>>=
+require("knitr")
+opts_chunk$set(fig.width=5,fig.height=5,
+               out.width="0.8\\textwidth",echo=TRUE)
+Rver <- paste(R.version$major,R.version$minor,sep=".")
+used.pkgs <- c("stockassessment")  
+@ 
+
+
+\section{Introduction/quick start}
+\code{stockassessment} is an R package built to replicate the functionality found on \href{http://www.stockassessment.org}{stockassessment.org}.
+\end{document}
+

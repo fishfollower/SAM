@@ -1,5 +1,6 @@
 ##' Setup minimal initial parameters
-##' @param dat sam data object 
+##' @param dat sam data object
+##' @param conf configuration list  
 ##' @details ...
 ##' @export
 defpar <- function(dat,conf){

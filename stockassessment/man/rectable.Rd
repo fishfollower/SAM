@@ -4,7 +4,7 @@
 \alias{rectable}
 \title{Recruit table}
 \usage{
-rectable(fit, ...)
+rectable(fit)
 }
 \arguments{
 \item{fit}{...}
