@@ -1,4 +1,4 @@
-library(SAM)
+library(stockassessment)
 
 cn<-read.ices("cn.dat")
 cw<-read.ices("cw.dat")

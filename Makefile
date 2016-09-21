@@ -1,8 +1,8 @@
 R=R
 # -> you can do    R=R-devel  make ....
 
-PACKAGE=SAM
-VERSION := $(shell sed -n '/^Version: /s///p' SAM/DESCRIPTION)
+PACKAGE=stockassessment
+VERSION := $(shell sed -n '/^Version: /s///p' stockassessment/DESCRIPTION)
 
 TARBALL := $(PACKAGE)_$(VERSION).tar.gz
 ZIPFILE := =$(PACKAGE)_$(VERSION).zip
@@ -24,8 +24,8 @@ doc-update: $(PACKAGE)/R/*.R
 	@touch doc-update
 
 vignette-update: $(PACKAGE)/vignettes/*.Rnw
-	cd $(PACKAGE)/vignettes; echo "library(knitr);knit2pdf('SAM.Rnw')" | $(R) --slave
-	 mv $(PACKAGE)/vignettes/SAM.pdf $(PACKAGE)/inst/doc
+	cd $(PACKAGE)/vignettes; echo "library(knitr);knit2pdf('stockassessment.Rnw')" | $(R) --slave
+	 mv $(PACKAGE)/vignettes/stockassessment.pdf $(PACKAGE)/inst/doc
 	@touch vignette-update
 
 namespace-update :: $(PACKAGE)/NAMESPACE
@@ -40,11 +40,11 @@ install: $(TARBALL)
 	$(R) CMD INSTALL --preclean $<
 	@touch $@
 
-quick-install: $(PACKAGE)/src/SAM.so
+quick-install: $(PACKAGE)/src/stockassessment.so
 	$(R) CMD INSTALL $(PACKAGE)
 
-$(PACKAGE)/src/SAM.so: $(PACKAGE)/src/SAM.cpp
-	cd $(PACKAGE)/src; echo "library(TMB); compile('SAM.cpp','-O0 -g')" | $(R) --slave
+$(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp
+	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp','-O0 -g')" | $(R) --slave
 
 unexport TEXINPUTS
 pdf: $(PACKAGE).pdf
@@ -64,10 +64,10 @@ check-cran: $(TARBALL)
 quick-check: quick-install ex-test
 
 ex-test:
-	echo "library(SAM); example(sam.fit)" | $(R) --slave
+	echo "library(stockassessment); example(sam.fit)" | $(R) --slave
 
 clean:
-	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/SAM.so $(PACKAGE)/src/SAM.o
+	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/stockassessment.so $(PACKAGE)/src/stockassessment.o
 
 test: $(SUBDIRS)
 $(SUBDIRS):

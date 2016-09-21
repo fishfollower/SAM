@@ -4,7 +4,7 @@
 ##' @param parameters ...
 ##' @importFrom TMB MakeADFun sdreport
 ##' @details ...
-##' @useDynLib SAM
+##' @useDynLib stockassessment
 ##' @export
 ##' @examples
 ##' data(nscodData)
@@ -13,7 +13,7 @@
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
 sam.fit <- function(data, conf, parameters,...){
   tmball <- c(data, conf)
-  obj <- MakeADFun(tmball,parameters,random=c("logN", "logF"), DLL="SAM",...)
+  obj <- MakeADFun(tmball,parameters,random=c("logN", "logF"), DLL="stockassessment",...)
   opt<-nlminb(obj$par,obj$fn,obj$gr,control=list(trace=1, eval.max=1200))
   sdrep<-sdreport(obj)
   pl <- as.list(sdrep,"Est")
