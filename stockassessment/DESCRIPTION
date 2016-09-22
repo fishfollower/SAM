@@ -7,10 +7,7 @@ Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.d
             person("Kasper","Kristensen",role="aut"))
 Description: Fitting SAM...
 License: GPL-2
-Imports:
-    TMB,
-    Matrix,
-    nlme
+Imports: TMB
 LinkingTo: TMB, RcppEigen
 Suggests: knitr
 VignetteBuilder: knitr
