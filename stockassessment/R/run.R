@@ -4,6 +4,7 @@
 ##' @param parameters ...
 ##' @param ... extra arguments to MakeADFun
 ##' @importFrom TMB MakeADFun sdreport
+##' @importFrom stats nlminb
 ##' @details ...
 ##' @useDynLib stockassessment
 ##' @export

@@ -1,7 +1,10 @@
 ##' Table helper 
-##' @param  fit ...
+##' @param fit returned object from sam.fit
+##' @param quoted name of what to extract
+##' @param x rownames of table
+##' @param trans function to be applied
 ##' @details ...
-.tableit <-function (what, x=fit$data$years, ylab=what, trans=function(x)x){
+.tableit <-function (fit, what, x=fit$data$years, trans=function(x)x){
    idx<-names(fit$sdrep$value)==what
    y<-fit$sdrep$value[idx]
    ci<-y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -16,7 +19,7 @@
 ##' @details ...
 ##' @export
 ssbtable<-function(fit){
-   ret<-.tableit("logssb", trans=exp) 
+   ret<-.tableit(fit, "logssb", trans=exp) 
    return(ret)
 }
 
@@ -25,7 +28,7 @@ ssbtable<-function(fit){
 ##' @details ...
 ##' @export
 tsbtable<-function(fit){
-   ret<-.tableit("logtsb", trans=exp) 
+   ret<-.tableit(fit, "logtsb", trans=exp) 
    return(ret)
 }
 
@@ -43,7 +46,7 @@ fbartable<-function(fit){
 ##' @details ...
 ##' @export
 rectable<-function(fit){
-   ret<-.tableit("logR", trans=exp) 
+   ret<-.tableit(fit, "logR", trans=exp) 
    return(ret)
 }
 

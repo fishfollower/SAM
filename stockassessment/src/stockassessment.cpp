@@ -28,7 +28,6 @@
 //  --------------------------------------------------------------------------
  
 #include <TMB.hpp>
-#include <iostream>
 
 /* Parameter transform */
 template <class Type>
@@ -148,8 +147,7 @@ Type objective_function<Type>::operator() ()
     }
   }
 
-  using namespace density;
-  MVNORM_t<Type> neg_log_densityF(fvar);
+  density::MVNORM_t<Type> neg_log_densityF(fvar);
   for(int i=1;i<timeSteps;i++){    
      ans+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood 
   }
@@ -173,7 +171,7 @@ Type objective_function<Type>::operator() ()
       if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(keyVarLogN(i));}
     }
   }
-  MVNORM_t<Type> neg_log_densityN(nvar);
+  density::MVNORM_t<Type> neg_log_densityN(nvar);
   vector<Type> predN(stateDimN); 
   for(int i=1;i<timeSteps;i++){ 
     if(stockRecruitmentModelCode==0){ // straight RW 
@@ -237,7 +235,7 @@ Type objective_function<Type>::operator() ()
       break;
   
       case 1:
-  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	error("Unknown fleet code");
         return(0);
       break;
   
@@ -253,32 +251,32 @@ Type objective_function<Type>::operator() ()
       break;
   
       case 3:
-  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	error("Unknown fleet code");
         return 0;
       break;
   
       case 4:
-  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	error("Unknown fleet code");
         return 0;
       break;
   
       case 5:
-  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	error("Unknown fleet code");
         return 0;
       break;
   
       case 6:
-  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	error("Unknown fleet code");
         return 0;
       break;
   
       case 7:
-  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	error("Unknown fleet code");
         return 0;
       break;
   
       default:
-  	//std::cerr<<"Unknown fleet code: "<<ft<<std::endl;
+  	error("Unknown fleet code");
         return 0 ;
       break;
     }    

@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{logLik.sam}
 \alias{logLik.sam}
-\title{Log likelihood SAM fit}
+\title{Log likelihood of sam object}
 \usage{
 \method{logLik}{sam}(object, ...)
 }
@@ -12,7 +12,7 @@
 \item{...}{extra arguments}
 }
 \description{
-Log likelihood SAM fit
+Log likelihood of sam object
 }
 \details{
 ...

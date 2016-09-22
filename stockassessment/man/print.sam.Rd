@@ -2,9 +2,9 @@
 % Please edit documentation in R/methods.R
 \name{print.sam}
 \alias{print.sam}
-\title{Print SAM fit}
+\title{Print sam object}
 \usage{
-print.sam(x, ...)
+\method{print}{sam}(x, ...)
 }
 \arguments{
 \item{x}{...}
@@ -12,7 +12,7 @@ print.sam(x, ...)
 \item{...}{extra arguments}
 }
 \description{
-Print SAM fit
+Print sam object
 }
 \details{
 ...

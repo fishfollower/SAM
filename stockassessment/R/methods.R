@@ -1,6 +1,8 @@
-##' Plot SAM model 
+##' Plot sam object 
+##' @method plot sam
 ##' @param  x ...
 ##' @param  ... extra arguments
+##' @importFrom graphics par
 ##' @details ...
 ##' @export
 plot.sam<-function(x, ...){
@@ -11,16 +13,18 @@ plot.sam<-function(x, ...){
   par(mfrow=c(1,1))
 }
 
-##' Print SAM fit 
+##' Print sam object 
+##' @method print sam 
 ##' @param  x ...
 ##' @param  ... extra arguments
 ##' @details ...
 ##' @export
 print.sam<-function(x, ...){
- cat("SAM model: log likelihood is", logLik(x,...),"Convergence", ifelse(0==x$opt$convergence, "OK\n", "failed\n"))
+ cat("SAM model: log likelihood is", logLik.sam(x,...),"Convergence", ifelse(0==x$opt$convergence, "OK\n", "failed\n"))
 }
 
-##' Log likelihood SAM fit 
+##' Log likelihood of sam object 
+##' @method logLik sam 
 ##' @param  object ...
 ##' @param  ... extra arguments
 ##' @details ...

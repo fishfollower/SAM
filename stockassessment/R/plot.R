@@ -8,6 +8,7 @@
 ##' @param  trans function to transform values by
 ##' @param  ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid
+##' @importFrom grDevices gray
 ##' @details ...
 .plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x ,...){
    idx<-names(fit$sdrep$value)==what

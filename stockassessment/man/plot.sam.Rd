@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{plot.sam}
 \alias{plot.sam}
-\title{Plot SAM model}
+\title{Plot sam object}
 \usage{
 \method{plot}{sam}(x, ...)
 }
@@ -12,7 +12,7 @@
 \item{...}{extra arguments}
 }
 \description{
-Plot SAM model
+Plot sam object
 }
 \details{
 ...
