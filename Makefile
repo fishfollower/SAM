@@ -67,7 +67,8 @@ ex-test:
 	echo "library(stockassessment); example(sam.fit)" | $(R) --slave
 
 clean:
-	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/stockassessment.so $(PACKAGE)/src/stockassessment.o
+	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/*.so $(PACKAGE)/src/*.o
+	\rm -rf $(PACKAGE).Rcheck
 
 test: $(SUBDIRS)
 $(SUBDIRS):
