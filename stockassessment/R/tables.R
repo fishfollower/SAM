@@ -37,7 +37,7 @@ tsbtable<-function(fit){
 ##' @details ...
 ##' @export
 fbartable<-function(fit){
-   ret<-.tableit("logfbar", trans=exp) 
+   ret<-.tableit(fit, "logfbar", trans=exp) 
    return(ret)
 }
 
