@@ -66,3 +66,21 @@ recplot<-function(fit,...){
    lab<-paste("Recruits (age ", fit$conf$minAge, ")", sep="")
   .plotit(fit, "logR", ylab=lab, trans=exp,...)
 }
+
+##' SAM catch plot 
+##' @param fit the object returned from sam.fit
+##' @param obs.show if observations are to be shown also
+##' @param ... extra arguments transferred to plot
+##' @details ...
+##' @importFrom graphics points
+##' @export
+catchplot<-function(fit, obs.show=TRUE, ...){
+  CW <- fit$data$catchMeanWeight
+  x <- as.numeric(rownames(CW))
+  .plotit(fit, x=x, "logCatch", ylab="Catch", trans=exp,...)
+  if(obs.show){
+    obs<-fit$data$obs
+    .goget<-function(y,a)obs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a , "obs"]  
+    points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW), pch=4, lwd=2, cex=1.2)
+  }  
+}
