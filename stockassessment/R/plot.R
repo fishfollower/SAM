@@ -38,7 +38,6 @@ fbarplot<-function(fit,partial=TRUE,...){
   }  
 }
 
-
 ##' SAM SSB plot 
 ##' @param fit the object returned from sam.fit
 ##' @param ... extra arguments transferred to plot
