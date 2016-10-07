@@ -25,7 +25,7 @@ print.sam<-function(x, ...){
 
 ##' Log likelihood of sam object 
 ##' @method logLik sam 
-##' @param  object ...
+##' @param  object sam fitted object (result from sam.fit)
 ##' @param  ... extra arguments
 ##' @details ...
 ##' @export
@@ -34,4 +34,15 @@ logLik.sam<-function(object, ...){
  attr(ret,"df")<-length(object$opt$par)
  class(ret)<-"logLik"
  ret
+}
+
+
+##' Extract number of observations from sam object 
+##' @method nobs sam 
+##' @param  object sam fitted object (result from sam.fit)
+##' @param  ... extra arguments
+##' @details ...
+##' @export
+nobs.sam<-function(object, ...){
+ object$data$nobs
 }
