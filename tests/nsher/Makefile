@@ -1,5 +1,5 @@
 all: 
-	@echo 'source("script.R")' | R --slave > nul
+	@echo 'source("script.R")' | R --slave > /dev/null
 	@cmp -s res.out res.EXP; \
 	RETVAL=$$?; \
 	if [ $$RETVAL -eq 0 ]; then \

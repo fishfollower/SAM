@@ -4,7 +4,7 @@
 \alias{sam.fit}
 \title{Fit SAM model}
 \usage{
-sam.fit(data, conf, parameters, ...)
+sam.fit(data, conf, parameters, newtonsteps = 3, ...)
 }
 \arguments{
 \item{data}{...}
@@ -12,6 +12,8 @@ sam.fit(data, conf, parameters, ...)
 \item{conf}{...}
 
 \item{parameters}{...}
+
+\item{newtonsteps}{...}
 
 \item{...}{extra arguments to MakeADFun}
 }

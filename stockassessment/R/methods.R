@@ -36,13 +36,13 @@ logLik.sam<-function(object, ...){
  ret
 }
 
-
 ##' Extract number of observations from sam object 
 ##' @method nobs sam 
-##' @param  object sam fitted object (result from sam.fit)
-##' @param  ... extra arguments
+##' @param object sam fitted object (result from sam.fit)
+##' @param ... extra arguments
+##' @importFrom stats nobs
 ##' @details ...
 ##' @export
 nobs.sam<-function(object, ...){
- object$data$nobs
+ as.integer(object$data$nobs)
 }
