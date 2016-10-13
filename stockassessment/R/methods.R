@@ -57,7 +57,7 @@ nobs.sam<-function(object, ...){
 ##' @export
 residuals.sam<-function(object, ...){
  res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep")
- ret <- cbind(fit$data$obs, res)
+ ret <- cbind(object$data$obs, res)
  ret
 }
 
