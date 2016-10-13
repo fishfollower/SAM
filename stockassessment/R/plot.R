@@ -79,7 +79,8 @@ catchplot<-function(fit, obs.show=TRUE, ...){
   .plotit(fit, x=x, "logCatch", ylab="Catch", trans=exp,...)
   if(obs.show){
     obs<-fit$data$obs
-    .goget<-function(y,a)obs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a , "obs"]  
+    logobs<-fit$data$logobs
+    .goget<-function(y,a)exp(logobs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a])  
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW), pch=4, lwd=2, cex=1.2)
   }  
 }

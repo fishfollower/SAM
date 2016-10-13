@@ -40,14 +40,16 @@ Type square(Type x){return x*x;}
 Type objective_function<Type>::operator() ()
 {
   DATA_INTEGER(noFleets);
-  DATA_VECTOR(fleetTypes); 
+  DATA_IVECTOR(fleetTypes); 
   DATA_VECTOR(sampleTimes);
   DATA_INTEGER(noYears);
   DATA_VECTOR(years);
   DATA_INTEGER(nobs);
   DATA_VECTOR(idx1);
   DATA_VECTOR(idx2);
-  DATA_ARRAY(obs);
+  DATA_IARRAY(obs);
+  DATA_VECTOR(logobs);
+  DATA_VECTOR_INDICATOR(keep, logobs);
   DATA_ARRAY(propMat);
   DATA_ARRAY(stockMeanWeight); 
   DATA_ARRAY(catchMeanWeight);
@@ -204,15 +206,15 @@ Type objective_function<Type>::operator() ()
 
   // Now finally match to observations
   int f, ft, a, y,yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
-  int minYear=CppAD::Integer((obs(0,0)));
+  int minYear=obs(0,0);
   Type zz;
   vector<Type> predObs(nobs);
   vector<Type> predSd(nobs);
   for(int i=0;i<nobs;i++){
-    y=CppAD::Integer(obs(i,0))-minYear;
-    f=CppAD::Integer(obs(i,1));
-    ft=CppAD::Integer(fleetTypes(f-1));
-    a=CppAD::Integer(obs(i,2))-minAge;
+    y=obs(i,0)-minYear;
+    f=obs(i,1);
+    ft=fleetTypes(f-1);
+    a=obs(i,2)-minAge;
     zz=exp(logF(keyLogFsta(0,a),y))+natMor(y,a);
     
     switch(ft){
@@ -222,7 +224,7 @@ Type objective_function<Type>::operator() ()
           predObs(i)+=logF(keyLogFsta(0,a),y);
         }
         scaleIdx=-1;
-        yy=CppAD::Integer(obs(i,0));
+        yy=obs(i,0);
         for(int j=0; j<noScaledYears; ++j){
           if(yy==keyScaledYears(j)){
             scaleIdx=keyParScaledYA(j,a);
@@ -281,7 +283,7 @@ Type objective_function<Type>::operator() ()
       break;
     }    
     predSd(i)=sqrt(varLogObs(keyVarObs(f-1,a)));
-    ans+=-dnorm(log(obs(i,3)),predObs(i),predSd(i),true);
+    ans+=-keep(i)*dnorm(logobs(i),predObs(i),predSd(i),true);
   }
 
   for(int y=0;y<timeSteps;y++){  
@@ -314,6 +316,12 @@ Type objective_function<Type>::operator() ()
     logR(y)=logN(0,y);
     R(y)=exp(logR(y));
   }
+
+  if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
+    Type huge = 10;
+    for (int i = 0; i < stateDimN; i++) ans -= dnorm(logN(i, 0), Type(0), huge, true);  
+    for (int i = 0; i < stateDimF; i++) ans -= dnorm(logF(i, 0), Type(0), huge, true);  
+  } 
   
   REPORT(predObs);
   REPORT(predSd);
