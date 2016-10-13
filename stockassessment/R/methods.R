@@ -46,3 +46,19 @@ logLik.sam<-function(object, ...){
 nobs.sam<-function(object, ...){
  as.integer(object$data$nobs)
 }
+
+##' Extract residuals from sam object 
+##' @method residuals sam 
+##' @param object sam fitted object (result from sam.fit)
+##' @param ... extra arguments
+##' @importFrom stats residuals
+##' @importFrom TMB oneStepPredict
+##' @details ...
+##' @export
+residuals.sam<-function(object, ...){
+ res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep")
+ ret <- cbind(fit$data$obs, res)
+ ret
+}
+
+

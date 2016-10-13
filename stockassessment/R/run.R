@@ -27,7 +27,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3,...){
   sdrep <- sdreport(obj,opt$par)
   pl <- as.list(sdrep,"Est")
   plsd <- as.list(sdrep,"Std")
-  ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt)
+  ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj)
   class(ret)<-"sam"
   return(ret)
 }
