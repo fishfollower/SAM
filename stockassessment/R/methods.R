@@ -50,14 +50,28 @@ nobs.sam<-function(object, ...){
 ##' Extract residuals from sam object 
 ##' @method residuals sam 
 ##' @param object sam fitted object (result from sam.fit)
-##' @param ... extra arguments
+##' @param ... extra arguments for TMB's oneStepPredict
 ##' @importFrom stats residuals
 ##' @importFrom TMB oneStepPredict
 ##' @details ...
 ##' @export
 residuals.sam<-function(object, ...){
- res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep")
+ res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep",...)
  ret <- cbind(object$data$obs, res)
+ ret
+}
+
+##' Summary of sam object 
+##' @method summary sam 
+##' @param object sam fitted object (result from sam.fit)
+##' @param ... extra arguments 
+##' @details ...
+##' @export
+summary.sam<-function(object, ...){
+ ret <- cbind(round(rectable(object)), round(ssbtable(object)), round(fbartable(object),2))
+ colnames(ret)[1] <- paste("R(age ", object$conf$minAge, ")", sep="") 
+ colnames(ret)[4] <- "SSB"
+ colnames(ret)[7] <- paste("Fbar(",object$conf$fbarRange[1], "-", object$conf$fbarRange[2], ")", sep="")
  ret
 }
 
