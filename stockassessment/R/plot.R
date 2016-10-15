@@ -37,6 +37,12 @@
 ##' @importFrom grDevices gray rgb
 ##' @details ...
 ##' @export
+##' @examples
+##' exdat<-expand.grid(age=1:5, year=1950:2016, fleet=1:3)
+##' exdat$perfectres<-rnorm(nrow(exdat))
+##' attach(exdat)
+##' plotby(year,age,perfectres, by=fleet)
+##' detach(exdat)
 plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE, y.common=TRUE, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, axes=TRUE, ...){
   if(is.null(by) | length(unique(by))==1){
     # 0
@@ -117,6 +123,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE,
       b<-uby[i]
       plotby(x[by==b], y[by==b], z[by==b], xlab=ifelse(x.common,"",xlab), ylab=ifelse(y.common,"",ylab),
              xlim=xlim, ylim=ylim, bubblescale=bubblescale, axes=FALSE, ...)
+      legend("top", bty="n", legend=uby[i], text.col=gray(.5))
       if(!x.common)axis(1)
       if(!y.common)axis(2)
       if(x.common&(row(laym)[i]==div[1]))axis(1)

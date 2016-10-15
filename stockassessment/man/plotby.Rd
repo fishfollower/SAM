@@ -41,4 +41,11 @@ Plot by one or two
 \details{
 ...
 }
+\examples{
+exdat<-expand.grid(age=1:5, year=1950:2016, fleet=1:3)
+exdat$perfectres<-rnorm(nrow(exdat))
+attach(exdat)
+plotby(year,age,perfectres, by=fleet)
+detach(exdat)
+}
 
