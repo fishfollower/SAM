@@ -41,6 +41,7 @@
 ##' exdat<-expand.grid(age=1:5, year=1950:2016, fleet=1:3)
 ##' exdat$perfectres<-rnorm(nrow(exdat))
 ##' attach(exdat)
+##' par(ask=FALSE)
 ##' plotby(year,age,perfectres, by=fleet)
 ##' detach(exdat)
 plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE, y.common=TRUE, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, axes=TRUE, ...){

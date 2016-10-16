@@ -25,6 +25,7 @@ plot.sam<-function(x, ...){
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
+##' par(ask=FALSE)
 ##' plot(residuals(fit))
 ##' }
 plot.samres<-function(x, ...){
