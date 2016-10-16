@@ -25,7 +25,7 @@ doc-update: $(PACKAGE)/R/*.R
 
 vignette-update: $(PACKAGE)/vignettes/*.Rnw
 	cd $(PACKAGE)/vignettes; echo "library(knitr);knit2pdf('stockassessment.Rnw')" | $(R) --slave
-	 mv $(PACKAGE)/vignettes/stockassessment.pdf $(PACKAGE)/inst/doc
+	mv $(PACKAGE)/vignettes/stockassessment.pdf $(PACKAGE)/inst/doc
 	@touch vignette-update
 
 namespace-update :: $(PACKAGE)/NAMESPACE
@@ -75,5 +75,3 @@ $(SUBDIRS):
 	@echo -n $@
 	@echo -n ".. "
 	@$(MAKE) -s -C $@
-
-

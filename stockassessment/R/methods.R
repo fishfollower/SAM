@@ -6,12 +6,31 @@
 ##' @details ...
 ##' @export
 plot.sam<-function(x, ...){
-  par(mfrow=c(3,1))
+  op<-par(mfrow=c(3,1))
   ssbplot(x,...)
   fbarplot(x,...)
   recplot(x,...)
-  par(mfrow=c(1,1))
+  par(op)
 }
+
+##' Plot sam residuals 
+##' @method plot samres 
+##' @param  x ...
+##' @param  ... extra arguments
+##' @details ...
+##' @export
+##' @examples
+##' \dontrun{
+##' data(nscodData)
+##' data(nscodConf)
+##' data(nscodParameters)
+##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
+##' plot(residuals(fit))
+##' }
+plot.samres<-function(x, ...){
+  plotby(x$year, x$age, x$residual, by=x$fleet, xlab="Year", ylab="Age", ...)
+}
+
 
 ##' Print sam object 
 ##' @method print sam 
@@ -58,6 +77,7 @@ nobs.sam<-function(object, ...){
 residuals.sam<-function(object, ...){
  res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep",...)
  ret <- cbind(object$data$obs, res)
+ class(ret)<-"samres"
  ret
 }
 
