@@ -161,7 +161,6 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE,
       if(!x.common)axis(1)
       if(!y.common)axis(2)
       if(x.common&(i==div[1]))axis(1)
-      #if(x.common&(i==length(uby)))axis(1)
       if(y.common&(j==1))axis(2)
       box()
     }
