@@ -4,10 +4,12 @@
 \alias{residuals.sam}
 \title{Extract residuals from sam object}
 \usage{
-\method{residuals}{sam}(object, ...)
+\method{residuals}{sam}(object, discrete = FALSE, ...)
 }
 \arguments{
 \item{object}{sam fitted object (result from sam.fit)}
+
+\item{discrete}{logical if model contain discrete observations}
 
 \item{...}{extra arguments for TMB's oneStepPredict}
 }

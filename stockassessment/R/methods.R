@@ -70,13 +70,14 @@ nobs.sam<-function(object, ...){
 ##' Extract residuals from sam object 
 ##' @method residuals sam 
 ##' @param object sam fitted object (result from sam.fit)
+##' @param discrete logical if model contain discrete observations  
 ##' @param ... extra arguments for TMB's oneStepPredict
 ##' @importFrom stats residuals
 ##' @importFrom TMB oneStepPredict
 ##' @details ...
 ##' @export
-residuals.sam<-function(object, ...){
- res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep",...)
+residuals.sam<-function(object, discrete=FALSE, ...){
+ res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete,...)
  ret <- cbind(object$data$obs, res)
  class(ret)<-"samres"
  ret
