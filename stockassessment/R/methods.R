@@ -32,7 +32,6 @@ plot.samres<-function(x, ...){
   plotby(x$year, x$age, x$residual, by=x$fleet, xlab="Year", ylab="Age", ...)
 }
 
-
 ##' Print sam object 
 ##' @method print sam 
 ##' @param  x ...
@@ -41,6 +40,17 @@ plot.samres<-function(x, ...){
 ##' @export
 print.sam<-function(x, ...){
  cat("SAM model: log likelihood is", logLik.sam(x,...),"Convergence", ifelse(0==x$opt$convergence, "OK\n", "failed\n"))
+}
+
+##' Print samres object 
+##' @method print samres 
+##' @param  x ...
+##' @param  ... extra arguments
+##' @details ...
+##' @export
+print.samres<-function(x, ...){
+ class(x)<-NULL
+ print(as.data.frame(x))
 }
 
 ##' Log likelihood of sam object 
@@ -96,5 +106,3 @@ summary.sam<-function(object, ...){
  colnames(ret)[7] <- paste("Fbar(",object$conf$fbarRange[1], "-", object$conf$fbarRange[2], ")", sep="")
  ret
 }
-
-
