@@ -1,24 +1,45 @@
 ##' Plot helper
-##' @param  fit the fitted object from sam.fit
-##' @param  what quoted name of object to extract
-##' @param  x x-alues
-##' @param  ymab label on y-axis
-##' @param  xlab label on x-axis
-##' @param  ex extra y's to make room for
-##' @param  trans function to transform values by
-##' @param  ... extra arguments transferred to plot
+##' @param fit the fitted object from sam.fit
+##' @param what quoted name of object to extract
+##' @param x x-alues
+##' @param ymab label on y-axis
+##' @param xlab label on x-axis
+##' @param ex extra y's to make room for
+##' @param trans function to transform values by
+##' @param Add if plotting is to be added on existing plot
+##' @param ci if confidence intervals should be plottet
+##' @param cicol color to plot the confidence polygon
+##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid
 ##' @importFrom grDevices gray
 ##' @details ...
-.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x ,...){
-   idx<-names(fit$sdrep$value)==what
-   y<-fit$sdrep$value[idx]
-   ci<-y+fit$sdrep$sd[idx]%o%c(-2,2)
-   plot(x,trans(y), xlab=xlab, ylab=ylab, type="l", lwd=3, ylim=range(c(trans(ci),0,ex)), las=1,...)
-   polygon(c(x,rev(x)), y = c(trans(ci[,1]),rev(trans(ci[,2]))), border = gray(.5,alpha=.5), col = gray(.5,alpha=.5))
-   grid(col="black")
- }
-
+.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),...){
+  if(class(fit)!="samset"){ 
+    idx<-names(fit$sdrep$value)==what
+    y<-fit$sdrep$value[idx]
+    lowhig<-y+fit$sdrep$sd[idx]%o%c(-2,2)
+    if(add){
+      lines(x,trans(y), lwd=3,...)
+    }else{
+      plot(x,trans(y), xlab=xlab, ylab=ylab, type="l", lwd=3, ylim=range(c(trans(lowhig),0,ex)), las=1,...)
+    }
+    if(ci){
+      polygon(c(x,rev(x)), y = c(trans(lowhig[,1]),rev(trans(lowhig[,2]))), border = gray(.5,alpha=.5), col = cicol)
+    }
+    grid(col="black")
+  }else{
+    col10=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")
+    if(!is.null(attr(fit,"fit"))){
+      fitlocal <- attr(fit,"fit")
+    }else{
+      fitlocal <- fit[[1]]
+    }
+    if(is.null(x))x=fitlocal$data$years
+    .plotit(fitlocal, what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol,...)
+    lapply(1:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE,col=col10[(i-1)%%10+1]))
+  }
+}
+   
 ##' Plot by one or two  
 ##' @param x numeric vector
 ##' @param y numeric vector

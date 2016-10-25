@@ -58,7 +58,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   conf$keyQpow <- .reidx(conf$keyQpow[suf,,drop=FALSE])
   conf$keyVarF <- .reidx(conf$keyVarF[suf,,drop=FALSE])
   conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
-  yidx <- conf$keyScaledYears%in%data$obs[,'year']
+  yidx <- conf$keyScaledYears%in%data$obs[data$obs[,'fleet']==1,'year']
   conf$noScaledYears[1,1] <- sum(yidx)
   conf$keyScaledYears <- conf$keyScaledYears[,yidx,drop=FALSE]
   conf$keyParScaledYA <- .reidx(conf$keyParScaledYA[yidx,,drop=FALSE])
@@ -100,8 +100,8 @@ retro <- function(fit, year=NULL, ncores=detectCores(all.tests = FALSE, logical 
   if(ncol(mat)!=length(suf))stop("Number of retro fleets does not match")
 
   setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)cbind(mat[i,ff]:maxy[ff], ff))))
-
   runs <- mclapply(setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...), mc.cores=ncores, mc.silent=mc.silent)
+  attr(runs, "fit") <- fit
   class(runs)<-"samset"
   runs
 }

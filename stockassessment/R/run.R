@@ -17,7 +17,7 @@
 sam.fit <- function(data, conf, parameters, newtonsteps=3,...){
   tmball <- c(data, conf)
   obj <- MakeADFun(tmball, parameters, random=c("logN", "logF"), DLL="stockassessment", ...)
-  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000))
+  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000))
   for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
     g <- as.numeric( obj$gr(opt$par) )
     h <- optimHess(opt$par, obj$fn, obj$gr)
