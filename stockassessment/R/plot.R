@@ -10,7 +10,7 @@
 ##' @param ci if confidence intervals should be plottet
 ##' @param cicol color to plot the confidence polygon
 ##' @param ... extra arguments transferred to plot
-##' @importFrom graphics plot polygon grid
+##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
 ##' @details ...
 .plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),...){
