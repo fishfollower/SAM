@@ -64,6 +64,44 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   conf$keyParScaledYA <- .reidx(conf$keyParScaledYA[yidx,,drop=FALSE])
   par<-defpar(data,conf)
   
-  ret <- sam.fit(data,conf,par)
+  ret <- sam.fit(data,conf,par,...)
   return(ret)
+}
+
+
+
+
+##' retro run 
+##' @param fit a fittes model objest as returned from sam.fit
+##' @param year either 1) a single integer n in which case runs where all fleets are reduced by 1, 2, ..., n are returned, 2) a vector of years in which case runs where years from and later are excluded for all fleets, and 3 a matrix of years were each column is a fleet and each column corresponds to a run where the years and later are excluded.    
+##' @param ncores the number of cores to attemp to use
+##' @param mc.silent logical to indicate is output is to be suppressed 
+##' @param ... extra arguments to sam.fit
+##' @details ...
+##' @importFrom parallel mclapply detectCores
+##' @export
+retro <- function(fit, year=NULL, ncores=detectCores(all.tests = FALSE, logical = TRUE), mc.silent=TRUE, ...){
+  data <- fit$data
+  y <- fit$data$obs[,"year"]
+  f <- fit$data$obs[,"fleet"]
+  suf <- sort(unique(f))
+  maxy <- sapply(suf, function(ff)max(y[f==ff]))
+  if(length(year)==1){
+    mat <- sapply(suf,function(ff){my<-maxy[ff];my:(my-year+1)})
+  }
+  if(is.vector(year) & length(year)>1){
+    mat <- sapply(suf,function(ff)year)
+  }
+  if(is.matrix(year)){
+    mat <- year
+  }
+
+  if(nrow(mat)>length(unique(y)))stop("The number of retro runs exceeds number of years")
+  if(ncol(mat)!=length(suf))stop("Number of retro fleets does not match")
+
+  setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)cbind(mat[i,ff]:maxy[ff], ff))))
+
+  runs <- mclapply(setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...), mc.cores=ncores, mc.silent=mc.silent)
+  class(runs)<-"samset"
+  runs
 }
