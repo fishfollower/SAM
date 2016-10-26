@@ -4,16 +4,19 @@
 \alias{sam.fit}
 \title{Fit SAM model}
 \usage{
-sam.fit(data, conf, parameters, newtonsteps = 3, ...)
+sam.fit(data, conf, parameters, newtonsteps = 3, rm.unidentified = FALSE,
+  ...)
 }
 \arguments{
-\item{data}{...}
+\item{data}{data for the sam model as returned from the setup.sam.data function}
 
-\item{conf}{...}
+\item{conf}{model configuration for the model in a format similar to what is returned from the defcon function}
 
-\item{parameters}{...}
+\item{parameters}{initial values for the model in a format similar to what is returned from the defpar function}
 
-\item{newtonsteps}{...}
+\item{newtonsteps}{optional extra true extra newton steps}
+
+\item{rm.unidentified}{option to eliminate unidentified model parameters based on gradient in initial value (somewhat experimental)}
 
 \item{...}{extra arguments to MakeADFun}
 }

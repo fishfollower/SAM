@@ -46,7 +46,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
 
   .reidx <- function(x){
     if(any(x >= (-0.5))){
-      xx<-x[x >= (-.5)]
+      xx <- x[x >= (-.5)]
       x[x >= (-.5)] <- match(xx,sort(unique(xx)))-1
     };
     x
@@ -64,9 +64,8 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
     conf$keyScaledYears <- conf$keyScaledYears[,yidx,drop=FALSE]
     conf$keyParScaledYA <- .reidx(conf$keyParScaledYA[yidx,,drop=FALSE])
   }
-  par<-defpar(data,conf)
-  
-  ret <- sam.fit(data,conf,par,...)
+  par <- defpar(data,conf)
+  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, ...)
   return(ret)
 }
 
