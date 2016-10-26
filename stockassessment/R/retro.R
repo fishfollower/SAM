@@ -68,9 +68,6 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   return(ret)
 }
 
-
-
-
 ##' retro run 
 ##' @param fit a fittes model objest as returned from sam.fit
 ##' @param year either 1) a single integer n in which case runs where all fleets are reduced by 1, 2, ..., n are returned, 2) a vector of years in which case runs where years from and later are excluded for all fleets, and 3 a matrix of years were each column is a fleet and each column corresponds to a run where the years and later are excluded.    
@@ -101,6 +98,22 @@ retro <- function(fit, year=NULL, ncores=detectCores(all.tests = FALSE, logical 
 
   setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)cbind(mat[i,ff]:maxy[ff], ff))))
   runs <- mclapply(setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...), mc.cores=ncores, mc.silent=mc.silent)
+  attr(runs, "fit") <- fit
+  class(runs)<-"samset"
+  runs
+}
+
+##' leaveout run 
+##' @param fit a fittes model objest as returned from sam.fit
+##' @param fleet a list of vectors. Each element in the list specifies a run where the fleets mentioned are omitted 
+##' @param ncores the number of cores to attemp to use
+##' @param mc.silent logical to indicate is output is to be suppressed 
+##' @param ... extra arguments to sam.fit
+##' @details ...
+##' @importFrom parallel mclapply detectCores
+##' @export
+leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores(all.tests = FALSE, logical = TRUE), mc.silent=TRUE, ...){
+  runs <- mclapply(fleet, function(f)runwithout(fit, fleet=f, ...), mc.cores=ncores, mc.silent=mc.silent)
   attr(runs, "fit") <- fit
   class(runs)<-"samset"
   runs
