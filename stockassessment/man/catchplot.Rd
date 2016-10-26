@@ -4,12 +4,14 @@
 \alias{catchplot}
 \title{SAM catch plot}
 \usage{
-catchplot(fit, obs.show = TRUE, ...)
+catchplot(fit, obs.show = TRUE, drop = NULL, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
 
 \item{obs.show}{if observations are to be shown also}
+
+\item{drop}{number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information}
 
 \item{...}{extra arguments transferred to plot}
 }

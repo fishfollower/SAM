@@ -266,16 +266,30 @@ recplot<-function(fit,...){
 ##' @param fit the object returned from sam.fit
 ##' @param obs.show if observations are to be shown also
 ##' @param ... extra arguments transferred to plot
+##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information 
 ##' @details ...
 ##' @importFrom graphics points
 ##' @export
-catchplot<-function(fit, obs.show=TRUE, ...){
-  CW <- fit$data$catchMeanWeight
+catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
+  if(class(fit)=="sam"){
+    fitlocal <- fit
+  }
+  if(class(fit)=="samset"){
+    if(!is.null(attr(fit,"fit"))){
+      fitlocal <- attr(fit,"fit")
+    }else{
+      fitlocal <- fit[[1]]
+    }
+  }
+  if(is.null(drop)){
+    drop=max(fitlocal$data$obs[,"year"])-max(fitlocal$data$obs[fitlocal$data$obs[,"fleet"]==1,"year"])
+  }
+  CW <- fitlocal$data$catchMeanWeight
   x <- as.numeric(rownames(CW))
-  .plotit(fit, x=x, "logCatch", ylab="Catch", trans=exp,...)
+  .plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
   if(obs.show){
-    obs<-fit$data$obs
-    logobs<-fit$data$logobs
+    obs<-fitlocal$data$obs
+    logobs<-fitlocal$data$logobs
     .goget<-function(y,a)exp(logobs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a])  
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW), pch=4, lwd=2, cex=1.2)
   }  
