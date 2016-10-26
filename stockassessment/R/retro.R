@@ -59,9 +59,11 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   conf$keyVarF <- .reidx(conf$keyVarF[suf,,drop=FALSE])
   conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
   yidx <- conf$keyScaledYears%in%data$obs[data$obs[,'fleet']==1,'year']
-  conf$noScaledYears[1,1] <- sum(yidx)
-  conf$keyScaledYears <- conf$keyScaledYears[,yidx,drop=FALSE]
-  conf$keyParScaledYA <- .reidx(conf$keyParScaledYA[yidx,,drop=FALSE])
+  if(length(conf$keyScaledYears)>0){
+    conf$noScaledYears <- sum(yidx)
+    conf$keyScaledYears <- conf$keyScaledYears[,yidx,drop=FALSE]
+    conf$keyParScaledYA <- .reidx(conf$keyParScaledYA[yidx,,drop=FALSE])
+  }
   par<-defpar(data,conf)
   
   ret <- sam.fit(data,conf,par,...)
