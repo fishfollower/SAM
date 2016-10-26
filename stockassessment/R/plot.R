@@ -9,24 +9,31 @@
 ##' @param Add if plotting is to be added on existing plot
 ##' @param ci if confidence intervals should be plottet
 ##' @param cicol color to plot the confidence polygon
+##' @param drop number of years to be left unplotted at the end. 
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
 ##' @details ...
-.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),...){
+.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), drop=0,...){
   if(class(fit)!="samset"){ 
-    idx<-names(fit$sdrep$value)==what
-    y<-fit$sdrep$value[idx]
-    lowhig<-y+fit$sdrep$sd[idx]%o%c(-2,2)
+    idx <- names(fit$sdrep$value)==what
+    y <- fit$sdrep$value[idx]
+    lowhig <- y+fit$sdrep$sd[idx]%o%c(-2,2)
+    didx <- 1:(length(x)-drop)
+    xr<-range(x)
+    x<-x[didx]
+    y<-y[didx]
+    lowhig<-lowhig[didx,]
     if(add){
-      lines(x,trans(y), lwd=3,...)
+      lines(x, trans(y), lwd=3,...)
     }else{
-      plot(x,trans(y), xlab=xlab, ylab=ylab, type="l", lwd=3, ylim=range(c(trans(lowhig),0,ex)), las=1,...)
+      plot(x, trans(y), xlab=xlab, ylab=ylab, type="n", lwd=3, xlim=xr, ylim=range(c(trans(lowhig),0,ex)), las=1,...)
+      grid(col="black")
+      lines(x, trans(y), lwd=3, ...)
     }
     if(ci){
       polygon(c(x,rev(x)), y = c(trans(lowhig[,1]),rev(trans(lowhig[,2]))), border = gray(.5,alpha=.5), col = cicol)
     }
-    grid(col="black")
   }else{
     col10=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")
     if(!is.null(attr(fit,"fit"))){
@@ -35,8 +42,8 @@
       fitlocal <- fit[[1]]
     }
     if(is.null(x))x=fitlocal$data$years
-    .plotit(fitlocal, what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol,...)
-    lapply(1:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE,col=col10[(i-1)%%10+1]))
+    .plotit(fitlocal, what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop,...)
+    d<-lapply(1:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=col10[(i-1)%%10+1], drop=drop, ...))
   }
 }
    
@@ -195,20 +202,35 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE,
 
 ##' SAM Fbar plot 
 ##' @param fit the object returned from sam.fit 
-##' @param partial true if included partial F's are to be plotted 
+##' @param partial true if included partial F's are to be plotted
+##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information  
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics matplot
 ##' @details ...
 ##' @export
-fbarplot<-function(fit,partial=TRUE,...){
-  fbarRange<-fit$conf$fbarRange
+fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
+  if(class(fit)=="sam"){
+    fitlocal <- fit
+  }
+  if(class(fit)=="samset"){
+    if(!is.null(attr(fit,"fit"))){
+      fitlocal <- attr(fit,"fit")
+    }else{
+      fitlocal <- fit[[1]]
+    }
+  }
+  if(is.null(drop)){
+    drop=max(fitlocal$data$obs[,"year"])-max(fitlocal$data$obs[fitlocal$data$obs[,"fleet"]==1,"year"])
+  }
+  
+  fbarRange<-fitlocal$conf$fbarRange
   fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
-  fmat<-fit$pl$logF[fit$conf$keyLogFsta[1,]+1,]
-  idx<-which(fit$conf$minAge:fit$conf$maxAge %in% fbarRange[1]:fbarRange[2])
+  fmat<-fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
+  idx<-which(fitlocal$conf$minAge:fitlocal$conf$maxAge %in% fbarRange[1]:fbarRange[2])
   exx <- if(partial){exp(fmat[idx,])}else{numeric(0)}
-  .plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx,...)
+  .plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
   if(partial){
-    matplot(fit$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
+    matplot(fitlocal$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
   }  
 }
 

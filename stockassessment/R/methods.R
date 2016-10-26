@@ -13,6 +13,21 @@ plot.sam<-function(x, ...){
   par(op)
 }
 
+##' Plot sam object 
+##' @method plot samset
+##' @param  x ...
+##' @param  ... extra arguments
+##' @importFrom graphics par
+##' @details ...
+##' @export
+plot.samset<-function(x, ...){
+  op<-par(mfrow=c(3,1))
+  ssbplot(x,...)
+  fbarplot(x,...)
+  recplot(x,...)
+  par(op)
+}
+
 ##' Plot sam residuals 
 ##' @method plot samres 
 ##' @param  x ...

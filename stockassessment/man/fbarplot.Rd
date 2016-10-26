@@ -4,12 +4,14 @@
 \alias{fbarplot}
 \title{SAM Fbar plot}
 \usage{
-fbarplot(fit, partial = TRUE, ...)
+fbarplot(fit, partial = (class(fit) == "sam"), drop = NULL, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
 
 \item{partial}{true if included partial F's are to be plotted}
+
+\item{drop}{number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information}
 
 \item{...}{extra arguments transferred to plot}
 }
