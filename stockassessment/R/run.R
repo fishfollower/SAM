@@ -7,6 +7,7 @@
 ##' @param ... extra arguments to MakeADFun
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
+##' @importFrom utils relist
 ##' @details ...
 ##' @useDynLib stockassessment
 ##' @export
