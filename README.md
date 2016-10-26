@@ -7,7 +7,9 @@ Can be installed by typing:
 devtools::install_github("fishfollower/SAM/stockassessment")
 ```
 
-The following is a quick tour og the package, but let's first download a few needed files (make sure you are not overwriting existing files). 
+The following is a quick tour of the package. 
+
+We start by downloading a few needed files. Here the files are taken from one of the test cases (North Sea Herring). We use a temporary folder to make sure we are not overwriting existing files). 
 
 ```R
 setwd(tempdir())
@@ -52,7 +54,7 @@ From this defined data object it is possible to generate a default/minimalistic 
 conf<-defcon(dat)
 ```
 
-This configuration can be changed by modifying the elements in the list. Here we set the fbar-range to 2-4, allow correlated F processes, and modify the catchability couplings. 
+This configuration can be changed by modifying/overwriting the elements in the list. Here we set the fbar range to 2-6, allow correlated F processes, and modify the catchability couplings. 
 
 ```R
 conf$fbarRange<-c(2,6)
@@ -64,4 +66,30 @@ conf$keyLogFpar<-matrix(c(
  8,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1), nrow=4, byrow=TRUE)
 ``` 
 
- 
+Now the configuration and data is in place, so we can generate default initial values for all our model parameters. 
+
+```R
+par<-defpar(dat,conf)
+```
+
+These default initial can be modified (like the configuration), but it is rarely necessary. To illustrate we modify the initial values for the catchabilities
+
+```R
+par$logFpar<-rep(0,9)
+```
+
+Now we are ready to optimize the model.
+
+```R
+fit<-sam.fit(dat,conf,par) 
+```
+
+This fitted model object contains all information about the fit and can be used to plot and extract all requested quantities. Let's plot the SSB and Fbar.  
+
+```R
+ssbplot(fit)
+fbarplot(fit)
+```
+![](figs/ssb.png?raw=true)
+
+![](figs/fbar.png?raw=true)
