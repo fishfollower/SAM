@@ -1,5 +1,5 @@
 # SAM
-Git page for SAM R-package
+Git page for `stockassessment` R-package containing the state-space assessment model (SAM) 
 
 Can be installed by typing: 
 
@@ -7,9 +7,9 @@ Can be installed by typing:
 devtools::install_github("fishfollower/SAM/stockassessment")
 ```
 
-The following is a quick tour of the package. 
+## A quick example: 
 
-We start by downloading a few needed files. Here the files are taken from one of the test cases (North Sea Herring). We use a temporary folder to make sure we are not overwriting existing files). 
+We start by downloading a few needed files. Here the files are taken from one of the test cases (North Sea Herring). We use a temporary folder to make sure we are not overwriting existing files. 
 
 ```R
 setwd(tempdir())
