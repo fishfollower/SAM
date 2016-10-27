@@ -90,7 +90,7 @@ This fitted model object contains all information about the fit and can be used 
 ssbplot(fit)
 fbarplot(fit)
 ```
-->![text](figs/ssb.png?raw=true)<-
+  ->![text](figs/ssb.png?raw=true)<-
 
-->![test](figs/fbar.png?raw=true)<-
+  ->![test](figs/fbar.png?raw=true)<-
 
