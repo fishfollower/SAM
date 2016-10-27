@@ -1,4 +1,5 @@
 R=R
+SHELL=/bin/bash
 # -> you can do    R=R-devel  make ....
 
 PACKAGE=stockassessment
@@ -69,6 +70,7 @@ ex-test:
 clean:
 	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/*.so $(PACKAGE)/src/*.o
 	\rm -rf $(PACKAGE).Rcheck
+	\rm -f stockassessment/vignettes/stockassessment.{aux,log,out,pdf,tex}
 
 test: $(SUBDIRS)
 $(SUBDIRS):
