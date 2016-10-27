@@ -288,9 +288,12 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
   x <- as.numeric(rownames(CW))
   .plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
   if(obs.show){
-    obs<-fitlocal$data$obs
-    logobs<-fitlocal$data$logobs
-    .goget<-function(y,a)exp(logobs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a])  
+    obs <- fitlocal$data$obs
+    logobs <- fitlocal$data$logobs
+    .goget <- function(y,a){
+        ret <- exp(logobs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a])
+        ifelse(length(ret)==0,0,ret)
+    }
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW), pch=4, lwd=2, cex=1.2)
   }  
 }

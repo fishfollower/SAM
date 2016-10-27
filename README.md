@@ -51,15 +51,15 @@ dat<-setup.sam.data(surveys=surveys,
 From this defined data object it is possible to generate a default/minimalistic model configuration.
 
 ```R
-conf<-defcon(dat)
+conf <- defcon(dat)
 ```
 
 This configuration can be changed by modifying/overwriting the elements in the list. Here we set the fbar range to 2-6, allow correlated F processes, and modify the catchability couplings. 
 
 ```R
-conf$fbarRange<-c(2,6)
-conf$corFlag<-1
-conf$keyLogFpar<-matrix(c(
+conf$fbarRange <- c(2,6)
+conf$corFlag <- 1
+conf$keyLogFpar <- matrix(c(
 -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
 -1,    0,    1,    2,    3,    4,    5,    6,   -1,
 -1,    7,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
@@ -69,7 +69,7 @@ conf$keyLogFpar<-matrix(c(
 Now the configuration and data is in place, so we can generate default initial values for all our model parameters. 
 
 ```R
-par<-defpar(dat,conf)
+par <- defpar(dat,conf)
 ```
 
 These default initial can be modified (like the configuration), but it is rarely necessary. To illustrate we modify the initial values for the catchabilities
@@ -81,14 +81,16 @@ par$logFpar<-rep(0,9)
 Now we are ready to optimize the model.
 
 ```R
-fit<-sam.fit(dat,conf,par) 
+fit <- sam.fit(dat,conf,par) 
 ```
 
-This fitted model object contains all information about the fit and can be used to plot and extract all requested quantities. Let's plot the SSB and Fbar.  
+This fitted model object contains all information about the fit and can be used to plot and extract all requested quantities. Let's plot the SSB, Fbar, rectuitment, and total catch.  
 
 ```R
 ssbplot(fit)
 fbarplot(fit)
+recplot(fit)
+catchplot(fit)
 ```
 
 <p align="center">
@@ -99,3 +101,35 @@ fbarplot(fit)
   <img src="figs/fbar.png?raw=true">
 </p>
 
+<p align="center">
+  <img src="figs/rec.png?raw=true">
+</p>
+
+<p align="center">
+  <img src="figs/catch.png?raw=true">
+</p>
+
+Model diagnosis in terms of residuals (one observation ahead residuals), retrospective, and leave-out can be computed and plottet in the following way.   
+
+```R
+res <- residuals(fit)
+plot(res)
+
+retro <- retro(fit,year=10)
+plot(retro)
+
+lo <- leaveout(fit)
+plot(lo)
+```
+
+<p align="center">
+  <img src="figs/res.png?raw=true">
+</p>
+
+<p align="center">
+  <img src="figs/retro.png?raw=true">
+</p>
+
+<p align="center">
+  <img src="figs/lo.png?raw=true">
+</p>

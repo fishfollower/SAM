@@ -40,4 +40,3 @@ par$logFpar<-rep(0,9)
 fit<-sam.fit(dat,conf,par)
 
 cat(fit$opt$objective,"\n", file="res.out")
-
