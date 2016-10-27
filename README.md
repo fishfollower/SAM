@@ -91,7 +91,11 @@ ssbplot(fit)
 fbarplot(fit)
 ```
 
-![text](figs/ssb.png?raw=true#center)
+<p align="center">
+  <img src="figs/ssb.png?raw=true">
+</p>
 
-![test](figs/fbar.png?raw=true)
+<p align="center">
+  <img src="figs/fbar.png?raw=true">
+</p>
 
