@@ -16,36 +16,36 @@ setwd(tempdir())
 filestoget <- c("cn.dat", "cw.dat", "dw.dat", "lf.dat", "lw.dat", 
                 "mo.dat", "nm.dat", "pf.dat", "pm.dat", "sw.dat", 
                 "survey.dat")
-url<-"https://raw.githubusercontent.com/fishfollower/SAM/master/tests/nsher/"
-d<-lapply(filestoget, function(f)download.file(paste(url,f,sep=""), f))
+url <- "https://raw.githubusercontent.com/fishfollower/SAM/master/tests/nsher/"
+d <- lapply(filestoget, function(f)download.file(paste(url,f,sep=""), f))
 ```
 Now the files should be downloaded to our current working directory. Next we read in the data files and create a collected data object: 
 
 ```R
 library(stockassessment)
-cn<-read.ices("cn.dat")
-cw<-read.ices("cw.dat")
-dw<-read.ices("dw.dat")
-lf<-read.ices("lf.dat")
-lw<-read.ices("lw.dat")
-mo<-read.ices("mo.dat")
-nm<-read.ices("nm.dat")
-pf<-read.ices("pf.dat")
-pm<-read.ices("pm.dat")
-sw<-read.ices("sw.dat")
-surveys<-read.ices("survey.dat")
+cn <- read.ices("cn.dat")
+cw <- read.ices("cw.dat")
+dw <- read.ices("dw.dat")
+lf <- read.ices("lf.dat")
+lw <- read.ices("lw.dat")
+mo <- read.ices("mo.dat")
+nm <- read.ices("nm.dat")
+pf <- read.ices("pf.dat")
+pm <- read.ices("pm.dat")
+sw <- read.ices("sw.dat")
+surveys <- read.ices("survey.dat")
 
-dat<-setup.sam.data(surveys=surveys,
-                    residual.fleet=cn, 
-                    prop.mature=mo, 
-                    stock.mean.weight=sw, 
-                    catch.mean.weight=cw, 
-                    dis.mean.weight=dw, 
-                    land.mean.weight=lw,
-                    prop.f=pf, 
-                    prop.m=pm, 
-                    natural.mortality=nm, 
-                    land.frac=lf)
+dat <- setup.sam.data(surveys=surveys,
+                      residual.fleet=cn, 
+                      prop.mature=mo, 
+                      stock.mean.weight=sw, 
+                      catch.mean.weight=cw, 
+                      dis.mean.weight=dw, 
+                      land.mean.weight=lw,
+                      prop.f=pf, 
+                      prop.m=pm, 
+                      natural.mortality=nm, 
+                      land.frac=lf)
 ```
 
 From this defined data object it is possible to generate a default/minimalistic model configuration.
@@ -75,7 +75,7 @@ par <- defpar(dat,conf)
 These default initial can be modified (like the configuration), but it is rarely necessary. To illustrate we modify the initial values for the catchabilities
 
 ```R
-par$logFpar<-rep(0,9)
+par$logFpar <- rep(0,9)
 ```
 
 Now we are ready to optimize the model.
@@ -88,23 +88,28 @@ This fitted model object contains all information about the fit and can be used 
 
 ```R
 ssbplot(fit)
-fbarplot(fit)
-recplot(fit)
-catchplot(fit)
 ```
-
 <p align="center">
   <img src="figs/ssb.png?raw=true">
 </p>
 
+```R
+fbarplot(fit)
+```
 <p align="center">
   <img src="figs/fbar.png?raw=true">
 </p>
 
+```R
+recplot(fit)
+```
 <p align="center">
   <img src="figs/rec.png?raw=true">
 </p>
 
+```R
+catchplot(fit)
+```
 <p align="center">
   <img src="figs/catch.png?raw=true">
 </p>
@@ -114,22 +119,23 @@ Model diagnosis in terms of residuals (one observation ahead residuals), retrosp
 ```R
 res <- residuals(fit)
 plot(res)
-
-retro <- retro(fit,year=10)
-plot(retro)
-
-lo <- leaveout(fit)
-plot(lo)
 ```
-
 <p align="center">
   <img src="figs/res.png?raw=true">
 </p>
 
+```R
+retro <- retro(fit,year=10)
+plot(retro)
+```
 <p align="center">
   <img src="figs/retro.png?raw=true">
 </p>
 
+```R
+lo <- leaveout(fit)
+plot(lo)
+```
 <p align="center">
   <img src="figs/lo.png?raw=true">
 </p>
