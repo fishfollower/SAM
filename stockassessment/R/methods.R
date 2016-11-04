@@ -81,6 +81,33 @@ logLik.sam<-function(object, ...){
  ret
 }
 
+##' Extract fixed coefficients of sam object 
+##' @method coef sam 
+##' @param  object sam fitted object (result from sam.fit)
+##' @param  ... extra arguments
+##' @details ...
+##' @export
+coef.sam <- function(object, ...){
+ ret <- object$sdrep$par.fixed
+ attr(ret,"cov") <- object$sdrep$cov.fixed
+ attr(ret,"sd") <- sqrt(diag(object$sdrep$cov.fixed))
+ class(ret)<-"samcoef"
+ ret
+}
+
+##' Print samcoef object 
+##' @method print samcoef 
+##' @param  x ...
+##' @param  ... extra arguments
+##' @details ...
+##' @export
+print.samcoef<-function(x, ...){
+ y<-as.vector(x)
+ names(y)<-names(x)
+ print(y)
+}
+
+
 ##' Extract number of observations from sam object 
 ##' @method nobs sam 
 ##' @param object sam fitted object (result from sam.fit)
