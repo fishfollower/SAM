@@ -86,6 +86,7 @@ logLik.sam<-function(object, ...){
 ##' @param  object sam fitted object (result from sam.fit)
 ##' @param  ... extra arguments
 ##' @details ...
+##' @importFrom stats coef
 ##' @export
 coef.sam <- function(object, ...){
  ret <- object$sdrep$par.fixed
