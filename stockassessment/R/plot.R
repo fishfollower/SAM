@@ -297,3 +297,56 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW), pch=4, lwd=2, cex=1.2)
   }  
 }
+
+
+##' SAM parameter plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot
+##' @details ...
+##' @export
+parplot<-function(fit,...){
+  if(class(fit)=="sam"){
+    fit <- list(fit)
+    class(fit) <- "samset"
+  }
+  if(!is.null(attr(fit,"fit"))){
+    fit <- c(list(attr(fit,"fit")), fit)
+  }
+  param <- lapply(fit, coef) 
+  nam <- names(param[[1]])
+  dup <- duplicated(nam)
+  namadd <- rep(0,length(nam))
+  for(i in 2:length(dup)){
+    if(dup[i])namadd[i] <- namadd[i-1]+1
+  }
+  nam <- paste(nam, namadd, sep="_")
+  for(i in 1:length(param)){
+    m <- param[[i]]+t(c(-2,0,2)%o%attr(param[[i]],"sd"))  
+    if(i==1){
+      mat <- cbind(m,0)
+      rownames(mat) <- nam
+    }else{
+      if(nrow(m)==length(nam)){
+        rownames(m) <- nam
+        mat<-rbind(mat,cbind(m,-i+1))
+      }
+    }
+  }
+  .plotapar<-function(name){
+    sub <- mat[rownames(mat)==name,,drop=FALSE]
+    if(nrow(sub)==1)sub<-rbind(cbind(sub[,1:3,drop=FALSE],-.5), cbind(sub[,1:3,drop=FALSE],.5))
+    x <- sub[,4]
+    y <- sub[,2]
+    plot(x, y, xlim=c(min(x)-1,5), ylim=range(sub[,1:3]), ylab=name, xlab="", axes=FALSE, type="n",...)
+    box()
+    axis(2, las=1)
+    lines(x, y, lwd=3, ...)
+    polygon(c(x,rev(x)), y = c(sub[,1],rev(sub[,3])), border = gray(.5,alpha=.5), col = gray(.5,alpha=.5))
+  }
+  div<-rep(ceiling(sqrt(length(nam))),2)
+  if(div[1]*(div[2]-1)>=length(nam))div[2] <- div[2]-1
+  op<-par(mar=c(.2,par("mar")[2],.2,par("mar")[4]))
+  laym<-matrix(1:(div[1]*div[2]),nrow=div[1], ncol=div[2])
+  layout(laym)
+  d<-sapply(nam, .plotapar)
+}
