@@ -304,6 +304,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
 ##' @param ... extra arguments transferred to plot
 ##' @details ...
 ##' @export
+##' @importFrom stats cov2cor
 parplot<-function(fit,...){
   if(class(fit)=="sam"){
     fit <- list(fit)
@@ -320,6 +321,11 @@ parplot<-function(fit,...){
     if(dup[i])namadd[i] <- namadd[i-1]+1
   }
   nam <- paste(nam, namadd, sep="_")
+  corrs <- cov2cor(attr(param[[1]], "cov"))-diag(length(param[[1]]))
+  wmin <- nam[apply(corrs,1,which.min)]
+  min <- round(100*apply(corrs,1,min))
+  wmax <- nam[apply(corrs,1,which.max)]
+  max <- round(100*apply(corrs,1,max))
   for(i in 1:length(param)){
     m <- param[[i]]+t(c(-2,0,2)%o%attr(param[[i]],"sd"))  
     if(i==1){
@@ -342,6 +348,9 @@ parplot<-function(fit,...){
     axis(2, las=1)
     lines(x, y, lwd=3, ...)
     polygon(c(x,rev(x)), y = c(sub[,1],rev(sub[,3])), border = gray(.5,alpha=.5), col = gray(.5,alpha=.5))
+    idx<-which(nam==name)
+    legend("topright", legend=paste0(wmax[idx],": ",max[idx],"%"), bty="n", text.col="blue")
+    legend("bottomright", legend=paste0(wmin[idx],": ",min[idx],"%"), bty="n", text.col="red")
   }
   div<-rep(ceiling(sqrt(length(nam))),2)
   if(div[1]*(div[2]-1)>=length(nam))div[2] <- div[2]-1
