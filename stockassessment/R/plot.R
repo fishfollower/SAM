@@ -301,11 +301,12 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
 
 ##' SAM parameter plot 
 ##' @param fit the object returned from sam.fit
+##' @param cor.report.limit correlations with absolute value > this number is reported in the plot 
 ##' @param ... extra arguments transferred to plot
 ##' @details ...
 ##' @export
 ##' @importFrom stats cov2cor
-parplot<-function(fit,...){
+parplot<-function(fit, cor.report.limit=0.95, ...){
   if(class(fit)=="sam"){
     fit <- list(fit)
     class(fit) <- "samset"
@@ -322,10 +323,13 @@ parplot<-function(fit,...){
   }
   nam <- paste(nam, namadd, sep="_")
   corrs <- cov2cor(attr(param[[1]], "cov"))-diag(length(param[[1]]))
-  wmin <- nam[apply(corrs,1,which.min)]
-  min <- round(100*apply(corrs,1,min))
-  wmax <- nam[apply(corrs,1,which.max)]
-  max <- round(100*apply(corrs,1,max))
+  #browser()
+  rownames(corrs)<-nam
+  colnames(corrs)<-nam
+  higcor <- lapply(1:nrow(corrs),function(i)corrs[i,][corrs[i,]>cor.report.limit]*100)
+  names(higcor) <- nam
+  lowcor<-lapply(1:nrow(corrs),function(i)corrs[i,][corrs[i,]<(-cor.report.limit)]*100)
+  names(lowcor) <- nam
   for(i in 1:length(param)){
     m <- param[[i]]+t(c(-2,0,2)%o%attr(param[[i]],"sd"))  
     if(i==1){
@@ -340,22 +344,33 @@ parplot<-function(fit,...){
   }
   .plotapar<-function(name){
     sub <- mat[rownames(mat)==name,,drop=FALSE]
+    xold <- sub[,4]
     if(nrow(sub)==1)sub<-rbind(cbind(sub[,1:3,drop=FALSE],-.5), cbind(sub[,1:3,drop=FALSE],.5))
     x <- sub[,4]
     y <- sub[,2]
     plot(x, y, xlim=c(min(x)-1,5), ylim=range(sub[,1:3]), ylab=name, xlab="", axes=FALSE, type="n",...)
     box()
     axis(2, las=1)
-    lines(x, y, lwd=3, ...)
+    #abline(v=xold, lty="dotted", lwd=.5)
+    lines(x, y, lwd=3,...)
     polygon(c(x,rev(x)), y = c(sub[,1],rev(sub[,3])), border = gray(.5,alpha=.5), col = gray(.5,alpha=.5))
-    idx<-which(nam==name)
-    legend("topright", legend=paste0(wmax[idx],": ",max[idx],"%"), bty="n", text.col="blue")
-    legend("bottomright", legend=paste0(wmin[idx],": ",min[idx],"%"), bty="n", text.col="red")
+    d <- sapply(1:length(xold), function(i)lines(xold[c(i,i)],c(sub[i,1],sub[i,3]), lty="dotted", lwd=.5))
+    idx <- which(nam==name)
+
+    if(length(higcor[[name]])!=0){
+      legend("topright", legend=paste0(names(higcor[[name]]),": ",round(higcor[[name]]),"%"), bty="n", text.col="blue")
+    }
+    if(length(lowcor[[name]])!=0){
+      legend("bottomright", legend=paste0(names(lowcor[[name]]),": ",round(lowcor[[name]]),"%"), bty="n", text.col="red")
+    }
+    
+    #legend("bottomright", legend=paste0(wmin[idx],": ",min[idx],"%"), bty="n", text.col="red")
   }
-  div<-rep(ceiling(sqrt(length(nam))),2)
+  div <- rep(ceiling(sqrt(length(nam))),2)
   if(div[1]*(div[2]-1)>=length(nam))div[2] <- div[2]-1
-  op<-par(mar=c(.2,par("mar")[2],.2,par("mar")[4]))
-  laym<-matrix(1:(div[1]*div[2]),nrow=div[1], ncol=div[2])
+  op <- par(mar=c(.2,par("mar")[2],.2,par("mar")[4]))
+  laym <- matrix(1:(div[1]*div[2]),nrow=div[1], ncol=div[2])
   layout(laym)
-  d<-sapply(nam, .plotapar)
+  d <- sapply(nam, .plotapar)
+  par(op)
 }

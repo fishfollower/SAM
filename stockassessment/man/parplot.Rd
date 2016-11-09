@@ -4,10 +4,12 @@
 \alias{parplot}
 \title{SAM parameter plot}
 \usage{
-parplot(fit, ...)
+parplot(fit, cor.report.limit = 0.95, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
+
+\item{cor.report.limit}{correlations with absolute value > this number is reported in the plot}
 
 \item{...}{extra arguments transferred to plot}
 }
