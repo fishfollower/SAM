@@ -18,7 +18,7 @@ List of 14
  $ logSdLogObs 
  $ rec_loga    
  $ rec_logb    
- $ logit_rho   
+ $ itrans_rho   
  $ logScale    
  $ logScaleSSB 
  $ logPowSSB   

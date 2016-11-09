@@ -12,7 +12,7 @@ defpar <- function(dat,conf){
   ret$logSdLogObs=numeric(max(conf$keyVarObs)+1)-.35
   ret$rec_loga=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)}
   ret$rec_logb=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)} 
-  ret$logit_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
+  ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
   ret$logScale=numeric(conf$noScaledYears)
   ret$logScaleSSB=if(any(dat$fleetTypes%in%c(3,4))){numeric(1)}else{numeric(0)}
   ret$logPowSSB=if(any(dat$fleetTypes==4)){numeric(1)}else{numeric(0)}

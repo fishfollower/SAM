@@ -31,7 +31,7 @@
 
 /* Parameter transform */
 template <class Type>
-Type f(Type x){return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);}
+Type trans(Type x){return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);}
 
 template <class Type> 
 Type square(Type x){return x*x;}
@@ -82,7 +82,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdLogObs); 
   PARAMETER_VECTOR(rec_loga); 
   PARAMETER_VECTOR(rec_logb); 
-  PARAMETER_VECTOR(logit_rho); 
+  PARAMETER_VECTOR(itrans_rho); 
   PARAMETER_VECTOR(logScale); 
   PARAMETER_VECTOR(logScaleSSB); 
   PARAMETER_VECTOR(logPowSSB); 
@@ -120,7 +120,7 @@ Type objective_function<Type>::operator() ()
   if(corFlag==1){
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        fcor(i,j)=f(logit_rho(0));
+        fcor(i,j)=trans(itrans_rho(0));
         fcor(j,i)=fcor(i,j);
       }
     } 
@@ -129,7 +129,7 @@ Type objective_function<Type>::operator() ()
   if(corFlag==2){
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        fcor(i,j)=pow(f(logit_rho(0)),abs(Type(i-j)));
+        fcor(i,j)=pow(trans(itrans_rho(0)),abs(Type(i-j)));
         fcor(j,i)=fcor(i,j);
       }
     } 
