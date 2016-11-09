@@ -323,7 +323,6 @@ parplot<-function(fit, cor.report.limit=0.95, ...){
   }
   nam <- paste(nam, namadd, sep="_")
   corrs <- cov2cor(attr(param[[1]], "cov"))-diag(length(param[[1]]))
-  #browser()
   rownames(corrs)<-nam
   colnames(corrs)<-nam
   higcor <- lapply(1:nrow(corrs),function(i)corrs[i,][corrs[i,]>cor.report.limit]*100)
@@ -351,7 +350,6 @@ parplot<-function(fit, cor.report.limit=0.95, ...){
     plot(x, y, xlim=c(min(x)-1,5), ylim=range(sub[,1:3]), ylab=name, xlab="", axes=FALSE, type="n",...)
     box()
     axis(2, las=1)
-    #abline(v=xold, lty="dotted", lwd=.5)
     lines(x, y, lwd=3,...)
     polygon(c(x,rev(x)), y = c(sub[,1],rev(sub[,3])), border = gray(.5,alpha=.5), col = gray(.5,alpha=.5))
     d <- sapply(1:length(xold), function(i)lines(xold[c(i,i)],c(sub[i,1],sub[i,3]), lty="dotted", lwd=.5))
@@ -363,8 +361,6 @@ parplot<-function(fit, cor.report.limit=0.95, ...){
     if(length(lowcor[[name]])!=0){
       legend("bottomright", legend=paste0(names(lowcor[[name]]),": ",round(lowcor[[name]]),"%"), bty="n", text.col="red")
     }
-    
-    #legend("bottomright", legend=paste0(wmin[idx],": ",min[idx],"%"), bty="n", text.col="red")
   }
   div <- rep(ceiling(sqrt(length(nam))),2)
   if(div[1]*(div[2]-1)>=length(nam))div[2] <- div[2]-1
