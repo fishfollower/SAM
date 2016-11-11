@@ -38,6 +38,10 @@ bool isNA(Type x){
   return R_IsNA(asDouble(x));
 }
 
+bool isNAINT(int x){
+  return NA_INTEGER==x;
+}
+
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
@@ -46,9 +50,11 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(sampleTimes);
   DATA_INTEGER(noYears);
   DATA_VECTOR(years);
+  DATA_IVECTOR(minAgePerFleet);
+  DATA_IVECTOR(maxAgePerFleet);
   DATA_INTEGER(nobs);
-  DATA_VECTOR(idx1);
-  DATA_VECTOR(idx2);
+  DATA_IARRAY(idx1);    // minimum index of obs by fleet x year
+  DATA_IARRAY(idx2);    // maximum index of obs by fleet x year
   DATA_IARRAY(obs);
   DATA_VECTOR(logobs);
   DATA_VECTOR_INDICATOR(keep, logobs);
@@ -216,6 +222,19 @@ Type objective_function<Type>::operator() ()
     ans+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
   }
 
+  // setup obs likelihoods
+  vector< density::MVNORM_t<Type> >  nllVec(noFleets);
+  for(int f=0; f<noFleets; ++f){
+    int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
+    matrix<Type> cov(thisdim,thisdim);
+    cov.setZero();
+    for(int i=0; i<thisdim; ++i){
+      cov(i,i)=varLogObs(keyVarObs(f,i+minAgePerFleet(f)-minAge));
+    }
+    nllVec(f).setSigma(cov);
+  }
+  
+
   // Now finally match to observations
   int f, ft, a, y,yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=obs(0,0);
@@ -294,8 +313,16 @@ Type objective_function<Type>::operator() ()
         return 0 ;
       break;
     }    
-    predSd(i)=sqrt(varLogObs(keyVarObs(f-1,a)));
-    ans+=-keep(i)*dnorm(logobs(i),predObs(i),predSd(i),true);
+  }
+
+  for(int y=0;y<noYears;y++){  
+    for(int f=0;f<noFleets;f++){
+      if(!isNAINT(idx1(f,y))){
+        int idxfrom=idx1(f,y);
+        int idxlength=idx2(f,y)-idx1(f,y)+1;
+        ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength));
+      }  
+    }  
   }
 
   for(int y=0;y<timeSteps;y++){  

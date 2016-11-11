@@ -292,8 +292,6 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     prop.m<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
   }
     
-  #dat<-dat[complete.cases(dat),]
-  #dat<-dat[dat$obs>0,]
   dat$obs[which(dat$obs<=0)] <- NA
   dat<-dat[!is.na(dat$year),]
       
@@ -303,10 +301,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'time')<-time
   dat<-dat[o,]
   newyear<-min(as.numeric(dat$year)):max(as.numeric(dat$year))
-  idx1<-sapply(newyear, function(y){idx<-which(as.numeric(dat$year)==y);ifelse(length(idx)==0,-1,min(idx))}) ###which(!duplicated(dat$year))
-  idx2<-sapply(newyear, function(y){idx<-which(as.numeric(dat$year)==y);ifelse(length(idx)==0,-1,max(idx))}) ###c(idx1[-1]-1,nrow(dat))
-  attr(dat,'idx1')<-idx1-1
-  attr(dat,'idx2')<-idx2-1
+  newfleet<-min(as.numeric(dat$fleet)):max(as.numeric(dat$fleet))
+  mmfun<-function(f,y, ff){idx<-which(dat$year==y & dat$fleet==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
+  idx1<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=min)
+  idx2<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=max)
+  attr(dat,'idx1')<-idx1
+  attr(dat,'idx2')<-idx2    
+  attr(dat,"minAgePerFleet")<-as.integer(tapply(dat[,"age"], INDEX=dat[,"fleet"], FUN=min))
+  attr(dat,"maxAgePerFleet")<-as.integer(tapply(dat[,"age"], INDEX=dat[,"fleet"], FUN=max))
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
@@ -325,6 +327,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     sampleTimes=attr(dat,'time'),
     noYears=attr(dat,'nyear'),
     years=attr(dat,'year'),
+    minAgePerFleet=attr(dat,"minAgePerFleet"),
+    maxAgePerFleet=attr(dat,"maxAgePerFleet"),
     nobs=nrow(dat),
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
