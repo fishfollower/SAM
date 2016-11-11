@@ -294,7 +294,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
         ret <- exp(logobs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a])
         ifelse(length(ret)==0,0,ret)
     }
-    points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW), pch=4, lwd=2, cex=1.2)
+    points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
   }  
 }
 
