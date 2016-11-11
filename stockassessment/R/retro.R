@@ -26,12 +26,14 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   data$noFleets <- length(suf)
   data$fleetTypes <- data$fleetTypes[suf]
   data$sampleTimes <- data$sampleTimes[suf]
+  data$minAgePerFleet <- data$minAgePerFleet[suf]
+  data$maxAgePerFleet <- data$maxAgePerFleet[suf]
   data$years <- min(as.numeric(data$obs[,"year"])):max(as.numeric(data$obs[,"year"]))
   data$noYears <- length(data$years)
-  data$idx1 <- sapply(data$years, function(y){idx<-which(as.numeric(data$obs[,"year"])==y);ifelse(length(idx)==0,-1,min(idx))}) 
-  data$idx2 <- sapply(data$years, function(y){idx<-which(as.numeric(data$obs[,"year"])==y);ifelse(length(idx)==0,-1,max(idx))})
-  data$nobs <- length(data$logobs[idx])
-  
+  mmfun<-function(f,y, ff){idx<-which(data$obs[,"year"]==y & data$obs[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
+  data$idx1 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=min)
+  data$idx2 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=max)
+  data$nobs <- length(data$logobs[idx])  
   data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, ]
   data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, ]
   data$natMor <- data$natMor[rownames(data$natMor)%in%data$years, ]
