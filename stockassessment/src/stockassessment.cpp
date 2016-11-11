@@ -33,10 +33,12 @@
 template <class Type>
 Type trans(Type x){return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);}
 
-template <class Type> 
-Type square(Type x){return x*x;}
+template<class Type>
+bool isNA(Type x){
+  return R_IsNA(asDouble(x));
+}
 
- template<class Type>
+template<class Type>
 Type objective_function<Type>::operator() ()
 {
   DATA_INTEGER(noFleets);
@@ -89,6 +91,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdSSB); 
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
+  PARAMETER_VECTOR(missing);
   int timeSteps=logF.dim[1];
   int stateDimF=logF.dim[0];
   int stateDimN=logN.dim[0];
@@ -107,6 +110,15 @@ Type objective_function<Type>::operator() ()
   vector<Type> R(timeSteps);
 
   Type ans=0; //negative log-likelihood
+
+
+  // patch missing 
+  int idxmis=0; 
+  for(int i=0;i<nobs;i++){
+    if(isNA(logobs(i))){
+      logobs(i)=missing(idxmis++);
+    }    
+  }
   
   //First take care of F
   matrix<Type> fvar(stateDimF,stateDimF);

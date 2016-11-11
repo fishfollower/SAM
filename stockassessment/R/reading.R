@@ -229,7 +229,6 @@ read.ices<-function(filen){
 ##' @param prop.f ...
 ##' @param prop.m ...
 ##' @param land.frac ...
-##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
@@ -292,8 +291,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   if(is.null(prop.m)){
     prop.m<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
   }
-  dat<-dat[complete.cases(dat),]
-  dat<-dat[dat$obs>0,]
+    
+  #dat<-dat[complete.cases(dat),]
+  #dat<-dat[dat$obs>0,]
+  dat$obs[which(dat$obs<=0)] <- NA
+  dat<-dat[!is.na(dat$year),]
+      
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
   attr(dat,'type')<-type
   names(time)<-NULL

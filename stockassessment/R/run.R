@@ -18,7 +18,9 @@
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
 sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE,...){
   tmball <- c(data, conf)
-  ran <- c("logN", "logF")
+  nmissing <- sum(is.na(data$logobs))
+  parameters$missing <- numeric(nmissing)
+  ran <- c("logN", "logF", "missing")
   obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
   if(rm.unidentified){
     skel <- parameters[!names(parameters)%in%ran]
