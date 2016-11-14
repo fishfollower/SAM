@@ -111,8 +111,12 @@ Type objective_function<Type>::operator() ()
   //First take care of F
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
-  vector<Type> fsd(stateDimF);
-  
+  vector<Type> fsd(stateDimF);  
+
+  if(corFlag==0){
+    fcor.setZero();
+  }
+
   for(int i=0; i<stateDimF; ++i){
     fcor(i,i)=1.0;
   }
