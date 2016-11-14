@@ -18,7 +18,7 @@ nscodData
  $ nobs        
  $ idx1        
  $ idx2        
- $ obs
+ $ aux
  $ logobs         
  $ propMat   
  $ stockMeanWeight          

@@ -55,7 +55,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(nobs);
   DATA_IARRAY(idx1);    // minimum index of obs by fleet x year
   DATA_IARRAY(idx2);    // maximum index of obs by fleet x year
-  DATA_IARRAY(obs);
+  DATA_IARRAY(aux);
   DATA_VECTOR(logobs);
   DATA_VECTOR_INDICATOR(keep, logobs);
   DATA_ARRAY(propMat);
@@ -129,8 +129,12 @@ Type objective_function<Type>::operator() ()
   //First take care of F
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
-  vector<Type> fsd(stateDimF);
-  
+  vector<Type> fsd(stateDimF);  
+
+  if(corFlag==0){
+    fcor.setZero();
+  }
+
   for(int i=0; i<stateDimF; ++i){
     fcor(i,i)=1.0;
   }
@@ -237,15 +241,15 @@ Type objective_function<Type>::operator() ()
 
   // Now finally match to observations
   int f, ft, a, y,yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
-  int minYear=obs(0,0);
+  int minYear=aux(0,0);
   Type zz;
   vector<Type> predObs(nobs);
   vector<Type> predSd(nobs);
   for(int i=0;i<nobs;i++){
-    y=obs(i,0)-minYear;
-    f=obs(i,1);
+    y=aux(i,0)-minYear;
+    f=aux(i,1);
     ft=fleetTypes(f-1);
-    a=obs(i,2)-minAge;
+    a=aux(i,2)-minAge;
     zz=exp(logF(keyLogFsta(0,a),y))+natMor(y,a);
     
     switch(ft){
@@ -255,7 +259,7 @@ Type objective_function<Type>::operator() ()
           predObs(i)+=logF(keyLogFsta(0,a),y);
         }
         scaleIdx=-1;
-        yy=obs(i,0);
+        yy=aux(i,0);
         for(int j=0; j<noScaledYears; ++j){
           if(yy==keyScaledYears(j)){
             scaleIdx=keyParScaledYA(j,a);

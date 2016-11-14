@@ -220,7 +220,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
     }
   }
   if(is.null(drop)){
-    drop=max(fitlocal$data$obs[,"year"])-max(fitlocal$data$obs[fitlocal$data$obs[,"fleet"]==1,"year"])
+    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
   }
   
   fbarRange<-fitlocal$conf$fbarRange
@@ -282,16 +282,16 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
     }
   }
   if(is.null(drop)){
-    drop=max(fitlocal$data$obs[,"year"])-max(fitlocal$data$obs[fitlocal$data$obs[,"fleet"]==1,"year"])
+    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
   }
   CW <- fitlocal$data$catchMeanWeight
   x <- as.numeric(rownames(CW))
   .plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
   if(obs.show){
-    obs <- fitlocal$data$obs
+    aux <- fitlocal$data$aux
     logobs <- fitlocal$data$logobs
     .goget <- function(y,a){
-        ret <- exp(logobs[obs[,"fleet"]==1 & obs[,"year"]==y & obs[,"age"]==a])
+        ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
         ifelse(length(ret)==0,0,ret)
     }
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
