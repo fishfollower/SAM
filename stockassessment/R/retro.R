@@ -63,7 +63,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   yidx <- conf$keyScaledYears%in%data$obs[data$obs[,'fleet']==1,'year']
   if(length(conf$keyScaledYears)>0){
     conf$noScaledYears <- sum(yidx)
-    conf$keyScaledYears <- conf$keyScaledYears[,yidx,drop=FALSE]
+    conf$keyScaledYears <- as.vector(conf$keyScaledYears)[yidx]
     conf$keyParScaledYA <- .reidx(conf$keyParScaledYA[yidx,,drop=FALSE])
   }
   par <- defpar(data,conf)

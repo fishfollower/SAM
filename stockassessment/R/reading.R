@@ -127,7 +127,7 @@ read.ices<-function(filen){
     stop(paste("File",filen, "does not exsist"))
   }
 
-  if(grepl("[0-9]", scan(filen, skip=2, n=1, quiet=TRUE, what=""))){ # is not a survey file 
+  if(grepl("^[0-9]", scan(filen, skip=2, n=1, quiet=TRUE, what=""))){ # is not a survey file 
     
     head<-scan(filen, skip=2, n=5, quiet=TRUE)
     minY<-head[1]
