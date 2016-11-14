@@ -225,18 +225,6 @@ Type objective_function<Type>::operator() ()
     }
     ans+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
   }
-
-  // setup obs likelihoods
-  vector< density::MVNORM_t<Type> >  nllVec(noFleets);
-  for(int f=0; f<noFleets; ++f){
-    int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
-    matrix<Type> cov(thisdim,thisdim);
-    cov.setZero();
-    for(int i=0; i<thisdim; ++i){
-      cov(i,i)=varLogObs(keyVarObs(f,i+minAgePerFleet(f)-minAge));
-    }
-    nllVec(f).setSigma(cov);
-  }
   
 
   // Now finally match to observations
@@ -317,6 +305,18 @@ Type objective_function<Type>::operator() ()
         return 0 ;
       break;
     }    
+  }
+
+  // setup obs likelihoods
+  vector< density::MVNORM_t<Type> >  nllVec(noFleets);
+  for(int f=0; f<noFleets; ++f){
+    int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
+    matrix<Type> cov(thisdim,thisdim);
+    cov.setZero();
+    for(int i=0; i<thisdim; ++i){
+      cov(i,i)=varLogObs(keyVarObs(f,i+minAgePerFleet(f)-minAge));
+    }
+    nllVec(f).setSigma(cov);
   }
 
   for(int y=0;y<noYears;y++){  
