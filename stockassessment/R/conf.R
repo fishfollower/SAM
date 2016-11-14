@@ -17,7 +17,7 @@ setSeq<-function(min,max){
 ##' @export
 defcon<-function(dat){
   fleetTypes<-dat$fleetTypes
-  ages<-do.call(rbind,tapply(dat$obs[,3], INDEX=dat$obs[,2], FUN=range))
+  ages<-do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
   minAge<-min(ages)
   maxAge<-max(ages)
   nAges<-maxAge-minAge+1

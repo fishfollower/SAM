@@ -131,7 +131,7 @@ nobs.sam<-function(object, ...){
 ##' @export
 residuals.sam<-function(object, discrete=FALSE, ...){
  res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete,...)
- ret <- cbind(object$data$obs, res)
+ ret <- cbind(object$data$aux, res)
  class(ret)<-"samres"
  ret
 }

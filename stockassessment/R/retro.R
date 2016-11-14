@@ -8,28 +8,28 @@
 runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   data <- fit$data
   if(length(year)==0 & length(fleet)==0){
-    idx <- 1:nrow(data$obs)
+    idx <- 1:nrow(data$aux)
   }
   if(length(year)>0 & length(fleet)==0){
-    idx <- which(!data$obs[,"year"]%in%year)
+    idx <- which(!data$aux[,"year"]%in%year)
   }
   if(length(fleet)>0 & length(year)==0){
-    idx <- which(!data$obs[,"fleet"]%in%fleet)
+    idx <- which(!data$aux[,"fleet"]%in%fleet)
   }
   if(length(fleet)>0 & length(year)>0){
     if(length(fleet)!=length(year))stop("length of fleet not equal to length of year: When both fleet and year are supplied they need to be of same length as only the pairs are excluded")
-    idx<-!apply(apply(cbind(year,fleet),1,function(s)data$obs[,"year"]%in%s[1] & data$obs[,"fleet"]%in%s[2]),1,any) # could this be done simpler???
+    idx<-!apply(apply(cbind(year,fleet),1,function(s)data$aux[,"year"]%in%s[1] & data$aux[,"fleet"]%in%s[2]),1,any) # could this be done simpler???
   }
-  data$obs <- data$obs[idx,]
+  data$aux <- data$aux[idx,]
   data$logobs <- data$logobs[idx]
-  suf <- sort(unique(data$obs[,"fleet"])) # sort-unique-fleet
+  suf <- sort(unique(data$aux[,"fleet"])) # sort-unique-fleet
   data$noFleets <- length(suf)
   data$fleetTypes <- data$fleetTypes[suf]
   data$sampleTimes <- data$sampleTimes[suf]
-  data$years <- min(as.numeric(data$obs[,"year"])):max(as.numeric(data$obs[,"year"]))
+  data$years <- min(as.numeric(data$aux[,"year"])):max(as.numeric(data$aux[,"year"]))
   data$noYears <- length(data$years)
-  data$idx1 <- sapply(data$years, function(y){idx<-which(as.numeric(data$obs[,"year"])==y);ifelse(length(idx)==0,-1,min(idx))}) 
-  data$idx2 <- sapply(data$years, function(y){idx<-which(as.numeric(data$obs[,"year"])==y);ifelse(length(idx)==0,-1,max(idx))})
+  data$idx1 <- sapply(data$years, function(y){idx<-which(as.numeric(data$aux[,"year"])==y);ifelse(length(idx)==0,-1,min(idx))}) 
+  data$idx2 <- sapply(data$years, function(y){idx<-which(as.numeric(data$aux[,"year"])==y);ifelse(length(idx)==0,-1,max(idx))})
   data$nobs <- length(data$logobs[idx])
   
   data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, ]
@@ -42,7 +42,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, ]
   data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, ]
   data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, ]
-  data$obs[,"fleet"] <- match(data$obs[,"fleet"],suf)
+  data$aux[,"fleet"] <- match(data$aux[,"fleet"],suf)
 
   .reidx <- function(x){
     if(any(x >= (-0.5))){
@@ -58,7 +58,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   conf$keyQpow <- .reidx(conf$keyQpow[suf,,drop=FALSE])
   conf$keyVarF <- .reidx(conf$keyVarF[suf,,drop=FALSE])
   conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
-  yidx <- conf$keyScaledYears%in%data$obs[data$obs[,'fleet']==1,'year']
+  yidx <- conf$keyScaledYears%in%data$aux[data$aux[,'fleet']==1,'year']
   if(length(conf$keyScaledYears)>0){
     conf$noScaledYears <- sum(yidx)
     conf$keyScaledYears <- conf$keyScaledYears[,yidx,drop=FALSE]
@@ -80,8 +80,8 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
 ##' @export
 retro <- function(fit, year=NULL, ncores=detectCores(all.tests = FALSE, logical = TRUE), mc.silent=TRUE, ...){
   data <- fit$data
-  y <- fit$data$obs[,"year"]
-  f <- fit$data$obs[,"fleet"]
+  y <- fit$data$aux[,"year"]
+  f <- fit$data$aux[,"fleet"]
   suf <- sort(unique(f))
   maxy <- sapply(suf, function(ff)max(y[f==ff]))
   if(length(year)==1){
