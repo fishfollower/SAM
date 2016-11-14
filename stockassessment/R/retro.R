@@ -28,7 +28,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
   data$sampleTimes <- data$sampleTimes[suf]
   data$minAgePerFleet <- data$minAgePerFleet[suf]
   data$maxAgePerFleet <- data$maxAgePerFleet[suf]
-  data$years <- min(as.numeric(data$aux[,"year"])):max(as.numeric(data$obs[,"year"]))
+  data$years <- min(as.numeric(data$aux[,"year"])):max(as.numeric(data$aux[,"year"]))
   data$noYears <- length(data$years)
   mmfun<-function(f,y, ff){idx<-which(data$aux[,"year"]==y & data$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
   data$idx1 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=min)

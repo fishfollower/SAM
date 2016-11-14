@@ -240,14 +240,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   fleet.idx<-0
   type<-NULL
   time<-NULL
-  dat<-data.frame(year=NA,fleet=NA,age=NA,obs=NA)
+  dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
   doone<-function(m){
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
     fleet<-rep(fleet.idx,length(year))
     age<-colnames(m)[col(m)]
-    obs<-as.vector(m)
-    dat<<-rbind(dat,data.frame(year,fleet,age,obs))
+    aux<-as.vector(m)
+    dat<<-rbind(dat,data.frame(year,fleet,age,aux))
   }
   if(!is.null(residual.fleet)){
     doone(residual.fleet)
@@ -292,7 +292,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     prop.m<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
   }
     
-  dat$obs[which(dat$obs<=0)] <- NA
+  dat$aux[which(dat$aux<=0)] <- NA
   dat<-dat[!is.na(dat$year),]
       
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
