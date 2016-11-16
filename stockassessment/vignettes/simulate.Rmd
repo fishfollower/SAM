@@ -1,0 +1,84 @@
+---
+title: "Simulate from a fitted sam model"
+author: "Mollie Brooks"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+The most recent version of TMB includes the ability to simulated model, so we have implemented that ability in `stockassessment`. By default, these simulations are conditional on the estimated values of `F` and `N` but it is possible to also simulate `F` and `N` forward from the initial time point using the `sim.condRE` argument to the `sam.fit` function.
+
+```{r setup, include=FALSE, message=FALSE}
+library(stockassessment)
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
+```
+Read in and organize the data using special fuctions
+
+```{r data}
+cn <- read.ices("nsher/cn.dat")
+cw <- read.ices("nsher/cw.dat")
+dw <- read.ices("nsher/dw.dat")
+lf <- read.ices("nsher/lf.dat")
+lw <- read.ices("nsher/lw.dat")
+mo <- read.ices("nsher/mo.dat")
+nm <- read.ices("nsher/nm.dat")
+pf <- read.ices("nsher/pf.dat")
+pm <- read.ices("nsher/pm.dat")
+sw <- read.ices("nsher/sw.dat")
+surveys <- read.ices("nsher/survey.dat")
+dat <- setup.sam.data(surveys=surveys,
+                    residual.fleet=cn, 
+                    prop.mature=mo, 
+                    stock.mean.weight=sw, 
+                    catch.mean.weight=cw, 
+                    dis.mean.weight=dw, 
+                    land.mean.weight=lw,
+                    prop.f=pf, 
+                    prop.m=pm, 
+                    natural.mortality=nm, 
+                    land.frac=lf)
+
+```
+
+```{r conf}
+conf <- defcon(dat)
+conf$fbarRange <- c(2,6)
+conf$corFlag <- 1
+conf$keyLogFpar <- matrix(c(
+-1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+-1,    0,    1,    2,    3,    4,    5,    6,   -1,
+-1,    7,   -1,   -1,   -1,   -1,   -1,   -1,   -1,
+ 8,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1), nrow=4, byrow=TRUE)
+```
+
+Set up initial values for the parameters.
+```{r par}
+par <- defpar(dat,conf)
+par$logFpar <- rep(0,9)
+```
+
+Fit the model.
+```{r run, results='hide'}
+fit <- sam.fit(dat,conf,par)
+```
+
+Simulate from the fitted model and store the simulated observations into a new data set with the same structure as the original data.
+```{r sim}
+simdat <- dat
+simdat$logobs <- simulate(fit)[[1]]$logobs
+```
+
+Fit the same model to the simulated data and compare the plot to the original data.
+```{r plot, fig.width=7, results='hide'}
+fit2 <- sam.fit(simdat, conf, par)
+ssbplot(fit)
+ssbplot(fit2)
+fbarplot(fit)
+fbarplot(fit2)
+recplot(fit)
+recplot(fit2)
+```
+
