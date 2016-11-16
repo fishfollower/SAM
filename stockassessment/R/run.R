@@ -4,6 +4,7 @@
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
 ##' @param newtonsteps optional extra true extra newton steps
 ##' @param rm.unidentified option to eliminate unidentified model parameters based on gradient in initial value (somewhat experimental)
+##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rahter than also simulating F and N forward from their initial values.
 ##' @param ... extra arguments to MakeADFun
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
@@ -16,8 +17,8 @@
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE,...){
-  tmball <- c(data, conf)
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, sim.condRE=TRUE, ...){
+  tmball <- c(data, conf, simFlag=as.numeric(sim.condRE))
   ran <- c("logN", "logF")
   obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
   if(rm.unidentified){

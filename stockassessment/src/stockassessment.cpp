@@ -74,6 +74,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyScaledYears);
   DATA_IARRAY(keyParScaledYA);
   DATA_IVECTOR(fbarRange);
+  DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
 
   PARAMETER_VECTOR(logFpar); 
   PARAMETER_VECTOR(logQpow); 
@@ -152,10 +153,13 @@ Type objective_function<Type>::operator() ()
       fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
     }
   }
-
-  density::MVNORM_t<Type> neg_log_densityF(fvar);
+  using namespace density;
+  MVNORM_t<Type> neg_log_densityF(fvar);
   for(int i=1;i<timeSteps;i++){    
-     ans+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood 
+     ans+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+     if(simFlag==0){SIMULATE{
+        logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+      }}
   }
   
   for(int i=0;i<timeSteps;i++){ // calc ssb
@@ -177,7 +181,7 @@ Type objective_function<Type>::operator() ()
       if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(keyVarLogN(i));}
     }
   }
-  density::MVNORM_t<Type> neg_log_densityN(nvar);
+  MVNORM_t<Type> neg_log_densityN(nvar);
   vector<Type> predN(stateDimN); 
   for(int i=1;i<timeSteps;i++){ 
     if(stockRecruitmentModelCode==0){ // straight RW 
@@ -206,6 +210,9 @@ Type objective_function<Type>::operator() ()
                              exp(logN(stateDimN-1,i-1)-exp(logF(keyLogFsta(0,stateDimN-1),i-1))-natMor(i-1,stateDimN-1))); 
     }
     ans+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
+    if(simFlag==0){SIMULATE{
+        logN.col(i) = predN + neg_log_densityN.simulate();
+    }}
   }
 
   // Now finally match to observations
@@ -288,6 +295,9 @@ Type objective_function<Type>::operator() ()
     }    
     predSd(i)=sqrt(varLogObs(keyVarObs(f-1,a)));
     ans+=-keep(i)*dnorm(logobs(i),predObs(i),predSd(i),true);
+    SIMULATE{
+      logobs(i)=rnorm(predObs(i), predSd(i));
+    }
   }
 
   for(int y=0;y<timeSteps;y++){  
@@ -327,6 +337,11 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < stateDimF; i++) ans -= dnorm(logF(i, 0), Type(0), huge, true);  
   } 
   
+  SIMULATE {
+    REPORT(logF);
+    REPORT(logN);
+    REPORT(logobs);
+  }
   REPORT(predObs);
   REPORT(predSd);
   ADREPORT(ssb);
