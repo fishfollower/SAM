@@ -42,6 +42,43 @@ bool isNAINT(int x){
   return NA_INTEGER==x;
 }
 
+template <class Type>
+matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec){
+
+  int dim = maxAgeFleet-minAgeFleet+1;
+  int offset = minAgeFleet-minAge;
+  matrix<Type> ret(dim,dim);
+  ret.setZero();
+
+  Type rho0 = Type(0.5);
+  vector<Type> xvec(dim);
+  xvec(0)=Type(0);
+  int maxrm=-1;
+  if(rhoVec.size()>0){
+    for(int i=1; i<xvec.size(); i++) { 
+      if(rhoMap(i-1+offset)>=0)
+	xvec(i) = xvec(i-1)+rhoVec(rhoMap(i-1+offset)); 
+      if(rhoMap(i-1)>maxrm) maxrm=rhoMap(i-1);
+    } 
+  }
+   
+  for(int i=0; i<dim; i++)
+    for(int j=0; j<dim; j++){
+      if(i!=j && maxrm>=0){	
+	Type dist = abs(xvec(i)-xvec(j));
+     	ret(i,j)=pow( rho0,dist)*sdVec( sdMap(i+offset) )*sdVec( sdMap(j+offset));
+      } else if(i==j) ret(i,j) = sdVec( sdMap(i+offset) )*sdVec( sdMap(j+offset));
+    }
+  
+  return ret;
+}
+
+template <class Type> 
+density::UNSTRUCTURED_CORR_t<Type> getCorrObj(vector<Type> params){
+  density::UNSTRUCTURED_CORR_t<Type> ret(params);
+  return ret;
+}
+
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
@@ -76,7 +113,9 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyQpow);
   DATA_IARRAY(keyVarF);
   DATA_IVECTOR(keyVarLogN); 
-  DATA_IARRAY(keyVarObs); 
+  DATA_IARRAY(keyVarObs);
+  DATA_FACTOR(obsCorStruct); 
+  DATA_IARRAY(keyCorObs);
   DATA_INTEGER(stockRecruitmentModelCode);
   DATA_INTEGER(noScaledYears);
   DATA_IVECTOR(keyScaledYears);
@@ -87,7 +126,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logQpow); 
   PARAMETER_VECTOR(logSdLogFsta); 
   PARAMETER_VECTOR(logSdLogN); 
-  PARAMETER_VECTOR(logSdLogObs); 
+  PARAMETER_VECTOR(logSdLogObs);
+  PARAMETER_VECTOR(transfIRARdist);//transformed distances for IRAR cor obs structure
+  PARAMETER_VECTOR(sigmaObsParUS);//choleski elements for unstructured cor obs structure
   PARAMETER_VECTOR(rec_loga); 
   PARAMETER_VECTOR(rec_logb); 
   PARAMETER_VECTOR(itrans_rho); 
@@ -114,6 +155,24 @@ Type objective_function<Type>::operator() ()
   vector<Type> logtsb(timeSteps);
   vector<Type> logR(timeSteps);
   vector<Type> R(timeSteps);
+  
+  vector<Type> IRARdist(transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
+  if(transfIRARdist.size()>0) IRARdist=exp(transfIRARdist);
+
+  vector< vector<Type> > sigmaObsParVec(noFleets);
+  int nfleet = maxAgePerFleet(0)-minAgePerFleet(0)+1;
+  int dn=nfleet*(nfleet-1)/2;
+  int from=-dn, to=-1; 
+  for(int f=0; f<noFleets; f++){
+    if(obsCorStruct(f)!=2) continue;
+    nfleet = maxAgePerFleet(f)-minAgePerFleet(f)+1;
+    dn = nfleet*(nfleet-1)/2;
+    from=to+1;
+    to=to+dn;
+    vector<Type> tmp(dn);
+    for(int i=from; i<=to; i++) tmp(i-from) = sigmaObsParUS(i);
+    sigmaObsParVec(f) = tmp; 
+  }
 
   Type ans=0; //negative log-likelihood
 
@@ -227,7 +286,7 @@ Type objective_function<Type>::operator() ()
   }
   
 
-  // Now finally match to observations
+  // Calculate predicted observations
   int f, ft, a, y,yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=aux(0,0);
   Type zz;
@@ -309,16 +368,36 @@ Type objective_function<Type>::operator() ()
 
   // setup obs likelihoods
   vector< density::MVNORM_t<Type> >  nllVec(noFleets);
+  vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(noFleets);
+  vector< vector<Type> > obsCovScaleVec(noFleets);
   for(int f=0; f<noFleets; ++f){
     int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
     matrix<Type> cov(thisdim,thisdim);
     cov.setZero();
-    for(int i=0; i<thisdim; ++i){
-      cov(i,i)=varLogObs(keyVarObs(f,i+minAgePerFleet(f)-minAge));
-    }
+    
+    if(obsCorStruct(f)==0){//ID (independent)  
+      for(int i=0; i<thisdim; ++i){
+	cov(i,i)=varLogObs(keyVarObs(f,i+minAgePerFleet(f)-minAge));
+      }
+    } else if(obsCorStruct(f)==1){//(AR) irregular lattice AR
+      cov = setupVarCovMatrix(minAge, maxAge, minAgePerFleet(f), maxAgePerFleet(f), keyCorObs.transpose().col(f), IRARdist, keyVarObs.transpose().col(f) , exp(logSdLogObs) );
+    } else if(obsCorStruct(f)==2){//(US) unstructured
+      neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
+      matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
+      
+      tmp.setZero();
+      int offset = minAgePerFleet(f)-minAge;
+      obsCovScaleVec(f).resize(tmp.rows());
+      for(int i=0; i<tmp.rows(); i++) {
+	tmp(i,i) = sqrt(varLogObs(keyVarObs(f,i+offset)));
+	obsCovScaleVec(f)(i) = tmp(i,i);
+      }
+      cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+
+    } else { error("Unkown obsCorStruct code"); }
     nllVec(f).setSigma(cov);
   }
-
+  //eval likelihood 
   for(int y=0;y<noYears;y++){  
     for(int f=0;f<noFleets;f++){
       if(!isNAINT(idx1(f,y))){
@@ -328,7 +407,8 @@ Type objective_function<Type>::operator() ()
       }  
     }  
   }
-
+  
+  // derived quantities for ADreport
   for(int y=0;y<timeSteps;y++){  
     fbar(y)=Type(0);
     for(int a=fbarRange(0);a<=fbarRange(1);a++){  

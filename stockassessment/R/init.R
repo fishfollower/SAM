@@ -10,6 +10,9 @@ defpar <- function(dat,conf){
   ret$logSdLogFsta=numeric(max(conf$keyVarF)+1)-.7
   ret$logSdLogN=numeric(max(conf$keyVarLogN)+1)-.35
   ret$logSdLogObs=numeric(max(conf$keyVarObs)+1)-.35
+  ret$transfIRARdist=numeric(max(conf$keyCorObs,na.rm=TRUE)+1)+0.05
+  nbyfleet = (conf$obsCorStruct=="US")*(dat$maxAgePerFleet-dat$minAgePerFleet+1)
+  ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2))
   ret$rec_loga=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)}
   ret$rec_logb=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)} 
   ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}

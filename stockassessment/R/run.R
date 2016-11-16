@@ -4,6 +4,9 @@
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
 ##' @param newtonsteps optional extra true extra newton steps
 ##' @param rm.unidentified option to eliminate unidentified model parameters based on gradient in initial value (somewhat experimental)
+##' @param run if FALSE return AD object without running the optimization
+##' @param lower named list with lower bounds for optimization (only met before extra newton steps)
+##' @param upper named list with upper bounds for optimization (only met before extra newton steps)
 ##' @param ... extra arguments to MakeADFun
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
@@ -16,7 +19,7 @@
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE,...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE,run=TRUE,lower=getLowerBounds(parameters),upper=getUpperBounds(parameters),...){
   tmball <- c(data, conf)
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
@@ -29,7 +32,15 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
     obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
   }
-  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000))
+  
+  lower2<-rep(-Inf,length(obj$par))
+  upper2<-rep(Inf,length(obj$par))
+  for(nn in names(lower)) lower2[names(obj$par)==nn]=lower[[nn]]
+  for(nn in names(upper)) upper2[names(obj$par)==nn]=upper[[nn]]
+
+  if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
+  
+  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000),lower=lower2,upper=upper2)
   for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
     g <- as.numeric( obj$gr(opt$par) )
     h <- optimHess(opt$par, obj$fn, obj$gr)
@@ -43,3 +54,18 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   class(ret)<-"sam"
   return(ret)
 }
+
+##' Bounds
+##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
+##' @return a named list
+getLowerBounds<-function(parameters){
+    list(sigmaObsParUS=rep(-10,length(parameters$sigmaObsParUS)))
+}
+
+##' Bounds
+##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
+##' @return a named list
+getUpperBounds<-function(parameters){
+    list(sigmaObsParUS=rep(10,length(parameters$sigmaObsParUS)))
+}
+    
