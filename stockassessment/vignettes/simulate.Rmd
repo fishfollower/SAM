@@ -8,14 +8,14 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
-The most recent version of TMB includes the ability to simulated model, so we have implemented that ability in `stockassessment`. By default, these simulations are conditional on the estimated values of `F` and `N` but it is possible to also simulate `F` and `N` forward from the initial time point using the `sim.condRE` argument to the `sam.fit` function.
+The most recent version of TMB facilitates simulating from a fitted model, so we have implemented that ability in `stockassessment`. By default, these simulations are conditional on the estimated values of `F` and `N` but it is possible to also simulate `F` and `N` forward from the initial time point using the `sim.condRE` argument to the `sam.fit` function.
 
 ```{r setup, include=FALSE, message=FALSE}
 library(stockassessment)
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE, cache=TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.width=7, cache=TRUE)
 ```
-Read in and organize the data using special fuctions
+Read in and organize the data using fuctions specific to the `stockassessment` package.
 
 ```{r data}
 cn <- read.ices("nsher/cn.dat")
@@ -42,7 +42,7 @@ dat <- setup.sam.data(surveys=surveys,
                     land.frac=lf)
 
 ```
-
+Set up the model's configuration.
 ```{r conf}
 conf <- defcon(dat)
 conf$fbarRange <- c(2,6)
@@ -54,7 +54,7 @@ conf$keyLogFpar <- matrix(c(
  8,   -1,   -1,   -1,   -1,   -1,   -1,   -1,   -1), nrow=4, byrow=TRUE)
 ```
 
-Set up initial values for the parameters.
+Set up initial values for the parameters based on the data and configuration.
 ```{r par}
 par <- defpar(dat,conf)
 par$logFpar <- rep(0,9)
@@ -65,14 +65,14 @@ Fit the model.
 fit <- sam.fit(dat,conf,par)
 ```
 
-Simulate from the fitted model and store the simulated observations into a new data set with the same structure as the original data.
+Simulate from the fitted model and store the simulated observations in a new data set `simdat` that has the same structure as the original data.
 ```{r sim}
 simdat <- dat
-simdat$logobs <- simulate(fit)[[1]]$logobs
+simdat$logobs <- simulate(fit, seed=1)[[1]]$logobs
 ```
 
-Fit the same model to the simulated data and compare the plot to the original data.
-```{r plot, fig.width=7, results='hide'}
+Fit the same model to the simulated observations and compare the plot to the original
+```{r plot, results='hide'}
 fit2 <- sam.fit(simdat, conf, par)
 ssbplot(fit)
 ssbplot(fit2)
@@ -81,4 +81,4 @@ fbarplot(fit2)
 recplot(fit)
 recplot(fit2)
 ```
-
+They are quite similar.
