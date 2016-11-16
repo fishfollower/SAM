@@ -7,6 +7,7 @@
 ##' @param run if FALSE return AD object without running the optimization
 ##' @param lower named list with lower bounds for optimization (only met before extra newton steps)
 ##' @param upper named list with upper bounds for optimization (only met before extra newton steps)
+##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rahter than also simulating F and N forward from their initial values.
 ##' @param ... extra arguments to MakeADFun
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
@@ -19,8 +20,8 @@
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE,run=TRUE,lower=getLowerBounds(parameters),upper=getUpperBounds(parameters),...){
-  tmball <- c(data, conf)
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE,run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ...){
+  tmball <- c(data, conf, simFlag=as.numeric(sim.condRE))    
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
   ran <- c("logN", "logF", "missing")
