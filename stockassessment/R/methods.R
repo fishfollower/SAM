@@ -149,12 +149,14 @@ summary.sam<-function(object, ...){
  colnames(ret)[7] <- paste("Fbar(",object$conf$fbarRange[1], "-", object$conf$fbarRange[2], ")", sep="")
  ret
 }
+
 ##' Simulate from a sam object 
 ##' @method simulate sam 
 ##' @param object sam fitted object (result from sam.fit)
 ##' @param nsim number of response lists to simulate. Defaults to 1.
 ##' @param seed random number seed
-##' @param ... extra arguments 
+##' @param ... extra arguments
+##' @importFrom stats simulate
 ##' @details ...
 ##' @return returns a list of lists. The outer list has length \code{nsim}. Each inner list contains simulated values of \code{logF}, \code{logN}, and \code{obs} with dimensions equal to those parameters.
 ##' @export
