@@ -72,8 +72,8 @@ clean:
 	\rm -rf $(PACKAGE).Rcheck
 	\rm -f stockassessment/vignettes/stockassessment.{aux,log,out,pdf,tex}
 
-test: $(SUBDIRS)
-$(SUBDIRS):
+test: $(SUBDIRS) 
+$(SUBDIRS): install
 	@echo -n $@
 	@echo -n ".. "
 	@$(MAKE) -s -C $@
