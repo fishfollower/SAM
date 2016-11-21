@@ -62,9 +62,6 @@ check: $(TARBALL)
 check-cran: $(TARBALL)
 	$(R) CMD check --as-cran $(TARBALL)
 
-test:
-	echo "cat(’THIS IS NOT A TEST. IT IS JUST A TEST OF A TEST.’)" | $(R) --slave
-
 quick-check: quick-install ex-test
 
 ex-test:
