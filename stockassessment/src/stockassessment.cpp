@@ -498,7 +498,6 @@ Type objective_function<Type>::operator() ()
       if(!isNAINT(idx1(f,y))){
         int idxfrom=idx1(f,y);
         int idxlength=idx2(f,y)-idx1(f,y)+1;
-<<<<<<< HEAD
 	switch(obsLikelihoodFlag(f)){
 	case 0: // (LN) log-Normal distribution
 	  ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
