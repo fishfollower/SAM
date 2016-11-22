@@ -498,9 +498,10 @@ Type objective_function<Type>::operator() ()
       if(!isNAINT(idx1(f,y))){
         int idxfrom=idx1(f,y);
         int idxlength=idx2(f,y)-idx1(f,y)+1;
+<<<<<<< HEAD
 	switch(obsLikelihoodFlag(f)){
 	case 0: // (LN) log-Normal distribution
-	  ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength));
+	  ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
 	  // += ((vector<Type>)logobs.segment(idxfrom,idxlength)).sum();
 	  SIMULATE{
 	    logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
@@ -568,6 +569,7 @@ Type objective_function<Type>::operator() ()
     Type huge = 10;
     for (int i = 0; i < stateDimN; i++) ans -= dnorm(logN(i, 0), Type(0), huge, true);  
     for (int i = 0; i < stateDimF; i++) ans -= dnorm(logF(i, 0), Type(0), huge, true);  
+    for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
   
   SIMULATE {
