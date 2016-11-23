@@ -247,7 +247,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
     fleet<-rep(fleet.idx,length(year))
-    age<-colnames(m)[col(m)]
+    age<-as.integer(colnames(m)[col(m)])
     aux<-as.vector(m)
     dat<<-rbind(dat,data.frame(year,fleet,age,aux))
   }

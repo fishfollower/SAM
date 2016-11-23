@@ -458,14 +458,19 @@ Type objective_function<Type>::operator() ()
   vector< density::MVNORM_t<Type> >  nllVec(noFleets);
   vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(noFleets);
   vector< vector<Type> > obsCovScaleVec(noFleets);
+  int aidx;
   for(int f=0; f<noFleets; ++f){
     int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
     matrix<Type> cov(thisdim,thisdim);
     cov.setZero();
-    
     if(obsCorStruct(f)==0){//ID (independent)  
       for(int i=0; i<thisdim; ++i){
-	cov(i,i)=varLogObs(keyVarObs(f,i+minAgePerFleet(f)-minAge));
+        if(fleetTypes(f)!=3){
+          aidx = i+minAgePerFleet(f)-minAge;
+        }else{
+          aidx = 0;
+        }
+	cov(i,i)=varLogObs(keyVarObs(f,aidx));
       }
     } else if(obsCorStruct(f)==1){//(AR) irregular lattice AR
       cov = setupVarCovMatrix(minAge, maxAge, minAgePerFleet(f), maxAgePerFleet(f), keyCorObs.transpose().col(f), IRARdist, keyVarObs.transpose().col(f) , exp(logSdLogObs) );
