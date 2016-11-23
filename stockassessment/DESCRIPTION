@@ -11,7 +11,7 @@ Description: Fitting SAM...
 License: GPL-2
 Imports: TMB
 LinkingTo: TMB, RcppEigen
-Suggests: knitr
+Suggests: knitr, testthat
 VignetteBuilder: knitr
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
