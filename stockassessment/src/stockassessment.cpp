@@ -503,19 +503,19 @@ Type objective_function<Type>::operator() ()
 	switch(obsLikelihoodFlag(f)){
 	case 0: // (LN) log-Normal distribution
 	  ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
-	  // += logobs.segment(idxfrom,idxlength).sum();
 	  SIMULATE{
 	    logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
 	  }
 	  break;
 	case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
 	  ans +=  nllVec(f)(addLogratio((vector<Type>)logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
-	   ans += log(log2proportion((vector<Type>)logobs.segment(idxfrom,idxlength))).sum();
-	   ans -= dnorm(log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength))),
+	  ans += log(log2proportion((vector<Type>)logobs.segment(idxfrom,idxlength))).sum();
+	  ans -= dnorm(log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength))),
 	   	       log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
 	   	       exp(logSdLogTotalObs(totalParKey++)),true);
-	   ans += log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength)));
-	   ans -= log(abs(jacobianDet((vector<Type>)logobs.segment(idxfrom,idxlength).exp())));
+	  ans += log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength)));
+	  ans -= log(abs(jacobianDet((vector<Type>)logobs.segment(idxfrom,idxlength).exp())));
+          ans -= logobs.segment(idxfrom,idxlength).sum();
 	  SIMULATE{
 	    vector<Type> logProb(idxlength);
 	    logProb.setZero();
