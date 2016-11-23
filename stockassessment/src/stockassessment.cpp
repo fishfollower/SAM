@@ -489,11 +489,12 @@ Type objective_function<Type>::operator() ()
         cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
 
 
-    } else { error("Unkown obsCorStruct code"); }
-    if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
-      nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
-    }else{
-      nllVec(f).setSigma(cov);
+      } else { error("Unkown obsCorStruct code"); }
+      if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
+        nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
+      }else{
+        nllVec(f).setSigma(cov);
+      }
     }
   }
   
@@ -532,8 +533,8 @@ Type objective_function<Type>::operator() ()
 	      logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
 	    }
 	    break;
-	  default:
-	    error("Unknown obsLikelihoodFlag");
+  	    default:
+	      error("Unknown obsLikelihoodFlag");
 	  }
         }
       }  
