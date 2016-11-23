@@ -460,32 +460,34 @@ Type objective_function<Type>::operator() ()
   vector< vector<Type> > obsCovScaleVec(noFleets);
   int aidx;
   for(int f=0; f<noFleets; ++f){
-    int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
-    matrix<Type> cov(thisdim,thisdim);
-    cov.setZero();
-    if(obsCorStruct(f)==0){//ID (independent)  
-      for(int i=0; i<thisdim; ++i){
-        if(fleetTypes(f)!=3){
-          aidx = i+minAgePerFleet(f)-minAge;
-        }else{
-          aidx = 0;
+    if(fleetTypes(f)!=5){ 
+      int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
+      matrix<Type> cov(thisdim,thisdim);
+      cov.setZero();
+      if(obsCorStruct(f)==0){//ID (independent)  
+        for(int i=0; i<thisdim; ++i){
+          if(fleetTypes(f)!=3){
+            aidx = i+minAgePerFleet(f)-minAge;
+          }else{
+            aidx = 0;
+          }
+  	  cov(i,i)=varLogObs(keyVarObs(f,aidx));
         }
-	cov(i,i)=varLogObs(keyVarObs(f,aidx));
-      }
-    } else if(obsCorStruct(f)==1){//(AR) irregular lattice AR
-      cov = setupVarCovMatrix(minAge, maxAge, minAgePerFleet(f), maxAgePerFleet(f), keyCorObs.transpose().col(f), IRARdist, keyVarObs.transpose().col(f) , exp(logSdLogObs) );
-    } else if(obsCorStruct(f)==2){//(US) unstructured
-      neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
-      matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
+      } else if(obsCorStruct(f)==1){//(AR) irregular lattice AR
+        cov = setupVarCovMatrix(minAge, maxAge, minAgePerFleet(f), maxAgePerFleet(f), keyCorObs.transpose().col(f), IRARdist, keyVarObs.transpose().col(f) , exp(logSdLogObs) );
+      } else if(obsCorStruct(f)==2){//(US) unstructured
+        neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
+        matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
       
-      tmp.setZero();
-      int offset = minAgePerFleet(f)-minAge;
-      obsCovScaleVec(f).resize(tmp.rows());
-      for(int i=0; i<tmp.rows(); i++) {
-	tmp(i,i) = sqrt(varLogObs(keyVarObs(f,i+offset)));
-	obsCovScaleVec(f)(i) = tmp(i,i);
-      }
-      cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+        tmp.setZero();
+        int offset = minAgePerFleet(f)-minAge;
+        obsCovScaleVec(f).resize(tmp.rows());
+        for(int i=0; i<tmp.rows(); i++) {
+  	  tmp(i,i) = sqrt(varLogObs(keyVarObs(f,i+offset)));
+	  obsCovScaleVec(f)(i) = tmp(i,i);
+        }
+        cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+
 
     } else { error("Unkown obsCorStruct code"); }
     if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
