@@ -72,8 +72,11 @@ clean:
 	\rm -rf $(PACKAGE).Rcheck
 	\rm -f stockassessment/vignettes/stockassessment.{aux,log,out,pdf,tex}
 
-test: $(SUBDIRS) 
-$(SUBDIRS): install
+test: install 
+	$(R) CMD check $(TARBALL)
+
+testold: $(SUBDIRS)
+$(SUBDIRS):
 	@echo -n $@
 	@echo -n ".. "
 	@$(MAKE) -s -C $@
