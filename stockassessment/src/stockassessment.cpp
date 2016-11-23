@@ -1,6 +1,8 @@
 //  --------------------------------------------------------------------------
 // Copyright (c) 2014, Anders Nielsen <an@aqua.dtu.dk>,    
-// Casper Berg <cbe@aqua.dtu.dk>, and Kasper Kristensen <kkr@aqua.dtu.dk>.
+// Casper Berg <cbe@aqua.dtu.dk>, Kasper Kristensen <kkr@aqua.dtu.dk>,
+// Mollie Brooks <molbr@aqua.dtu.dk>,
+// and Christoffer Moesgaard Albertsen <cmoe@aqua.dtu.dk>.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -501,7 +503,7 @@ Type objective_function<Type>::operator() ()
 	switch(obsLikelihoodFlag(f)){
 	case 0: // (LN) log-Normal distribution
 	  ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
-	  // += ((vector<Type>)logobs.segment(idxfrom,idxlength)).sum();
+	  // += logobs.segment(idxfrom,idxlength).sum();
 	  SIMULATE{
 	    logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
 	  }
