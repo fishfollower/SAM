@@ -1,7 +1,6 @@
 context("nsher example")
 setwd("../nsher/")
 
-
 stopifnot(require("testthat"),
 		require("stockassessment"))
 source("../compare.fits.R")
