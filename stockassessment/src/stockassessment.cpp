@@ -1,6 +1,8 @@
 //  --------------------------------------------------------------------------
 // Copyright (c) 2014, Anders Nielsen <an@aqua.dtu.dk>,    
-// Casper Berg <cbe@aqua.dtu.dk>, and Kasper Kristensen <kkr@aqua.dtu.dk>.
+// Casper Berg <cbe@aqua.dtu.dk>, Kasper Kristensen <kkr@aqua.dtu.dk>,
+// Mollie Brooks <molbr@aqua.dtu.dk>,
+// and Christoffer Moesgaard Albertsen <cmoe@aqua.dtu.dk>.
 // All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without
@@ -73,6 +75,77 @@ matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxA
   return ret;
 }
 
+
+template <class Type>
+vector<Type> addLogratio(vector<Type> logx){
+  int n = logx.size();
+  vector<Type> res(n-1);
+  for(int i = 0; i < res.size(); ++i)
+    res(i) = logx(i) - logx(n-1);
+  return res;//log(x.head(x.size()-1)/x.tail(1));
+};
+
+template<class Type>
+vector<Type> multLogratio(vector<Type> logx){
+  vector<Type> res(logx.size()-1);
+  for(int i = 0; i < res.size(); ++i)
+    res(i) = logx(i)-log(Type(1.0)-exp(logExpSum(logx.head(i+1))));
+  return res;
+}
+
+
+template <class Type>
+Type log2expsum(vector<Type> x){
+  return exp(x).sum();
+}
+
+template<class Type>
+Type logExpSum(vector<Type> x){
+  Type m = max(x);
+  return m + log(exp(x-m).sum());
+}
+
+template <class Type>
+vector<Type> log2proportion(vector<Type> x){
+  return exp(x) / log2expsum(x);
+}
+
+
+template<class Type>
+matrix<Type> buildJac(vector<Type> x, vector<Type> w){
+  matrix<Type> res(x.size(),x.size()); 
+  Type xs = x.sum();
+  Type xsp = pow(xs,Type(2));
+  for(int i = 0; i < res.rows(); ++i){
+    for(int j = 0; j < res.cols(); ++j){
+      if(i == j){
+	res(i,j) = Type(1.0)/xs-x(i)/xsp;
+      }else{
+	res(i,j) = -x(i)/xsp;
+      }
+    }
+  }
+  for(int j = 0; j < res.cols(); ++j){
+    res(res.rows()-1,j) = w(j);
+  }
+  return res;
+}
+
+
+template <class Type>
+Type jacobianDet(vector<Type> x){
+  vector<Type> w(x.size());
+  w.fill(Type(1.0));
+  return buildJac(x,w).determinant();
+}
+template <class Type>
+Type jacobianDet(vector<Type> x,vector<Type> w){
+  return buildJac(x,w).determinant();
+}
+
+
+
+
 template <class Type> 
 density::UNSTRUCTURED_CORR_t<Type> getCorrObj(vector<Type> params){
   density::UNSTRUCTURED_CORR_t<Type> ret(params);
@@ -122,12 +195,14 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyParScaledYA);
   DATA_IVECTOR(fbarRange);
   DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
+  DATA_FACTOR(obsLikelihoodFlag);
 
   PARAMETER_VECTOR(logFpar); 
   PARAMETER_VECTOR(logQpow); 
   PARAMETER_VECTOR(logSdLogFsta); 
   PARAMETER_VECTOR(logSdLogN); 
   PARAMETER_VECTOR(logSdLogObs);
+  PARAMETER_VECTOR(logSdLogTotalObs);
   PARAMETER_VECTOR(transfIRARdist);//transformed distances for IRAR cor obs structure
   PARAMETER_VECTOR(sigmaObsParUS);//choleski elements for unstructured cor obs structure
   PARAMETER_VECTOR(rec_loga); 
@@ -136,7 +211,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logScale); 
   PARAMETER_VECTOR(logScaleSSB); 
   PARAMETER_VECTOR(logPowSSB); 
-  PARAMETER_VECTOR(logSdSSB); 
+  PARAMETER_VECTOR(logSdSSB);
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
@@ -411,18 +486,50 @@ Type objective_function<Type>::operator() ()
       cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
 
     } else { error("Unkown obsCorStruct code"); }
-    nllVec(f).setSigma(cov);
+    if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
+      nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
+    }else{
+      nllVec(f).setSigma(cov);
+    }
   }
+  
   //eval likelihood 
-  for(int y=0;y<noYears;y++){  
+  for(int y=0;y<noYears;y++){
+    int totalParKey = 0;
     for(int f=0;f<noFleets;f++){
       if(!isNAINT(idx1(f,y))){
         int idxfrom=idx1(f,y);
         int idxlength=idx2(f,y)-idx1(f,y)+1;
-        ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength));
-        SIMULATE{
-          logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
-        }
+	switch(obsLikelihoodFlag(f)){
+	case 0: // (LN) log-Normal distribution
+	  ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
+	  SIMULATE{
+	    logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
+	  }
+	  break;
+	case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
+	  ans +=  nllVec(f)(addLogratio((vector<Type>)logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
+	  ans += log(log2proportion((vector<Type>)logobs.segment(idxfrom,idxlength))).sum();
+	  ans -= dnorm(log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength))),
+	   	       log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+	   	       exp(logSdLogTotalObs(totalParKey++)),true);
+	  ans += log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength)));
+	  ans -= log(abs(jacobianDet((vector<Type>)logobs.segment(idxfrom,idxlength).exp())));
+          ans -= logobs.segment(idxfrom,idxlength).sum();
+	  SIMULATE{
+	    vector<Type> logProb(idxlength);
+	    logProb.setZero();
+	    logProb.segment(0,idxlength-1) = addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
+	    Type logDenom = logExpSum(logProb);
+	    logProb -= logDenom;
+	    Type logTotal = rnorm(log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+				  exp(logSdLogTotalObs(totalParKey++)));
+	    logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
+	  }
+	  break;
+	default:
+	  error("Unknown obsLikelihoodFlag");
+	}
       }  
     }  
   }
@@ -463,6 +570,7 @@ Type objective_function<Type>::operator() ()
     Type huge = 10;
     for (int i = 0; i < stateDimN; i++) ans -= dnorm(logN(i, 0), Type(0), huge, true);  
     for (int i = 0; i < stateDimF; i++) ans -= dnorm(logF(i, 0), Type(0), huge, true);  
+    for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
   
   SIMULATE {
@@ -483,5 +591,6 @@ Type objective_function<Type>::operator() ()
   ADREPORT(R);
   ADREPORT(logR);
 
+  
   return ans;
 }

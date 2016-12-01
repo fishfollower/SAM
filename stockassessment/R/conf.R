@@ -78,5 +78,8 @@ defcon<-function(dat){
   ret$keyParScaledYA <- array(0,c(0,0))
   ret$fbarRange <- ages[fleetTypes==0,]
 
+  ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
+  
+
   return(ret) 
 }
