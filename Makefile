@@ -72,8 +72,6 @@ clean:
 	\rm -rf $(PACKAGE).Rcheck
 	\rm -f stockassessment/vignettes/stockassessment.{aux,log,out,pdf,tex}
 
-test: $(SUBDIRS)
-$(SUBDIRS):
-	@echo -n $@
-	@echo -n ".. "
-	@$(MAKE) -s -C $@
+test:
+	echo "devtools::test('stockassessment')" | $(R) --slave
+
