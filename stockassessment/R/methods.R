@@ -1,7 +1,7 @@
 ##' Plot sam object 
 ##' @method plot sam
 ##' @param  x ...
-##' @param  ... extra arguments
+##' @param  ... extra arguments (not possible to use add=TRUE --- please collect to a list of fits, set class to 'samset', and then plot that collected object)
 ##' @importFrom graphics par
 ##' @details ...
 ##' @export
