@@ -14,24 +14,24 @@ setSeq<-function(min,max){
 ##' Setup basic minimal configuration for sam assessment
 ##' @param dat sam data object 
 ##' @return a list containing 
-##' \item {minAge}{}
-##' \item {maxAge}{}
-##' \item {maxAgePlusGroup}{}
-##' \item {keyLogFsta}{}
-##' \item {keyLogFpar}{}
-##' \item {keyQpow}{}
-##' \item {keyVarF}{}
-##' \item {keyVarLogN}{}
-##' \item {keyVarObs}{}
-##' \item {obsCorStruct}{}
-##' \item {keyCorObs}{}
-##' \item {corFlag}{set to zero as a placeholder here.}
-##' \item {stockRecruitmentModelCode}{set to zero as a placeholder here.}
-##' \item {noScaledYears}{set to zero as a placeholder here.}
-##' \item {keyScaledYears}{a scalar set to zero as a placeholder here.}
-##' \item {keyParScaledYA}{an array set to zero as a placeholder here.}
-##' \item {fbarRange}{}
-##' \item {obsLikelihoodFlag}{A vector with an element for each fleet. "LN" means, and "ALN" means}
+##' \item{minAge}{}
+##' \item{maxAge}{}
+##' \item{maxAgePlusGroup}{}
+##' \item{keyLogFsta}{}
+##' \item{keyLogFpar}{}
+##' \item{keyQpow}{}
+##' \item{keyVarF}{}
+##' \item{keyVarLogN}{}
+##' \item{keyVarObs}{}
+##' \item{obsCorStruct}{}
+##' \item{keyCorObs}{}
+##' \item{corFlag}{set to zero as a placeholder here.}
+##' \item{stockRecruitmentModelCode}{set to zero as a placeholder here.}
+##' \item{noScaledYears}{set to zero as a placeholder here.}
+##' \item{keyScaledYears}{a scalar set to zero as a placeholder here.}
+##' \item{keyParScaledYA}{an array set to zero as a placeholder here.}
+##' \item{fbarRange}{}
+##' \item{obsLikelihoodFlag}{A vector with an element for each fleet. "LN" means, and "ALN" means}
 ##' @details ...
 ##' @export
 defcon<-function(dat){

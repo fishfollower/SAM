@@ -3,23 +3,23 @@
 ##' @param conf configuration list  
 ##' @details ...
 ##' @return a list containing the following
-##' \item {logFpar}{}
-##' \item {logQpow}{}
-##' \item {logSdLogFsta}{}
-##' \item {logSdLogN}{}
-##' \item {logSdLogObs}{}
-##' \item {logSdLogTotalObs}{}
-##' \item {transfIRARdist}{}
-##' \item {sigmaObsParUS}{}
-##' \item {rec_loga}{}
-##' \item {rec_logb}{}
-##' \item {itrans_rho}{}
-##' \item {logScale}{}
-##' \item {logScaleSSB}{}
-##' \item {logPowSSB}{}
-##' \item {logSdSSB}{}
-##' \item {logF}{}
-##' \item {logN}{}
+##' \item{logFpar}{}
+##' \item{logQpow}{}
+##' \item{logSdLogFsta}{}
+##' \item{logSdLogN}{}
+##' \item{logSdLogObs}{}
+##' \item{logSdLogTotalObs}{}
+##' \item{transfIRARdist}{}
+##' \item{sigmaObsParUS}{}
+##' \item{rec_loga}{}
+##' \item{rec_logb}{}
+##' \item{itrans_rho}{}
+##' \item{logScale}{}
+##' \item{logScaleSSB}{}
+##' \item{logPowSSB}{}
+##' \item{logSdSSB}{}
+##' \item{logF}{}
+##' \item{logN}{}
 ##' @export
 defpar <- function(dat,conf){
   ret<-list()

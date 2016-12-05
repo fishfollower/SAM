@@ -2,12 +2,12 @@
 ##' @param fit the fitted object from sam.fit
 ##' @param what quoted name of object to extract
 ##' @param x x-alues
-##' @param ymab label on y-axis
+##' @param ylab label on y-axis
 ##' @param xlab label on x-axis
 ##' @param ex extra y's to make room for
 ##' @param trans function to transform values by
-##' @param Add if plotting is to be added on existing plot
-##' @param ci if confidence intervals should be plotted
+##' @param add logical, plotting is to be added on existing plot
+##' @param ci logical, confidence intervals should be plotted
 ##' @param cicol color to plot the confidence polygon
 ##' @param drop number of years to be left unplotted at the end. 
 ##' @param ... extra arguments transferred to plot
@@ -204,7 +204,10 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE,
 ##' @param fit the object returned from sam.fit 
 ##' @param partial true if included partial F's are to be plotted
 ##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information  
-##' @param ... extra arguments transferred to plot
+##' @param ... extra arguments transferred to plot including the following:
+##' @param add logical, plotting is to be added on existing plot
+##' @param ci logical, confidence intervals should be plotted
+##' @param cicol color to plot the confidence polygon
 ##' @importFrom graphics matplot
 ##' @details ...
 ##' @export
@@ -236,7 +239,10 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
 
 ##' SAM SSB plot 
 ##' @param fit the object returned from sam.fit
-##' @param ... extra arguments transferred to plot
+##' @param ... extra arguments transferred to plot including the following:
+##' @param add logical, plotting is to be added on existing plot
+##' @param ci logical, confidence intervals should be plotted
+##' @param cicol color to plot the confidence polygon
 ##' @details ...
 ##' @export
 ssbplot<-function(fit, ...){
@@ -245,7 +251,10 @@ ssbplot<-function(fit, ...){
 
 ##' SAM TSB plot 
 ##' @param fit the object returned from sam.fit
-##' @param ... extra arguments transferred to plot
+##' @param ... extra arguments transferred to plot including the following:
+##' @param add logical, plotting is to be added on existing plot
+##' @param ci logical, confidence intervals should be plotted
+##' @param cicol color to plot the confidence polygon
 ##' @details ...
 ##' @export
 tsbplot<-function(fit, ...){
@@ -254,7 +263,10 @@ tsbplot<-function(fit, ...){
 
 ##' SAM Recruits plot 
 ##' @param fit the object returned from sam.fit
-##' @param ... extra arguments transferred to plot
+##' @param ... extra arguments transferred to plot including the following:
+##' @param add logical, plotting is to be added on existing plot
+##' @param ci logical, confidence intervals should be plotted
+##' @param cicol color to plot the confidence polygon
 ##' @details ...
 ##' @export
 recplot<-function(fit,...){
@@ -265,8 +277,11 @@ recplot<-function(fit,...){
 ##' SAM catch plot 
 ##' @param fit the object returned from sam.fit
 ##' @param obs.show if observations are to be shown also
-##' @param ... extra arguments transferred to plot
 ##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information 
+##' @param ... extra arguments transferred to plot including the following:
+##' @param add logical, plotting is to be added on existing plot
+##' @param ci logical, confidence intervals should be plotted
+##' @param cicol color to plot the confidence polygon
 ##' @details ...
 ##' @importFrom graphics points
 ##' @export
@@ -302,7 +317,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
 ##' SAM parameter plot 
 ##' @param fit the object returned from sam.fit
 ##' @param cor.report.limit correlations with absolute value > this number is reported in the plot 
-##' @param ... extra arguments transferred to plot
+##' @param ... extra arguments transferred to plot including the following
 ##' @details ...
 ##' @export
 ##' @importFrom stats cov2cor
