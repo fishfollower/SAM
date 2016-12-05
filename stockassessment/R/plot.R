@@ -7,7 +7,7 @@
 ##' @param ex extra y's to make room for
 ##' @param trans function to transform values by
 ##' @param Add if plotting is to be added on existing plot
-##' @param ci if confidence intervals should be plottet
+##' @param ci if confidence intervals should be plotted
 ##' @param cicol color to plot the confidence polygon
 ##' @param drop number of years to be left unplotted at the end. 
 ##' @param ... extra arguments transferred to plot
