@@ -1,8 +1,7 @@
 ---
 title: "Simulate from a fitted sam model"
-author: "Mollie Brooks"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: pdf_document
 vignette: >
   %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
@@ -12,8 +11,9 @@ The most recent version of TMB facilitates simulating from a fitted model, so we
 
 ```{r setup, include=FALSE, message=FALSE}
 library(stockassessment)
+library(parallel)#for parLapply
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE, fig.width=7, cache=TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.width=7, cache=FALSE)
 ```
 Read in and organize the data using fuctions specific to the `stockassessment` package.
 
@@ -62,23 +62,41 @@ par$logFpar <- rep(0,9)
 
 Fit the model.
 ```{r run, results='hide'}
-fit <- sam.fit(dat,conf,par)
+fit <- sam.fit(dat, conf, par)
 ```
 
 Simulate from the fitted model and store the simulated observations in a new data set `simdat` that has the same structure as the original data.
 ```{r sim}
-simdat <- dat
-simdat$logobs <- simulate(fit, seed=1)[[1]]$logobs
+simdat <- simulate(fit, seed=1, nsim=1)[[1]]
 ```
 
-Fit the same model to the simulated observations and compare the plot to the original
-```{r plot, results='hide'}
-fit2 <- sam.fit(simdat, conf, par)
+Fit the same model to the simulated data and compare the plot to the original
+```{r fitsim, results='hide'}
+simfit <- sam.fit(simdat, conf, par)
 ssbplot(fit)
-ssbplot(fit2)
-fbarplot(fit)
-fbarplot(fit2)
+ssbplot(simfit, add=TRUE)
+fbarplot(fit, partial=FALSE)
+fbarplot(simfit, add=TRUE, partial=FALSE)
 recplot(fit)
-recplot(fit2)
+recplot(simfit, add=TRUE)
 ```
-They are quite similar.
+
+We can also simulate multiple data sets and fit models to the new observations. For this it is best to use the `parLapply` function so that the fits are run in parallel. Fitting them in parallel just requires a few extra steps to set up the cluster, but it will save a lot of time. 
+
+```{r parallel fitsims, results='hide'}
+simlist <- simulate(fit, seed=1, nsim=3)
+no_cores <- detectCores() - 1 #how many cores can we use
+cl <- makeCluster(no_cores) #set up some number of nodes
+clusterExport(cl, c("conf", "par")) #send these objects to each node
+clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
+simfitslist <- parLapply(cl, simlist, function(x){sam.fit(x, conf, par)}) #do sam.fit to each element of the list
+stopCluster(cl) #shut it down
+```
+
+```{r multiplot}
+ssbplot(fit, cicol="red")#the original data
+trash <- lapply(simfitslist, function(x){ssbplot(x, add=TRUE)})
+trash <- lapply(simfitslist, function(x){ssbplot(x, ci=FALSE, add=TRUE)})
+```
+
+
