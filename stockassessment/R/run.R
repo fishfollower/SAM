@@ -1,18 +1,19 @@
 ##' Fit SAM model 
 ##' @param data data for the sam model as returned from the setup.sam.data function
-##' @param conf model configuration for the model in a format similar to what is returned from the defcon function
-##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
+##' @param conf model configuration which can be set up using the \code{\link{defcon}} function and then modified.
+##' @param parameters initial values which can be set up using the \code{\link{defpar}} function and then modified.
 ##' @param newtonsteps optional extra true extra newton steps
 ##' @param rm.unidentified option to eliminate unidentified model parameters based on gradient in initial value (somewhat experimental)
 ##' @param run if FALSE return AD object without running the optimization
 ##' @param lower named list with lower bounds for optimization (only met before extra newton steps)
 ##' @param upper named list with upper bounds for optimization (only met before extra newton steps)
-##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rahter than also simulating F and N forward from their initial values.
+##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.
 ##' @param ... extra arguments to MakeADFun
+##' @return an object of class \code{sam}
+##' @details ...
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
 ##' @importFrom utils relist
-##' @details ...
 ##' @useDynLib stockassessment
 ##' @export
 ##' @examples
