@@ -1,17 +1,32 @@
 ##' Plot sam object 
 ##' @method plot sam
 ##' @param  x ...
-##' @param  ... extra arguments
+##' @param  ... extra arguments (not possible to use add=TRUE --- please collect to a list of fits using e.g the c(...), and then plot that collected object)
 ##' @importFrom graphics par
 ##' @details ...
 ##' @export
 plot.sam<-function(x, ...){
+  dots <- list(...) 
+  if("add" %in% names(dots) && dots$add==TRUE){stop("Not possible to use add=TRUE here --- please collect to a list of fits using c(...)")}
   op<-par(mfrow=c(3,1))
   ssbplot(x,...)
   fbarplot(x,...)
   recplot(x,...)
   par(op)
 }
+
+##' Collect sam objects 
+##' @method c sam
+##' @param  ... sam fits to be combined 
+##' @importFrom graphics par
+##' @details ...
+##' @export
+c.sam<-function(...){
+  ret<-list(...)
+  class(ret)<-"samset"
+  ret
+}
+
 
 ##' Plot sam object 
 ##' @method plot samset
