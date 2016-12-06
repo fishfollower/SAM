@@ -60,12 +60,12 @@ read.surveys<-function(filen){
       stop(paste("In file",filen, ": Maximum year is expected to be greater than minimum year for fleet number",i))
     }
     # Check ages 
-    if(!is.whole.positive.number(ages[i,1])){
-      stop(paste("In file",filen, ": Minimum age is expected to be a positive integer number for fleet number",i))
-    }
-    if(!is.whole.positive.number(ages[i,2])){
-      stop(paste("In file",filen, ": Maximum age is expected to be a positive integer number for fleet number",i))
-    }    
+    ##if(!is.whole.positive.number(ages[i,1])){
+    ##  stop(paste("In file",filen, ": Minimum age is expected to be a positive integer number for fleet number",i))
+    ##}
+    ##if(!is.whole.positive.number(ages[i,2])){
+    ##  stop(paste("In file",filen, ": Maximum age is expected to be a positive integer number for fleet number",i))
+    ##}    
     if(ages[i,1]>ages[i,2]){
       stop(paste("In file",filen, ": Maximum age is expected to be greater than minimum age for fleet number",i))
     }
@@ -229,12 +229,14 @@ read.ices<-function(filen){
 ##' @param prop.f ...
 ##' @param prop.m ...
 ##' @param land.frac ...
+##' @param recapture ...
+##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -245,7 +247,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
     fleet<-rep(fleet.idx,length(year))
-    age<-colnames(m)[col(m)]
+    age<-as.integer(colnames(m)[col(m)])
     aux<-as.vector(m)
     dat<<-rbind(dat,data.frame(year,fleet,age,aux))
   }
@@ -268,11 +270,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   if(!is.null(surveys)){
     if(is.data.frame(surveys)|is.matrix(surveys)){
       doone(surveys)
-      type<-c(type,2)
+      thistype<-ifelse(min(as.integer(colnames(surveys)))<(-.5),3,2)
+      type<-c(type,thistype)
       time<-c(time,mean(attr(surveys,'time')))
     }else{
       dummy<-lapply(surveys,doone)
-      type<-c(type,rep(2,length(surveys)))
+      type<-c(type,unlist(lapply(surveys, function(x)ifelse(min(as.integer(colnames(x)))<(-.5), 3, 2))))
       time<-c(time,unlist(lapply(surveys, function(x)mean(attr(x,'time')))))
     }
   }
@@ -291,10 +294,23 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   if(is.null(prop.m)){
     prop.m<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
   }
-    
   dat$aux[which(dat$aux<=0)] <- NA
   dat<-dat[!is.na(dat$year),]
-      
+
+  if(!is.null(recapture)){
+    tag<-data.frame(year=recapture$ReleaseY)
+    fleet.idx <- fleet.idx+1
+    tag$fleet <- fleet.idx
+    tag$age <- recapture$ReleaseY-recapture$Yearclass
+    tag$aux <- exp(recapture$r)
+    tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type")])
+    dat[names(tag)[!names(tag)%in%names(dat)]]<-NA
+    dat<-rbind(dat, tag)
+    type<-c(type,5)
+    time<-c(time,0)
+  }
+  dat<-dat[complete.cases(dat[,1:3]),]
+  
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
   attr(dat,'type')<-type
   names(time)<-NULL
@@ -323,7 +339,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'land.frac')<-cutY(land.frac)
   ret<-list(
     noFleets=length(attr(dat,'type')),
-    fleetTypes=attr(dat,'type'),
+    fleetTypes=as.integer(attr(dat,'type')),
     sampleTimes=attr(dat,'time'),
     noYears=attr(dat,'nyear'),
     years=attr(dat,'year'),
@@ -332,7 +348,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     nobs=nrow(dat),
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
-    aux=data.matrix(dat[,1:3]),
+    aux=data.matrix(dat[,-4]),
     logobs=log(dat[,4]),
     propMat=attr(dat,'prop.mature'),
     stockMeanWeight=attr(dat,'stock.mean.weight'),

@@ -209,9 +209,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(rec_logb); 
   PARAMETER_VECTOR(itrans_rho); 
   PARAMETER_VECTOR(logScale); 
-  PARAMETER_VECTOR(logScaleSSB); 
-  PARAMETER_VECTOR(logPowSSB); 
-  PARAMETER_VECTOR(logSdSSB);
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
@@ -383,8 +380,10 @@ Type objective_function<Type>::operator() ()
     f=aux(i,1);
     ft=fleetTypes(f-1);
     a=aux(i,2)-minAge;
-    zz=exp(logF(keyLogFsta(0,a),y))+natMor(y,a);
-    
+    if(ft==3){a=0;}
+    if(ft<3){ 
+      zz=exp(logF(keyLogFsta(0,a),y))+natMor(y,a);
+    }    
     switch(ft){
       case 0:
         predObs(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
@@ -420,9 +419,8 @@ Type objective_function<Type>::operator() ()
         
       break;
   
-      case 3:
-  	error("Unknown fleet code");
-        return 0;
+      case 3:// ssb survey
+        predObs(i)=logssb(y)+logFpar(keyLogFpar(f-1,a));
       break;
   
       case 4:
@@ -431,8 +429,7 @@ Type objective_function<Type>::operator() ()
       break;
   
       case 5:
-  	error("Unknown fleet code");
-        return 0;
+  	    //predObs(i)=Type(0);
       break;
   
       case 6:
@@ -461,35 +458,43 @@ Type objective_function<Type>::operator() ()
   vector< density::MVNORM_t<Type> >  nllVec(noFleets);
   vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(noFleets);
   vector< vector<Type> > obsCovScaleVec(noFleets);
+  int aidx;
   for(int f=0; f<noFleets; ++f){
-    int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
-    matrix<Type> cov(thisdim,thisdim);
-    cov.setZero();
-    
-    if(obsCorStruct(f)==0){//ID (independent)  
-      for(int i=0; i<thisdim; ++i){
-	cov(i,i)=varLogObs(keyVarObs(f,i+minAgePerFleet(f)-minAge));
-      }
-    } else if(obsCorStruct(f)==1){//(AR) irregular lattice AR
-      cov = setupVarCovMatrix(minAge, maxAge, minAgePerFleet(f), maxAgePerFleet(f), keyCorObs.transpose().col(f), IRARdist, keyVarObs.transpose().col(f) , exp(logSdLogObs) );
-    } else if(obsCorStruct(f)==2){//(US) unstructured
-      neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
-      matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
+    if(fleetTypes(f)!=5){ 
+      int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
+      matrix<Type> cov(thisdim,thisdim);
+      cov.setZero();
+      if(obsCorStruct(f)==0){//ID (independent)  
+        for(int i=0; i<thisdim; ++i){
+          if(fleetTypes(f)!=3){
+            aidx = i+minAgePerFleet(f)-minAge;
+          }else{
+            aidx = 0;
+          }
+  	  cov(i,i)=varLogObs(keyVarObs(f,aidx));
+        }
+      } else if(obsCorStruct(f)==1){//(AR) irregular lattice AR
+        cov = setupVarCovMatrix(minAge, maxAge, minAgePerFleet(f), maxAgePerFleet(f), keyCorObs.transpose().col(f), IRARdist, keyVarObs.transpose().col(f) , exp(logSdLogObs) );
+      } else if(obsCorStruct(f)==2){//(US) unstructured
+        neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
+        matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
       
-      tmp.setZero();
-      int offset = minAgePerFleet(f)-minAge;
-      obsCovScaleVec(f).resize(tmp.rows());
-      for(int i=0; i<tmp.rows(); i++) {
-	tmp(i,i) = sqrt(varLogObs(keyVarObs(f,i+offset)));
-	obsCovScaleVec(f)(i) = tmp(i,i);
-      }
-      cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+        tmp.setZero();
+        int offset = minAgePerFleet(f)-minAge;
+        obsCovScaleVec(f).resize(tmp.rows());
+        for(int i=0; i<tmp.rows(); i++) {
+  	  tmp(i,i) = sqrt(varLogObs(keyVarObs(f,i+offset)));
+	  obsCovScaleVec(f)(i) = tmp(i,i);
+        }
+        cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
 
-    } else { error("Unkown obsCorStruct code"); }
-    if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
-      nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
-    }else{
-      nllVec(f).setSigma(cov);
+
+      } else { error("Unkown obsCorStruct code"); }
+      if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
+        nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
+      }else{
+        nllVec(f).setSigma(cov);
+      }
     }
   }
   
@@ -497,39 +502,41 @@ Type objective_function<Type>::operator() ()
   for(int y=0;y<noYears;y++){
     int totalParKey = 0;
     for(int f=0;f<noFleets;f++){
-      if(!isNAINT(idx1(f,y))){
-        int idxfrom=idx1(f,y);
-        int idxlength=idx2(f,y)-idx1(f,y)+1;
-	switch(obsLikelihoodFlag(f)){
-	case 0: // (LN) log-Normal distribution
-	  ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
-	  SIMULATE{
-	    logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
+      if(fleetTypes(f)!=5){
+        if(!isNAINT(idx1(f,y))){
+          int idxfrom=idx1(f,y);
+          int idxlength=idx2(f,y)-idx1(f,y)+1;
+  	  switch(obsLikelihoodFlag(f)){
+	  case 0: // (LN) log-Normal distribution
+	    ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
+	    SIMULATE{
+	      logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
+	    }
+	    break;
+	  case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
+	    ans +=  nllVec(f)(addLogratio((vector<Type>)logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
+	    ans += log(log2proportion((vector<Type>)logobs.segment(idxfrom,idxlength))).sum();
+	    ans -= dnorm(log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength))),
+	     	         log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+	   	         exp(logSdLogTotalObs(totalParKey++)),true);
+	    ans += log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength)));
+	    ans -= log(abs(jacobianDet((vector<Type>)logobs.segment(idxfrom,idxlength).exp())));
+            ans -= logobs.segment(idxfrom,idxlength).sum();
+	    SIMULATE{
+	      vector<Type> logProb(idxlength);
+	      logProb.setZero();
+	      logProb.segment(0,idxlength-1) = addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
+	      Type logDenom = logExpSum(logProb);
+	      logProb -= logDenom;
+	      Type logTotal = rnorm(log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+				    exp(logSdLogTotalObs(totalParKey++)));
+	      logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
+	    }
+	    break;
+  	    default:
+	      error("Unknown obsLikelihoodFlag");
 	  }
-	  break;
-	case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
-	  ans +=  nllVec(f)(addLogratio((vector<Type>)logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
-	  ans += log(log2proportion((vector<Type>)logobs.segment(idxfrom,idxlength))).sum();
-	  ans -= dnorm(log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength))),
-	   	       log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-	   	       exp(logSdLogTotalObs(totalParKey++)),true);
-	  ans += log(log2expsum((vector<Type>)logobs.segment(idxfrom,idxlength)));
-	  ans -= log(abs(jacobianDet((vector<Type>)logobs.segment(idxfrom,idxlength).exp())));
-          ans -= logobs.segment(idxfrom,idxlength).sum();
-	  SIMULATE{
-	    vector<Type> logProb(idxlength);
-	    logProb.setZero();
-	    logProb.segment(0,idxlength-1) = addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
-	    Type logDenom = logExpSum(logProb);
-	    logProb -= logDenom;
-	    Type logTotal = rnorm(log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-				  exp(logSdLogTotalObs(totalParKey++)));
-	    logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
-	  }
-	  break;
-	default:
-	  error("Unknown obsLikelihoodFlag");
-	}
+        }
       }  
     }  
   }
@@ -578,8 +585,8 @@ Type objective_function<Type>::operator() ()
     REPORT(logN);
     REPORT(logobs);
   }
-  REPORT(predObs);
-  REPORT(predSd);
+  //REPORT(predObs);
+  //REPORT(predSd);
   ADREPORT(ssb);
   ADREPORT(logssb);
   ADREPORT(fbar);
