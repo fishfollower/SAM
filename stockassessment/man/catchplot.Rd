@@ -13,7 +13,10 @@ catchplot(fit, obs.show = TRUE, drop = NULL, ...)
 
 \item{drop}{number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information}
 
-\item{...}{extra arguments transferred to plot}
+\item{...}{extra arguments transferred to plot including the following:
+\code{add} logical, plotting is to be added on existing plot
+\code{ci} logical, confidence intervals should be plotted
+\code{cicol} color to plot the confidence polygon}
 }
 \description{
 SAM catch plot

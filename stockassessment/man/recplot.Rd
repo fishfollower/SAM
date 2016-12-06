@@ -9,7 +9,10 @@ recplot(fit, ...)
 \arguments{
 \item{fit}{the object returned from sam.fit}
 
-\item{...}{extra arguments transferred to plot}
+\item{...}{extra arguments transferred to plot including the following:
+\code{add} logical, plotting is to be added on existing plot
+\code{ci} logical, confidence intervals should be plotted
+\code{cicol} color to plot the confidence polygon}
 }
 \description{
 SAM Recruits plot

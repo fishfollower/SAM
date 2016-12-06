@@ -11,9 +11,9 @@ sam.fit(data, conf, parameters, newtonsteps = 3, rm.unidentified = FALSE,
 \arguments{
 \item{data}{data for the sam model as returned from the setup.sam.data function}
 
-\item{conf}{model configuration for the model in a format similar to what is returned from the defcon function}
+\item{conf}{model configuration which can be set up using the \code{\link{defcon}} function and then modified.}
 
-\item{parameters}{initial values for the model in a format similar to what is returned from the defpar function}
+\item{parameters}{initial values which can be set up using the \code{\link{defpar}} function and then modified.}
 
 \item{newtonsteps}{optional extra true extra newton steps}
 
@@ -25,9 +25,12 @@ sam.fit(data, conf, parameters, newtonsteps = 3, rm.unidentified = FALSE,
 
 \item{upper}{named list with upper bounds for optimization (only met before extra newton steps)}
 
-\item{sim.condRE}{logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rahter than also simulating F and N forward from their initial values.}
+\item{sim.condRE}{logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.}
 
 \item{...}{extra arguments to MakeADFun}
+}
+\value{
+an object of class \code{sam}
 }
 \description{
 Fit SAM model

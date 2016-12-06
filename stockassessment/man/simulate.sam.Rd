@@ -4,7 +4,8 @@
 \alias{simulate.sam}
 \title{Simulate from a sam object}
 \usage{
-\method{simulate}{sam}(object, nsim = 1, seed = NULL, ...)
+\method{simulate}{sam}(object, nsim = 1, seed = NULL, full.data = TRUE,
+  ...)
 }
 \arguments{
 \item{object}{sam fitted object (result from sam.fit)}
@@ -12,6 +13,8 @@
 \item{nsim}{number of response lists to simulate. Defaults to 1.}
 
 \item{seed}{random number seed}
+
+\item{full.data}{logical, should each inner list contain a full list of data. Defaults to TRUE}
 
 \item{...}{extra arguments}
 }
