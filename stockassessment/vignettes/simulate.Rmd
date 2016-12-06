@@ -86,6 +86,7 @@ We can also simulate multiple data sets and fit models to the new observations. 
 ```{r parallel fitsims, results='hide'}
 simlist <- simulate(fit, seed=1, nsim=3)
 no_cores <- detectCores() - 1 #how many cores can we use
+if( no_cores>2 ) no_cores <- 2 # Cran check does not allow us to use more than two 
 cl <- makeCluster(no_cores) #set up some number of nodes
 clusterExport(cl, c("conf", "par")) #send these objects to each node
 clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
