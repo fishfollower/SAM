@@ -204,9 +204,9 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE,
 ##' @param fit the object returned from sam.fit 
 ##' @param partial true if included partial F's are to be plotted
 ##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information  
-##' @param ... extra arguments transferred to plot including the following:
-##' \code{add} logical, plotting is to be added on existing plot
-##' \code{ci} logical, confidence intervals should be plotted
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @importFrom graphics matplot
 ##' @details ...
@@ -239,9 +239,9 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
 
 ##' SAM SSB plot 
 ##' @param fit the object returned from sam.fit
-##' @param ... extra arguments transferred to plot including the following:
-##' \code{add} logical, plotting is to be added on existing plot
-##' \code{ci} logical, confidence intervals should be plotted
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @details ...
 ##' @export
@@ -251,9 +251,9 @@ ssbplot<-function(fit, ...){
 
 ##' SAM TSB plot 
 ##' @param fit the object returned from sam.fit
-##' @param ... extra arguments transferred to plot including the following:
-##' \code{add} logical, plotting is to be added on existing plot
-##' \code{ci} logical, confidence intervals should be plotted
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @details ...
 ##' @export
@@ -263,9 +263,9 @@ tsbplot<-function(fit, ...){
 
 ##' SAM Recruits plot 
 ##' @param fit the object returned from sam.fit
-##' @param ... extra arguments transferred to plot including the following:
-##' \code{add} logical, plotting is to be added on existing plot
-##' \code{ci} logical, confidence intervals should be plotted
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @details ...
 ##' @export
@@ -278,9 +278,9 @@ recplot<-function(fit,...){
 ##' @param fit the object returned from sam.fit
 ##' @param obs.show if observations are to be shown also
 ##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information 
-##' @param ... extra arguments transferred to plot including the following:
-##' \code{add} logical, plotting is to be added on existing plot
-##' \code{ci} logical, confidence intervals should be plotted
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @details ...
 ##' @importFrom graphics points
@@ -317,7 +317,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
 ##' SAM parameter plot 
 ##' @param fit the object returned from sam.fit
 ##' @param cor.report.limit correlations with absolute value > this number is reported in the plot 
-##' @param ... extra arguments transferred to plot including the following
+##' @param ... extra arguments transferred to plot
 ##' @details ...
 ##' @export
 ##' @importFrom stats cov2cor
