@@ -370,6 +370,7 @@ Type objective_function<Type>::operator() ()
   vector< density::MVNORM_t<Type> >  nllVec(noFleets);
   vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(noFleets);
   vector< vector<Type> > obsCovScaleVec(noFleets);
+  vector< matrix<Type> > obsCov(noFleets); // for reporting
   for(int f=0; f<noFleets; ++f){
     int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
     matrix<Type> cov(thisdim,thisdim);
@@ -393,9 +394,10 @@ Type objective_function<Type>::operator() ()
 	obsCovScaleVec(f)(i) = tmp(i,i);
       }
       cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
-
+      
     } else { error("Unkown obsCorStruct code"); }
     nllVec(f).setSigma(cov);
+    obsCov(f) = cov;
   }
   //eval likelihood 
   for(int y=0;y<noYears;y++){  
@@ -448,6 +450,7 @@ Type objective_function<Type>::operator() ()
   
   REPORT(predObs);
   REPORT(predSd);
+  REPORT(obsCov);
   ADREPORT(ssb);
   ADREPORT(logssb);
   ADREPORT(fbar);
