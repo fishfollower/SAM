@@ -375,7 +375,7 @@ parplot<-function(fit, cor.report.limit=0.95, ...){
 ##' @param fit the object returned from sam.fit
 ##' @param corr if TRUE return correlation matrices rather than covariances
 ##' @return a list of matrices
-##' @author Casper
+##' @export
 obscov<-function(fit, corr=FALSE){
     stopifnot(class(fit)=="sam")
     res<-fit$rep$obsCov
@@ -559,6 +559,7 @@ plotcorr<-function(corr, outline = TRUE, col = "grey", numbers = FALSE,
 ##' Plots the estimated correlation matrices by fleet.
 ##' @param fit the object returned from sam.fit
 ##' @param ... extra arguments to plot
+##' @export
 obscorrplot<-function(fit,...){
     ccolors <- c("#A50F15","#DE2D26","#FB6A4A","#FCAE91","#FEE5D9","white",
                  "#EFF3FF","#BDD7E7","#6BAED6","#3182BD","#08519C")
