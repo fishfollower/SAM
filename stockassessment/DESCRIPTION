@@ -7,10 +7,13 @@ Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.d
             person("Kasper","Kristensen",role="aut"))
 Description: Fitting SAM...
 License: GPL-2
-Imports: TMB
+Imports:
+    TMB
 LinkingTo: TMB, RcppEigen
-Suggests: knitr
+Suggests:
+    knitr
 VignetteBuilder: knitr
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
 BugReports: https://github.com/fishfollower/SAM/issues
+RoxygenNote: 5.0.1

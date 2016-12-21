@@ -388,14 +388,14 @@ obscov<-function(fit, corr=FALSE){
 ##' confidence region for two parameters.
 ##' 
 ##' Taken from the 'ellipse' package.
-##' @param x An object. In the default method the parameter ‘x’ should be
+##' @param x An object. In the default method the parameter 'x' should be
 ##' a correlation between -1 and 1 or a square positive definite
 ##' matrix at least 2x2 in size. It will be treated as the
 ##' correlation or covariance of a multivariate normal
 ##' distribution.
-##' @param scale If ‘x’ is a correlation matrix, then the standard deviations
+##' @param scale If 'x' is a correlation matrix, then the standard deviations
 ##' of each parameter can be given in the scale parameter.  This
-##' defaults to ‘c(1, 1)’, so no rescaling will be done.
+##' defaults to 'c(1, 1)', so no rescaling will be done.
 ##' @param centre The centre of the ellipse will be at this position.
 ##' @param level The confidence level of a pairwise confidence region.  The
 ##' default is 0.95, for a 95% region.  This is used to control
@@ -408,8 +408,8 @@ obscov<-function(fit, corr=FALSE){
 ##' matrix will be plotted.  The default is the first 2.
 ##' @param npoints The number of points used in the ellipse.  Default is 100.
 ##' @param ... Descendant methods may require additional parameters.
-##' @return An ‘npoints’ x ‘2’ matrix is returned with columns named according
-##' to the row names of the matrix ‘x’ (default ‘'x'’ and ‘'y'’),
+##' @return An 'npoints' x '2' matrix is returned with columns named according
+##' to the row names of the matrix 'x' (default ''x'' and ''y''),
 ##' suitable for plotting.
 ellipse<-function (x, scale = c(1, 1), centre = c(0, 0), level = 0.95, 
                    t = sqrt(qchisq(level, 2)), which = c(1, 2), npoints = 100, 
@@ -443,25 +443,24 @@ ellipse<-function (x, scale = c(1, 1), centre = c(0, 0), level = 0.95,
 ##' the density of a bivariate normal with the matching correlation.
 ##'
 ##' Taken from the 'ellipse' package.
-##' @title 
-##' @param corr A matrix containing entries between ‘-1’ and ‘1’ to be plotted as correlations.
+##' @param corr A matrix containing entries between '-1' and '1' to be plotted as correlations.
 ##' @param outline Whether the ellipses should be outlined in the default colour.
 ##' @param col Which colour(s) to use to fill the ellipses.
 ##' @param numbers Whether to plot numerical correlations in place of ellipses.
-##'           If numbers is ‘TRUE’, then the correlations will be rounded
+##'           If numbers is 'TRUE', then the correlations will be rounded
 ##'           to a single decimal place and placed on the plot.
-##' @param type Character. Plot ‘"full"’ matrix or just ‘"upper"’ or
-##' ‘"lower"’ triangular part of it.
+##' @param type Character. Plot '"full"' matrix or just '"upper"' or
+##' '"lower"' triangular part of it.
 ##' @param diag Logical. Plot diagonal elements or not.
-##' @param bty for ‘plot’
-##' @param axes for ‘plot’
-##' @param xlab for ‘plot’
-##' @param ylab for ‘plot’
-##' @param asp for ‘plot’
-##' @param cex.lab for ‘plot’
-##' @param cex for ‘plot’
-##' @param mar for ‘plot’
-##' @param ... for ‘plot’
+##' @param bty for 'plot'
+##' @param axes for 'plot'
+##' @param xlab for 'plot'
+##' @param ylab for 'plot'
+##' @param asp for 'plot'
+##' @param cex.lab for 'plot'
+##' @param cex for 'plot'
+##' @param mar for 'plot'
+##' @param ... for 'plot'
 plotcorr<-function(corr, outline = TRUE, col = "grey", numbers = FALSE, 
     type = c("full", "lower", "upper"), diag = (type == "full"), 
     bty = "n", axes = FALSE, xlab = "", ylab = "", asp = 1, cex.lab = par("cex.lab"), 
@@ -557,14 +556,9 @@ plotcorr<-function(corr, outline = TRUE, col = "grey", numbers = FALSE,
     invisible()
 }
 
-##' .. content for \description{} (no empty lines) ..
-##'
-##' .. content for \details{} ..
-##' @title 
-##' @param fit 
-##' @param ... 
-##' @return 
-##' @author Casper
+##' Plots the estimated correlation matrices by fleet.
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments to plot
 obscorrplot<-function(fit,...){
     ccolors <- c("#A50F15","#DE2D26","#FB6A4A","#FCAE91","#FEE5D9","white",
                  "#EFF3FF","#BDD7E7","#6BAED6","#3182BD","#08519C")
