@@ -208,7 +208,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(rec_loga); 
   PARAMETER_VECTOR(rec_logb); 
   PARAMETER_VECTOR(itrans_rho); 
-  PARAMETER_VECTOR(logScale); 
+  PARAMETER_VECTOR(logScale);
+  PARAMETER_VECTOR(logitReleaseSurvival);   
+  PARAMETER_VECTOR(logitRecapturePhi);   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
@@ -228,10 +230,14 @@ Type objective_function<Type>::operator() ()
   vector<Type> logtsb(timeSteps);
   vector<Type> logR(timeSteps);
   vector<Type> R(timeSteps);
+
+  vector<Type> releaseSurvival(logitReleaseSurvival.size());
+  if(releaseSurvival.size()>0)releaseSurvival=invlogit(logitReleaseSurvival);
+  vector<Type> recapturePhi(logitRecapturePhi.size());
+  if(recapturePhi.size()>0)recapturePhi=invlogit(logitRecapturePhi);
   
   vector<Type> IRARdist(transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
   if(transfIRARdist.size()>0) IRARdist=exp(transfIRARdist);
-
   vector< vector<Type> > sigmaObsParVec(noFleets);
   int nfleet = maxAgePerFleet(0)-minAgePerFleet(0)+1;
   int dn=nfleet*(nfleet-1)/2;
@@ -430,6 +436,8 @@ Type objective_function<Type>::operator() ()
   
       case 5:
   	    //predObs(i)=Type(0);
+        if((a+minAge)>maxAge){a=maxAge-minAge;} 
+	predObs(i)=exp(log(aux(i,6))+log(aux(i,5))-logN(a,y)-log(1000))*releaseSurvival(0);
       break;
   
       case 6:
@@ -537,7 +545,13 @@ Type objective_function<Type>::operator() ()
 	      error("Unknown obsLikelihoodFlag");
 	  }
         }
-      }  
+      }else{ //fleetTypes(f)==5     
+        if(!isNAINT(idx1(f,y))){    
+          for(int i=idx1(f,y); i<=idx2(f,y); ++i){
+            ans += -dnbinom(logobs(i),predObs(i)*recapturePhi(0)/(Type(1.0)-recapturePhi(0)),recapturePhi(0),true);
+          }
+        }   
+      }   
     }  
   }
   
@@ -585,7 +599,7 @@ Type objective_function<Type>::operator() ()
     REPORT(logN);
     REPORT(logobs);
   }
-  //REPORT(predObs);
+  REPORT(predObs);
   //REPORT(predSd);
   ADREPORT(ssb);
   ADREPORT(logssb);
