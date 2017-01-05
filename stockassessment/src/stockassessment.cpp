@@ -549,6 +549,9 @@ Type objective_function<Type>::operator() ()
         if(!isNAINT(idx1(f,y))){    
           for(int i=idx1(f,y); i<=idx2(f,y); ++i){
             ans += -dnbinom(logobs(i),predObs(i)*recapturePhi(0)/(Type(1.0)-recapturePhi(0)),recapturePhi(0),true);
+            SIMULATE{
+	      logobs(i) = rnbinom(predObs(i)*recapturePhi(0)/(Type(1.0)-recapturePhi(0)),recapturePhi(0));
+            }
           }
         }   
       }   
