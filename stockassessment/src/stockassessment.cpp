@@ -196,6 +196,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(fbarRange);
   DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
   DATA_FACTOR(obsLikelihoodFlag);
+  DATA_IVECTOR(cutReleaseSurvival);
 
   PARAMETER_VECTOR(logFpar); 
   PARAMETER_VECTOR(logQpow); 
@@ -232,10 +233,24 @@ Type objective_function<Type>::operator() ()
   vector<Type> R(timeSteps);
 
   vector<Type> releaseSurvival(logitReleaseSurvival.size());
-  if(releaseSurvival.size()>0)releaseSurvival=invlogit(logitReleaseSurvival);
+  vector<Type> releaseSurvivalVec(noYears);
+  if(releaseSurvival.size()>0){
+    releaseSurvival=invlogit(logitReleaseSurvival);
+    for(int j=0; j<noYears; ++j){
+      releaseSurvivalVec(j)=releaseSurvival(0);
+    }
+    for(int i=0; i<cutReleaseSurvival.size(); ++i){
+      for(int j=0; j<noYears; ++j){
+        if(years(j)<=cutReleaseSurvival(i))releaseSurvivalVec(j)=releaseSurvival(i+1);
+      } 
+    }
+  }
+
   vector<Type> recapturePhi(logitRecapturePhi.size());
   if(recapturePhi.size()>0)recapturePhi=invlogit(logitRecapturePhi);
-  
+    
+
+
   vector<Type> IRARdist(transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
   if(transfIRARdist.size()>0) IRARdist=exp(transfIRARdist);
   vector< vector<Type> > sigmaObsParVec(noFleets);
@@ -437,7 +452,7 @@ Type objective_function<Type>::operator() ()
       case 5:
   	    //predObs(i)=Type(0);
         if((a+minAge)>maxAge){a=maxAge-minAge;} 
-	predObs(i)=exp(log(aux(i,6))+log(aux(i,5))-logN(a,y)-log(1000))*releaseSurvival(0);
+	predObs(i)=exp(log(aux(i,6))+log(aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(y);
       break;
   
       case 6:
