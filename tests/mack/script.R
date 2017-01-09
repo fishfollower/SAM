@@ -13,15 +13,12 @@ sw<-read.ices("sw.dat")
 surveys<-read.ices("survey.dat")
 
 recap<-read.table("tag.dat", header=TRUE)
-
+recap<-recap[recap$Type==1 & recap$RecaptureY<=2006,]
 recap<-recap[recap[,1]>=min(as.numeric(rownames(sw))), ]
 
-W<-matrix(1,nrow=nrow(cn), ncol=ncol(cn))
-W[as.numeric(rownames(cn))<2000]<-100
+W<-matrix(NA,nrow=nrow(cn), ncol=ncol(cn))
+W[as.numeric(rownames(cn))<2000]<-10
 attr(cn,"weight")<-W
-#cn[1,1:11]<-NA
-#cn[2:5,]<-NA
-
 
 dat<-setup.sam.data(surveys=surveys,
                     residual.fleet=cn, 
