@@ -167,6 +167,7 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(idx2);    // maximum index of obs by fleet x year
   DATA_IARRAY(aux);
   DATA_VECTOR(logobs);
+  DATA_VECTOR(weight);
   DATA_VECTOR_INDICATOR(keep, logobs);
   DATA_ARRAY(propMat);
   DATA_ARRAY(stockMeanWeight); 
@@ -197,6 +198,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
   DATA_FACTOR(obsLikelihoodFlag);
   DATA_IVECTOR(cutReleaseSurvival);
+  DATA_INTEGER(fixVarToWeight);
 
   PARAMETER_VECTOR(logFpar); 
   PARAMETER_VECTOR(logQpow); 
@@ -529,9 +531,28 @@ Type objective_function<Type>::operator() ()
         if(!isNAINT(idx1(f,y))){
           int idxfrom=idx1(f,y);
           int idxlength=idx2(f,y)-idx1(f,y)+1;
+
+          vector<Type> currentVar=nllVec(f).cov().diagonal();
+          vector<Type> sqrtW(currentVar.size());
+
   	  switch(obsLikelihoodFlag(f)){
 	  case 0: // (LN) log-Normal distribution
-	    ans += nllVec(f)(logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength),keep.segment(idxfrom,idxlength));
+            
+            for(int idxV=0; idxV<currentVar.size(); ++idxV){
+              if(isNA(weight(idxfrom+idxV))){
+                sqrtW(idxV)=Type(1.0);
+              }else{
+                if(fixVarToWeight==1){ 
+                  sqrtW(idxV)=sqrt(weight(idxfrom+idxV)/currentVar(idxV));
+                }else{
+                  sqrtW(idxV)=sqrt(Type(1)/weight(idxfrom+idxV));
+                }
+              }
+            }
+
+	    ans += nllVec(f)((logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
+            ans += log(sqrtW).sum();
+
 	    SIMULATE{
 	      logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
 	    }
@@ -618,7 +639,7 @@ Type objective_function<Type>::operator() ()
     REPORT(logobs);
   }
   REPORT(predObs);
-  //REPORT(predSd);
+  //REPORT(sqrtW);
   ADREPORT(ssb);
   ADREPORT(logssb);
   ADREPORT(fbar);

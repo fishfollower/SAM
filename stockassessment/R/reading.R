@@ -243,6 +243,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   type<-NULL
   time<-NULL
   dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
+  weight<-NULL
   doone<-function(m){
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
@@ -250,6 +251,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     age<-as.integer(colnames(m)[col(m)])
     aux<-as.vector(m)
     dat<<-rbind(dat,data.frame(year,fleet,age,aux))
+    if("weight"%in%names(attributes(m))){
+      weight<<-c(weight,as.vector(attr(m,"weight")))
+    }else{
+      weight<<-c(weight,rep(NA,length(year)))
+    }
   }
   if(!is.null(residual.fleet)){
     doone(residual.fleet)
@@ -306,6 +312,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type")])
     dat[names(tag)[!names(tag)%in%names(dat)]]<-NA
     dat<-rbind(dat, tag)
+    weight<-c(weight,rep(NA,nrow(tag)))
     type<-c(type,5)
     time<-c(time,0)
   }
@@ -316,6 +323,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   names(time)<-NULL
   attr(dat,'time')<-time
   dat<-dat[o,]
+  weight<-weight[o]
   newyear<-min(as.numeric(dat$year)):max(as.numeric(dat$year))
   newfleet<-min(as.numeric(dat$fleet)):max(as.numeric(dat$fleet))
   mmfun<-function(f,y, ff){idx<-which(dat$year==y & dat$fleet==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
@@ -350,6 +358,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     idx2=attr(dat,'idx2'),
     aux=data.matrix(dat[,-4]),
     logobs=log(dat[,4]),
+    weight=as.numeric(weight),
     propMat=attr(dat,'prop.mature'),
     stockMeanWeight=attr(dat,'stock.mean.weight'),
     catchMeanWeight=attr(dat,'catch.mean.weight'),
