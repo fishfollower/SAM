@@ -383,8 +383,11 @@ Type objective_function<Type>::operator() ()
     f=aux(i,1);
     ft=fleetTypes(f-1);
     a=aux(i,2)-minAge;
-    zz=exp(logF(keyLogFsta(0,a),y))+natMor(y,a);
-    
+    zz = natMor(y,a);
+    if(keyLogFsta(0,a)>(-1)){
+      zz+=exp(logF(keyLogFsta(0,a),y));
+    }
+
     switch(ft){
       case 0:
         predObs(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
@@ -549,8 +552,11 @@ Type objective_function<Type>::operator() ()
   for(int y=0;y<catchMeanWeight.dim(0);y++){  
     cat(y)=Type(0);
     for(int a=minAge;a<=maxAge;a++){  
-      Type z=exp(logF(keyLogFsta(0,a-minAge),y))+natMor(y,a-minAge);
-      cat(y)+=exp(logF(keyLogFsta(0,a-minAge),y))/z*exp(logN(a-minAge,y))*(Type(1.0)-exp(-z))*catchMeanWeight(y,a-minAge);
+      Type z=natMor(y,a-minAge);
+      if(keyLogFsta(0,a-minAge)>(-1)){
+        z+=exp(logF(keyLogFsta(0,a-minAge),y));
+        cat(y)+=exp(logF(keyLogFsta(0,a-minAge),y))/z*exp(logN(a-minAge,y))*(Type(1.0)-exp(-z))*catchMeanWeight(y,a-minAge);
+      }
     }
     logCatch(y)=log(cat(y));
   }
