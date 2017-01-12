@@ -16,7 +16,7 @@ setwd(tempdir())
 filestoget <- c("cn.dat", "cw.dat", "dw.dat", "lf.dat", "lw.dat", 
                 "mo.dat", "nm.dat", "pf.dat", "pm.dat", "sw.dat", 
                 "survey.dat")
-url <- "https://raw.githubusercontent.com/fishfollower/SAM/master/tests/nsher/"
+url <- "https://raw.githubusercontent.com/fishfollower/SAM/master/stockassessment/tests/nsher/"
 d <- lapply(filestoget, function(f)download.file(paste(url,f,sep=""), f))
 ```
 Now the files should be downloaded to our current working directory. Next we read in the data files and create a collected data object: 

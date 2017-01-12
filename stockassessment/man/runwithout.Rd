@@ -7,11 +7,11 @@
 runwithout(fit, year = NULL, fleet = NULL, ...)
 }
 \arguments{
-\item{fit}{a fittes model objest as returned from sam.fit}
+\item{fit}{a fitted model object as returned from sam.fit}
 
-\item{year}{a vector of years to be excluded.  When both fleet and year are supplied they need to be of same length as only the pairs are excluded}
+\item{year}{a vector of years to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded}
 
-\item{fleet}{a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length as only the pairs are excluded}
+\item{fleet}{a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded}
 
 \item{...}{extra arguments to sam.fit}
 }

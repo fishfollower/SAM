@@ -331,8 +331,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   idx2<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=max)
   attr(dat,'idx1')<-idx1
   attr(dat,'idx2')<-idx2    
-  attr(dat,"minAgePerFleet")<-as.integer(tapply(dat[,"age"], INDEX=dat[,"fleet"], FUN=min))
-  attr(dat,"maxAgePerFleet")<-as.integer(tapply(dat[,"age"], INDEX=dat[,"fleet"], FUN=max))
+  attr(dat,"minAgePerFleet")<-tapply(as.integer(dat[,"age"]), INDEX=dat[,"fleet"], FUN=min)
+  attr(dat,"maxAgePerFleet")<-tapply(as.integer(dat[,"age"]), INDEX=dat[,"fleet"], FUN=max)
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
