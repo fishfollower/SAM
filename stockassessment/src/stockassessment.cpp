@@ -509,24 +509,24 @@ Type objective_function<Type>::operator() ()
         neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
         matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
   
-      tmp.setZero();
-      int offset = minAgePerFleet(f)-minAge;
-      obsCovScaleVec(f).resize(tmp.rows());
-      for(int i=0; i<tmp.rows(); i++) {
-	tmp(i,i) = sqrt(varLogObs(keyVarObs(f,i+offset)));
-	obsCovScaleVec(f)(i) = tmp(i,i);
+        tmp.setZero();
+        int offset = minAgePerFleet(f)-minAge;
+        obsCovScaleVec(f).resize(tmp.rows());
+        for(int i=0; i<tmp.rows(); i++) {
+	  tmp(i,i) = sqrt(varLogObs(keyVarObs(f,i+offset)));
+	  obsCovScaleVec(f)(i) = tmp(i,i);
+        }
+        cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+      } else { error("Unkown obsCorStruct code"); }
+      if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
+        nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
+        obsCov(f) = cov.block(0,0,thisdim-1,thisdim-1);
+      }else{
+        nllVec(f).setSigma(cov);
+        obsCov(f) = cov;
       }
-      cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
-    } else { error("Unkown obsCorStruct code"); }
-    if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
-      nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
-      obsCov(f) = cov.block(0,0,thisdim-1,thisdim-1);
-    }else{
-      nllVec(f).setSigma(cov);
-      obsCov(f) = cov;
     }
   }
-  
   //eval likelihood 
   for(int y=0;y<noYears;y++){
     int totalParKey = 0;
