@@ -38,8 +38,10 @@ defpar <- function(dat,conf){
   ret$rec_logb=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)} 
   ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
   ret$logScale=numeric(conf$noScaledYears)
-  ret$logitReleaseSurvival=if(any(dat$aux[,2]==5)){numeric(length(conf$cutReleaseSurvival)+1)}else{numeric(0)}
-  ret$logitRecapturePhi=if(any(dat$aux[,2]==5)){numeric(1)}else{numeric(0)}
+  ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))
+                           }else{numeric(0)}
+  ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(ret$logitReleaseSurvival))
+                        }else{numeric(0)}
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
   return(ret)

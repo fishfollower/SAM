@@ -100,7 +100,6 @@ defcon<-function(dat){
   ret$fbarRange <- ages[fleetTypes==0,]
 
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
-  ret$cutReleaseSurvival <- integer(0)
   ret$fixVarToWeight <- 0
   return(ret) 
 }

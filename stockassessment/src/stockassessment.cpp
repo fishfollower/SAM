@@ -197,7 +197,6 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(fbarRange);
   DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
   DATA_FACTOR(obsLikelihoodFlag);
-  DATA_IVECTOR(cutReleaseSurvival);
   DATA_INTEGER(fixVarToWeight);
 
   PARAMETER_VECTOR(logFpar); 
@@ -235,23 +234,20 @@ Type objective_function<Type>::operator() ()
   vector<Type> R(timeSteps);
 
   vector<Type> releaseSurvival(logitReleaseSurvival.size());
-  vector<Type> releaseSurvivalVec(noYears);
-  if(releaseSurvival.size()>0){
+  vector<Type> recapturePhi(logitRecapturePhi.size());
+  vector<Type> releaseSurvivalVec(nobs);
+  vector<Type> recapturePhiVec(nobs);
+
+  if(logitReleaseSurvival.size()>0){
     releaseSurvival=invlogit(logitReleaseSurvival);
-    for(int j=0; j<noYears; ++j){
-      releaseSurvivalVec(j)=releaseSurvival(0);
-    }
-    for(int i=0; i<cutReleaseSurvival.size(); ++i){
-      for(int j=0; j<noYears; ++j){
-        if(years(j)<=cutReleaseSurvival(i))releaseSurvivalVec(j)=releaseSurvival(i+1);
-      } 
+    recapturePhi=invlogit(logitRecapturePhi);
+    for(int j=0; j<nobs; ++j){
+      if(!isNAINT(aux(j,7))){
+        releaseSurvivalVec(j)=releaseSurvival(aux(j,7)-1);
+        recapturePhiVec(j)=recapturePhi(aux(j,7)-1);
+      }
     }
   }
-
-  vector<Type> recapturePhi(logitRecapturePhi.size());
-  if(recapturePhi.size()>0)recapturePhi=invlogit(logitRecapturePhi);
-    
-
 
   vector<Type> IRARdist(transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
   if(transfIRARdist.size()>0) IRARdist=exp(transfIRARdist);
@@ -458,7 +454,7 @@ Type objective_function<Type>::operator() ()
       case 5:
   	    //predObs(i)=Type(0);
         if((a+minAge)>maxAge){a=maxAge-minAge;} 
-	predObs(i)=exp(log(aux(i,6))+log(aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(y);
+	predObs(i)=exp(log(aux(i,6))+log(aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(i);
       break;
   
       case 6:
@@ -588,9 +584,9 @@ Type objective_function<Type>::operator() ()
       }else{ //fleetTypes(f)==5     
         if(!isNAINT(idx1(f,y))){    
           for(int i=idx1(f,y); i<=idx2(f,y); ++i){
-            ans += -dnbinom(logobs(i),predObs(i)*recapturePhi(0)/(Type(1.0)-recapturePhi(0)),recapturePhi(0),true);
+            ans += -dnbinom(logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
             SIMULATE{
-	      logobs(i) = rnbinom(predObs(i)*recapturePhi(0)/(Type(1.0)-recapturePhi(0)),recapturePhi(0));
+	      logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
             }
           }
         }   
