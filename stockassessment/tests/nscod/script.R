@@ -43,4 +43,4 @@ conf$keyParScaledYA <- row(matrix(NA, nrow=13, ncol=6))-1
 conf$fbarRange <- c(2,4)
 
 par<-defpar(dat,conf)
-fit<-sam.fit(dat,conf,par, newtonsteps=3)
+fit<-sam.fit(dat,conf,par, newtonsteps=0)
