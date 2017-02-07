@@ -383,8 +383,11 @@ Type objective_function<Type>::operator() ()
     f=aux(i,1);
     ft=fleetTypes(f-1);
     a=aux(i,2)-minAge;
-    zz=exp(logF(keyLogFsta(0,a),y))+natMor(y,a);
-    
+    zz = natMor(y,a);
+    if(keyLogFsta(0,a)>(-1)){
+      zz+=exp(logF(keyLogFsta(0,a),y));
+    }
+
     switch(ft){
       case 0:
         predObs(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
@@ -461,6 +464,7 @@ Type objective_function<Type>::operator() ()
   vector< density::MVNORM_t<Type> >  nllVec(noFleets);
   vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(noFleets);
   vector< vector<Type> > obsCovScaleVec(noFleets);
+  vector< matrix<Type> > obsCov(noFleets); // for reporting
   for(int f=0; f<noFleets; ++f){
     int thisdim=maxAgePerFleet(f)-minAgePerFleet(f)+1;
     matrix<Type> cov(thisdim,thisdim);
@@ -484,12 +488,13 @@ Type objective_function<Type>::operator() ()
 	obsCovScaleVec(f)(i) = tmp(i,i);
       }
       cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
-
     } else { error("Unkown obsCorStruct code"); }
     if(obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
       nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
+      obsCov(f) = cov.block(0,0,thisdim-1,thisdim-1);
     }else{
       nllVec(f).setSigma(cov);
+      obsCov(f) = cov;
     }
   }
   
@@ -547,8 +552,11 @@ Type objective_function<Type>::operator() ()
   for(int y=0;y<catchMeanWeight.dim(0);y++){  
     cat(y)=Type(0);
     for(int a=minAge;a<=maxAge;a++){  
-      Type z=exp(logF(keyLogFsta(0,a-minAge),y))+natMor(y,a-minAge);
-      cat(y)+=exp(logF(keyLogFsta(0,a-minAge),y))/z*exp(logN(a-minAge,y))*(Type(1.0)-exp(-z))*catchMeanWeight(y,a-minAge);
+      Type z=natMor(y,a-minAge);
+      if(keyLogFsta(0,a-minAge)>(-1)){
+        z+=exp(logF(keyLogFsta(0,a-minAge),y));
+        cat(y)+=exp(logF(keyLogFsta(0,a-minAge),y))/z*exp(logN(a-minAge,y))*(Type(1.0)-exp(-z))*catchMeanWeight(y,a-minAge);
+      }
     }
     logCatch(y)=log(cat(y));
   }
@@ -580,6 +588,7 @@ Type objective_function<Type>::operator() ()
   }
   REPORT(predObs);
   REPORT(predSd);
+  REPORT(obsCov);
   ADREPORT(ssb);
   ADREPORT(logssb);
   ADREPORT(fbar);

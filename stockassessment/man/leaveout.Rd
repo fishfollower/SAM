@@ -4,20 +4,17 @@
 \alias{leaveout}
 \title{leaveout run}
 \usage{
-leaveout(fit, fleet = as.list(2:fit$data$noFleets),
-  ncores = detectCores(all.tests = FALSE, logical = TRUE), mc.silent = TRUE,
+leaveout(fit, fleet = as.list(2:fit$data$noFleets), ncores = detectCores(),
   ...)
 }
 \arguments{
-\item{fit}{a fittes model objest as returned from sam.fit}
+\item{fit}{a fitted model object as returned from sam.fit}
 
 \item{fleet}{a list of vectors. Each element in the list specifies a run where the fleets mentioned are omitted}
 
 \item{ncores}{the number of cores to attemp to use}
 
-\item{mc.silent}{logical to indicate is output is to be suppressed}
-
-\item{...}{extra arguments to sam.fit}
+\item{...}{extra arguments to \code{\link{sam.fit}}}
 }
 \description{
 leaveout run

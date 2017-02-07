@@ -13,9 +13,9 @@ fbarplot(fit, partial = (class(fit) == "sam"), drop = NULL, ...)
 
 \item{drop}{number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information}
 
-\item{...}{extra arguments transferred to plot including the following:
-\code{add} logical, plotting is to be added on existing plot
-\code{ci} logical, confidence intervals should be plotted
+\item{...}{extra arguments transferred to plot including the following: \cr
+\code{add} logical, plotting is to be added on existing plot \cr
+\code{ci} logical, confidence intervals should be plotted \cr
 \code{cicol} color to plot the confidence polygon}
 }
 \description{

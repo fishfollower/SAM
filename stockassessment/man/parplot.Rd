@@ -11,7 +11,7 @@ parplot(fit, cor.report.limit = 0.95, ...)
 
 \item{cor.report.limit}{correlations with absolute value > this number is reported in the plot}
 
-\item{...}{extra arguments transferred to plot including the following}
+\item{...}{extra arguments transferred to plot}
 }
 \description{
 SAM parameter plot

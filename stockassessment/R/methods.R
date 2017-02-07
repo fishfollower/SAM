@@ -178,13 +178,14 @@ summary.sam<-function(object, ...){
 ##' @export
 simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, ...){
   if(!is.null(seed)) set.seed(seed)
+  est <- unlist(object$pl)
   if(full.data){
     ret <- replicate(nsim, 
     	c(object$data[names(object$data)!="logobs"],#all the old data
-    	object$obj$simulate()["logobs"])#simulated observations
+    	object$obj$simulate(est)["logobs"])#simulated observations
     	, simplify=FALSE)
   }else{
-  	ret <- replicate(nsim, object$obj$simulate(), simplify=FALSE)
+  	ret <- replicate(nsim, object$obj$simulate(est), simplify=FALSE)
   }
   ret
 }
