@@ -80,10 +80,20 @@ read.surveys<-function(filen){
       stop(paste("In file",filen, ": Maximum survey time is expected greater than minimum survey time for fleet number",i))
     } 
   }
+    
+  as.num <- function(x, na.strings = "NA") {
+    stopifnot(is.character(x))
+    na = x %in% na.strings
+    x[na] = 0
+    x = as.numeric(x)
+    x[na] = NA_real_
+    x
+  }
+    
   onemat<-function(i){
     lin.local<-gsub('^[[:blank:]]*','',lin[(idx1[i]+4):idx2[i]])
     nr<-idx2[i]-idx1[i]-3
-    ret<-matrix(as.numeric(unlist((strsplit(lin.local,'[[:space:]]+')))),nrow=nr, byrow=TRUE)[,,drop=FALSE]   #[,1:(2+ages[i,2]-ages[i,1]),drop=FALSE]
+    ret<-matrix(as.num(unlist((strsplit(lin.local,'[[:space:]]+')))),nrow=nr, byrow=TRUE)[,,drop=FALSE]   #[,1:(2+ages[i,2]-ages[i,1]),drop=FALSE]
     if(nrow(ret)!=(years[i,2]-years[i,1]+1)){
       stop(paste("In file",filen, ": Year range specified does not match number of rows for survey fleet number",i))
     } 
