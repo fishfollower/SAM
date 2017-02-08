@@ -139,3 +139,5 @@ plot(lo)
 <p align="center">
   <img src="figs/lo.png?raw=true">
 </p>
+
+[![Build Status](https://travis-ci.org/fishfollower/SAM.svg?branch=master)](https://travis-ci.org/fishfollower/SAM)
