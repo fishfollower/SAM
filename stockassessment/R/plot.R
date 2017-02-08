@@ -476,6 +476,8 @@ ellipse<-function (x, scale = c(1, 1), centre = c(0, 0), level = 0.95,
 ##' @param cex for 'plot'
 ##' @param mar for 'plot'
 ##' @param ... for 'plot'
+##' @importFrom graphics plot.new strwidth text 
+##' @importFrom stats qchisq
 plotcorr<-function(corr, outline = TRUE, col = "grey", numbers = FALSE, 
     type = c("full", "lower", "upper"), diag = (type == "full"), 
     bty = "n", axes = FALSE, xlab = "", ylab = "", asp = 1, cex.lab = par("cex.lab"), 
