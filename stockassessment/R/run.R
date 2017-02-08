@@ -75,7 +75,7 @@ getUpperBounds<-function(parameters){
     
 ##' remove void catches
 ##' @param dat data for the sam model as returned from the setup.sam.data function
-##' $conf model configuration which can be set up using the \code{\link{defcon}} function and then modified
+##' @param conf model configuration which can be set up using the \code{\link{defcon}} function and then modified
 ##' @return an updated dataset without the catches where F is fixed to zero
 clean.void.catches<-function(dat, conf){
   rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)

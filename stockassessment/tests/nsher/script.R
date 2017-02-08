@@ -36,4 +36,4 @@ conf$keyLogFpar<-matrix(c(
 par<-defpar(dat,conf)
 par$logFpar<-rep(0,9)
 
-fit<-sam.fit(dat,conf,par, newtonsteps=0)
+fit<-sam.fit(dat,conf,par, newtonsteps=3)

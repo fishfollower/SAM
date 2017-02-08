@@ -7,8 +7,9 @@
 clean.void.catches(dat, conf)
 }
 \arguments{
-\item{dat}{data for the sam model as returned from the setup.sam.data function
-$conf model configuration which can be set up using the \code{\link{defcon}} function and then modified}
+\item{dat}{data for the sam model as returned from the setup.sam.data function}
+
+\item{conf}{model configuration which can be set up using the \code{\link{defcon}} function and then modified}
 }
 \value{
 an updated dataset without the catches where F is fixed to zero
