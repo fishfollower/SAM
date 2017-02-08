@@ -4,7 +4,7 @@
 \alias{sam.fit}
 \title{Fit SAM model}
 \usage{
-sam.fit(data, conf, parameters, newtonsteps = 0, rm.unidentified = FALSE,
+sam.fit(data, conf, parameters, newtonsteps = 3, rm.unidentified = FALSE,
   run = TRUE, lower = getLowerBounds(parameters),
   upper = getUpperBounds(parameters), sim.condRE = TRUE, ...)
 }
