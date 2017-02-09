@@ -9,13 +9,13 @@
 ##' @param add logical, plotting is to be added on existing plot
 ##' @param ci logical, confidence intervals should be plotted
 ##' @param cicol color to plot the confidence polygon
-##' @param dropAddCI logicial don't plot CI for added fits 
+##' @param addCI logicial plot CI for added fits 
 ##' @param drop number of years to be left unplotted at the end.
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
-##' @details ...
-.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), dropAddCI=FALSE, drop=0, ...){
+##' @details The basic plotting used bu many of the plotting functions (e.g. ssbplot, fbarplot ...) 
+.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), addCI=FALSE, drop=0, ...){
   if(class(fit)!="samset"){ 
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
@@ -44,10 +44,10 @@
     }
     if(is.null(x))x=attr(fit,"fit")$data$years
     .plotit(attr(fit,"fit"), what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop,...)
-    if(dropAddCI){
-      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
+    if(addCI){
+      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, col=colSet[(i-1)%%length(colSet)+1], cicol=paste0(colSet[(i-1)%%length(colSet)+1],"80"), drop=drop, ...)) 
     }else{
-      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, col=colSet[(i-1)%%length(colSet)+1], cicol=paste0(colSet[(i-1)%%length(colSet)+1],"80"), drop=drop, ...))
+      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
     }
   }
 }
@@ -68,7 +68,7 @@
 ##' @param ... additional graphical parameters 
 ##' @importFrom graphics plot layout axis box mtext legend
 ##' @importFrom grDevices gray rgb
-##' @details ...
+##' @details Function used for splitting plots e.g. used to plot residuals 
 ##' @export
 ##' @examples
 ##' exdat<-expand.grid(age=1:5, year=1950:2016, fleet=1:3)
@@ -214,7 +214,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE,
 ##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @importFrom graphics matplot
-##' @details ...
+##' @details Plot the defined fbar. 
 ##' @export
 fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
   if(class(fit)=="sam"){
@@ -248,7 +248,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
 ##' \code{add} logical, plotting is to be added on existing plot \cr
 ##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
-##' @details ...
+##' @details Plot of spawning stock biomass 
 ##' @export
 ssbplot<-function(fit, ...){
   .plotit(fit, "logssb", ylab="SSB", trans=exp,...)
@@ -260,7 +260,7 @@ ssbplot<-function(fit, ...){
 ##' \code{add} logical, plotting is to be added on existing plot \cr
 ##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
-##' @details ...
+##' @details Plot of total stock biomass
 ##' @export
 tsbplot<-function(fit, ...){
   .plotit(fit, "logtsb", ylab="TSB", trans=exp,...)
@@ -272,7 +272,7 @@ tsbplot<-function(fit, ...){
 ##' \code{add} logical, plotting is to be added on existing plot \cr
 ##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
-##' @details ...
+##' @details Plot of numbers of recruits (youngest age class)
 ##' @export
 recplot<-function(fit,...){
    lab<-paste("Recruits (age ", fit$conf$minAge, ")", sep="")
@@ -287,7 +287,7 @@ recplot<-function(fit,...){
 ##' \code{add} logical, plotting is to be added on existing plot \cr
 ##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
-##' @details ...
+##' @details Plot of estimated (and optionally observed) total catch in weight  
 ##' @importFrom graphics points
 ##' @export
 catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
@@ -323,7 +323,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
 ##' @param fit the object returned from sam.fit
 ##' @param cor.report.limit correlations with absolute value > this number is reported in the plot 
 ##' @param ... extra arguments transferred to plot
-##' @details ...
+##' @details Plot of all estimated model parameters (fixed effects). Shown with confidence interval.  
 ##' @export
 ##' @importFrom stats cov2cor
 parplot<-function(fit, cor.report.limit=0.95, ...){
@@ -404,183 +404,10 @@ obscov<-function(fit, corr=FALSE){
     res
 }
 
-##' A generic function returning an ellipse or other outline of a
-##' confidence region for two parameters.
-##' 
-##' Taken from the 'ellipse' package.
-##' @param x An object. In the default method the parameter 'x' should be
-##' a correlation between -1 and 1 or a square positive definite
-##' matrix at least 2x2 in size. It will be treated as the
-##' correlation or covariance of a multivariate normal
-##' distribution.
-##' @param scale If 'x' is a correlation matrix, then the standard deviations
-##' of each parameter can be given in the scale parameter.  This
-##' defaults to 'c(1, 1)', so no rescaling will be done.
-##' @param centre The centre of the ellipse will be at this position.
-##' @param level The confidence level of a pairwise confidence region.  The
-##' default is 0.95, for a 95% region.  This is used to control
-##' the size of the ellipse being plotted.  A vector of levels
-##' may be used.
-##' @param t The size of the ellipse may also be controlled by specifying
-##' the value of a t-statistic on its boundary.  This defaults to
-##' the appropriate value for the confidence region.
-##' @param which This parameter selects which pair of variables from the
-##' matrix will be plotted.  The default is the first 2.
-##' @param npoints The number of points used in the ellipse.  Default is 100.
-##' @param ... Descendant methods may require additional parameters.
-##' @return An 'npoints' x '2' matrix is returned with columns named according
-##' to the row names of the matrix 'x' (default ''x'' and ''y''),
-##' suitable for plotting.
-ellipse<-function (x, scale = c(1, 1), centre = c(0, 0), level = 0.95, 
-                   t = sqrt(qchisq(level, 2)), which = c(1, 2), npoints = 100, 
-                   ...){
-    names <- c("x", "y")
-    if (is.matrix(x)) {
-        xind <- which[1]
-        yind <- which[2]
-        r <- x[xind, yind]
-        if (missing(scale)) {
-            scale <- sqrt(c(x[xind, xind], x[yind, yind]))
-            if (scale[1] > 0) 
-                r <- r/scale[1]
-            if (scale[2] > 0) 
-                r <- r/scale[2]
-        }
-        if (!is.null(dimnames(x)[[1]])) 
-            names <- dimnames(x)[[1]][c(xind, yind)]
-    }
-    else r <- x
-    r <- min(max(r, -1), 1)
-    d <- acos(r)
-    a <- seq(0, 2 * pi, len = npoints)
-    matrix(c(t * scale[1] * cos(a + d/2) + centre[1], t * scale[2] * 
-        cos(a - d/2) + centre[2]), npoints, 2, dimnames = list(NULL, 
-        names))
-}
-
-##' This function plots a correlation matrix using ellipse-shaped
-##' glyphs for each entry.  The ellipse represents a level curve of
-##' the density of a bivariate normal with the matching correlation.
-##'
-##' Taken from the 'ellipse' package.
-##' @param corr A matrix containing entries between '-1' and '1' to be plotted as correlations.
-##' @param outline Whether the ellipses should be outlined in the default colour.
-##' @param col Which colour(s) to use to fill the ellipses.
-##' @param numbers Whether to plot numerical correlations in place of ellipses.
-##'           If numbers is 'TRUE', then the correlations will be rounded
-##'           to a single decimal place and placed on the plot.
-##' @param type Character. Plot '"full"' matrix or just '"upper"' or
-##' '"lower"' triangular part of it.
-##' @param diag Logical. Plot diagonal elements or not.
-##' @param bty for 'plot'
-##' @param axes for 'plot'
-##' @param xlab for 'plot'
-##' @param ylab for 'plot'
-##' @param asp for 'plot'
-##' @param cex.lab for 'plot'
-##' @param cex for 'plot'
-##' @param mar for 'plot'
-##' @param ... for 'plot'
-##' @importFrom graphics plot.new strwidth text 
-##' @importFrom stats qchisq
-plotcorr<-function(corr, outline = TRUE, col = "grey", numbers = FALSE, 
-    type = c("full", "lower", "upper"), diag = (type == "full"), 
-    bty = "n", axes = FALSE, xlab = "", ylab = "", asp = 1, cex.lab = par("cex.lab"), 
-    cex = 0.75 * par("cex"), mar = 0.1 + c(2, 2, 4, 2), ...) 
-{
-    savepar <- par(pty = "s", mar = mar)
-    on.exit(par(savepar))
-    if (is.null(corr)) 
-        return(invisible())
-    if ((!is.matrix(corr)) || (round(min(corr, na.rm = TRUE), 
-        6) < -1) || (round(max(corr, na.rm = TRUE), 6) > 1)) 
-        stop("Need a correlation matrix")
-    plot.new()
-    par(new = TRUE)
-    rowdim <- dim(corr)[1]
-    coldim <- dim(corr)[2]
-    rowlabs <- dimnames(corr)[[1]]
-    collabs <- dimnames(corr)[[2]]
-    if (is.null(rowlabs)) 
-        rowlabs <- 1:rowdim
-    if (is.null(collabs)) 
-        collabs <- 1:coldim
-    rowlabs <- as.character(rowlabs)
-    collabs <- as.character(collabs)
-    col <- rep(col, length = length(corr))
-    dim(col) <- dim(corr)
-    type <- match.arg(type)
-    cols <- 1:coldim
-    rows <- 1:rowdim
-    xshift <- 0
-    yshift <- 0
-    if (!diag) {
-        if (type == "upper") {
-            cols <- 2:coldim
-            rows <- 1:(rowdim - 1)
-            xshift <- 1
-        }
-        else if (type == "lower") {
-            cols <- 1:(coldim - 1)
-            rows <- 2:rowdim
-            yshift <- -1
-        }
-    }
-    maxdim <- max(length(rows), length(cols))
-    plt <- par("plt")
-    xlabwidth <- max(strwidth(rowlabs[rows], units = "figure", 
-        cex = cex.lab))/(plt[2] - plt[1])
-    xlabwidth <- xlabwidth * maxdim/(1 - xlabwidth)
-    ylabwidth <- max(strwidth(collabs[cols], units = "figure", 
-        cex = cex.lab))/(plt[4] - plt[3])
-    ylabwidth <- ylabwidth * maxdim/(1 - ylabwidth)
-    plot(c(-xlabwidth - 0.5, maxdim + 0.5), c(0.5, maxdim + 1 + 
-        ylabwidth), type = "n", bty = bty, axes = axes, xlab = "", 
-        ylab = "", asp = asp, cex.lab = cex.lab, ...)
-    text(rep(0, length(rows)), length(rows):1, labels = rowlabs[rows], 
-        adj = 1, cex = cex.lab)
-    text(cols - xshift, rep(length(rows) + 1, length(cols)), 
-        labels = collabs[cols], srt = 90, adj = 0, cex = cex.lab)
-    mtext(xlab, 1, 0)
-    mtext(ylab, 2, 0)
-    mat <- diag(c(1, 1))
-    plotcorrInternal <- function() {
-        if (i == j && !diag) 
-            return()
-        if (!numbers) {
-            mat[1, 2] <- corr[i, j]
-            mat[2, 1] <- mat[1, 2]
-            ell <- ellipse(mat, t = 0.43)
-            ell[, 1] <- ell[, 1] + j - xshift
-            ell[, 2] <- ell[, 2] + length(rows) + 1 - i - yshift
-            polygon(ell, col = col[i, j])
-            if (outline) 
-                lines(ell)
-        }
-        else {
-            text(j + 0.3 - xshift, length(rows) + 1 - i - yshift, 
-                round(10 * corr[i, j], 0), adj = 1, cex = cex)
-        }
-    }
-    for (i in 1:dim(corr)[1]) {
-        for (j in 1:dim(corr)[2]) {
-            if (type == "full") {
-                plotcorrInternal()
-            }
-            else if (type == "lower" && (i >= j)) {
-                plotcorrInternal()
-            }
-            else if (type == "upper" && (i <= j)) {
-                plotcorrInternal()
-            }
-        }
-    }
-    invisible()
-}
-
 ##' Plots the estimated correlation matrices by fleet.
 ##' @param fit the object returned from sam.fit
 ##' @param ... extra arguments to plot
+##' @importFrom ellipse plotcorr 
 ##' @export
 obscorrplot<-function(fit,...){
     ccolors <- c("#A50F15","#DE2D26","#FB6A4A","#FCAE91","#FEE5D9","white",
