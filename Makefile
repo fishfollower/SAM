@@ -75,3 +75,12 @@ clean:
 test:
 	echo "devtools::test('stockassessment')" | $(R) --slave
 
+updataData: 
+	echo "library(stockassessment); \
+	      source('stockassessment/tests/nscod/script.R', chdir=TRUE, echo=TRUE); \
+	      nscodData <- dat; nscodConf <- conf; nscodParameters <- par; \
+	      save(nscodData, file='stockassessment/data/nscodData.RData'); \
+	      save(nscodConf, file='stockassessment/data/nscodConf.RData'); \
+	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData'); " | R --vanilla
+
+
