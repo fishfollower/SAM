@@ -28,6 +28,8 @@ a list containing the following
 \item{logScaleSSB}{}
 \item{logPowSSB}{}
 \item{logSdSSB}{}
+\item{logitReleaseSurvival}{}
+\item{logitRecapturePhi}{}
 \item{logF}{}
 \item{logN}{}
 }

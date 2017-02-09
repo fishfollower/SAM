@@ -9,12 +9,13 @@
 ##' @param add logical, plotting is to be added on existing plot
 ##' @param ci logical, confidence intervals should be plotted
 ##' @param cicol color to plot the confidence polygon
-##' @param drop number of years to be left unplotted at the end. 
+##' @param dropAddCI logicial don't plot CI for added fits 
+##' @param drop number of years to be left unplotted at the end.
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
 ##' @details ...
-.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), drop=0,...){
+.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), dropAddCI=FALSE, drop=0, ...){
   if(class(fit)!="samset"){ 
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
@@ -35,15 +36,19 @@
       polygon(c(x,rev(x)), y = c(trans(lowhig[,1]),rev(trans(lowhig[,2]))), border = gray(.5,alpha=.5), col = cicol)
     }
   }else{
-    col10=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")
-    if(!is.null(attr(fit,"fit"))){
-      fitlocal <- attr(fit,"fit")
-    }else{
-      fitlocal <- fit[[1]]
+    colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
+    idxfrom <- 1
+    if(is.null(attr(fit,"fit"))){
+      attr(fit,"fit") <- fit[[1]]
+      idxfrom <- 2
     }
-    if(is.null(x))x=fitlocal$data$years
-    .plotit(fitlocal, what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop,...)
-    d<-lapply(1:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=col10[(i-1)%%10+1], drop=drop, ...))
+    if(is.null(x))x=attr(fit,"fit")$data$years
+    .plotit(attr(fit,"fit"), what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop,...)
+    if(dropAddCI){
+      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
+    }else{
+      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, col=colSet[(i-1)%%length(colSet)+1], cicol=paste0(colSet[(i-1)%%length(colSet)+1],"80"), drop=drop, ...))
+    }
   }
 }
    
