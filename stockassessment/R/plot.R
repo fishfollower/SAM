@@ -427,3 +427,103 @@ obscorrplot<-function(fit,...){
         plotcorr(x[[i]],col=ccolors[5*x[[i]]+6],mar=0.1+c(2,2,2,2),...)
     
 }
+
+
+##' Plots the classic yield per recruit
+##' @param fit the object returned from sam.fit
+##' @param Flimit Upper limit for Fbar
+##' @param Fdelta increments on the Fbar axis 
+##' @param aveYears Number of years back to use when calculating averages (selection, weights, ...)
+##' @param ageLimit Oldest age used (should be high)
+##' @importFrom graphics title
+##' @export
+yprplot<-function(fit, Flimit=2, Fdelta=0.01, aveYears=15, ageLimit=100){
+  idxF <- fit$conf$keyLogFsta[1,]+1
+  barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
+  last.year.used=max(fit$data$years)
+  idxno<-which(fit$data$years==last.year.used)
+  #dim<-fit.current$stateDim
+  #idxN<-1:ncol(stock.mean.weight) 
+  F <- exp(fit$pl$logF[idxF,])
+  
+  sel<-function(){
+    Sa<-rep(0,nrow(F))
+    K<-0
+    for(i in 0:(aveYears-1)){
+      thisF<-F[,idxno-i]
+      Sa<-Sa+thisF
+      K<-K+fbartable(fit)[idxno-i]
+    }
+    return(Sa/K)
+  }
+
+  extend<-function(x,len=100){
+    ret<-numeric(len)
+    ret[1:length(x)]<-x
+    ret[-c(1:length(x))]<-x[length(x)]
+    ret
+  }
+
+  ave.sl<-sel()
+  ave.sw<-colMeans(fit$data$stockMeanWeight[(idxno-aveYears+1):idxno,,drop=FALSE])
+  ave.cw<-colMeans(fit$data$catchMeanWeight[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.pm<-colMeans(fit$data$propMat[(idxno-aveYears+1):idxno,,drop=FALSE])
+  ave.nm<-colMeans(fit$data$natMor[(idxno-aveYears+1):idxno,,drop=FALSE])
+  ave.lf<-colMeans(fit$data$landFrac[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.cw.land<-colMeans(fit$data$landMeanWeight[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+
+  N<-numeric(ageLimit)
+  N[1]<-1.0
+  M<-extend(ave.nm)
+  sw<-extend(ave.sw)
+  cw<-extend(ave.cw.land)
+  pm<-extend(ave.pm)
+  lf<-extend(ave.lf)
+ 
+  deltafirst <- 0.00001
+  delta <- Fdelta
+  scales<-c(0, deltafirst, seq(0.01, Flimit, by=delta))
+  yields<-numeric(length(scales))
+  ssbs<-numeric(length(scales))
+  for(i in 1:length(scales)){
+    scale<-scales[i]
+    F<-extend(ave.sl*scale)
+    Z<-M+F
+    for(a in 2:length(N)){
+      N[a]<-N[a-1]*exp(-Z[a-1])  
+    }
+    C<-F/Z*(1-exp(-Z))*N*lf  
+    Y<-sum(C*cw)
+    yields[i]<-Y
+    ssbs[i]<-sum(N*pm*sw)
+  }
+
+
+  par(mar=c(5.1,4.1,4.1,5.1))
+  fbarlab = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2]))
+
+  plot(scales, yields, type='l', xlab=fbarlab, ylab='Yield per recruit')
+
+  fmaxidx<-which.max(yields)
+  fmax<-scales[fmaxidx]
+  deltaY<-diff(yields)
+  f01idx<-which.min((deltaY/delta-0.1*deltaY[1]/deltafirst)^2)+1
+  f01<-scales[f01idx]
+  lines(c(fmax,fmax), c(par('usr')[1],yields[fmaxidx]), lwd=3, col='red')
+  lines(c(f01,f01), c(par('usr')[1],yields[f01idx]), lwd=3, col='blue')
+
+  ssbscale<-max(yields)/max(ssbs)
+
+  lines(scales, ssbscale*ssbs, lty='dotted')
+  ssbtick<-pretty(ssbs)
+  ssbat<-ssbtick*ssbscale
+  axis(4,at=ssbat, labels=ssbtick)
+  mtext('SSB per recruit', side=4, line=2)
+
+  f35spridx<-which.min((ssbs-0.35*ssbs[1])^2)+1
+  f35<-scales[f35spridx]
+  lines(c(f35,f35), c(par('usr')[1],ssbs[f35spridx]*ssbscale), lwd=3, col='green')
+
+  title(eval(substitute(expression(F[max]==fmax~ ~ ~ ~ ~F[0.10]==f01~ ~ ~ ~ ~F[0.35*SPR]==f35), 
+                        list(fmax=round(fmax,2), f01=round(f01,2), f35=round(f35,2)))))
+}
