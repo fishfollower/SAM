@@ -189,3 +189,45 @@ simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, ...){
   }
   ret
 }
+
+
+##' Plot sam object 
+##' @method plot samypr
+##' @param  x ...
+##' @param  ... extra arguments 
+##' @importFrom graphics par title
+##' @details ...
+##' @export
+plot.samypr<-function(x, ...){
+  par(mar=c(5.1,4.1,4.1,5.1))
+  plot(x$fbar, x$yield, type='l', xlab=x$fbarlab, ylab='Yield per recruit', ...)
+  lines(c(x$fmax,x$fmax), c(par('usr')[1],x$yield[x$fmaxIdx]), lwd=3, col='red')
+  lines(c(x$f01,x$f01), c(par('usr')[1],x$yield[x$f01Idx]), lwd=3, col='blue')  
+  ssbscale <- max(x$yield)/max(x$ssb)
+
+  lines(x$fbar, ssbscale*x$ssb, lty='dotted')
+  ssbtick <- pretty(x$ssb)
+  ssbat <- ssbtick*ssbscale
+  axis(4,at=ssbat, labels=ssbtick)
+  mtext('SSB per recruit', side=4, line=2)
+
+  lines(c(x$f35,x$f35), c(par('usr')[1],x$ssb[x$f35Idx]*ssbscale), lwd=3, col='green')
+
+  title(eval(substitute(expression(F[max]==fmax~ ~ ~ ~ ~F[0.10]==f01~ ~ ~ ~ ~F[0.35*SPR]==f35), 
+                        list(fmax=round(x$fmax,2), f01=round(x$f01,2), f35=round(x$f35,2)))))
+}
+
+
+##' Print samypr object 
+##' @method print samypr 
+##' @param  x an object as returned from the ypr function
+##' @param  ... extra arguments
+##' @details ...
+##' @export
+print.samypr <- function(x, ...){
+  idx <- c(x$fmaxIdx, x$f01Idx, x$f35Idx)
+  ret <- cbind(x$fbar[idx],x$ssb[idx],x$yield[idx])
+  rownames(ret) <- c("Fmax", "F01", "F35")
+  colnames(ret) <- c("Fbar", "SSB", "Yield")
+  print(ret)
+}
