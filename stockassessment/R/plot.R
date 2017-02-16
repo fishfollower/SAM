@@ -428,6 +428,22 @@ obscorrplot<-function(fit,...){
     
 }
 
-
-
-
+##' Plots the stock recruitment 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments to plot
+##' @importFrom graphics text
+##' @export
+srplot<-function(fit, ...){
+  X <- summary(fit)
+  n<-nrow(X)
+  lag <- fit$conf$minAge
+  idxR <- (lag+1):n
+  idxS <- 1:(n-lag)
+  R<-X[idxR,1]
+  S<-X[idxS,4]
+  Rnam<-colnames(X)[1]
+  Snam<-colnames(X)[4]
+  y<-rownames(X)
+  plot(S,R, xlab=Snam, ylab=Rnam, type="l", xlim=range(0,S), ylim=range(0,R), ...)
+  text(S,R, labels=y[idxR], cex=.7, col="red" )
+}
