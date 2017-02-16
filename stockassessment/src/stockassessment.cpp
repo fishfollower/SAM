@@ -654,7 +654,14 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logtsb);
   ADREPORT(R);
   ADREPORT(logR);
+  vector<Type> lastLogN = logN.col(timeSteps-1);
+  ADREPORT(lastLogN);
+  vector<Type> lastLogF = logF.col(timeSteps-1);
+  ADREPORT(lastLogF);  
 
-  
+  vector<Type> beforeLastLogN = logN.col(timeSteps-2);
+  ADREPORT(beforeLastLogN);
+  vector<Type> beforeLastLogF = logF.col(timeSteps-2);
+  ADREPORT(beforeLastLogF);  
   return ans;
 }
