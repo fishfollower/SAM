@@ -15,6 +15,21 @@ plot.sam<-function(x, ...){
   par(op)
 }
 
+##' Plot samforecast object 
+##' @method plot samforecast
+##' @param  x ...
+##' @param  ... extra arguments
+##' @importFrom graphics par
+##' @details ...
+##' @export
+plot.samforecast<-function(x, ...){
+  op<-par(mfrow=c(3,1))
+  ssbplot(x,...)
+  fbarplot(x, drop=0,...)
+  recplot(x,...)
+  par(op)
+}
+
 ##' Collect sam objects 
 ##' @method c sam
 ##' @param  ... sam fits to be combined 
@@ -237,22 +252,9 @@ print.samypr <- function(x, ...){
 ##' @param  x an object as returned from the forecast function
 ##' @param  ... extra arguments
 ##' @details ...
-##' @importFrom stats median quantile
 ##' @export
 print.samforecast<-function(x, ...){
-  collect <- function(x){
-    quan <- quantile(x, c(.50,.025,.975))
-    c(median=quan[1], low=quan[2], hig=quan[3])
-  }
-  fbar <- round(do.call(rbind, lapply(x, function(xx)collect(xx$fbar))),3)
-  rec <- round(do.call(rbind, lapply(x, function(xx)collect(xx$rec))))
-  ssb <- round(do.call(rbind, lapply(x, function(xx)collect(xx$ssb))))
-  catch <- round(do.call(rbind, lapply(x, function(xx)collect(xx$catch))))
-  ret <- cbind(fbar, rec,ssb,catch)
-  rownames(ret) <- unlist(lapply(x, function(xx)xx$year))
-  nam <- c("median","low","hig")
-  colnames(ret) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
-  print(ret)
+  print(x$tab)
 }
 
 

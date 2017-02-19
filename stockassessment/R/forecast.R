@@ -9,7 +9,7 @@
 ##' @param rec.years vector of years to use to resample recruitment from 
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
-##' @importFrom stats median uniroot
+##' @importFrom stats median uniroot quantile
 ##' @importFrom MASS mvrnorm
 ##' @export
 forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0)){
@@ -193,7 +193,6 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
       sim<-t(apply(sim, 1, scaleF, scale=adj))    
     }
 
-
     if(!is.na(catchval[i+1])){
       simtmp<-NA
       fun<-function(s){
@@ -211,10 +210,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     recsim <- exp(sim[,1])
     simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y)
   }
+    
   attr(simlist, "fit")<-fit
+
+  collect <- function(x){
+    quan <- quantile(x, c(.50,.025,.975))
+    c(median=quan[1], low=quan[2], hig=quan[3])
+  }
+  fbar <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbar))),3)
+  rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
+  ssb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$ssb))))
+  catch <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$catch))))
+  tab <- cbind(fbar, rec,ssb,catch)
+  rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
+  nam <- c("median","low","hig")
+  colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
+  attr(simlist, "tab")<-tab
+    
   class(simlist) <- "samforecast"
   simlist
 }
-
-
-

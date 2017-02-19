@@ -15,13 +15,17 @@
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
 ##' @details The basic plotting used bu many of the plotting functions (e.g. ssbplot, fbarplot ...) 
-.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), addCI=FALSE, drop=0, ...){
-  if(class(fit)!="samset"){ 
+.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), addCI=FALSE, drop=0, xlim=NULL,...){
+  if(class(fit)=="sam"){ 
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
     lowhig <- y+fit$sdrep$sd[idx]%o%c(-2,2)
     didx <- 1:(length(x)-drop)
-    xr<-range(x)
+    if(missing(xlim)){
+      xr <- range(x)
+    }else{
+      xr <- xlim
+    }
     x<-x[didx]
     y<-y[didx]
     lowhig<-lowhig[didx,]
@@ -35,7 +39,8 @@
     if(ci){
       polygon(c(x,rev(x)), y = c(trans(lowhig[,1]),rev(trans(lowhig[,2]))), border = gray(.5,alpha=.5), col = cicol)
     }
-  }else{
+  }
+  if(class(fit)=="samset"){ 
     colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
     idxfrom <- 1
     if(is.null(attr(fit,"fit"))){
@@ -50,6 +55,12 @@
       d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
     }
   }
+  if(class(fit)=="samforecast"){
+    xy <- unlist(lapply(fit, function(xx) xx$year))
+    thisfit<-attr(fit,"fit")
+    xr <- range(thisfit$data$years, xy)
+    .plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)    
+  }  
 }
    
 ##' Plot by one or two  
@@ -227,10 +238,12 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
       fitlocal <- fit[[1]]
     }
   }
+  if(class(fit)=="samforecast"){
+    fitlocal <- attr(fit,"fit")
+  }
   if(is.null(drop)){
     drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
-  }
-  
+  }  
   fbarRange<-fitlocal$conf$fbarRange
   fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
   fmat<-fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
@@ -239,7 +252,14 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
   .plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
   if(partial){
     matplot(fitlocal$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
-  }  
+  }
+  if(class(fit)=="samforecast"){
+    x<-attr(fit,"tab")
+    y<-rownames(x)
+    lines(y,x[,"fbar:median"], lwd=3, col="red")
+    lines(y,x[,"fbar:low"], lwd=3, col="red", lty="dotted")  
+    lines(y,x[,"fbar:hig"], lwd=3, col="red", lty="dotted")  
+  }
 }
 
 ##' SAM SSB plot 
@@ -252,6 +272,13 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
 ##' @export
 ssbplot<-function(fit, ...){
   .plotit(fit, "logssb", ylab="SSB", trans=exp,...)
+  if(class(fit)=="samforecast"){
+    x<-attr(fit,"tab")
+    y<-rownames(x)
+    lines(y,x[,"ssb:median"], lwd=3, col="red")
+    lines(y,x[,"ssb:low"], lwd=3, col="red", lty="dotted")  
+    lines(y,x[,"ssb:hig"], lwd=3, col="red", lty="dotted")  
+  }
 }
 
 ##' SAM TSB plot 
@@ -275,8 +302,28 @@ tsbplot<-function(fit, ...){
 ##' @details Plot of numbers of recruits (youngest age class)
 ##' @export
 recplot<-function(fit,...){
-   lab<-paste("Recruits (age ", fit$conf$minAge, ")", sep="")
+  if(class(fit)=="sam"){
+    fitlocal <- fit
+  }
+  if(class(fit)=="samset"){
+    if(!is.null(attr(fit,"fit"))){
+      fitlocal <- attr(fit,"fit")
+    }else{
+      fitlocal <- fit[[1]]
+    }
+  }
+  if(class(fit)=="samforecast"){
+    fitlocal <- attr(fit,"fit")
+  }
+  lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
   .plotit(fit, "logR", ylab=lab, trans=exp,...)
+  if(class(fit)=="samforecast"){
+    x<-attr(fit,"tab")
+    y<-rownames(x)
+    lines(y,x[,"rec:median"], lwd=3, col="red")
+    lines(y,x[,"rec:low"], lwd=3, col="red", lty="dotted")  
+    lines(y,x[,"rec:hig"], lwd=3, col="red", lty="dotted")  
+  }
 }
 
 ##' SAM catch plot 
@@ -301,6 +348,9 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
       fitlocal <- fit[[1]]
     }
   }
+  if(class(fit)=="samforecast"){
+    fitlocal <- attr(fit,"fit")
+  }
   if(is.null(drop)){
     drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
   }
@@ -315,7 +365,15 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
         ifelse(length(ret)==0,0,ret)
     }
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
-  }  
+  }
+  if(class(fit)=="samforecast"){
+    x<-attr(fit,"tab")
+    y<-rownames(x)
+    lines(y,x[,"catch:median"], lwd=3, col="red")
+    lines(y,x[,"catch:low"], lwd=3, col="red", lty="dotted")  
+    lines(y,x[,"catch:hig"], lwd=3, col="red", lty="dotted")  
+  }
+
 }
 
 
