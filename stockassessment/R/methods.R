@@ -15,6 +15,21 @@ plot.sam<-function(x, ...){
   par(op)
 }
 
+##' Plot samforecast object 
+##' @method plot samforecast
+##' @param  x ...
+##' @param  ... extra arguments
+##' @importFrom graphics par
+##' @details ...
+##' @export
+plot.samforecast<-function(x, ...){
+  op<-par(mfrow=c(3,1))
+  ssbplot(x,...)
+  fbarplot(x, drop=0,...)
+  recplot(x,...)
+  par(op)
+}
+
 ##' Collect sam objects 
 ##' @method c sam
 ##' @param  ... sam fits to be combined 
@@ -231,3 +246,15 @@ print.samypr <- function(x, ...){
   colnames(ret) <- c("Fbar", "SSB", "Yield")
   print(ret)
 }
+
+##' Print samforecast object 
+##' @method print samforecast 
+##' @param  x an object as returned from the forecast function
+##' @param  ... extra arguments
+##' @details ...
+##' @export
+print.samforecast<-function(x, ...){
+  print(x$tab)
+}
+
+

@@ -9,11 +9,9 @@ Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.d
 	    person(c("Christoffer","Moesgaard"), "Albertsen", role="aut"))
 Description: Fitting SAM...
 License: GPL-2
-Imports: TMB, ellipse
+Imports: TMB, ellipse, MASS
 LinkingTo: TMB, RcppEigen
-Suggests:
-    knitr,
-    testthat
+Suggests: knitr, testthat
 VignetteBuilder: knitr
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
