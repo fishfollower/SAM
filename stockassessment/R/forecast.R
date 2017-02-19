@@ -47,7 +47,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   }
 
   getState <- function(N,F){
-    k <- fit$conf$keyLogFsta[1,]  
+    k <- fit$conf$keyLogFsta[1,]
+    F <- F[k>=0]
     k <- unique(k[k>=0]+1)
     x <- log(c(N,F[k]))
     x
@@ -59,6 +60,10 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     sdN[1]<-0
     nN <- length(sdN)
     sdF <- exp(cof[names(cof)=="logSdLogFsta"][fit$conf$keyVarF+1])
+    k<-fit$conf$keyLogFsta[1,]
+    sdF <- sdF[k>=0]
+    k <- unique(k[k >= 0] + 1)
+    sdF <-sdF[k]
     nF <- length(sdF)
     if(fit$conf$corFlag==1){
       corr <- diag(nF)    
@@ -140,7 +145,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     
   sim<-MASS::mvrnorm(nosim, mu=est, Sigma=cov)
     
-  if(!identical(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
+  if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
 
   doAve<-function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
   ave.sw<-doAve(fit$data$stockMeanWeight)
