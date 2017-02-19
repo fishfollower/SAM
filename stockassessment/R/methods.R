@@ -233,10 +233,11 @@ print.samypr <- function(x, ...){
 }
 
 ##' Print samforecast object 
-##' @method print samypr 
+##' @method print samforecast 
 ##' @param  x an object as returned from the forecast function
 ##' @param  ... extra arguments
 ##' @details ...
+##' @importFrom stats median quantile
 ##' @export
 print.samforecast<-function(x, ...){
   collect <- function(x){
@@ -248,7 +249,7 @@ print.samforecast<-function(x, ...){
   ssb <- round(do.call(rbind, lapply(x, function(xx)collect(xx$ssb))))
   catch <- round(do.call(rbind, lapply(x, function(xx)collect(xx$catch))))
   ret <- cbind(fbar, rec,ssb,catch)
-  row.names(ret) <- unlist(lapply(fc, function(xx)xx$year))
+  rownames(ret) <- unlist(lapply(x, function(xx)xx$year))
   nam <- c("median","low","hig")
   colnames(ret) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
   print(ret)

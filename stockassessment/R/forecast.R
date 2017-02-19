@@ -8,7 +8,9 @@
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
 ##' @param rec.years vector of years to use to resample recruitment from 
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
-##' @return an object of type samforecast  
+##' @return an object of type samforecast
+##' @importFrom stats median uniroot
+##' @importFrom MASS mvrnorm
 ##' @export
 forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0)){
 
@@ -33,7 +35,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   }
 
   fbar<-function(x){
-    fromto <- fit$conf$fbarRange-(conf$minAge-1)  
+    fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
     mean(getF(x)[fromto[1]:fromto[2]])
   }    
     
@@ -188,6 +190,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
 
 
     if(!is.na(catchval[i+1])){
+      simtmp<-NA
       fun<-function(s){
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))      
         simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
