@@ -22,3 +22,23 @@ bibentry(bibtype = "Article",
         "Fisheries Research 158, 96-101.",
         "doi:10.1016/j.fishres.2014.01.014")
 )
+
+bibentry(bibtype = "Article",
+  title        = "Accounting for correlated observations in an age-based state-space stock assessment model",
+  author       = c(person(given = c("Casper", "W."),
+                          family = "Berg",
+                          email = "cbe@aqua.dtu.dk"),
+                   person(given = "Anders",
+                          family = "Nielsen",
+  journal      = "ICES Journal of Marine Science: Journal du Conseil",
+  year         = "2016",
+  volume       = "73",
+  pages        = "1788--1797",
+  doi          = "10.1093/icesjms/fsw046",
+  header       = "To cite in publications use:",
+  textVersion  =
+  paste("Casper W. Berg, Anders Nielsen (2016).",
+        "Accounting for correlated observations in an age-based state-space stock assessment model.",
+        "ICES Journal of Marine Science 73, 1788-1797.",
+        "doi:10.1093/icesjms/fsw046")
+)
