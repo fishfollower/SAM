@@ -127,22 +127,18 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   rectab<-rectable(fit)
   recpool<-rectab[rownames(rectab)%in%rec.years,1]
 
-  # Last state
-  if(year.base==max(fit$data$years)){  
-    idxN <- which(names(fit$sdrep$value)=="lastLogN")
-    idxF <- which(names(fit$sdrep$value)=="lastLogF")
+  # Get final state
+  if(year.base==max(fit$data$years)){
+    est <- fit$sdrep$estY
+    cov <- fit$sdrep$covY
   }
   if(year.base==(max(fit$data$years)-1)){  
-    idxN <- which(names(fit$sdrep$value)=="beforeLastLogN")
-    idxF <- which(names(fit$sdrep$value)=="beforeLastLogF")
+    est <- fit$sdrep$estYm1
+    cov <- fit$sdrep$covYm1
   }
   if(year.base<(max(fit$data$years)-1)){
     stop("State not saved, so cannot proceed from this year")
   }
-  idx <- c(idxN,idxF)
-  est <- fit$sdrep$value[idx]
-  cov <- fit$sdrep$cov[idx,idx]
-    
   sim<-MASS::mvrnorm(nosim, mu=est, Sigma=cov)
     
   if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  

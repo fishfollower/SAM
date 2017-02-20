@@ -52,6 +52,18 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   }
   rep <- obj$report()
   sdrep <- sdreport(obj,opt$par)
+
+  # Last two states
+  idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
+  sdrep$estY <- sdrep$value[idx]
+  sdrep$covY <- sdrep$cov[idx,idx]
+
+  idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
+  sdrep$estYm1 <- sdrep$value[idx]
+  sdrep$covYm1 <- sdrep$cov[idx,idx]
+
+  sdrep$cov<-NULL # save memory
+  
   pl <- as.list(sdrep,"Est")
   plsd <- as.list(sdrep,"Std")
   ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep)

@@ -1,7 +1,3 @@
-year <- sub("-.*", "", meta$Date)
-note <- sprintf("R package version %s", meta$Version)
-
-
 bibentry(bibtype = "Article",
   title        = "Estimation of time-varying selectivity in stock assessments using state-space models",
   author       = c(person(given = "Anders",
