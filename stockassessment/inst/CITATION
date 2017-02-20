@@ -1,0 +1,24 @@
+year <- sub("-.*", "", meta$Date)
+note <- sprintf("R package version %s", meta$Version)
+
+
+bibentry(bibtype = "Article",
+  title        = "Estimation of time-varying selectivity in stock assessments using state-space models",
+  author       = c(person(given = "Anders",
+                          family = "Nielsen",
+                          email = "an@aqua.dtu.dk"),
+                   person(given = c("Casper", "W."),
+                          family = "Berg")),
+  journal      = "Fisheries Research",
+  year         = "2014",
+  volume       = "158",
+  pages        = "96--101",
+  doi          = "10.1016/j.fishres.2014.01.014",
+
+  header       = "To cite in publications use:",
+  textVersion  =
+  paste("Anders Nielsen, Casper W. Berg (2014).",
+        "Estimation of time-varying selectivity in stock assessments using state-space models.",
+        "Fisheries Research 158, 96-101.",
+        "doi:10.1016/j.fishres.2014.01.014")
+)

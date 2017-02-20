@@ -254,7 +254,7 @@ print.samypr <- function(x, ...){
 ##' @details ...
 ##' @export
 print.samforecast<-function(x, ...){
-  print(x$tab)
+  print(attr(x,"tab"))
 }
 
-
+ 
