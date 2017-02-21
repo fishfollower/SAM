@@ -65,7 +65,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     k <- unique(k[k >= 0] + 1)
     sdF <-sdF[k]
     nF <- length(sdF)
-    if(fit$conf$corFlag==1){
+    if(fit$conf$corFlag==0){
       corr <- diag(nF)    
     }
     if(fit$conf$corFlag==1){
