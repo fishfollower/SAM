@@ -123,6 +123,7 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
   clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
   runs <- parLapply(cl, fleet, function(f)runwithout(fit, fleet=f, ...))
   stopCluster(cl) #shut it down
+  names(runs) <- paste0("w.o ", lapply(fleet, function(x)paste(attr(fit$data,"fleetNames")[x], collapse=" and ")))
   attr(runs, "fit") <- fit
   class(runs)<-"samset"
   runs
