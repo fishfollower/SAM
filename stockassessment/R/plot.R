@@ -67,7 +67,7 @@
 ##' @param x numeric vector
 ##' @param y numeric vector
 ##' @param z numeric vector
-##' @param by vector or two column matrix to create sub sets from  
+##' @param by vector or two column matrix to create sub sets from
 ##' @param bubblescale scaling of bubble size
 ##' @param x.common logical: use same x-axis for all plots
 ##' @param y.common logical: use same y-axis for all plots
@@ -88,7 +88,7 @@
 ##' par(ask=FALSE)
 ##' plotby(year,age,perfectres, by=fleet)
 ##' detach(exdat)
-plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL, bubblescale=1, x.common=TRUE, y.common=TRUE, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, axes=TRUE, ...){
+plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE, y.common=TRUE, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, axes=TRUE, ...){
   if(is.null(by) | length(unique(by))==1){
     # 0
     if(length(x)==0 & length(y)==0 & length(z)==0){

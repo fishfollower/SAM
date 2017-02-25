@@ -252,6 +252,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   fleet.idx<-0
   type<-NULL
   time<-NULL
+  name<-NULL  
   dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
   weight<-NULL
   doone<-function(m){
@@ -271,16 +272,19 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     doone(residual.fleet)
     type<-c(type,0)
     time<-c(time,0)
+    name<-c(name,"Residual catch")
   }
   if(!is.null(fleets)){
     if(is.data.frame(fleets)|is.matrix(fleets)){
       doone(fleets)
       type<-c(type,1)
       time<-c(time,0)
+      name<-c(name,"Comm fleet")
     }else{
       dummy<-lapply(fleets,doone)
       type<-c(type,rep(1,length(fleets)))
       time<-c(time,rep(0,length(fleets)))
+      name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
     }
   }
   if(!is.null(surveys)){
@@ -289,10 +293,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       thistype<-ifelse(min(as.integer(colnames(surveys)))<(-.5),3,2)
       type<-c(type,thistype)
       time<-c(time,mean(attr(surveys,'time')))
+      name<-c(name,"Survey fleet")
     }else{
       dummy<-lapply(surveys,doone)
       type<-c(type,unlist(lapply(surveys, function(x)ifelse(min(as.integer(colnames(x)))<(-.5), 3, 2))))
       time<-c(time,unlist(lapply(surveys, function(x)mean(attr(x,'time')))))
+      name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
     }
   }
   if(is.null(land.frac)){
@@ -325,6 +331,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     weight<-c(weight,rep(NA,nrow(tag)))
     type<-c(type,5)
     time<-c(time,0)
+    name<-c(name,"Recaptures")
   }
   dat<-dat[complete.cases(dat[,1:3]),]
   
@@ -332,6 +339,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'type')<-type
   names(time)<-NULL
   attr(dat,'time')<-time
+  names(name)<-NULL  
+  attr(dat,'name')<-name
   dat<-dat[o,]
   weight<-weight[o]
   newyear<-min(as.numeric(dat$year)):max(as.numeric(dat$year))
@@ -379,5 +388,6 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     propF=attr(dat,'prop.f'),
     propM=attr(dat,'prop.m')
   )
+  attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)
 }

@@ -74,7 +74,7 @@ plot.samset<-function(x, ...){
 ##' plot(residuals(fit))
 ##' }
 plot.samres<-function(x, ...){
-  plotby(x$year, x$age, x$residual, by=x$fleet, xlab="Year", ylab="Age", ...)
+  plotby(x$year, x$age, x$residual, by=attr(x,"fleetNames")[x$fleet], xlab="Year", ylab="Age", ...)
 }
 
 ##' Print sam object 
@@ -162,6 +162,7 @@ nobs.sam<-function(object, ...){
 residuals.sam<-function(object, discrete=FALSE, ...){
   res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete,...)
   ret <- cbind(object$data$aux, res)
+  attr(ret,"fleetNames") <- attr(object$data, "fleetNames")
   class(ret)<-"samres"
   ret
 }
