@@ -1,4 +1,5 @@
-source("../tests/nsher/script.R", chdir = TRUE)
+library(stockassessment)
+source("../stockassessment/tests/nsher/script.R", chdir = TRUE)
 
 png("fbar.png", 600, 600)
 fbarplot(fit, partial=FALSE)
