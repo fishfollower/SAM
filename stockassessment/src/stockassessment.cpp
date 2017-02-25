@@ -32,6 +32,8 @@
 #define TMB_LIB_INIT R_init_stockassessment
 #include <TMB.hpp>
 
+using CppAD::abs;
+
 /* Parameter transform */
 template <class Type>
 Type trans(Type x){return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);}
