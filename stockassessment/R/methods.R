@@ -42,7 +42,6 @@ c.sam<-function(...){
   ret
 }
 
-
 ##' Plot sam object 
 ##' @method plot samset
 ##' @param  x ...

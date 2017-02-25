@@ -43,9 +43,12 @@
   if(class(fit)=="samset"){ 
     colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
     idxfrom <- 1
+    leg<-names(fit)
     if(is.null(attr(fit,"fit"))){
       attr(fit,"fit") <- fit[[1]]
       idxfrom <- 2
+    }else{
+      leg<-c("Base", leg)
     }
     if(is.null(x))x=attr(fit,"fit")$data$years
     .plotit(attr(fit,"fit"), what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop,...)
@@ -54,6 +57,7 @@
     }else{
       d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
     }
+    if(!is.null(names(fit)))legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
   }
   if(class(fit)=="samforecast"){
     xy <- unlist(lapply(fit, function(xx) xx$year))
