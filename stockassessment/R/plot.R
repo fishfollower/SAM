@@ -66,7 +66,28 @@
     .plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)    
   }  
 }
-   
+
+##' SAM add forecasts 
+##' @param fit the object returned from sam.fit
+##' @param what what to plot
+##' @param dotcol color for dot
+##' @param dotpch pch for dot
+##' @param dotcex cex for dot
+##' @param intervalcol color for interval
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' @details internal plotting fun
+##' @importFrom graphics arrows
+addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5), ...){
+  if(class(fit)=="samforecast"){
+    x <- attr(fit,"tab")
+    y <- as.numeric(rownames(x))
+    dummy <- sapply(1:length(y), function(i)arrows(y[i],x[i,paste(what,"low", sep=":")], y[i],x[i,paste(what,"hig", sep=":")],
+                                                   lwd=3, col=intervalcol, angle=90, code=3, length=.1))
+    points(y,x[,paste(what,"median", sep=":")], pch=dotpch, cex=dotcex, col=dotcol, ...)
+  }
+}
+
+
 ##' Plot by one or two  
 ##' @param x numeric vector
 ##' @param y numeric vector
@@ -257,13 +278,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
   if(partial){
     matplot(fitlocal$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
   }
-  if(class(fit)=="samforecast"){
-    x<-attr(fit,"tab")
-    y<-rownames(x)
-    lines(y,x[,"fbar:median"], lwd=3, col="red")
-    lines(y,x[,"fbar:low"], lwd=3, col="red", lty="dotted")  
-    lines(y,x[,"fbar:hig"], lwd=3, col="red", lty="dotted")  
-  }
+  addforecast(fit,"fbar", ...)  
 }
 
 ##' SAM SSB plot 
@@ -276,13 +291,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
 ##' @export
 ssbplot<-function(fit, ...){
   .plotit(fit, "logssb", ylab="SSB", trans=exp,...)
-  if(class(fit)=="samforecast"){
-    x<-attr(fit,"tab")
-    y<-rownames(x)
-    lines(y,x[,"ssb:median"], lwd=3, col="red")
-    lines(y,x[,"ssb:low"], lwd=3, col="red", lty="dotted")  
-    lines(y,x[,"ssb:hig"], lwd=3, col="red", lty="dotted")  
-  }
+  addforecast(fit,"ssb", ...)
 }
 
 ##' SAM TSB plot 
@@ -321,13 +330,7 @@ recplot<-function(fit,...){
   }
   lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
   .plotit(fit, "logR", ylab=lab, trans=exp,...)
-  if(class(fit)=="samforecast"){
-    x<-attr(fit,"tab")
-    y<-rownames(x)
-    lines(y,x[,"rec:median"], lwd=3, col="red")
-    lines(y,x[,"rec:low"], lwd=3, col="red", lty="dotted")  
-    lines(y,x[,"rec:hig"], lwd=3, col="red", lty="dotted")  
-  }
+  addforecast(fit, "rec", ...)
 }
 
 ##' SAM catch plot 
@@ -370,14 +373,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
     }
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
   }
-  if(class(fit)=="samforecast"){
-    x<-attr(fit,"tab")
-    y<-rownames(x)
-    lines(y,x[,"catch:median"], lwd=3, col="red")
-    lines(y,x[,"catch:low"], lwd=3, col="red", lty="dotted")  
-    lines(y,x[,"catch:hig"], lwd=3, col="red", lty="dotted")  
-  }
-
+  addforecast(fit, "catch", ...)
 }
 
 
