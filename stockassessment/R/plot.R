@@ -74,16 +74,15 @@
 ##' @param dotpch pch for dot
 ##' @param dotcex cex for dot
 ##' @param intervalcol color for interval
-##' @param ... extra arguments transferred to plot including the following: \cr
 ##' @details internal plotting fun
 ##' @importFrom graphics arrows
-addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5), ...){
+addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5)){
   if(class(fit)=="samforecast"){
     x <- attr(fit,"tab")
     y <- as.numeric(rownames(x))
     dummy <- sapply(1:length(y), function(i)arrows(y[i],x[i,paste(what,"low", sep=":")], y[i],x[i,paste(what,"hig", sep=":")],
                                                    lwd=3, col=intervalcol, angle=90, code=3, length=.1))
-    points(y,x[,paste(what,"median", sep=":")], pch=dotpch, cex=dotcex, col=dotcol, ...)
+    points(y,x[,paste(what,"median", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
   }
 }
 
@@ -278,7 +277,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
   if(partial){
     matplot(fitlocal$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
   }
-  addforecast(fit,"fbar", ...)  
+  addforecast(fit,"fbar")  
 }
 
 ##' SAM SSB plot 
@@ -291,7 +290,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
 ##' @export
 ssbplot<-function(fit, ...){
   .plotit(fit, "logssb", ylab="SSB", trans=exp,...)
-  addforecast(fit,"ssb", ...)
+  addforecast(fit,"ssb")
 }
 
 ##' SAM TSB plot 
@@ -330,7 +329,7 @@ recplot<-function(fit,...){
   }
   lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
   .plotit(fit, "logR", ylab=lab, trans=exp,...)
-  addforecast(fit, "rec", ...)
+  addforecast(fit, "rec")
 }
 
 ##' SAM catch plot 
@@ -373,7 +372,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
     }
     points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
   }
-  addforecast(fit, "catch", ...)
+  addforecast(fit, "catch")
 }
 
 
