@@ -257,4 +257,19 @@ print.samforecast<-function(x, ...){
   print(attr(x,"tab"))
 }
 
- 
+##' Print jitset object 
+##' @method print jitset 
+##' @param  x an object as returned from the jit function
+##' @param  ... extra arguments
+##' @details ...
+##' @importFrom stats logLik
+##' @export 
+print.jitset<-function(x,...){
+  fit<-attr(x,"fit")
+  maxabsdiff <- apply(abs(do.call(cbind, lapply(x, function(f)unlist(f$pl)-unlist(fit$pl)))),1,max)
+  maxlist <- relist(maxabsdiff, fit$pl)
+  ret <- as.data.frame(unlist(lapply(maxlist,function(x)if(length(x)>0)max(x) else NULL)))
+  ret <- rbind(ret, logLik=max(abs(unlist(lapply(x, logLik))-logLik(fit))))
+  names(ret) <- "max(|delta|)" 
+  print(ret)
+}
