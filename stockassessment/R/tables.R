@@ -50,6 +50,16 @@ rectable<-function(fit){
    return(ret)
 }
 
+##' Catch table 
+##' @param  fit ... 
+##' @details ...
+##' @export
+catchtable<-function(fit){
+   xx <- as.integer(rownames(fit$data$catchMeanWeight))
+   ret <- .tableit(fit, x=xx, "logCatch", trans=exp) 
+   return(ret)
+}
+
 ##' Yield per recruit calculation
 ##' @param fit the object returned from sam.fit
 ##' @param Flimit Upper limit for Fbar
