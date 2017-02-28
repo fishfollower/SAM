@@ -2,7 +2,7 @@
 % Please edit documentation in R/run.R
 \name{jit}
 \alias{jit}
-\title{leaveout run}
+\title{Jitter runs}
 \usage{
 jit(fit, nojit = 10, par = defpar(fit$data, fit$conf), sd = 0.25,
   ncores = detectCores())
@@ -22,7 +22,7 @@ jit(fit, nojit = 10, par = defpar(fit$data, fit$conf), sd = 0.25,
 A "samset" object, which is basically a list of sam fits
 }
 \description{
-leaveout run
+Jitter runs
 }
 \details{
 ...

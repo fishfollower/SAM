@@ -105,7 +105,7 @@ clean.void.catches<-function(dat, conf){
 }
 
 
-##' leaveout run 
+##' Jitter runs 
 ##' @param fit a fitted model object as returned from sam.fit
 ##' @param nojit a list of vectors. Each element in the list specifies a run where the fleets mentioned are omitted
 ##' @param par initial values to jitter around. The defaule ones are returned from the defpar function
@@ -117,13 +117,14 @@ clean.void.catches<-function(dat, conf){
 ##' @importFrom stats rnorm
 ##' @export
 jit <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=detectCores()){
-  parv<-unlist(par)
-  pars<-lapply(1:nojit, function(i)relist(parv+rnorm(length(parv),sd=sd), par))
+  parv <- unlist(par)
+  pars <- lapply(1:nojit, function(i)relist(parv+rnorm(length(parv),sd=sd), par))
   cl <- makeCluster(ncores) #set up nodes
   clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
-  fits <- parLapply(cl, pars, function(p)sam.fit(fit$data, fit$conf, p))
+  fits <- parLapply(cl, pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))
   stopCluster(cl) #shut it down
   attr(fits,"fit") <- fit
-  class(fits) <- c("jitset","samset")
+  attr(fits,"jitflag") <- 1
+  class(fits) <- c("samset")
   fits
 }
