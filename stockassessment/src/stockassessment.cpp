@@ -554,10 +554,10 @@ Type objective_function<Type>::operator() ()
             }
 
 	    ans += nllVec(f)((logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
-            ans += log(sqrtW).sum();
+            ans += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 
 	    SIMULATE{
-	      logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + nllVec(f).simulate();
+	      logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
 	    }
 	    break;
 	  case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers

@@ -199,6 +199,7 @@ simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, ...){
     	c(object$data[names(object$data)!="logobs"],#all the old data
     	object$obj$simulate(est)["logobs"])#simulated observations
     	, simplify=FALSE)
+    ret<-lapply(ret, function(x){attr(x,"fleetNames") <- attr(object$data,"fleetNames");x})
   }else{
   	ret <- replicate(nsim, object$obj$simulate(est), simplify=FALSE)
   }
