@@ -31,7 +31,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   }else{
     nmissingSSB <- 0
   }
-  parameters$missingSSB <- numeric(nmissingSSB)
+  parameters$missingSSB <- rep(5,nmissingSSB)
   ran <- c("logN", "logF", "missing", "missingSSB")
   obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
   if(rm.unidentified){

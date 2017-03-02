@@ -362,7 +362,7 @@ Type objective_function<Type>::operator() ()
     if(stockRecruitmentModelCode==0){ // straight RW 
       predN(0)=logN(0,i-1);
     }else{
-      if((i-minAge)>=0){thisSSB=ssb(i-minAge);}else{thisSSB=missingSSB((minAge-i)-1);}      
+      if((i-minAge)>=0){thisSSB=ssb(i-minAge);}else{thisSSB=exp(missingSSB((minAge-i)-1));}      
       if(stockRecruitmentModelCode==1){//ricker
         predN(0)=rec_loga(0)+log(thisSSB)-exp(rec_logb(0))*thisSSB; 
       }else{
@@ -642,7 +642,7 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
     for (int i = 0; i < missingSSB.size(); i++) ans -= dnorm(missingSSB(i), Type(0), huge, true);  
   } 
-  
+
   SIMULATE {
     REPORT(logF);
     REPORT(logN);
