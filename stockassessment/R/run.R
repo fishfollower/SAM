@@ -26,7 +26,13 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   tmball <- c(data, conf, simFlag=as.numeric(sim.condRE))    
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
-  ran <- c("logN", "logF", "missing")
+  if((conf$minAge>1)&(conf$stockRecruitmentModelCode!=0)){
+    nmissingSSB <- conf$minAge-1
+  }else{
+    nmissingSSB <- 0
+  }
+  parameters$missingSSB <- numeric(nmissingSSB)
+  ran <- c("logN", "logF", "missing", "missingSSB")
   obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
   if(rm.unidentified){
     skel <- parameters[!names(parameters)%in%ran]

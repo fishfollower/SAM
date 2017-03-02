@@ -219,6 +219,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
+  PARAMETER_VECTOR(missingSSB);
   int timeSteps=logF.dim[1];
   int stateDimF=logF.dim[0];
   int stateDimN=logN.dim[0];
@@ -356,15 +357,17 @@ Type objective_function<Type>::operator() ()
   }
   MVNORM_t<Type> neg_log_densityN(nvar);
   vector<Type> predN(stateDimN); 
+  Type thisSSB=Type(0); 
   for(int i=1;i<timeSteps;i++){ 
     if(stockRecruitmentModelCode==0){ // straight RW 
       predN(0)=logN(0,i-1);
     }else{
+      if((i-minAge)>=0){thisSSB=ssb(i-minAge);}else{thisSSB=missingSSB((minAge-i)-1);}      
       if(stockRecruitmentModelCode==1){//ricker
-        predN(0)=rec_loga(0)+log(ssb(i-1))-exp(rec_logb(0))*ssb(i-1); 
+        predN(0)=rec_loga(0)+log(thisSSB)-exp(rec_logb(0))*thisSSB; 
       }else{
         if(stockRecruitmentModelCode==2){//BH
-          predN(0)=rec_loga(0)+log(ssb(i-1))-log(1.0+exp(rec_logb(0))*ssb(i-1)); 
+          predN(0)=rec_loga(0)+log(thisSSB)-log(1.0+exp(rec_logb(0))*thisSSB); 
         }else{
           error("SR model code not recognized");
         }
@@ -637,6 +640,7 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < stateDimN; i++) ans -= dnorm(logN(i, 0), Type(0), huge, true);  
     for (int i = 0; i < stateDimF; i++) ans -= dnorm(logF(i, 0), Type(0), huge, true);  
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
+    for (int i = 0; i < missingSSB.size(); i++) ans -= dnorm(missingSSB(i), Type(0), huge, true);  
   } 
   
   SIMULATE {
