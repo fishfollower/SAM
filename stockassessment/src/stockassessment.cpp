@@ -364,10 +364,12 @@ Type objective_function<Type>::operator() ()
     }else{
       if((i-minAge)>=0){thisSSB=ssb(i-minAge);}else{thisSSB=exp(missingSSB((minAge-i)-1));}      
       if(stockRecruitmentModelCode==1){//ricker
-        predN(0)=rec_loga(0)+log(thisSSB)-exp(rec_logb(0))*thisSSB; 
+        //predN(0)=rec_loga(0)+log(thisSSB)-exp(rec_logb(0))*thisSSB;
+        predN(0)=rec_loga(0)+log(thisSSB)-rec_logb(0)+(Type(1)-thisSSB/exp(rec_logb(0))); 
       }else{
         if(stockRecruitmentModelCode==2){//BH
-          predN(0)=rec_loga(0)+log(thisSSB)-log(1.0+exp(rec_logb(0))*thisSSB); 
+          //predN(0)=rec_loga(0)+log(thisSSB)-log(1.0+exp(rec_logb(0))*thisSSB); 
+          predN(0)=rec_loga(0)+log(thisSSB)-log(thisSSB+exp(rec_logb(0)));  
         }else{
           error("SR model code not recognized");
         }

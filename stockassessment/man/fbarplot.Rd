@@ -4,7 +4,8 @@
 \alias{fbarplot}
 \title{SAM Fbar plot}
 \usage{
-fbarplot(fit, partial = (class(fit) == "sam"), drop = NULL, ...)
+fbarplot(fit, partial = (class(fit) == "sam"), drop = NULL,
+  pcol = "lightblue", page = NULL, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
@@ -12,6 +13,10 @@ fbarplot(fit, partial = (class(fit) == "sam"), drop = NULL, ...)
 \item{partial}{true if included partial F's are to be plotted}
 
 \item{drop}{number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information}
+
+\item{pcol}{color of partial lines}
+
+\item{page}{partial ages to plot}
 
 \item{...}{extra arguments transferred to plot including the following: \cr
 \code{add} logical, plotting is to be added on existing plot \cr

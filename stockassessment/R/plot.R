@@ -243,7 +243,9 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
 ##' SAM Fbar plot 
 ##' @param fit the object returned from sam.fit 
 ##' @param partial true if included partial F's are to be plotted
-##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information  
+##' @param drop number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information
+##' @param pcol color of partial lines
+##' @param page partial ages to plot
 ##' @param ... extra arguments transferred to plot including the following: \cr
 ##' \code{add} logical, plotting is to be added on existing plot \cr
 ##' \code{ci} logical, confidence intervals should be plotted \cr
@@ -251,7 +253,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
 ##' @importFrom graphics matplot
 ##' @details Plot the defined fbar. 
 ##' @export
-fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
+fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL, pcol="lightblue", page=NULL,...){
   if(class(fit)=="sam"){
     fitlocal <- fit
   }
@@ -271,11 +273,15 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL,...){
   fbarRange<-fitlocal$conf$fbarRange
   fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
   fmat<-fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
-  idx<-which(fitlocal$conf$minAge:fitlocal$conf$maxAge %in% fbarRange[1]:fbarRange[2])
+  if(is.null(page)){
+    page<-fbarRange[1]:fbarRange[2]
+  }
+  idx <- which(fitlocal$conf$minAge:fitlocal$conf$maxAge %in% page)
   exx <- if(partial){exp(fmat[idx,])}else{numeric(0)}
   .plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
   if(partial){
-    matplot(fitlocal$data$years, t(exp(fmat[idx,])), add=TRUE, type="b", col="lightblue", pch=as.character(fbarRange[1]:fbarRange[2]))
+    idxx <- 1:(length(fitlocal$data$years)-drop)
+    matplot(fitlocal$data$years[idxx], t(exp(fmat[idx,idxx])), add=TRUE, type="b", col=pcol, pch=as.character(page))
   }
   addforecast(fit,"fbar")  
 }
