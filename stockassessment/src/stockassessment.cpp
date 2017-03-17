@@ -241,6 +241,9 @@ Type objective_function<Type>::operator() ()
   vector<Type> recapturePhi(logitRecapturePhi.size());
   vector<Type> releaseSurvivalVec(nobs);
   vector<Type> recapturePhiVec(nobs);
+  array<Type> resF(logF.dim[0],logF.dim[1]-1);
+  array<Type> resN(logN.dim[0],logN.dim[1]-1);
+
 
   if(logitReleaseSurvival.size()>0){
     releaseSurvival=invlogit(logitReleaseSurvival);
@@ -327,8 +330,13 @@ Type objective_function<Type>::operator() ()
   }
   using namespace density;
   MVNORM_t<Type> neg_log_densityF(fvar);
-  for(int i=1;i<timeSteps;i++){    
-     ans+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+  LLT< Matrix<Type, Dynamic, Dynamic> > lltCovF(fvar);
+  matrix<Type> LF = lltCovF.matrixL();
+  matrix<Type> LinvF = LF.inverse();
+
+  for(int i=1;i<timeSteps;i++){
+    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));    
+    ans+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
     SIMULATE{
       if(simFlag==0){
         logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
@@ -356,6 +364,10 @@ Type objective_function<Type>::operator() ()
     }
   }
   MVNORM_t<Type> neg_log_densityN(nvar);
+  LLT< Matrix<Type, Dynamic, Dynamic> > lltCovN(nvar);
+  matrix<Type> LN = lltCovN.matrixL();
+  matrix<Type> LinvN = LN.inverse();
+ 
   vector<Type> predN(stateDimN); 
   Type thisSSB=Type(0); 
   for(int i=1;i<timeSteps;i++){ 
@@ -387,6 +399,7 @@ Type objective_function<Type>::operator() ()
       predN(stateDimN-1)=log(exp(logN(stateDimN-2,i-1)-exp(logF(keyLogFsta(0,stateDimN-2),i-1))-natMor(i-1,stateDimN-2))+
                              exp(logN(stateDimN-1,i-1)-exp(logF(keyLogFsta(0,stateDimN-1),i-1))-natMor(i-1,stateDimN-1))); 
     }
+    resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
     ans+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
     SIMULATE{
       if(simFlag==0){
@@ -663,6 +676,8 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logtsb);
   ADREPORT(R);
   ADREPORT(logR);
+  ADREPORT(resF);
+  ADREPORT(resN);
   vector<Type> lastLogN = logN.col(timeSteps-1);
   ADREPORT(lastLogN);
   vector<Type> lastLogF = logF.col(timeSteps-1);
