@@ -57,6 +57,48 @@ plot.samset<-function(x, ...){
   par(op)
 }
 
+##' Compute process residuals (single joint sample) 
+##' @param fit the fitted object as returned from the sam.fit function
+##' @param ... extra arguments (not currently used)
+##' @return an object of class \code{samres}
+##' @details ...
+##' @importFrom TMB sdreport
+##' @importFrom MASS mvrnorm
+##' @export
+##' @examples
+procres <- function(fit, ...){
+  sdrep <- sdreport(fit$obj,fit$opt$par)  
+  ages <- as.integer(colnames(fit$data$natMor))
+  iF<-fit$conf$keyLogFsta[1,]
+  if (exists(".Random.seed")){
+    oldseed <- get(".Random.seed", .GlobalEnv)
+    oldRNGkind <- RNGkind()
+  }
+  set.seed(123456)
+  idx <- which(names(sdrep$value)=="resN")
+  resN <- mvrnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
+  resN <- matrix(resN, nrow=nrow(fit$pl$logN))
+  resN <- data.frame(year=fit$data$years[as.vector(col(resN))],
+                     fleet=1,
+                     age=ages[as.vector(row(resN))],
+                     residual=as.vector(resN))
+  idx <- which(names(sdrep$value)=="resF")
+  resF <- mvrnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
+  resF <- matrix(resF, nrow=nrow(fit$pl$logF))
+  resF <- data.frame(year=fit$data$years[as.vector(col(resF))],
+                     fleet=2,
+                     age=ages[iF[iF>=0]+1][as.vector(row(resF))],
+                     residual=as.vector(resF))
+  ret <- rbind(resN, resF)
+  attr(ret, "fleetNames") <- c("Joint sample residuals log(N)", "Joint sample residuals log(F)")
+  class(ret) <- "samres"
+  if (exists("oldseed")){
+    do.call("RNGkind",as.list(oldRNGkind))
+    assign(".Random.seed", oldseed, .GlobalEnv)
+  }
+  return(ret)
+}
+
 ##' Plot sam residuals 
 ##' @method plot samres 
 ##' @param  x ...
