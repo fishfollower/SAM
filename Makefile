@@ -10,9 +10,7 @@ ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
 CPP_SRC := $(PACKAGE)/src/*.cpp
 
-SUBDIRS := $(wildcard tests/*/.)
-
-.PHONY: test all $(SUBDIRS)
+.PHONY: test all updateData
 
 all:
 	make doc-update
@@ -75,7 +73,7 @@ clean:
 test:
 	echo "devtools::test('stockassessment')" | $(R) --slave
 
-updataData: 
+updateData: 
 	echo "library(stockassessment); \
 	      source('stockassessment/tests/nscod/script.R', chdir=TRUE, echo=TRUE); \
 	      nscodData <- dat; nscodConf <- conf; nscodParameters <- par; \
@@ -83,4 +81,7 @@ updataData:
 	      save(nscodConf, file='stockassessment/data/nscodConf.RData'); \
 	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData'); " | R --vanilla
 
-
+#  for later 
+# 
+#	-cd $(@D); echo "library(stockassessment); source('script.R'); fit.exp<-fit;save(fit.exp,file='fit.expected.Rdata') " | R --vanilla
+# 
