@@ -20,6 +20,11 @@ png("res.png", 600, 600)
 plot(res, bubble=.5)
 dev.off()
 
+resp<-procres(fit)
+png("resp.png", 600, 600)
+plot(resp, bubble=.5)
+dev.off()
+
 retro <- retro(fit,year=10)
 
 png("retro.png", 600, 1200)

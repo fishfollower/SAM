@@ -114,7 +114,7 @@ catchplot(fit)
   <img src="figs/catch.png?raw=true">
 </p>
 
-Model diagnosis in terms of residuals (one observation ahead residuals), retrospective, and leave-out can be computed and plottet in the following way.   
+Model diagnosis in terms of residuals (one observation ahead residuals, and process joint sample residuals), retrospective, and leave-out can be computed and plottet in the following way.   
 
 ```R
 res <- residuals(fit)
@@ -122,6 +122,14 @@ plot(res)
 ```
 <p align="center">
   <img src="figs/res.png?raw=true">
+</p>
+
+```R
+resp <- procres(fit)
+plot(resp)
+```
+<p align="center">
+  <img src="figs/resp.png?raw=true">
 </p>
 
 ```R
