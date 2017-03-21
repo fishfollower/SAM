@@ -90,7 +90,9 @@ defcon<-function(dat){
   ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=nAges-1)
   colnames(ret$keyCorObs)<-paste(minAge:(maxAge-1),(minAge+1):maxAge,sep="-")
   for(i in 1:nrow(x)){
-      ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-NA
+      if(ages[i,1]<ages[i,2]){
+        ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-NA
+      }
   }
     
   ret$stockRecruitmentModelCode <- 0
