@@ -65,7 +65,6 @@ plot.samset<-function(x, ...){
 ##' @importFrom TMB sdreport
 ##' @importFrom MASS mvrnorm
 ##' @export
-##' @examples
 procres <- function(fit, ...){
   sdrep <- sdreport(fit$obj,fit$opt$par)  
   ages <- as.integer(colnames(fit$data$natMor))
