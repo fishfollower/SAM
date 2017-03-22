@@ -5,8 +5,9 @@
 \title{Plot by one or two}
 \usage{
 plotby(x = NULL, y = NULL, z = NULL, by = NULL, bubblescale = 1,
-  x.common = TRUE, y.common = TRUE, xlab = NULL, ylab = NULL,
-  xlim = NULL, ylim = NULL, axes = TRUE, ...)
+  x.common = TRUE, y.common = TRUE, z.common = TRUE, xlab = NULL,
+  ylab = NULL, xlim = NULL, ylim = NULL, zmax = NULL, axes = TRUE,
+  ...)
 }
 \arguments{
 \item{x}{numeric vector}
@@ -23,6 +24,8 @@ plotby(x = NULL, y = NULL, z = NULL, by = NULL, bubblescale = 1,
 
 \item{y.common}{logical: use same y-axis for all plots}
 
+\item{z.common}{logical: use same z-axis for all plots}
+
 \item{xlab}{normal graphical parameter}
 
 \item{ylab}{normal graphical parameter}
@@ -30,6 +33,8 @@ plotby(x = NULL, y = NULL, z = NULL, by = NULL, bubblescale = 1,
 \item{xlim}{normal graphical parameter}
 
 \item{ylim}{normal graphical parameter}
+
+\item{zmax}{internally used to scale bubbles similarly}
 
 \item{axes}{normal graphical parameter}
 

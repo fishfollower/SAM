@@ -95,10 +95,12 @@ addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, interval
 ##' @param bubblescale scaling of bubble size
 ##' @param x.common logical: use same x-axis for all plots
 ##' @param y.common logical: use same y-axis for all plots
+##' @param z.common logical: use same z-axis for all plots
 ##' @param xlab normal graphical parameter
 ##' @param ylab normal graphical parameter
 ##' @param xlim normal graphical parameter
 ##' @param ylim normal graphical parameter
+##' @param zmax internally used to scale bubbles similarly 
 ##' @param axes normal graphical parameter
 ##' @param ... additional graphical parameters 
 ##' @importFrom graphics plot layout axis box mtext legend
@@ -112,7 +114,7 @@ addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, interval
 ##' par(ask=FALSE)
 ##' plotby(year,age,perfectres, by=fleet)
 ##' detach(exdat)
-plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE, y.common=TRUE, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, axes=TRUE, ...){
+plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE, y.common=TRUE, z.common=TRUE, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, zmax=NULL, axes=TRUE, ...){
   if(is.null(by) | length(unique(by))==1){
     # 0
     if(length(x)==0 & length(y)==0 & length(z)==0){
@@ -162,7 +164,8 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
       if(missing(ylab)) ylab <- deparse(substitute(y))
       if(missing(xlim)) xlim <- c(min(x)-1, max(x)+1)
       if(missing(ylim)) ylim <- c(min(y)-1, max(y)+1)
-      cex=sqrt(abs(z))/max(sqrt(abs(z)), na.rm=TRUE)*5*bubblescale
+      if(is.null(zmax)) zmax <- max(sqrt(abs(z)), na.rm=TRUE)
+      cex=sqrt(abs(z))/zmax*5*bubblescale
       plot(x, y, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, type="n", axes=axes, ...)
       neg <- z<0
       points(x[neg],y[neg], cex=cex[neg], col=rgb(1, 0, 0, alpha=.5), pch=19, ...)
@@ -183,6 +186,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     if(missing(ylab)) ylab <- deparse(substitute(y))
     if(x.common) xlim <- c(min(x)-1, max(x)+1)
     if(y.common) ylim <- c(min(y)-1, max(y)+1)
+    if(z.common) zmax <- max(sqrt(abs(z)), na.rm=TRUE)
     if(x.common) op1<-par(oma=c(par("mar")[1], par("oma")[2], par("mar")[3], par("oma")[4]),
                           mar=c(.2,par("mar")[2],.2,par("mar")[4]))
     if(y.common) op2<-par(oma=c(par("oma")[1], par("mar")[2], par("oma")[3], par("mar")[4]),
@@ -191,7 +195,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     .fun<-function(i){
       b<-uby[i]
       plotby(x[by==b], y[by==b], z[by==b], xlab=ifelse(x.common,"",xlab), ylab=ifelse(y.common,"",ylab),
-             xlim=xlim, ylim=ylim, bubblescale=bubblescale, axes=FALSE, ...)
+             xlim=xlim, ylim=ylim, zmax=zmax, bubblescale=bubblescale, axes=FALSE, ...)
       legend("top", bty="n", legend=uby[i], text.col=gray(.5))
       if(!x.common)axis(1)
       if(!y.common)axis(2)
@@ -216,6 +220,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     if(missing(ylab)) ylab <- deparse(substitute(y))
     if(x.common) xlim <- c(min(x)-1, max(x)+1)
     if(y.common) ylim <- c(min(y)-1, max(y)+1)
+    if(z.common) zmax <- max(sqrt(abs(z)), na.rm=TRUE)
     if(x.common) op1<-par(oma=c(par("mar")[1], par("oma")[2], par("mar")[3], par("oma")[4]),
                           mar=c(.2,par("mar")[2],.2,par("mar")[4]))
     if(y.common) op2<-par(oma=c(par("oma")[1], par("mar")[2], par("oma")[3], par("mar")[4]),
@@ -224,7 +229,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     fun<-function(i,j){
       b<-(by[,1]==uby1[i])&(by[,2]==uby2[j])
       plotby(x[b], y[b], z[b], xlab=ifelse(x.common,"",xlab), ylab=ifelse(y.common,"",ylab),
-             xlim=xlim, ylim=ylim, bubblescale=bubblescale, axes=FALSE, ...)
+             xlim=xlim, ylim=ylim, zmax=zmax, bubblescale=bubblescale, axes=FALSE, ...)
       legend("top", bty="n", legend=paste(uby1[i],":",uby2[j], sep=""), text.col=gray(.5))
       if(!x.common)axis(1)
       if(!y.common)axis(2)

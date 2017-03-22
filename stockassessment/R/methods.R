@@ -114,7 +114,23 @@ procres <- function(fit, ...){
 ##' plot(residuals(fit))
 ##' }
 plot.samres<-function(x, ...){
+  add_legend <- function(x, ...) {
+    opar <- par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), 
+                mar=c(0, 0, 0, 0), new=TRUE)
+    on.exit(par(opar))
+    plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
+    zscale <- pretty(x$residual,min.n=5)
+    uu<-par("usr")
+    yy<-rep(uu[3]+.95*(uu[4]-uu[3]), length(zscale))
+    xx<-seq(uu[1]+.65*(uu[2]-uu[1]),uu[1]+.9*(uu[2]-uu[1]), length=length(zscale))
+    text(xx,yy,labels=zscale)
+    colb <- ifelse(zscale<0, rgb(1, 0, 0, alpha=.5), rgb(0, 0, 1, alpha=.5))
+    bs<-1
+    if("bubblescale"%in%names(list(...))) bs <- list(...)$bubblescale
+    points(xx,yy,cex=sqrt(abs(zscale))/max(sqrt(abs(zscale)), na.rm=TRUE)*5*bs, pch=19, col=colb)
+  }
   plotby(x$year, x$age, x$residual, by=attr(x,"fleetNames")[x$fleet], xlab="Year", ylab="Age", ...)
+  add_legend(x, ...)
 }
 
 ##' Print sam object 
