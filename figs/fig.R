@@ -17,12 +17,12 @@ dev.off()
 res<-residuals(fit)
 
 png("res.png", 600, 600)
-plot(res, bubble=.5)
+plot(res, bubblescale=.5)
 dev.off()
 
 resp<-procres(fit)
 png("resp.png", 600, 600)
-plot(resp, bubble=.5)
+plot(resp, bubblescale=.5)
 dev.off()
 
 retro <- retro(fit,year=10)
