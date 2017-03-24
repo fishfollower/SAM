@@ -10,7 +10,7 @@
    ci<-y+fit$sdrep$sd[idx]%o%c(-2,2)
    ret<-trans(cbind(y,ci))
    rownames(ret)<-x
-   colnames(ret)<-c("Estimate","Low","Hig")
+   colnames(ret)<-c("Estimate","Low","High")
    return(ret)
 }
 
