@@ -121,8 +121,8 @@ plot.samres<-function(x, ...){
     plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
     zscale <- pretty(x$residual,min.n=5)
     uu<-par("usr")
-    yy<-rep(uu[3]+.95*(uu[4]-uu[3]), length(zscale))
-    xx<-seq(uu[1]+.65*(uu[2]-uu[1]),uu[1]+.9*(uu[2]-uu[1]), length=length(zscale))
+    yy<-rep(uu[3]+.03*(uu[4]-uu[3]), length(zscale))
+    xx<-seq(uu[1]+.10*(uu[2]-uu[1]),uu[1]+.4*(uu[2]-uu[1]), length=length(zscale))
     text(xx,yy,labels=zscale)
     colb <- ifelse(zscale<0, rgb(1, 0, 0, alpha=.5), rgb(0, 0, 1, alpha=.5))
     bs<-1
