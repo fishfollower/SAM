@@ -60,6 +60,53 @@ catchtable<-function(fit){
    return(ret)
 }
 
+##' N table 
+##' @param  fit ... 
+##' @details ...
+##' @export
+ntable <- function(fit){
+   ret <- exp(t(fit$pl$logN))
+   colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
+   rownames(ret) <- fit$data$years
+   return(ret)
+}
+
+##' F table 
+##' @param  fit ... 
+##' @details ...
+##' @export
+ftable <- function(fit){
+   idx <- fit$conf$keyLogFsta[1,]+2    
+   ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
+   ret[,idx==0] <- 0
+   colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
+   rownames(ret) <- fit$data$years
+   return(ret)
+}
+
+##' parameter table 
+##' @param  fit ... 
+##' @details ...
+##' @export
+partable <- function(fit){
+  param <- coef(fit)
+  nam <- names(param)
+  dup <- duplicated(nam)
+  namadd <- rep(0, length(nam))
+  for (i in 2:length(dup)) {
+    if(dup[i])namadd[i] <- namadd[i - 1] + 1
+  }
+  nam <- paste(nam, namadd, sep = "_")
+  ret<-cbind(param, attr(param,"sd"))
+  ex<-exp(ret[,1])
+  lo<-exp(ret[,1]-2*ret[,2])
+  hi<-exp(ret[,1]+2*ret[,2])
+  ret<-cbind(ret,ex,lo,hi)
+  colnames(ret)<-c("par", "sd(par)", "exp(par)", "Low", "High")
+  rownames(ret)<-nam
+  return(ret)
+}
+
 ##' Yield per recruit calculation
 ##' @param fit the object returned from sam.fit
 ##' @param Flimit Upper limit for Fbar
