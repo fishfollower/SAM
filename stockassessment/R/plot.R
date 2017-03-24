@@ -80,7 +80,7 @@ addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, interval
   if(class(fit)=="samforecast"){
     x <- attr(fit,"tab")
     y <- as.numeric(rownames(x))
-    dummy <- sapply(1:length(y), function(i)arrows(y[i],x[i,paste(what,"low", sep=":")], y[i],x[i,paste(what,"hig", sep=":")],
+    dummy <- sapply(1:length(y), function(i)arrows(y[i],x[i,paste(what,"low", sep=":")], y[i],x[i,paste(what,"high", sep=":")],
                                                    lwd=3, col=intervalcol, angle=90, code=3, length=.1))
     points(y,x[,paste(what,"median", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
   }
