@@ -71,11 +71,11 @@ ntable <- function(fit){
    return(ret)
 }
 
-##' F table 
+##' F-at-age table 
 ##' @param  fit ... 
 ##' @details ...
 ##' @export
-ftable <- function(fit){
+faytable <- function(fit){
    idx <- fit$conf$keyLogFsta[1,]+2    
    ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
    ret[,idx==0] <- 0
