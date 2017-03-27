@@ -107,6 +107,48 @@ partable <- function(fit){
   return(ret)
 }
 
+##' model table 
+##' @param fits A sam fit as returned from the sam.fit function, or a collection c(fit1, fit2, ...) of such fits  
+##' @details ...
+##' @importFrom stats AIC pchisq
+##' @export
+modeltable <- function(fits){
+  if(class(fits)=="samset"){
+    if(!is.null(attr(fits,"fit"))){
+      fits[[length(fits)+1]] <- attr(fits,"fit")
+      fits <- fits[c(length(fits),1:(length(fits)-1))]
+    }
+  }
+  if(class(fits)=="sam"){
+    fits <- list(fits)
+    class(fits) <- "samset"
+  }
+  fits <- fits[!sapply(fits, is.null)]
+  if(is.null(names(fits))){
+    nam <- paste("M", 1:length(fits), sep="")
+  }else{
+    nam <-ifelse(names(fits)=="",paste("M", 1:length(fits), sep=""), names(fits))
+  }
+  logL <- sapply(fits, logLik)
+  npar <- sapply(fits, function(f)attr(logLik(f),"df"))
+  aic <- sapply(fits, AIC)
+  res <- cbind("log(L)"=logL, "#par"=npar, "AIC"=aic)
+  rownames(res) <- nam
+  o <- 1:length(fits)
+  if(length(fits)==2){
+    o <- order(npar, decreasing=TRUE)
+    if(npar[o[1]]>npar[o[2]]){
+      df <- npar[o[1]]>npar[o[2]]
+      D <- 2*(logL[o[1]]-logL[o[2]])
+      P <- 1-pchisq(D,df)
+      cnam <- paste0("Pval( ",nam[o[1]]," -> ",nam[o[2]], " )")
+      res <- cbind(res, c(NA, P)[o])
+      colnames(res)[ncol(res)] <- cnam
+    }
+  }
+  return(res[o,])
+}
+
 ##' Yield per recruit calculation
 ##' @param fit the object returned from sam.fit
 ##' @param Flimit Upper limit for Fbar
