@@ -32,7 +32,6 @@
 #define TMB_LIB_INIT R_init_stockassessment
 #include <TMB.hpp>
 
-using CppAD::abs;
 
 /* Parameter transform */
 template <class Type>
@@ -50,6 +49,7 @@ bool isNAINT(int x){
 template <class Type>
 matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec){
 
+  using CppAD::abs;
   int dim = maxAgeFleet-minAgeFleet+1;
   int offset = minAgeFleet-minAge;
   matrix<Type> ret(dim,dim);
@@ -158,6 +158,7 @@ density::UNSTRUCTURED_CORR_t<Type> getCorrObj(vector<Type> params){
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
+  using CppAD::abs;
   DATA_INTEGER(noFleets);
   DATA_IVECTOR(fleetTypes); 
   DATA_VECTOR(sampleTimes);
