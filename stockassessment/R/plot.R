@@ -88,9 +88,12 @@ addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, interval
 
 
 ##' Plot by one or two  
-##' @param x numeric vector
-##' @param y numeric vector
-##' @param z numeric vector
+##' @param x numeric vector of points to be plotted
+##' @param y numeric vector of points to be plotted
+##' @param z numeric vector of points to be plotted
+##' @param x.line numeric vector of points of line to be added
+##' @param y.line numeric vector of points of line to be added
+##' @param z.line numeric vector of points of line to be added
 ##' @param by vector or two column matrix to create sub sets from
 ##' @param bubblescale scaling of bubble size
 ##' @param x.common logical: use same x-axis for all plots
@@ -114,27 +117,38 @@ addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, interval
 ##' par(ask=FALSE)
 ##' plotby(year,age,perfectres, by=fleet)
 ##' detach(exdat)
-plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE, y.common=TRUE, z.common=TRUE, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, zmax=NULL, axes=TRUE, ...){
+plotby <-function(x=NULL, y=NULL, z=NULL, x.line=NULL, y.line=NULL, z.line=NULL, by=NULL,  bubblescale=1, x.common=!is.null(x), y.common=!is.null(y), z.common=!is.null(z), xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, zmax=NULL, axes=TRUE, ...){
   if(is.null(by) | length(unique(by))==1){
     # 0
     if(length(x)==0 & length(y)==0 & length(z)==0){
-      plot(NA, xlim=0:1, ylim=0:1, xlab="", ylab="", axes=FALSE, ...)
+      if(length(xlim)==0) xlim <- 0:1
+      if(length(ylim)==0) ylim <- 0:1
+      plot(NA, xlim=xlim, ylim=ylim, xlab="", ylab="", axes=FALSE, ...)
     }
     # 1
     if(length(x)>0 & length(y)==0 & length(z)==0){
       if(missing(ylab)) ylab <- deparse(substitute(x))
       if(missing(ylim)) ylim <- c(min(x)-1, max(x)+1)      
       plot(x, ylab=ylab, ylim=ylim, axes=axes, ...)
+      if(length(x.line)>0){
+        lines(x.line,...)    
+      }
     }
     if(length(x)==0 & length(y)>0 & length(z)==0){
       if(missing(ylab)) ylab <- deparse(substitute(y))
       if(missing(ylim)) ylim <- c(min(y)-1, max(y)+1)      
       plot(y, ylab=ylab, ylim=ylim, axes=axes, ...)
+      if(length(y.line)>0){
+        lines(y.line, ...)    
+      }
     }
     if(length(x)==0 & length(y)==0 & length(z)>0){
       if(missing(ylab)) ylab <- deparse(substitute(z))
       if(missing(ylim)) ylim <- c(min(z)-1, max(z)+1)      
       plot(z, ylab=ylab, ylim=ylim, axes=axes, ...)
+      if(length(z.line)>0){
+        lines(z.line, ...)    
+      }
     }
     # 2
     if(length(x)>0 & length(y)>0 & length(z)==0){
@@ -143,6 +157,10 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
       if(missing(xlim)) xlim <- c(min(x)-1, max(x)+1)
       if(missing(ylim)) ylim <- c(min(y)-1, max(y)+1)
       plot(x, y, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, axes=axes, ...)
+      if(length(y.line)>0){
+        o<-order(x)  
+        lines(x[o], y.line[o],...)    
+      }
     }
     if(length(x)>0 & length(y)==0 & length(z)>0){
       if(missing(xlab)) xlab <- deparse(substitute(x))
@@ -150,13 +168,21 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
       if(missing(xlim)) xlim <- c(min(x)-1, max(x)+1)
       if(missing(ylim)) ylim <- c(min(z)-1, max(z)+1)
       plot(x, z, xlab=xlab,  ylab=ylab, xlim=xlim, ylim=ylim, axes=axes, ...)
+      if(length(z.line)>0){
+        o<-order(x)  
+        lines(x[o], z.line[o],...)    
+      }
     }
     if(length(x)==0 & length(y)>0 & length(z)>0){
       if(missing(xlab)) xlab <- deparse(substitute(y))
       if(missing(ylab)) ylab <- deparse(substitute(z))
       if(missing(xlim)) xlim <- c(min(y)-1, max(y)+1)
       if(missing(ylim)) ylim <- c(min(z)-1, max(z)+1)
-      plot(y, x, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, axes=axes, ...)
+      plot(y, z, xlab=xlab, ylab=ylab, xlim=xlim, ylim=ylim, axes=axes, ...)
+      if(length(z.line)>0){
+        o<-order(y)  
+        lines(y[o], z.line[o],...)    
+      }
     }
     # 3
     if(length(x)>0 & length(y)>0 & length(z)>0){
@@ -194,7 +220,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     
     .fun<-function(i){
       b<-uby[i]
-      plotby(x[by==b], y[by==b], z[by==b], xlab=ifelse(x.common,"",xlab), ylab=ifelse(y.common,"",ylab),
+      plotby(x[by==b], y[by==b], z[by==b], x.line[by==b], y.line[by==b], z.line[by==b], xlab=ifelse(x.common,"",xlab), ylab=ifelse(y.common,"",ylab),
              xlim=xlim, ylim=ylim, zmax=zmax, bubblescale=bubblescale, axes=FALSE, ...)
       legend("top", bty="n", legend=uby[i], text.col=gray(.5))
       if(!x.common)axis(1)
@@ -209,8 +235,9 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     if(y.common)mtext(ylab, side = 2, line = 2.5, outer = TRUE, ...)
     if(x.common)par(op1)
     if(y.common&!x.common)par(op2)
+    par(mfrow=c(1,1))
   }  
-  if(is.matrix(by)){      
+  if(is.matrix(by)){
     uby1 <- unique(by[,1])
     uby2 <- unique(by[,2])
     div<-c(length(uby1), length(uby2))
@@ -228,7 +255,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     
     fun<-function(i,j){
       b<-(by[,1]==uby1[i])&(by[,2]==uby2[j])
-      plotby(x[b], y[b], z[b], xlab=ifelse(x.common,"",xlab), ylab=ifelse(y.common,"",ylab),
+      plotby(x[b], y[b], z[b], x.line[b], y.line[b], z.line[b], xlab=ifelse(x.common,"",xlab), ylab=ifelse(y.common,"",ylab),
              xlim=xlim, ylim=ylim, zmax=zmax, bubblescale=bubblescale, axes=FALSE, ...)
       legend("top", bty="n", legend=paste(uby1[i],":",uby2[j], sep=""), text.col=gray(.5))
       if(!x.common)axis(1)
@@ -242,6 +269,7 @@ plotby <-function(x=NULL, y=NULL, z=NULL, by=NULL,  bubblescale=1, x.common=TRUE
     if(y.common)mtext(ylab, side = 2, line = 2.5, outer = TRUE, ...)
     if(x.common)par(op1)
     if(y.common&!x.common)par(op2)
+    par(mfrow=c(1,1))
   }  
 }
 
@@ -514,4 +542,21 @@ srplot<-function(fit, ...){
   y<-rownames(X)
   plot(S,R, xlab=Snam, ylab=Rnam, type="l", xlim=range(0,S), ylim=range(0,R), ...)
   text(S,R, labels=y[idxR], cex=.7, col="red" )
+}
+
+##' Plots fit to data 
+##' @param fit the object returned from sam.fit
+##' @param log should the plot be against log-obs
+##' @param fleets an integer vector of fleets to plot. Default is all of them
+##' @param ... extra arguments to plot
+##' @export
+fitplot <- function(fit, log=TRUE, fleets=unique(fit$data$aux[,"fleet"]), ...){  
+  idx<-fit$data$aux[,"fleet"]%in%fleets  
+  trans <- function(x)if(log){x}else{exp(x)}  
+  p <- trans(fit$obj$report()$predObs[idx])
+  o <- trans(fit$data$logobs[idx])
+  a <- paste0("a=",fit$data$aux[idx,"age"]," ")
+  f <- paste0(" f=",attr(fit$data,"fleetNames")[fit$data$aux[idx,"fleet"]])
+  Year <- fit$data$aux[idx,"year"]
+  plotby(Year, o, y.line=p, by=if(length(fleets)==1){a}else{cbind(a,f)}, y.common=FALSE, ylab="", ...)
 }

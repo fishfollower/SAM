@@ -4,17 +4,24 @@
 \alias{plotby}
 \title{Plot by one or two}
 \usage{
-plotby(x = NULL, y = NULL, z = NULL, by = NULL, bubblescale = 1,
-  x.common = TRUE, y.common = TRUE, z.common = TRUE, xlab = NULL,
+plotby(x = NULL, y = NULL, z = NULL, x.line = NULL, y.line = NULL,
+  z.line = NULL, by = NULL, bubblescale = 1, x.common = !is.null(x),
+  y.common = !is.null(y), z.common = !is.null(z), xlab = NULL,
   ylab = NULL, xlim = NULL, ylim = NULL, zmax = NULL, axes = TRUE,
   ...)
 }
 \arguments{
-\item{x}{numeric vector}
+\item{x}{numeric vector of points to be plotted}
 
-\item{y}{numeric vector}
+\item{y}{numeric vector of points to be plotted}
 
-\item{z}{numeric vector}
+\item{z}{numeric vector of points to be plotted}
+
+\item{x.line}{numeric vector of points of line to be added}
+
+\item{y.line}{numeric vector of points of line to be added}
+
+\item{z.line}{numeric vector of points of line to be added}
 
 \item{by}{vector or two column matrix to create sub sets from}
 
