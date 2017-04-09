@@ -523,7 +523,8 @@ obscorrplot<-function(fit,...){
         xx <- x[[i]]
         ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
         rownames(xx) <- ages
-        plotcorr(xx,col=ccolors[5*xx+6],mar=0.1+c(2,2,2,2), main=fn[i],...)
+        colnames(xx) <- ages
+        plotcorr(xx,col=ccolors[5*xx+6],mar=0.1+c(2,2,2,2), main=substr(fn[i], 1, 20),...)
     }
     par(mfrow=c(1,1))
 }
