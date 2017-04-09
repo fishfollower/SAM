@@ -553,7 +553,7 @@ srplot<-function(fit, ...){
 fitplot <- function(fit, log=TRUE, fleets=unique(fit$data$aux[,"fleet"]), ...){  
   idx<-fit$data$aux[,"fleet"]%in%fleets  
   trans <- function(x)if(log){x}else{exp(x)}  
-  p <- trans(fit$obj$report()$predObs[idx])
+  p <- trans(fit$obj$report(unlist(fit$pl))$predObs[idx])
   o <- trans(fit$data$logobs[idx])
   a <- paste0("a=",fit$data$aux[idx,"age"]," ")
   f <- paste0(" f=",attr(fit$data,"fleetNames")[fit$data$aux[idx,"fleet"]])
