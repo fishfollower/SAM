@@ -146,7 +146,7 @@ modeltable <- function(fits){
       colnames(res)[ncol(res)] <- cnam
     }
   }
-  return(res[o,])
+  return(res[o,,drop=FALSE])
 }
 
 ##' Yield per recruit calculation
