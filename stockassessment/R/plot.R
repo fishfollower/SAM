@@ -508,20 +508,24 @@ obscov<-function(fit, corr=FALSE){
 obscorrplot<-function(fit,...){
     ccolors <- c("#A50F15","#DE2D26","#FB6A4A","#FCAE91","#FEE5D9","white",
                  "#EFF3FF","#BDD7E7","#6BAED6","#3182BD","#08519C")
-    x<-obscov(fit,TRUE)
+    x <- obscov(fit,TRUE)
 
     if(length(x)==3){
-      div<-c(3,1)
+      div <- c(3,1)
     }else{    
-      div<-rep(ceiling(sqrt(length(x))),2)
+      div <- rep(ceiling(sqrt(length(x))),2)
       if(div[1]*(div[2]-1)>=length(x))div[2] <- div[2]-1
     }
-    laym<-matrix(1:(div[1]*div[2]),nrow=div[1], ncol=div[2])
+    laym <- matrix(1:(div[1]*div[2]),nrow=div[1], ncol=div[2])
     layout(laym)
-    
-    for(i in 1:length(x)) 
-        plotcorr(x[[i]],col=ccolors[5*x[[i]]+6],mar=0.1+c(2,2,2,2),...)
-    
+    fn <- attr(fit$data,"fleetNames")
+    for(i in 1:length(x)){
+        xx <- x[[i]]
+        ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
+        rownames(xx) <- ages
+        plotcorr(xx,col=ccolors[5*xx+6],mar=0.1+c(2,2,2,2), main=fn[i],...)
+    }
+    par(mfrow=c(1,1))
 }
 
 ##' Plots the stock recruitment 
