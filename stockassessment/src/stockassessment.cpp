@@ -200,6 +200,7 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyParScaledYA);
   DATA_IVECTOR(fbarRange);
   DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
+  DATA_INTEGER(resFlag); 
   DATA_FACTOR(obsLikelihoodFlag);
   DATA_INTEGER(fixVarToWeight);
 
@@ -678,8 +679,10 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logtsb);
   ADREPORT(R);
   ADREPORT(logR);
-  ADREPORT(resF);
-  ADREPORT(resN);
+  if(resFlag==1){
+    ADREPORT(resF);
+    ADREPORT(resN);
+  }
   vector<Type> lastLogN = logN.col(timeSteps-1);
   ADREPORT(lastLogN);
   vector<Type> lastLogF = logF.col(timeSteps-1);

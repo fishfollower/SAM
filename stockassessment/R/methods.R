@@ -66,6 +66,8 @@ plot.samset<-function(x, ...){
 ##' @importFrom MASS mvrnorm
 ##' @export
 procres <- function(fit, ...){
+  fit$obj$env$data$resFlag<-1
+  fit$obj$retape()
   sdrep <- sdreport(fit$obj,fit$opt$par)  
   ages <- as.integer(colnames(fit$data$natMor))
   iF<-fit$conf$keyLogFsta[1,]
