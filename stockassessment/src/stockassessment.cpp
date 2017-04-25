@@ -669,15 +669,15 @@ Type objective_function<Type>::operator() ()
   REPORT(predObs);
   REPORT(predSd);
   REPORT(obsCov);
-  ADREPORT(ssb);
+  //ADREPORT(ssb);
   ADREPORT(logssb);
-  ADREPORT(fbar);
+  //ADREPORT(fbar);
   ADREPORT(logfbar);
-  ADREPORT(cat);
+  //ADREPORT(cat);
   ADREPORT(logCatch);
-  ADREPORT(tsb);
+  //ADREPORT(tsb);
   ADREPORT(logtsb);
-  ADREPORT(R);
+  //ADREPORT(R);
   ADREPORT(logR);
   if(resFlag==1){
     ADREPORT(resF);
