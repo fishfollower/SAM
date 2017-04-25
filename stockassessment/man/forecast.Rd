@@ -6,7 +6,7 @@
 \usage{
 forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
-  rec.years = max(fit$data$years) + (-9:0))
+  rec.years = max(fit$data$years) + (-9:0), label = NULL)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -24,6 +24,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
 \item{ave.years}{vector of years to average for weights, maturity, M and such}
 
 \item{rec.years}{vector of years to use to resample recruitment from}
+
+\item{label}{optional label to appear in short table}
 }
 \value{
 an object of type samforecast
