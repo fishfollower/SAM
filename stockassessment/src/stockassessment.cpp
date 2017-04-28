@@ -235,6 +235,8 @@ Type objective_function<Type>::operator() ()
   vector<Type> logfbar(timeSteps);
   vector<Type> cat(catchMeanWeight.dim(0));
   vector<Type> logCatch(catchMeanWeight.dim(0));
+  vector<Type> fsb(catchMeanWeight.dim(0));
+  vector<Type> logfsb(catchMeanWeight.dim(0));
   vector<Type> tsb(timeSteps);
   vector<Type> logtsb(timeSteps);
   vector<Type> logR(timeSteps);
@@ -359,7 +361,7 @@ Type objective_function<Type>::operator() ()
     logssb(i)=log(ssb(i));
   }
 
-  for(int y=0;y<catchMeanWeight.dim(0);y++){  // calc logCatch
+  for(int y=0;y<catchMeanWeight.dim(0);y++){ // calc logCatch 
     cat(y)=Type(0);
     for(int a=minAge;a<=maxAge;a++){  
       Type z=natMor(y,a-minAge);
@@ -369,6 +371,24 @@ Type objective_function<Type>::operator() ()
       }
     }
     logCatch(y)=log(cat(y));
+  }
+
+  for(int y=0;y<catchMeanWeight.dim(0);y++){  // calc logfsb
+    fsb(y) = Type(0);
+    Type sumF=Type(0);
+    for(int a=minAge;a<=maxAge;a++){  
+      if(keyLogFsta(0,a-minAge)>(-1)){
+        sumF+=exp(logF(keyLogFsta(0,a-minAge),y));
+      }
+    }
+    for(int a=minAge;a<=maxAge;a++){  
+      Type z=natMor(y,a-minAge);
+      if(keyLogFsta(0,a-minAge)>(-1)){
+        z+=exp(logF(keyLogFsta(0,a-minAge),y));
+        fsb(y)+=(exp(logF(keyLogFsta(0,a-minAge),y))/sumF)*exp(logN(a-minAge,y))*exp(-Type(0.5)*z)*catchMeanWeight(y,a-minAge);
+      }
+    }
+    logfsb(y)=log(fsb(y));
   }
   
   //Now take care of N
@@ -427,7 +447,7 @@ Type objective_function<Type>::operator() ()
   // Calculate predicted observations
   int f, ft, a, y,yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=aux(0,0);
-  Type zz;
+  Type zz=Type(0);
   vector<Type> predObs(nobs);
   vector<Type> predSd(nobs);
   for(int i=0;i<nobs;i++){
@@ -484,6 +504,9 @@ Type objective_function<Type>::operator() ()
         }
         if(keyBiomassTreat(f-1)==1){
           predObs(i) = logCatch(y)+logFpar(keyLogFpar(f-1,a));
+        }
+        if(keyBiomassTreat(f-1)==2){
+          predObs(i) = logfsb(y)+logFpar(keyLogFpar(f-1,a));
         }
       break;
   
