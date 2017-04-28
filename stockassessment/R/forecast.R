@@ -8,12 +8,13 @@
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
 ##' @param rec.years vector of years to use to resample recruitment from
 ##' @param label optional label to appear in short table
+##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended) 
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom MASS mvrnorm
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL){
 
   if(missing(fscale)&missing(fval)&missing(catchval))stop("No scenario is specified")    
   if(missing(fscale)&!missing(fval))fscale<-rep(NA,length(fval))
@@ -26,12 +27,24 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   if(!all(rowSums(!is.na(cbind(fscale, catchval, fval)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
+
+  if(!is.null(overwriteSelYears)){
+    fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
+    Ftab <- faytable(fit)
+    fixedsel <- colMeans(Ftab[as.integer(rownames(Ftab))%in%overwriteSelYears,,drop=FALSE])
+    fixedsel <- fixedsel/mean(fixedsel[fromto[1]:fromto[2]])
+  }
     
   getF <- function(x){
     idx <- fit$conf$keyLogFsta[1,]+1
     nsize <- length(idx)
     ret <- exp(x[nsize+idx])
     ret[idx==0] <- 0
+    if(!is.null(overwriteSelYears)){
+      fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
+      thisfbar<-mean(ret[fromto[1]:fromto[2]])
+      ret<-fixedsel*thisfbar
+    }
     ret
   }
 
@@ -141,9 +154,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     stop("State not saved, so cannot proceed from this year")
   }
   sim<-MASS::mvrnorm(nosim, mu=est, Sigma=cov)
-    
-  if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
 
+  if(is.null(overwriteSelYears)){  
+    if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
+  }
+    
   doAve<-function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
   ave.sw<-doAve(fit$data$stockMeanWeight)
   ave.cw<-doAve(fit$data$catchMeanWeight)
