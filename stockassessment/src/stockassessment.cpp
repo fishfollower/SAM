@@ -199,6 +199,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyScaledYears);
   DATA_IARRAY(keyParScaledYA);
   DATA_IVECTOR(fbarRange);
+  DATA_IVECTOR(keyBiomassTreat)
   DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
   DATA_INTEGER(resFlag); 
   DATA_FACTOR(obsLikelihoodFlag);
@@ -357,6 +358,18 @@ Type objective_function<Type>::operator() ()
     }
     logssb(i)=log(ssb(i));
   }
+
+  for(int y=0;y<catchMeanWeight.dim(0);y++){  // calc logCatch
+    cat(y)=Type(0);
+    for(int a=minAge;a<=maxAge;a++){  
+      Type z=natMor(y,a-minAge);
+      if(keyLogFsta(0,a-minAge)>(-1)){
+        z+=exp(logF(keyLogFsta(0,a-minAge),y));
+        cat(y)+=exp(logF(keyLogFsta(0,a-minAge),y))/z*exp(logN(a-minAge,y))*(Type(1.0)-exp(-z))*catchMeanWeight(y,a-minAge);
+      }
+    }
+    logCatch(y)=log(cat(y));
+  }
   
   //Now take care of N
   matrix<Type> nvar(stateDimN,stateDimN);
@@ -411,7 +424,6 @@ Type objective_function<Type>::operator() ()
     }
   }
   
-
   // Calculate predicted observations
   int f, ft, a, y,yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=aux(0,0);
@@ -466,8 +478,13 @@ Type objective_function<Type>::operator() ()
         
       break;
   
-      case 3:// ssb survey
-        predObs(i)=logssb(y)+logFpar(keyLogFpar(f-1,a));
+      case 3:// biomass survey
+        if(keyBiomassTreat(f-1)==0){
+          predObs(i) = logssb(y)+logFpar(keyLogFpar(f-1,a));
+        }
+        if(keyBiomassTreat(f-1)==1){
+          predObs(i) = logCatch(y)+logFpar(keyLogFpar(f-1,a));
+        }
       break;
   
       case 4:
@@ -628,17 +645,6 @@ Type objective_function<Type>::operator() ()
     logfbar(y)=log(fbar(y));
   }
 
-  for(int y=0;y<catchMeanWeight.dim(0);y++){  
-    cat(y)=Type(0);
-    for(int a=minAge;a<=maxAge;a++){  
-      Type z=natMor(y,a-minAge);
-      if(keyLogFsta(0,a-minAge)>(-1)){
-        z+=exp(logF(keyLogFsta(0,a-minAge),y));
-        cat(y)+=exp(logF(keyLogFsta(0,a-minAge),y))/z*exp(logN(a-minAge,y))*(Type(1.0)-exp(-z))*catchMeanWeight(y,a-minAge);
-      }
-    }
-    logCatch(y)=log(cat(y));
-  }
 
   for(int y=0;y<timeSteps;y++){  
     tsb(y)=Type(0);
