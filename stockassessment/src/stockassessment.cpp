@@ -492,8 +492,7 @@ Type objective_function<Type>::operator() ()
         return 0;
       break;
   
-      case 5:
-  	    //predObs(i)=Type(0);
+      case 5:// tags  
         if((a+minAge)>maxAge){a=maxAge-minAge;} 
 	predObs(i)=exp(log(aux(i,6))+log(aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(i);
       break;
@@ -513,11 +512,6 @@ Type objective_function<Type>::operator() ()
         return 0 ;
       break;
     }    
-    //predSd(i)=sqrt(varLogObs(keyVarObs(f-1,a)));
-    //ans+=-keep(i)*dnorm(logobs(i),predObs(i),predSd(i),true);
-    //SIMULATE{
-    //  logobs(i)=rnorm(predObs(i), predSd(i));
-    //}
   }
 
   // setup obs likelihoods

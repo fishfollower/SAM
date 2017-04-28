@@ -100,7 +100,7 @@ defcon<-function(dat){
   ret$keyScaledYears <- numeric(0)
   ret$keyParScaledYA <- array(0,c(0,0))
   ret$fbarRange <- ages[fleetTypes==0,]
-
+  ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, NA)
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
   ret$fixVarToWeight <- 0
   return(ret) 
