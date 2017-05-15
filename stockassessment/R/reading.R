@@ -30,11 +30,6 @@ is.whole.positive.number <- function(x, tol = .Machine$double.eps^0.5){
 ##' @details ...
 read.surveys<-function(filen){
   # Function to read ices survey file 
-
-  if(!file.exists(filen)){
-    stop(paste("File",filen, "does not exsist"))
-  }
-
   lin<-readLines(filen,warn=FALSE)[-c(1:2)]
   empty<-which(lapply(lapply(strsplit(lin, split='[[:space:]]+'), 
                paste, collapse=''), nchar)==0)
