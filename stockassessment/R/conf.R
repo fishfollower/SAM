@@ -105,3 +105,99 @@ defcon<-function(dat){
   ret$fixVarToWeight <- 0
   return(ret) 
 }
+
+##' Saves a model configuration list to a file  
+##' @param x sam configuration list as returned from defcon or loadConf
+##' @param file the file to save the configuration to
+##' @param overwrite logical if an existing file should be overwritten (FALSE by default) 
+##' @details function useful for saving a model configuration. A saved configuration can be read back in via the loadConf function 
+##' @export
+saveConf <- function(x, file="", overwrite=FALSE){
+  writeConf <- function(x,...) UseMethod("writeConf")
+
+  writeConf.default <- function(x,...){
+    stop("Unimplemented class in writeConf")
+  }
+
+   writeConf.integer <- function(x,...){
+    cat("\n",x,"\n",...)
+  }
+
+  writeConf.numeric <- function(x,...){
+    cat("\n",x,"\n",...)
+  }
+
+  writeConf.matrix <- function(x,...){
+    cat(capture.output(prmatrix(x, rowlab=rep("", nrow(x)), collab=rep("",ncol(x)))), sep="\n", ...)
+  }
+
+  writeConf.factor <- function(x,...){
+    cat(" | Possible values are:", paste0('\"',levels(x),'\"'), ...)
+    cat("\n", paste0('\"',x,'\"'),"\n", ...)
+  }
+  
+  if(file.exists(file) & !overwrite){
+    cat("Notice: Did not overwrite exsisting file\n")
+  }else{
+    cat(paste0("# Configuration saved: ",date()), file=file)  
+    nam<-names(x)
+    dummy<-lapply(1:length(nam), function(i){
+        cat('\n$', file=file, append=TRUE)
+        cat(nam[i], file=file, append=TRUE)
+        writeConf(x[[i]], file=file, append=TRUE)
+      }
+    )
+  }
+}
+
+##' Loads a model configuration from a file  
+##' @param dat sam data list as returned from the function setup.sam.data
+##' @param file the file to read the configuration from
+##' @details function useful loading a model configuration. Such a configuration can be saved via the saveConf function
+##' @importFrom utils capture.output
+##' @export
+loadConf <- function(dat, file){
+  dconf <- defcon(dat)
+  confWithName<-lapply(1:length(dconf), function(i){x<-dconf[[i]]; attr(x,"nam")<-names(dconf)[i]; x})
+  lin <- c(readLines(file),"$end")
+  keyIdx <- grep("^\\$",lin)
+  getIdx <- function(nam){
+    idx1<-grep(paste0("^\\$",nam, "( |$)"),lin)+1
+    idx2<-min(keyIdx[keyIdx>idx1])-1
+    ret <- NULL
+    if(idx1<=idx2){
+      ret <- idx1:idx2
+    }
+    ret
+  }
+  readConf <- function(x) UseMethod("readConf")
+
+  readConf.default <- function(x){
+    stop("Unimplemented class in readConf")
+  }
+  readConf.numeric <- function(x){
+    nam <- attr(x,"nam")
+    scan(textConnection(lin[getIdx(nam)]), quiet=TRUE)
+  }
+  readConf.integer <- function(x){
+    nam <- attr(x,"nam")
+    scan(textConnection(lin[getIdx(nam)]), quiet=TRUE)
+  }
+  readConf.matrix <- function(x){
+    nam <- attr(x,"nam")
+    x <- try(read.table(text=lin[getIdx(nam)], header=FALSE), silent = TRUE)
+    if(inherits(x, "try-error")){
+      return(matrix(NA_real_, nrow=0, ncol=0))
+    }else{
+      return(as.matrix(x))
+    }
+  }
+  readConf.factor <- function(x){
+    nam <- attr(x,"nam")
+    factor(scan(textConnection(lin[getIdx(nam)]), what="character", quiet="TRUE"), levels=levels(x))
+  }
+  #lapply(confWithName, readConf) does not work?
+  conf <- lapply(1:length(confWithName), function(i)readConf(confWithName[[i]]))
+  names(conf) <- names(dconf)
+  conf
+}
