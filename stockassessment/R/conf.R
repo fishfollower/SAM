@@ -128,7 +128,11 @@ saveConf <- function(x, file="", overwrite=FALSE){
   }
 
   writeConf.matrix <- function(x,...){
-    cat(capture.output(prmatrix(x, rowlab=rep("", nrow(x)), collab=rep("",ncol(x)))), sep="\n", ...)
+    if(nrow(x)>0){
+      cat(capture.output(prmatrix(x, rowlab=rep("", nrow(x)), collab=rep("",ncol(x)))), sep="\n", ...)
+    }else{
+      cat("\n", ...)
+    }
   }
 
   writeConf.factor <- function(x,...){
