@@ -55,4 +55,4 @@ button:
 	@echo Add leave-one-out runs\; leaveout\; Add leave-one-out runs based on the current model 
 	@echo Add retro runs\; retro\; Add retrospective runs based on the current model 
 	@echo Add forecasts\; forecast\; Add forecast runs to the output
-	@echo Residuals\; sim\; Add prediction and single joint sample residuals 
+	@echo Add residuals\; sim\; Add prediction and single joint sample residuals 
