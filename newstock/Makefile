@@ -1,4 +1,4 @@
-useR = R --vanilla --slave
+useR = /usr/share/R-3.2.5/bin/R --vanilla --slave
 BD = run
 RD = res
 SD = src
