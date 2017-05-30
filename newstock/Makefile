@@ -8,7 +8,7 @@ LD = log
 datafiles := $(wildcard $(DD)/*.dat)
 BASE = baserun
 
-.PHONY = data model plot justplot sim leaveout retro forecast updatabase
+.PHONY = data model plot justplot sim leaveout retro forecast updatabase button
 
 data: $(BD)/data.RData  
 $(BD)/data.RData: $(SD)/datascript.R $(datafiles) 
@@ -50,3 +50,9 @@ $(BASE)/model.RData: $(BD)/model.RData justplot
 	rm -f $(BASE)/*
 	cp $(BD)/model.RData $(BASE)
 
+button: 
+	@echo Upgrade to baserun\; updatebase\; use current run as new baserun
+	@echo Add leave-one-out runs\; leaveout\; Add leave-one-out runs based on the current model 
+	@echo Add retro runs\; retro\; Add retrospective runs based on the current model 
+	@echo Add forecasts\; forecast\; Add forecast runs to the output
+	@echo Residuals\; sim\; Add prediction and single joint sample residuals 
