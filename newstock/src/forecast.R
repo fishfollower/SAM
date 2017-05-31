@@ -1,8 +1,0 @@
-library(stockassessment)
-load("run/model.RData")
-FC<-list()
-set.seed(12345)
-FC[[length(FC)+1]] <- forecast(fit, fscale=c(1,1,1,1), label="SQ all years")
-set.seed(12345)
-FC[[length(FC)+1]] <- forecast(fit, fscale=c(1,NA,NA,NA), fval=c(NA,0.000001,0.000001, 0.000001), label="SQ then zero")
-save(FC, file="run/forecast.RData")
