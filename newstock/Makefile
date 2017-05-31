@@ -1,4 +1,4 @@
-useR = /usr/share/R-3.2.5/bin/R --vanilla --slave
+useR = Rnewest --vanilla --slave
 BD = run
 RD = res
 SD = src
