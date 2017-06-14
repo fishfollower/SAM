@@ -17,4 +17,4 @@ r_packages:
   - TMB
 
 before_install:
-  - cd ./SAM
+  - cd ./stockassessment
