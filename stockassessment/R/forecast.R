@@ -159,22 +159,22 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
   }
     
-  doAve<-function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
-  ave.sw<-doAve(fit$data$stockMeanWeight)
-  ave.cw<-doAve(fit$data$catchMeanWeight)
-  ave.mo<-doAve(fit$data$propMat)
-  ave.nm<-doAve(fit$data$natMor)
-  ave.lf<-doAve(fit$data$landFrac)
-  ave.lw<-doAve(fit$data$landMeanWeight)
-  ave.pm<-doAve(fit$data$propM)
-  ave.pf<-doAve(fit$data$propF)
-  getThisOrAve<-function(x,y, ave){
+  doAve <- function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
+  ave.sw <- doAve(fit$data$stockMeanWeight)
+  ave.cw <- doAve(fit$data$catchMeanWeight)
+  ave.mo <- doAve(fit$data$propMat)
+  ave.nm <- doAve(fit$data$natMor)
+  ave.lf <- doAve(fit$data$landFrac)
+  ave.lw <- doAve(fit$data$landMeanWeight)
+  ave.pm <- doAve(fit$data$propM)
+  ave.pf <- doAve(fit$data$propF)
+  getThisOrAve <- function(x,y, ave){
     if(y %in% rownames(x)){
-      ret<-x[which(rownames(x)==y),]
+      ret <- x[which(rownames(x)==y),]
     }else{
-      ret<-ave
+      ret <- ave
     }
-    return(ret)
+    ret
   }
   procVar<-getProcessVar(fit)  
   simlist<-list()
