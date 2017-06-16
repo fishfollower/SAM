@@ -143,11 +143,41 @@ saveConf <- function(x, file="", overwrite=FALSE){
   if(file.exists(file) & !overwrite){
     cat("Notice: Did not overwrite exsisting file\n")
   }else{
-    cat(paste0("# Configuration saved: ",date()), file=file)  
+    # Intro txt   
+    cat(paste0("# Configuration saved: ",date()), file=file)
+    cat("\n#\n# Where a matrix is specified rows corresponds to fleets and columns to ages.\n" , file=file, append=TRUE)
+    cat("# Same number indicates same parameter used\n" , file=file, append=TRUE)
+    cat("# Numbers (integers) starts from zero and must be consecutive\n#" , file=file, append=TRUE)
+    #
+
+    txt<-list()
+    txt$minAge <- "The minimium age class in the assessment"
+    txt$maxAge <- "The maximum age class in the assessment"
+    txt$maxAgePlusGroup <- "Is last age group considered a plus group (1 yes, or 0 no)." 
+    txt$keyLogFsta <- "Coupling of the fishing mortality states (nomally only first row is used)."
+    txt$corFlag <- "Correlation of fishing mortality across ages (0 independent, 1 compound symmetry, or 2 AR(1)"
+    txt$keyLogFpar <- "Coupling of the survey catchability parameters (nomally first row is not used, as that is covered by fishing mortality)."
+    txt$keyQpow <- "Density dependent catchability power parameters (if any)."
+    txt$keyVarF <- "Coupling of process variance parameters for log(F)-process (nomally only first row is used)"
+    txt$keyVarLogN <- "Coupling of process variance parameters for log(N)-process"
+    txt$keyVarObs <- "Coupling of the variance parameters for the observations."
+    txt$obsCorStruct <- "Covariance structure for each fleet (\"ID\" independent, \"AR\" AR(1), or \"US\" for unstructured)."
+    txt$keyCorObs <- "Coupling of correlation parameters must be specified if the AR(1) structure is chosen above."
+    txt$stockRecruitmentModelCode <- "Stock recruitment code (0 for plain random walk, 1 for Ricker, and 2 for Beverton-Holt)."
+    txt$noScaledYears <- "Number of years where catch scaling is applied."
+    txt$keyScaledYears <- "A vector of the years where catch scaling is applied."
+    txt$keyParScaledYA <- "A matrix specifying the couplings of scale parameters (nrow = no scaled years, ncols = no ages)."
+    txt$fbarRange <- "lowest and higest age included in Fbar"
+    txt$keyBiomassTreat <- "To be defined only if a biomass survey is used (0 SSB index, 1 catch index, and 2 FSB index)."
+    txt$obsLikelihoodFlag <- "Option for observational likelihood"
+    txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
+
+      
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)
         cat(nam[i], file=file, append=TRUE)
+        cat('\n#', txt[[nam[i]]], file=file, append=TRUE)
         writeConf(x[[i]], file=file, append=TRUE)
       }
     )
@@ -164,6 +194,7 @@ loadConf <- function(dat, file){
   dconf <- defcon(dat)
   confWithName<-lapply(1:length(dconf), function(i){x<-dconf[[i]]; attr(x,"nam")<-names(dconf)[i]; x})
   lin <- c(readLines(file),"$end")
+  lin<-lin[-grep("^#",lin)]
   keyIdx <- grep("^\\$",lin)
   getIdx <- function(nam){
     idx1<-grep(paste0("^\\$",nam, "( |$)"),lin)+1
