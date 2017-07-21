@@ -31,11 +31,9 @@
 
 #define TMB_LIB_INIT R_init_stockassessment
 #include <TMB.hpp>
+#include "../inst/include/macros.h"
 #include "../inst/include/obs.h"
-
-/* Parameter transform */
-template <class Type>
-Type trans(Type x){return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);}
+#include "../inst/include/f.h"
 
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -106,7 +104,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(missing);
   //PARAMETER_VECTOR(missingSSB);
   int timeSteps=logF.dim[1];
-  int stateDimF=logF.dim[0];
   int stateDimN=logN.dim[0];
   vector<Type> sdLogFsta=exp(logSdLogFsta);
   vector<Type> varLogN=exp(logSdLogN*Type(2.0));
@@ -127,10 +124,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> recapturePhi(logitRecapturePhi.size());
   vector<Type> releaseSurvivalVec(nobs);
   vector<Type> recapturePhiVec(nobs);
-  array<Type> resF(logF.dim[0],logF.dim[1]-1);
   array<Type> resN(logN.dim[0],logN.dim[1]-1);
-
-
   if(logitReleaseSurvival.size()>0){
     releaseSurvival=invlogit(logitReleaseSurvival);
     recapturePhi=invlogit(logitRecapturePhi);
@@ -152,67 +146,22 @@ Type objective_function<Type>::operator() ()
       logobs(i)=missing(idxmis++);
     }    
   }
-  
-  //First take care of F
-  matrix<Type> fvar(stateDimF,stateDimF);
-  matrix<Type> fcor(stateDimF,stateDimF);
-  vector<Type> fsd(stateDimF);  
 
-  if(corFlag==0){
-    fcor.setZero();
-  }
+  // FFF  
+  ans+=nllF(logF, 
+            timeSteps,
+            corFlag,
+            simFlag,
+            resFlag,
+            stateDimN,
+            keyLogFsta,
+            keyVarF,
+            itrans_rho,
+            sdLogFsta,
+            keep, 
+            this
+	    );
 
-  for(int i=0; i<stateDimF; ++i){
-    fcor(i,i)=1.0;
-  }
-
-  if(corFlag==1){
-    for(int i=0; i<stateDimF; ++i){
-      for(int j=0; j<i; ++j){
-        fcor(i,j)=trans(itrans_rho(0));
-        fcor(j,i)=fcor(i,j);
-      }
-    } 
-  }
-
-  if(corFlag==2){
-    for(int i=0; i<stateDimF; ++i){
-      for(int j=0; j<i; ++j){
-        fcor(i,j)=pow(trans(itrans_rho(0)),abs(Type(i-j)));
-        fcor(j,i)=fcor(i,j);
-      }
-    } 
-  }
-
-  int i,j;
-  for(i=0; i<stateDimF; ++i){
-    for(j=0; j<stateDimN; ++j){
-      if(keyLogFsta(0,j)==i)break;
-    }
-    fsd(i)=sdLogFsta(keyVarF(0,j));
-  }
- 
-  for(i=0; i<stateDimF; ++i){
-    for(j=0; j<stateDimF; ++j){
-      fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
-    }
-  }
-  using namespace density;
-  MVNORM_t<Type> neg_log_densityF(fvar);
-  LLT< Matrix<Type, Dynamic, Dynamic> > lltCovF(fvar);
-  matrix<Type> LF = lltCovF.matrixL();
-  matrix<Type> LinvF = LF.inverse();
-
-  for(int i=1;i<timeSteps;i++){
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));    
-    ans+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
-    SIMULATE{
-      if(simFlag==0){
-        logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
-      }
-    }
-  }
-  
   for(int i=0;i<timeSteps;i++){ // calc ssb
     ssb(i)=0.0;    
     for(int j=0; j<stateDimN; ++j){
@@ -262,8 +211,8 @@ Type objective_function<Type>::operator() ()
       if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(keyVarLogN(i));}
     }
   }
-  MVNORM_t<Type> neg_log_densityN(nvar);
-  LLT< Matrix<Type, Dynamic, Dynamic> > lltCovN(nvar);
+  density::MVNORM_t<Type> neg_log_densityN(nvar);
+  Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovN(nvar);
   matrix<Type> LN = lltCovN.matrixL();
   matrix<Type> LinvN = LN.inverse();
  
@@ -453,7 +402,6 @@ Type objective_function<Type>::operator() ()
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
     for (int i = 0; i < stateDimN; i++) ans -= dnorm(logN(i, 0), Type(0), huge, true);  
-    for (int i = 0; i < stateDimF; i++) ans -= dnorm(logF(i, 0), Type(0), huge, true);  
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
     //for (int i = 0; i < missingSSB.size(); i++) ans -= dnorm(missingSSB(i), Type(0), huge, true);  
   } 
@@ -477,7 +425,6 @@ Type objective_function<Type>::operator() ()
   //ADREPORT(R);
   ADREPORT(logR);
   if(resFlag==1){
-    ADREPORT(resF);
     ADREPORT(resN);
   }
   vector<Type> lastLogN = logN.col(timeSteps-1);
