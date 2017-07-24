@@ -4,17 +4,17 @@ Type trans(Type x){
 }
 
 template <class Type>
-Type nllF(array<Type> logF, 
+Type nllF(array<Type> &logF, 
           int timeSteps,
           int corFlag,
           int simFlag,
           int resFlag,
           int stateDimN,
-          array<int> keyLogFsta,
-          array<int> keyVarF,
-          vector<Type> itrans_rho,
-          vector<Type> sdLogFsta,
-          data_indicator<vector<Type>,Type> keep, 
+          array<int> &keyLogFsta,
+          array<int> &keyVarF,
+          vector<Type> &itrans_rho,
+          vector<Type> &sdLogFsta,
+          data_indicator<vector<Type>,Type> &keep, 
           objective_function<Type> *of
 	  ){
   Type nll=0; 
