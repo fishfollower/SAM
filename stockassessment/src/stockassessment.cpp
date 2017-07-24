@@ -34,6 +34,7 @@
 #include "../inst/include/macros.h"
 #include "../inst/include/f.h"
 #include "../inst/include/n.h"
+#include "../inst/include/predobs.h"
 #include "../inst/include/obs.h"
 
 template<class Type>
@@ -223,98 +224,30 @@ Type objective_function<Type>::operator() ()
               keep, 
               this); 
 
-  // Calculate predicted observations
-  int f, ft, a, y,yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
-  int minYear=aux(0,0);
-  Type zz=Type(0);
-  vector<Type> predObs(nobs);
-  vector<Type> predSd(nobs);
-  for(int i=0;i<nobs;i++){
-    y=aux(i,0)-minYear;
-    f=aux(i,1);
-    ft=fleetTypes(f-1);
-    a=aux(i,2)-minAge;
-    if(ft==3){a=0;}
-    if(ft<3){ 
-      zz = natMor(y,a);
-      if(keyLogFsta(0,a)>(-1)){
-        zz+=exp(logF(keyLogFsta(0,a),y));
-      }
-    }    
+  vector<Type> predObs=predObsFun(logF,
+                                  logN,
+                                  logFpar,
+                                  logScale,
+                                  logQpow,
+                                  nobs,
+                                  minAge,
+                                  maxAge,
+                                  noScaledYears,
+                                  fleetTypes,
+                                  keyScaledYears,
+                                  keyQpow,
+                                  keyBiomassTreat,
+                                  aux,
+                                  keyLogFsta,
+                                  keyLogFpar,
+                                  keyParScaledYA,
+                                  natMor,
+                                  sampleTimes,
+                                  logssb,
+                                  logfsb,
+                                  logCatch,
+                                  releaseSurvivalVec);
 
-    switch(ft){
-      case 0:
-        predObs(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
-        if(keyLogFsta(f-1,a)>(-1)){
-          predObs(i)+=logF(keyLogFsta(0,a),y);
-        }
-        scaleIdx=-1;
-        yy=aux(i,0);
-        for(int j=0; j<noScaledYears; ++j){
-          if(yy==keyScaledYears(j)){
-            scaleIdx=keyParScaledYA(j,a);
-            if(scaleIdx>=0){
-              predObs(i)-=logScale(scaleIdx);
-            }
-            break;
-          }
-        }
-      break;
-  
-      case 1:
-  	error("Unknown fleet code");
-        return(0);
-      break;
-  
-      case 2:
-        predObs(i)=logN(a,y)-zz*sampleTimes(f-1);
-        if(keyQpow(f-1,a)>(-1)){
-          predObs(i)*=exp(logQpow(keyQpow(f-1,a))); 
-        }
-        if(keyLogFpar(f-1,a)>(-1)){
-          predObs(i)+=logFpar(keyLogFpar(f-1,a));
-        }
-        
-      break;
-  
-      case 3:// biomass survey
-        if(keyBiomassTreat(f-1)==0){
-          predObs(i) = logssb(y)+logFpar(keyLogFpar(f-1,a));
-        }
-        if(keyBiomassTreat(f-1)==1){
-          predObs(i) = logCatch(y)+logFpar(keyLogFpar(f-1,a));
-        }
-        if(keyBiomassTreat(f-1)==2){
-          predObs(i) = logfsb(y)+logFpar(keyLogFpar(f-1,a));
-        }
-      break;
-  
-      case 4:
-  	error("Unknown fleet code");
-        return 0;
-      break;
-  
-      case 5:// tags  
-        if((a+minAge)>maxAge){a=maxAge-minAge;} 
-	predObs(i)=exp(log(aux(i,6))+log(aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(i);
-      break;
-  
-      case 6:
-  	error("Unknown fleet code");
-        return 0;
-      break;
-  
-      case 7:
-  	error("Unknown fleet code");
-        return 0;
-      break;
-  
-      default:
-  	error("Unknown fleet code");
-        return 0 ;
-      break;
-    }    
-  }
 
   ans += nllObs(noFleets, 
                 noYears,
@@ -377,7 +310,8 @@ Type objective_function<Type>::operator() ()
     REPORT(logobs);
   }
   REPORT(predObs);
-  REPORT(predSd);
+
+
   //REPORT(obsCov);
   //ADREPORT(ssb);
   ADREPORT(logssb);
