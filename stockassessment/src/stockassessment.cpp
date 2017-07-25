@@ -36,6 +36,7 @@
 #include "../inst/include/n.h"
 #include "../inst/include/predobs.h"
 #include "../inst/include/obs.h"
+#include "../inst/include/derived.h"
 
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -104,7 +105,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
-  //PARAMETER_VECTOR(missingSSB);
   int timeSteps=logF.dim[1];
   int stateDimN=logN.dim[0];
   vector<Type> sdLogFsta=exp(logSdLogFsta);
@@ -147,161 +147,52 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
-  // FFF  
-  ans+=nllF(logF, 
-            timeSteps,
-            corFlag,
-            simFlag,
-            resFlag,
-            stateDimN,
-            keyLogFsta,
-            keyVarF,
-            itrans_rho,
-            sdLogFsta,
-            keep, 
-            this
-	    );
+  R = rFun(logN, timeSteps);
+  logR = log(R);  
 
-  for(int i=0;i<timeSteps;i++){ // calc ssb
-    ssb(i)=0.0;    
-    for(int j=0; j<stateDimN; ++j){
-      if(keyLogFsta(0,j)>(-1)){
-        ssb(i)+=exp(logN(j,i))*exp(-exp(logF(keyLogFsta(0,j),i))*propF(i,j)-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
-      }else{
-        ssb(i)+=exp(logN(j,i))*exp(-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
-      }
-    }
-    logssb(i)=log(ssb(i));
-  }
+  ssb = ssbFun(logF, logN, timeSteps, stateDimN, keyLogFsta, natMor, propM, propF, propMat, stockMeanWeight);
+  logssb = log(ssb);
 
-  for(int y=0;y<catchMeanWeight.dim(0);y++){ // calc logCatch 
-    cat(y)=Type(0);
-    for(int a=minAge;a<=maxAge;a++){  
-      Type z=natMor(y,a-minAge);
-      if(keyLogFsta(0,a-minAge)>(-1)){
-        z+=exp(logF(keyLogFsta(0,a-minAge),y));
-        cat(y)+=exp(logF(keyLogFsta(0,a-minAge),y))/z*exp(logN(a-minAge,y))*(Type(1.0)-exp(-z))*catchMeanWeight(y,a-minAge);
-      }
-    }
-    logCatch(y)=log(cat(y));
-  }
+  fbar = fbarFun(logF, minAge, timeSteps, fbarRange, keyLogFsta);
+  logfbar = log(fbar);
 
-  for(int y=0;y<catchMeanWeight.dim(0);y++){  // calc logfsb
-    fsb(y) = Type(0);
-    Type sumF=Type(0);
-    for(int a=minAge;a<=maxAge;a++){  
-      if(keyLogFsta(0,a-minAge)>(-1)){
-        sumF+=exp(logF(keyLogFsta(0,a-minAge),y));
-      }
-    }
-    for(int a=minAge;a<=maxAge;a++){  
-      Type z=natMor(y,a-minAge);
-      if(keyLogFsta(0,a-minAge)>(-1)){
-        z+=exp(logF(keyLogFsta(0,a-minAge),y));
-        fsb(y)+=(exp(logF(keyLogFsta(0,a-minAge),y))/sumF)*exp(logN(a-minAge,y))*exp(-Type(0.5)*z)*catchMeanWeight(y,a-minAge);
-      }
-    }
-    logfsb(y)=log(fsb(y));
-  }
+  cat = catchFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
+  logCatch = log(cat);
 
-  //NNN  
-  ans += nllN(logN,
-              logF,
-              timeSteps,
-              stateDimN,
-              minAge,
-              maxAgePlusGroup,
-              simFlag,
-              resFlag,
-	      keyVarLogN,
-              keyLogFsta,
-              stockRecruitmentModelCode,
-              ssb,
-              natMor,
-              logSdLogN,
-              rec_loga,
-              rec_logb,
-              keep, 
-              this); 
+  fsb = fsbFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
+  logfsb = log(fsb);
 
-  vector<Type> predObs=predObsFun(logF,
-                                  logN,
-                                  logFpar,
-                                  logScale,
-                                  logQpow,
-                                  nobs,
-                                  minAge,
-                                  maxAge,
-                                  noScaledYears,
-                                  fleetTypes,
-                                  keyScaledYears,
-                                  keyQpow,
-                                  keyBiomassTreat,
-                                  aux,
-                                  keyLogFsta,
-                                  keyLogFpar,
-                                  keyParScaledYA,
-                                  natMor,
-                                  sampleTimes,
-                                  logssb,
-                                  logfsb,
-                                  logCatch,
-                                  releaseSurvivalVec);
+  tsb = tsbFun(logN, minAge, maxAge, timeSteps, stockMeanWeight);
+  logtsb = log(tsb);
 
+  ans+=nllF(logF, timeSteps, corFlag, simFlag, resFlag, stateDimN,
+            keyLogFsta, keyVarF, itrans_rho, sdLogFsta, keep, this );
 
-  ans += nllObs(noFleets, 
-                noYears,
-                fleetTypes, 
-                minAgePerFleet, 
-                maxAgePerFleet, 
-                minAge,
-                maxAge,
-                obsCorStruct,
-                logSdLogObs,
-                logSdLogTotalObs,
-                transfIRARdist,
-                sigmaObsParUS,
-                recapturePhiVec,
-                keyVarObs,
-                keyCorObs,
-                obsLikelihoodFlag,
-                idx1, 
-                idx2,
-                weight, 
-                fixVarToWeight,
-                logobs,  
-                predObs,
-                keep,
-                this);
+  ans += nllN(logN, logF, timeSteps, stateDimN, minAge,
+              maxAgePlusGroup, simFlag, resFlag, keyVarLogN,
+              keyLogFsta, stockRecruitmentModelCode, ssb, natMor,
+              logSdLogN, rec_loga, rec_logb, keep, this);
+
+  vector<Type> predObs=predObsFun(logF, logN, logFpar, logScale,
+                                  logQpow, nobs, minAge, maxAge,
+                                  noScaledYears, fleetTypes,
+                                  keyScaledYears, keyQpow,
+                                  keyBiomassTreat, aux, keyLogFsta,
+                                  keyLogFpar, keyParScaledYA, natMor,
+                                  sampleTimes, logssb, logfsb,
+                                  logCatch, releaseSurvivalVec);
+
+  ans += nllObs(noFleets, noYears, fleetTypes, minAgePerFleet,
+                maxAgePerFleet, minAge, maxAge, obsCorStruct,
+                logSdLogObs, logSdLogTotalObs, transfIRARdist,
+                sigmaObsParUS, recapturePhiVec, keyVarObs, keyCorObs,
+                obsLikelihoodFlag, idx1, idx2, weight, fixVarToWeight,
+                logobs, predObs, keep, this);
   
-  // derived quantities for ADreport
-  for(int y=0;y<timeSteps;y++){  
-    fbar(y)=Type(0);
-    for(int a=fbarRange(0);a<=fbarRange(1);a++){  
-      fbar(y)+=exp(logF(keyLogFsta(0,a-minAge),y));
-    }
-    fbar(y)/=Type(fbarRange(1)-fbarRange(0)+1);
-    logfbar(y)=log(fbar(y));
-  }
-
-
-  for(int y=0;y<timeSteps;y++){  
-    tsb(y)=Type(0);
-    for(int a=minAge;a<=maxAge;a++){  
-      tsb(y)+=exp(logN(a-minAge,y))*stockMeanWeight(y,a-minAge);
-    }
-    logtsb(y)=log(tsb(y));
-  }
-
-  for(int y=0;y<timeSteps;y++){  
-    logR(y)=logN(0,y);
-    R(y)=exp(logR(y));
-  }
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
-    //for (int i = 0; i < missingSSB.size(); i++) ans -= dnorm(missingSSB(i), Type(0), huge, true);  
   } 
 
   SIMULATE {
@@ -310,18 +201,10 @@ Type objective_function<Type>::operator() ()
     REPORT(logobs);
   }
   REPORT(predObs);
-
-
-  //REPORT(obsCov);
-  //ADREPORT(ssb);
   ADREPORT(logssb);
-  //ADREPORT(fbar);
   ADREPORT(logfbar);
-  //ADREPORT(cat);
   ADREPORT(logCatch);
-  //ADREPORT(tsb);
   ADREPORT(logtsb);
-  //ADREPORT(R);
   ADREPORT(logR);
 
   vector<Type> lastLogN = logN.col(timeSteps-1);
