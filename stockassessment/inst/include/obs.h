@@ -1,12 +1,3 @@
-template<class Type>
-bool isNA(Type x){
-  return R_IsNA(asDouble(x));
-}
-
-bool isNAINT(int x){
-  return NA_INTEGER==x;
-}
-
 template <class Type>
 matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec){
 
@@ -112,7 +103,8 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(int noFleets, 
+Type nllObs(int nobs,
+            int noFleets, 
             int noYears,
             vector<int> &fleetTypes, 
             vector<int> &minAgePerFleet, 
@@ -124,9 +116,10 @@ Type nllObs(int noFleets,
             vector<Type> &logSdLogTotalObs,
             vector<Type> &transfIRARdist,
             vector<Type> &sigmaObsParUS,
-            vector<Type> &recapturePhiVec,
+            vector<Type> &logitRecapturePhi,
             array<int> &keyVarObs,
             array<int> &keyCorObs,
+            array<int> &aux,
             vector<int> &obsLikelihoodFlag,
             array<int> &idx1, 
             array<int> &idx2,
@@ -148,6 +141,17 @@ Type nllObs(int noFleets,
   vector< vector<Type> > sigmaObsParVec(noFleets);
   int aidx;
   vector< matrix<Type> > obsCov(noFleets); // for reporting
+ 
+  vector<Type> recapturePhi(logitRecapturePhi.size());
+  vector<Type> recapturePhiVec(nobs);
+  if(logitRecapturePhi.size()>0){
+    recapturePhi=invlogit(logitRecapturePhi);
+    for(int j=0; j<nobs; ++j){
+      if(!isNAINT(aux(j,7))){
+        recapturePhiVec(j)=recapturePhi(aux(j,7)-1);
+      }
+    }
+  }
 
   int nfleet = maxAgePerFleet(0)-minAgePerFleet(0)+1;
   int dn=nfleet*(nfleet-1)/2;

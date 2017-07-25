@@ -107,37 +107,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(missing);
   int timeSteps=logF.dim[1];
   int stateDimN=logN.dim[0];
-  vector<Type> sdLogFsta=exp(logSdLogFsta);
-  vector<Type> ssb(timeSteps);
-  vector<Type> logssb(timeSteps);
-  vector<Type> fbar(timeSteps);
-  vector<Type> logfbar(timeSteps);
-  vector<Type> cat(catchMeanWeight.dim(0));
-  vector<Type> logCatch(catchMeanWeight.dim(0));
-  vector<Type> fsb(catchMeanWeight.dim(0));
-  vector<Type> logfsb(catchMeanWeight.dim(0));
-  vector<Type> tsb(timeSteps);
-  vector<Type> logtsb(timeSteps);
-  vector<Type> logR(timeSteps);
-  vector<Type> R(timeSteps);
-
-  vector<Type> releaseSurvival(logitReleaseSurvival.size());
-  vector<Type> recapturePhi(logitRecapturePhi.size());
-  vector<Type> releaseSurvivalVec(nobs);
-  vector<Type> recapturePhiVec(nobs);
-  if(logitReleaseSurvival.size()>0){
-    releaseSurvival=invlogit(logitReleaseSurvival);
-    recapturePhi=invlogit(logitRecapturePhi);
-    for(int j=0; j<nobs; ++j){
-      if(!isNAINT(aux(j,7))){
-        releaseSurvivalVec(j)=releaseSurvival(aux(j,7)-1);
-        recapturePhiVec(j)=recapturePhi(aux(j,7)-1);
-      }
-    }
-  }
-
-  Type ans=0; //negative log-likelihood
-
 
   // patch missing 
   int idxmis=0; 
@@ -147,31 +116,23 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
-  R = rFun(logN, timeSteps);
-  logR = log(R);  
+  vector<Type> R = rFun(logN, timeSteps);
+  vector<Type> logR = log(R);  
 
-  ssb = ssbFun(logF, logN, timeSteps, stateDimN, keyLogFsta, natMor, propM, propF, propMat, stockMeanWeight);
-  logssb = log(ssb);
+  vector<Type> ssb = ssbFun(logF, logN, timeSteps, stateDimN, keyLogFsta, natMor, propM, propF, propMat, stockMeanWeight);
+  vector<Type> logssb = log(ssb);
 
-  fbar = fbarFun(logF, minAge, timeSteps, fbarRange, keyLogFsta);
-  logfbar = log(fbar);
+  vector<Type> fbar = fbarFun(logF, minAge, timeSteps, fbarRange, keyLogFsta);
+  vector<Type> logfbar = log(fbar);
 
-  cat = catchFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
-  logCatch = log(cat);
+  vector<Type> cat = catchFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
+  vector<Type> logCatch = log(cat);
 
-  fsb = fsbFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
-  logfsb = log(fsb);
+  vector<Type> fsb = fsbFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
+  vector<Type> logfsb = log(fsb);
 
-  tsb = tsbFun(logN, minAge, maxAge, timeSteps, stockMeanWeight);
-  logtsb = log(tsb);
-
-  ans+=nllF(logF, timeSteps, corFlag, simFlag, resFlag, stateDimN,
-            keyLogFsta, keyVarF, itrans_rho, sdLogFsta, keep, this );
-
-  ans += nllN(logN, logF, timeSteps, stateDimN, minAge,
-              maxAgePlusGroup, simFlag, resFlag, keyVarLogN,
-              keyLogFsta, stockRecruitmentModelCode, ssb, natMor,
-              logSdLogN, rec_loga, rec_logb, keep, this);
+  vector<Type> tsb = tsbFun(logN, minAge, maxAge, timeSteps, stockMeanWeight);
+  vector<Type> logtsb = log(tsb);
 
   vector<Type> predObs=predObsFun(logF, logN, logFpar, logScale,
                                   logQpow, nobs, minAge, maxAge,
@@ -180,13 +141,23 @@ Type objective_function<Type>::operator() ()
                                   keyBiomassTreat, aux, keyLogFsta,
                                   keyLogFpar, keyParScaledYA, natMor,
                                   sampleTimes, logssb, logfsb,
-                                  logCatch, releaseSurvivalVec);
+                                  logCatch, logitReleaseSurvival);
 
-  ans += nllObs(noFleets, noYears, fleetTypes, minAgePerFleet,
+  Type ans=0; //negative log-likelihood
+
+  ans+=nllF(logF, timeSteps, corFlag, simFlag, resFlag, stateDimN,
+            keyLogFsta, keyVarF, itrans_rho, logSdLogFsta, keep, this );
+
+  ans += nllN(logN, logF, timeSteps, stateDimN, minAge,
+              maxAgePlusGroup, simFlag, resFlag, keyVarLogN,
+              keyLogFsta, stockRecruitmentModelCode, ssb, natMor,
+              logSdLogN, rec_loga, rec_logb, keep, this);
+
+  ans += nllObs(nobs, noFleets, noYears, fleetTypes, minAgePerFleet,
                 maxAgePerFleet, minAge, maxAge, obsCorStruct,
                 logSdLogObs, logSdLogTotalObs, transfIRARdist,
-                sigmaObsParUS, recapturePhiVec, keyVarObs, keyCorObs,
-                obsLikelihoodFlag, idx1, idx2, weight, fixVarToWeight,
+                sigmaObsParUS, logitRecapturePhi, keyVarObs, keyCorObs, 
+                aux, obsLikelihoodFlag, idx1, idx2, weight, fixVarToWeight,
                 logobs, predObs, keep, this);
   
 

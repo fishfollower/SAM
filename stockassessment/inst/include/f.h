@@ -13,12 +13,13 @@ Type nllF(array<Type> &logF,
           array<int> &keyLogFsta,
           array<int> &keyVarF,
           vector<Type> &itrans_rho,
-          vector<Type> &sdLogFsta,
+          vector<Type> &logSdLogFsta,
           data_indicator<vector<Type>,Type> &keep, 
           objective_function<Type> *of
 	  ){
   Type nll=0; 
   int stateDimF=logF.dim[0];
+  vector<Type> sdLogFsta=exp(logSdLogFsta);
   array<Type> resF(logF.dim[0],logF.dim[1]-1);
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);

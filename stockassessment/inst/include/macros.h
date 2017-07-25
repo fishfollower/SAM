@@ -10,3 +10,11 @@ if(isDouble<Type>::value && F->current_parallel_region<0) {     \
 #define SIMULATE_F(F)						\
 if(isDouble<Type>::value && F->do_simulate)
 
+template<class Type>
+bool isNA(Type x){
+  return R_IsNA(asDouble(x));
+}
+
+bool isNAINT(int x){
+  return NA_INTEGER==x;
+}

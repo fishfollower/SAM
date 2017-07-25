@@ -21,9 +21,21 @@ vector<Type> predObsFun(array<Type> &logF,
                         vector<Type> &logssb,
                         vector<Type> &logfsb,
                         vector<Type> &logCatch,
-                        vector<Type> &releaseSurvivalVec){
+                        vector<Type> &logitReleaseSurvival){
   vector<Type> pred(nobs);
   pred.setZero();
+
+  vector<Type> releaseSurvival(logitReleaseSurvival.size());
+  vector<Type> releaseSurvivalVec(nobs);
+  if(logitReleaseSurvival.size()>0){
+    releaseSurvival=invlogit(logitReleaseSurvival);
+    for(int j=0; j<nobs; ++j){
+      if(!isNAINT(aux(j,7))){
+        releaseSurvivalVec(j)=releaseSurvival(aux(j,7)-1);
+      }
+    }
+  }
+
   // Calculate predicted observations
   int f, ft, a, y, yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=aux(0,0);
