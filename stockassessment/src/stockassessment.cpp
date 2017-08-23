@@ -119,7 +119,12 @@ Type objective_function<Type>::operator() ()
   vector<Type> R = rFun(logN, timeSteps);
   vector<Type> logR = log(R);  
 
-  vector<Type> ssb = ssbFun(logF, logN, timeSteps, stateDimN, keyLogFsta, natMor, propM, propF, propMat, stockMeanWeight);
+  testdat<Type> dat;
+  dat.logF=logF;
+  dat.logN=logN;
+
+  //vector<Type> ssb = ssbFun(logF, logN, timeSteps, stateDimN, keyLogFsta, natMor, propM, propF, propMat, stockMeanWeight);
+  vector<Type> ssb = ssbFun(dat, timeSteps, stateDimN, keyLogFsta, natMor, propM, propF, propMat, stockMeanWeight);
   vector<Type> logssb = log(ssb);
 
   vector<Type> fbar = fbarFun(logF, minAge, timeSteps, fbarRange, keyLogFsta);

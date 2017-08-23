@@ -1,7 +1,10 @@
-
 template <class Type>
-vector<Type> ssbFun(array<Type> &logF,
-                    array<Type> &logN,
+  struct testdat{
+    array<Type> logF;
+    array<Type> logN;
+  };
+template <class Type>
+vector<Type> ssbFun(testdat<Type> dat,
                     int timeSteps, 
                     int stateDimN, 
                     array<int> &keyLogFsta,
@@ -15,15 +18,43 @@ vector<Type> ssbFun(array<Type> &logF,
   for(int i=0;i<timeSteps;i++){
     for(int j=0; j<stateDimN; ++j){
       if(keyLogFsta(0,j)>(-1)){
-        ssb(i)+=exp(logN(j,i))*exp(-exp(logF(keyLogFsta(0,j),i))*propF(i,j)-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
+        ssb(i)+=exp(dat.logN(j,i))*exp(-exp(dat.logF(keyLogFsta(0,j),i))*propF(i,j)-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
       }else{
-        ssb(i)+=exp(logN(j,i))*exp(-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
+        ssb(i)+=exp(dat.logN(j,i))*exp(-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
       }
     }
   }
   return ssb;
 }
 
+
+
+
+//template <class Type>
+//vector<Type> ssbFun(array<Type> &logF,
+//                    array<Type> &logN,
+//                    int timeSteps, 
+//                    int stateDimN, 
+//                    array<int> &keyLogFsta,
+//                    array<Type> &natMor,
+//                    array<Type> &propM,
+//                    array<Type> &propF,
+//                    array<Type> &propMat,
+//                    array<Type> &stockMeanWeight){
+//  vector<Type> ssb(timeSteps);
+//  ssb.setZero();
+//  for(int i=0;i<timeSteps;i++){
+//    for(int j=0; j<stateDimN; ++j){
+//      if(keyLogFsta(0,j)>(-1)){
+//        ssb(i)+=exp(logN(j,i))*exp(-exp(logF(keyLogFsta(0,j),i))*propF(i,j)-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
+//      }else{
+//        ssb(i)+=exp(logN(j,i))*exp(-natMor(i,j)*propM(i,j))*propMat(i,j)*stockMeanWeight(i,j);
+//      }
+//    }
+//  }
+//  return ssb;
+//}
+//
 template <class Type>
 vector<Type> catchFun(array<Type> &logF,
                       array<Type> &logN,
