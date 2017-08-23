@@ -66,11 +66,12 @@ plot.samset<-function(x, ...){
 ##' @importFrom MASS mvrnorm
 ##' @export
 procres <- function(fit, ...){
-  fit$obj$env$data$resFlag<-1
-  fit$obj$retape()
-  sdrep <- sdreport(fit$obj,fit$opt$par)  
-  ages <- as.integer(colnames(fit$data$natMor))
-  iF<-fit$conf$keyLogFsta[1,]
+  fit.co<-sam.fit(fit$data, fit$conf, fit$pl, run=FALSE)
+  fit.co$obj$env$data$resFlag<-1
+  fit.co$obj$retape()
+  sdrep <- sdreport(fit.co$obj,fit$opt$par)  
+  ages <- as.integer(colnames(fit.co$data$natMor))
+  iF<-fit.co$conf$keyLogFsta[1,]
   if (exists(".Random.seed")){
     oldseed <- get(".Random.seed", .GlobalEnv)
     oldRNGkind <- RNGkind()
@@ -78,15 +79,15 @@ procres <- function(fit, ...){
   set.seed(123456)
   idx <- which(names(sdrep$value)=="resN")
   resN <- mvrnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
-  resN <- matrix(resN, nrow=nrow(fit$pl$logN))
-  resN <- data.frame(year=fit$data$years[as.vector(col(resN))],
+  resN <- matrix(resN, nrow=nrow(fit.co$pl$logN))
+  resN <- data.frame(year=fit.co$data$years[as.vector(col(resN))],
                      fleet=1,
                      age=ages[as.vector(row(resN))],
                      residual=as.vector(resN))
   idx <- which(names(sdrep$value)=="resF")
   resF <- mvrnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
-  resF <- matrix(resF, nrow=nrow(fit$pl$logF))
-  resF <- data.frame(year=fit$data$years[as.vector(col(resF))],
+  resF <- matrix(resF, nrow=nrow(fit.co$pl$logF))
+  resF <- data.frame(year=fit.co$data$years[as.vector(col(resF))],
                      fleet=2,
                      age=ages[iF[iF>=0]+1][as.vector(row(resF))],
                      residual=as.vector(resF))
