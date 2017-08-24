@@ -31,7 +31,7 @@
 
 #define TMB_LIB_INIT R_init_stockassessment
 #include <TMB.hpp>
-#include "../inst/include/macros.h"
+#include "../inst/include/define.h"
 #include "../inst/include/f.h"
 #include "../inst/include/n.h"
 #include "../inst/include/predobs.h"
