@@ -10,7 +10,7 @@ ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
 CPP_SRC := $(PACKAGE)/src/*.cpp
 
-.PHONY: test all updateData
+.PHONY: test all updateData qi
 
 all:
 	make doc-update
@@ -38,6 +38,10 @@ $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
 install: $(TARBALL)
 	$(R) CMD INSTALL --preclean $<
 	@touch $@
+
+qi:
+	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp')" | $(R) --slave
+	$(R) CMD INSTALL $(PACKAGE)
 
 quick-install: $(PACKAGE)/src/stockassessment.so
 	$(R) CMD INSTALL $(PACKAGE)
