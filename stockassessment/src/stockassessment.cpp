@@ -143,8 +143,7 @@ Type objective_function<Type>::operator() ()
 
   Type ans=0; //negative log-likelihood
 
-  ans+=nllF(logF, timeSteps, corFlag, simFlag, resFlag, stateDimN,
-            keyLogFsta, keyVarF, itrans_rho, logSdLogFsta, keep, this );
+  ans+=nllF(confset, paraset, logF, keep, this);
 
   ans += nllN(logN, logF, timeSteps, stateDimN, minAge,
               maxAgePlusGroup, simFlag, resFlag, keyVarLogN,

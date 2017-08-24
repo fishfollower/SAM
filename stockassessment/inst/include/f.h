@@ -4,28 +4,18 @@ Type trans(Type x){
 }
 
 template <class Type>
-Type nllF(array<Type> &logF, 
-          int timeSteps,
-          int corFlag,
-          int simFlag,
-          int resFlag,
-          int stateDimN,
-          array<int> &keyLogFsta,
-          array<int> &keyVarF,
-          vector<Type> &itrans_rho,
-          vector<Type> &logSdLogFsta,
-          data_indicator<vector<Type>,Type> &keep, 
-          objective_function<Type> *of
-	  ){
+Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   Type nll=0; 
   int stateDimF=logF.dim[0];
-  vector<Type> sdLogFsta=exp(logSdLogFsta);
-  array<Type> resF(logF.dim[0],logF.dim[1]-1);
+  int timeSteps=logF.dim[1];
+  int stateDimN=conf.keyLogFsta.dim[1];
+  vector<Type> sdLogFsta=exp(par.logSdLogFsta);
+  array<Type> resF(stateDimF,timeSteps-1);
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
 
-  if(corFlag==0){
+  if(conf.corFlag==0){
     fcor.setZero();
   }
 
@@ -33,19 +23,19 @@ Type nllF(array<Type> &logF,
     fcor(i,i)=1.0;
   }
 
-  if(corFlag==1){
+  if(conf.corFlag==1){
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        fcor(i,j)=trans(itrans_rho(0));
+        fcor(i,j)=trans(par.itrans_rho(0));
         fcor(j,i)=fcor(i,j);
       }
     } 
   }
 
-  if(corFlag==2){
+  if(conf.corFlag==2){
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        fcor(i,j)=pow(trans(itrans_rho(0)),abs(Type(i-j)));
+        fcor(i,j)=pow(trans(par.itrans_rho(0)),abs(Type(i-j)));
         fcor(j,i)=fcor(i,j);
       }
     } 
@@ -54,9 +44,9 @@ Type nllF(array<Type> &logF,
   int i,j;
   for(i=0; i<stateDimF; ++i){
     for(j=0; j<stateDimN; ++j){
-      if(keyLogFsta(0,j)==i)break;
+      if(conf.keyLogFsta(0,j)==i)break;
     }
-    fsd(i)=sdLogFsta(keyVarF(0,j));
+    fsd(i)=sdLogFsta(conf.keyVarF(0,j));
   }
  
   for(i=0; i<stateDimF; ++i){
@@ -73,7 +63,7 @@ Type nllF(array<Type> &logF,
     resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));    
     nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
     SIMULATE_F(of){
-      if(simFlag==0){
+      if(conf.simFlag==0){
         logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
       }
     }
@@ -84,7 +74,7 @@ Type nllF(array<Type> &logF,
     for (int i = 0; i < stateDimF; i++) nll -= dnorm(logF(i, 0), Type(0), huge, true);  
   } 
 
-  if(resFlag==1){
+  if(conf.resFlag==1){
     ADREPORT_F(resF,of);
   }
   return nll;
