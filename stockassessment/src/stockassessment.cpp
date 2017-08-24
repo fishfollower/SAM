@@ -139,14 +139,7 @@ Type objective_function<Type>::operator() ()
   vector<Type> tsb = tsbFun(dataset, confset, logN);
   vector<Type> logtsb = log(tsb);
 
-  vector<Type> predObs=predObsFun(logF, logN, logFpar, logScale,
-                                  logQpow, nobs, minAge, maxAge,
-                                  noScaledYears, fleetTypes,
-                                  keyScaledYears, keyQpow,
-                                  keyBiomassTreat, aux, keyLogFsta,
-                                  keyLogFpar, keyParScaledYA, natMor,
-                                  sampleTimes, logssb, logfsb,
-                                  logCatch, logitReleaseSurvival);
+  vector<Type> predObs=predObsFun(dataset, confset, paraset, logN, logF, logssb, logfsb, logCatch);
 
   Type ans=0; //negative log-likelihood
 
