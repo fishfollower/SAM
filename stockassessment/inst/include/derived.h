@@ -1,5 +1,5 @@
 template <class Type>
-vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF, array<Type> &logN){
+vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int timeSteps=logF.dim[1];
   int stateDimN=logN.dim[0];
   vector<Type> ssb(timeSteps);
@@ -88,8 +88,8 @@ vector<Type> tsbFun(array<Type> &logN,
 }
 
 template <class Type>
-vector<Type> rFun(array<Type> &logN,
-                  int timeSteps){
+vector<Type> rFun(array<Type> &logN){
+  int timeSteps=logN.dim[1];
   vector<Type> R(timeSteps);
   R.setZero();
   for(int y=0;y<timeSteps;y++){  

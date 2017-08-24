@@ -121,10 +121,10 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
-  vector<Type> R = rFun(logN, timeSteps);
+  vector<Type> R = rFun(logN);
   vector<Type> logR = log(R);  
 
-  vector<Type> ssb = ssbFun(dataset, confset, logF, logN);
+  vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
   vector<Type> logssb = log(ssb);
 
   vector<Type> fbar = fbarFun(logF, minAge, timeSteps, fbarRange, keyLogFsta);
