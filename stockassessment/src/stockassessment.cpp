@@ -65,6 +65,7 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(landMeanWeight);
   DATA_ARRAY(propF);
   DATA_ARRAY(propM);
+
   DATA_INTEGER(minAge);
   DATA_INTEGER(maxAge);
   DATA_INTEGER(maxAgePlusGroup);
@@ -102,6 +103,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logScale);
   PARAMETER_VECTOR(logitReleaseSurvival);   
   PARAMETER_VECTOR(logitRecapturePhi);   
+
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
