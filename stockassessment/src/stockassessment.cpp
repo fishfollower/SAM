@@ -42,67 +42,70 @@ template<class Type>
 Type objective_function<Type>::operator() ()
 {
   using CppAD::abs;
-  DATA_INTEGER(noFleets);
-  DATA_IVECTOR(fleetTypes); 
-  DATA_VECTOR(sampleTimes);
-  DATA_INTEGER(noYears);
-  DATA_VECTOR(years);
-  DATA_IVECTOR(minAgePerFleet);
-  DATA_IVECTOR(maxAgePerFleet);
-  DATA_INTEGER(nobs);
-  DATA_IARRAY(idx1);    // minimum index of obs by fleet x year
-  DATA_IARRAY(idx2);    // maximum index of obs by fleet x year
-  DATA_IARRAY(aux);
-  DATA_VECTOR(logobs);
-  DATA_VECTOR(weight);
-  DATA_VECTOR_INDICATOR(keep, logobs);
-  DATA_ARRAY(propMat);
-  DATA_ARRAY(stockMeanWeight); 
-  DATA_ARRAY(catchMeanWeight);
-  DATA_ARRAY(natMor);
-  DATA_ARRAY(landFrac);
-  DATA_ARRAY(disMeanWeight);
-  DATA_ARRAY(landMeanWeight);
-  DATA_ARRAY(propF);
-  DATA_ARRAY(propM);
+  dataSet<Type> dataset;
+  DATA_INTEGER(noFleets); dataset.noFleets=noFleets; 
+  DATA_IVECTOR(fleetTypes); dataset.fleetTypes=fleetTypes;    
+  DATA_VECTOR(sampleTimes); dataset.sampleTimes=sampleTimes; 
+  DATA_INTEGER(noYears); dataset.noYears=noYears; 
+  DATA_VECTOR(years); dataset.years=years; 
+  DATA_IVECTOR(minAgePerFleet); dataset.minAgePerFleet=minAgePerFleet; 
+  DATA_IVECTOR(maxAgePerFleet); dataset.maxAgePerFleet=maxAgePerFleet; 
+  DATA_INTEGER(nobs); dataset.nobs=nobs; 
+  DATA_IARRAY(idx1); dataset.idx1=idx1;     // minimum index of obs by fleet x year
+  DATA_IARRAY(idx2); dataset.idx2=idx2;     // maximum index of obs by fleet x year
+  DATA_IARRAY(aux); dataset.aux=aux; 
+  DATA_VECTOR(logobs); dataset.logobs=logobs; 
+  DATA_VECTOR(weight); dataset.weight=weight; 
+  DATA_VECTOR_INDICATOR(keep, logobs); //dataset.keep=keep; 
+  DATA_ARRAY(propMat); dataset.propMat=propMat; 
+  DATA_ARRAY(stockMeanWeight); dataset.stockMeanWeight=stockMeanWeight;  
+  DATA_ARRAY(catchMeanWeight); dataset.catchMeanWeight=catchMeanWeight; 
+  DATA_ARRAY(natMor); dataset.natMor=natMor; 
+  DATA_ARRAY(landFrac); dataset.landFrac=landFrac; 
+  DATA_ARRAY(disMeanWeight); dataset.disMeanWeight=disMeanWeight; 
+  DATA_ARRAY(landMeanWeight); dataset.landMeanWeight=landMeanWeight; 
+  DATA_ARRAY(propF); dataset.propF=propF; 
+  DATA_ARRAY(propM); dataset.propM=propM; 
 
-  DATA_INTEGER(minAge);
-  DATA_INTEGER(maxAge);
-  DATA_INTEGER(maxAgePlusGroup);
-  DATA_IARRAY(keyLogFsta);
-  DATA_INTEGER(corFlag);
-  DATA_IARRAY(keyLogFpar);
-  DATA_IARRAY(keyQpow);
-  DATA_IARRAY(keyVarF);
-  DATA_IVECTOR(keyVarLogN); 
-  DATA_IARRAY(keyVarObs);
-  DATA_FACTOR(obsCorStruct); 
-  DATA_IARRAY(keyCorObs);
-  DATA_INTEGER(stockRecruitmentModelCode);
-  DATA_INTEGER(noScaledYears);
-  DATA_IVECTOR(keyScaledYears);
-  DATA_IARRAY(keyParScaledYA);
-  DATA_IVECTOR(fbarRange);
-  DATA_IVECTOR(keyBiomassTreat)
-  DATA_INTEGER(simFlag); //1 means simulations should not redo F and N
-  DATA_INTEGER(resFlag); 
-  DATA_FACTOR(obsLikelihoodFlag);
-  DATA_INTEGER(fixVarToWeight);
+  confSet confset;
+  DATA_INTEGER(minAge); confset.minAge=minAge; 
+  DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
+  DATA_INTEGER(maxAgePlusGroup); confset.maxAgePlusGroup=maxAgePlusGroup; 
+  DATA_IARRAY(keyLogFsta); confset.keyLogFsta=keyLogFsta; 
+  DATA_INTEGER(corFlag); confset.corFlag=corFlag; 
+  DATA_IARRAY(keyLogFpar); confset.keyLogFpar=keyLogFpar; 
+  DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
+  DATA_IARRAY(keyVarF); confset.keyVarF=keyVarF; 
+  DATA_IVECTOR(keyVarLogN); confset.keyVarLogN=keyVarLogN;  
+  DATA_IARRAY(keyVarObs); confset.keyVarObs=keyVarObs; 
+  DATA_FACTOR(obsCorStruct); confset.obsCorStruct=obsCorStruct;  
+  DATA_IARRAY(keyCorObs); confset.keyCorObs=keyCorObs; 
+  DATA_INTEGER(stockRecruitmentModelCode); confset.stockRecruitmentModelCode=stockRecruitmentModelCode; 
+  DATA_INTEGER(noScaledYears); confset.noScaledYears=noScaledYears; 
+  DATA_IVECTOR(keyScaledYears); confset.keyScaledYears=keyScaledYears; 
+  DATA_IARRAY(keyParScaledYA); confset.keyParScaledYA=keyParScaledYA; 
+  DATA_IVECTOR(fbarRange); confset.fbarRange=fbarRange; 
+  DATA_IVECTOR(keyBiomassTreat); confset.keyBiomassTreat=keyBiomassTreat;   
+  DATA_INTEGER(simFlag); confset.simFlag=simFlag;  //1 means simulations should not redo F and N
+  DATA_INTEGER(resFlag); confset.resFlag=resFlag;  
+  DATA_FACTOR(obsLikelihoodFlag); confset.obsLikelihoodFlag=obsLikelihoodFlag; 
+  DATA_INTEGER(fixVarToWeight); confset.fixVarToWeight=fixVarToWeight; 
 
-  PARAMETER_VECTOR(logFpar); 
-  PARAMETER_VECTOR(logQpow); 
-  PARAMETER_VECTOR(logSdLogFsta); 
-  PARAMETER_VECTOR(logSdLogN); 
-  PARAMETER_VECTOR(logSdLogObs);
-  PARAMETER_VECTOR(logSdLogTotalObs);
-  PARAMETER_VECTOR(transfIRARdist);//transformed distances for IRAR cor obs structure
-  PARAMETER_VECTOR(sigmaObsParUS);//choleski elements for unstructured cor obs structure
-  PARAMETER_VECTOR(rec_loga); 
-  PARAMETER_VECTOR(rec_logb); 
-  PARAMETER_VECTOR(itrans_rho); 
-  PARAMETER_VECTOR(logScale);
-  PARAMETER_VECTOR(logitReleaseSurvival);   
-  PARAMETER_VECTOR(logitRecapturePhi);   
+  paraSet<Type> paraset;
+  PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
+  PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
+  PARAMETER_VECTOR(logSdLogFsta); paraset.logSdLogFsta=logSdLogFsta;  
+  PARAMETER_VECTOR(logSdLogN); paraset.logSdLogN=logSdLogN;  
+  PARAMETER_VECTOR(logSdLogObs); paraset.logSdLogObs=logSdLogObs; 
+  PARAMETER_VECTOR(logSdLogTotalObs); paraset.logSdLogTotalObs=logSdLogTotalObs; 
+  PARAMETER_VECTOR(transfIRARdist); paraset.transfIRARdist=transfIRARdist; //transformed distances for IRAR cor obs structure
+  PARAMETER_VECTOR(sigmaObsParUS); paraset.sigmaObsParUS=sigmaObsParUS; //choleski elements for unstructured cor obs structure
+  PARAMETER_VECTOR(rec_loga); paraset.rec_loga=rec_loga;  
+  PARAMETER_VECTOR(rec_logb); paraset.rec_logb=rec_logb;  
+  PARAMETER_VECTOR(itrans_rho); paraset.itrans_rho=itrans_rho;  
+  PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
+  PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
+  PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
 
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);

@@ -34,7 +34,7 @@ struct dataSet{
   array<int> aux;
   vector<Type> logobs;
   vector<Type> weight;
-  data_indicator<vector<Type>,Type> keep;
+  //data_indicator<vector<Type>,Type> keep;
   array<Type> propMat;
   array<Type> stockMeanWeight; 
   array<Type> catchMeanWeight;
