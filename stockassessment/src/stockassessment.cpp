@@ -116,8 +116,8 @@ Type objective_function<Type>::operator() ()
   // patch missing 
   int idxmis=0; 
   for(int i=0;i<nobs;i++){
-    if(isNA(logobs(i))){
-      logobs(i)=missing(idxmis++);
+    if(isNA(dataset.logobs(i))){
+      dataset.logobs(i)=missing(idxmis++);
     }    
   }
 
@@ -147,13 +147,7 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, ssb, keep, this);
 
-  ans += nllObs(nobs, noFleets, noYears, fleetTypes, minAgePerFleet,
-                maxAgePerFleet, minAge, maxAge, obsCorStruct,
-                logSdLogObs, logSdLogTotalObs, transfIRARdist,
-                sigmaObsParUS, logitRecapturePhi, keyVarObs, keyCorObs, 
-                aux, obsLikelihoodFlag, idx1, idx2, weight, fixVarToWeight,
-                logobs, predObs, keep, this);
-  
+  ans += nllObs(dataset, confset, paraset, predObs, keep, this);
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
@@ -163,6 +157,7 @@ Type objective_function<Type>::operator() ()
   SIMULATE {
     REPORT(logF);
     REPORT(logN);
+    logobs=dataset.logobs; 
     REPORT(logobs);
   }
   REPORT(predObs);
