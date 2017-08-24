@@ -143,12 +143,9 @@ Type objective_function<Type>::operator() ()
 
   Type ans=0; //negative log-likelihood
 
-  ans+=nllF(confset, paraset, logF, keep, this);
+  ans += nllF(confset, paraset, logF, keep, this);
 
-  ans += nllN(logN, logF, timeSteps, stateDimN, minAge,
-              maxAgePlusGroup, simFlag, resFlag, keyVarLogN,
-              keyLogFsta, stockRecruitmentModelCode, ssb, natMor,
-              logSdLogN, rec_loga, rec_logb, keep, this);
+  ans += nllN(dataset, confset, paraset, logN, logF, ssb, keep, this);
 
   ans += nllObs(nobs, noFleets, noYears, fleetTypes, minAgePerFleet,
                 maxAgePerFleet, minAge, maxAge, obsCorStruct,
