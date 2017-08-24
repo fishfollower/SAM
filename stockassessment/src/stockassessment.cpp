@@ -127,16 +127,16 @@ Type objective_function<Type>::operator() ()
   vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
   vector<Type> logssb = log(ssb);
 
-  vector<Type> fbar = fbarFun(logF, minAge, timeSteps, fbarRange, keyLogFsta);
+  vector<Type> fbar = fbarFun(confset, logF);
   vector<Type> logfbar = log(fbar);
 
-  vector<Type> cat = catchFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
+  vector<Type> cat = catchFun(dataset, confset, logN, logF);
   vector<Type> logCatch = log(cat);
 
-  vector<Type> fsb = fsbFun(logF, logN, minAge, maxAge, keyLogFsta, catchMeanWeight, natMor);
+  vector<Type> fsb = fsbFun(dataset, confset, logN, logF);
   vector<Type> logfsb = log(fsb);
 
-  vector<Type> tsb = tsbFun(logN, minAge, maxAge, timeSteps, stockMeanWeight);
+  vector<Type> tsb = tsbFun(dataset, confset, logN);
   vector<Type> logtsb = log(tsb);
 
   vector<Type> predObs=predObsFun(logF, logN, logFpar, logScale,
