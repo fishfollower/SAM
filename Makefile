@@ -1,6 +1,5 @@
 R=R
 SHELL=/bin/bash
-# -> you can do    R=R-devel  make ....
 
 PACKAGE=stockassessment
 VERSION := $(shell sed -n '/^Version: /s///p' stockassessment/DESCRIPTION)
@@ -10,7 +9,7 @@ ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
 CPP_SRC := $(PACKAGE)/src/*.cpp
 
-.PHONY: test all updateData qi
+.PHONY: test all updateData qi quick-install vignette-update
 
 all:
 	make doc-update
@@ -22,10 +21,11 @@ doc-update: $(PACKAGE)/R/*.R
 	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\")" | $(R) --slave
 	@touch doc-update
 
-vignette-update: $(PACKAGE)/vignettes/*.Rnw
-	cd $(PACKAGE)/vignettes; echo "library(knitr);knit2pdf('stockassessment.Rnw')" | $(R) --slave
-	mv $(PACKAGE)/vignettes/stockassessment.pdf $(PACKAGE)/inst/doc
-	@touch vignette-update
+vignette-update: vignettes/*.Rnw vignettes/*.Rmd
+	cd vignettes; echo "knitr::knit2pdf('stockassessment.Rnw')" | $(R) --slave
+	cd vignettes; echo "rmarkdown::render('simulate.Rmd')" | $(R) --slave
+	mv vignettes/*.pdf $(PACKAGE)/inst/doc
+	cd vignettes; rm -f *.{log,aux,out,tex}
 
 namespace-update :: $(PACKAGE)/NAMESPACE
 $(PACKAGE)/NAMESPACE: $(PACKAGE)/R/*.R
