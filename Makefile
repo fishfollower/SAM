@@ -12,8 +12,8 @@ CPP_SRC := $(PACKAGE)/src/*.cpp
 .PHONY: test all updateData qi quick-install vignette-update
 
 all:
-	make doc-update
-	make build-package
+	#make doc-update
+	#make build-package
 	make install
 	make pdf
 
