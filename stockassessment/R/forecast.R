@@ -8,16 +8,24 @@
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
 ##' @param rec.years vector of years to use to resample recruitment from
 ##' @param label optional label to appear in short table
-##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended) 
+##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
+##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom MASS mvrnorm
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE){
     
-  resample <- function(x, ...) x[sample.int(length(x), ...)]
-  
+  resample <- function(x, ...){
+    if(deterministic){
+      ret <- mean(x)
+    }else{
+      ret <- x[sample.int(length(x), ...)]
+    }
+    return(ret)
+  }
+    
   if(missing(fscale)&missing(fval)&missing(catchval))stop("No scenario is specified")    
   if(missing(fscale)&!missing(fval))fscale<-rep(NA,length(fval))
   if(missing(fscale)&!missing(catchval))fscale<-rep(NA,length(catchval))
@@ -155,6 +163,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   if(year.base<(max(fit$data$years)-1)){
     stop("State not saved, so cannot proceed from this year")
   }
+  if(deterministic)cov<-cov*0
   sim<-MASS::mvrnorm(nosim, mu=est, Sigma=cov)
 
   if(is.null(overwriteSelYears)){  
@@ -194,6 +203,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
 
     sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
     if(i!=0){
+      if(deterministic)procVar<-procVar*0  
       sim <- sim + MASS::mvrnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
     }
     

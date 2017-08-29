@@ -7,7 +7,7 @@
 forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL)
+  overwriteSelYears = NULL, deterministic = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -29,6 +29,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
 \item{label}{optional label to appear in short table}
 
 \item{overwriteSelYears}{if a vector of years is specified, then the average selectivity of those years is used (not recommended)}
+
+\item{deterministic}{option to turn all process noise off (not recommended, as it will likely cause bias)}
 }
 \value{
 an object of type samforecast
