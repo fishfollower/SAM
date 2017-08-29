@@ -4,10 +4,12 @@
 \alias{catchtable}
 \title{Catch table}
 \usage{
-catchtable(fit)
+catchtable(fit, obs.show = FALSE)
 }
 \arguments{
 \item{fit}{...}
+
+\item{obs.show}{logical add a column with catch sum of product rowsums(C*W)}
 }
 \description{
 Catch table

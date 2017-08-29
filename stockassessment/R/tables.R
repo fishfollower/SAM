@@ -51,12 +51,24 @@ rectable<-function(fit){
 }
 
 ##' Catch table 
-##' @param  fit ... 
+##' @param  fit ...
+##' @param obs.show logical add a column with catch sum of product rowsums(C*W)
 ##' @details ...
 ##' @export
-catchtable<-function(fit){
-   xx <- as.integer(rownames(fit$data$catchMeanWeight))
-   ret <- .tableit(fit, x=xx, "logCatch", trans=exp) 
+catchtable<-function(fit, obs.show=FALSE){
+   CW <- fit$data$catchMeanWeight 
+   xx <- as.integer(rownames(CW))
+   ret <- .tableit(fit, x=xx, "logCatch", trans=exp)
+   if(obs.show){
+     aux <- fit$data$aux
+     logobs <- fit$data$logobs
+     .goget <- function(y,a){
+       ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
+       ifelse(length(ret)==0,0,ret)
+      }
+      sop<-rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE)
+      ret<-cbind(ret,sop.catch=sop)
+   }
    return(ret)
 }
 
