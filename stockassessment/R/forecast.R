@@ -15,7 +15,9 @@
 ##' @importFrom MASS mvrnorm
 ##' @export
 forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL){
-
+    
+  resample <- function(x, ...) x[sample.int(length(x), ...)]
+  
   if(missing(fscale)&missing(fval)&missing(catchval))stop("No scenario is specified")    
   if(missing(fscale)&!missing(fval))fscale<-rep(NA,length(fval))
   if(missing(fscale)&!missing(catchval))fscale<-rep(NA,length(catchval))
@@ -106,7 +108,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     if(!inyear){
       Z <- F+nm
       n <- length(N)
-      N <- c(sample(recpool,1),N[-n]*exp(-Z[-n])+c(rep(0,n-2),N[n]*exp(-Z[n])))
+      N <- c(resample(recpool,1),N[-n]*exp(-Z[-n])+c(rep(0,n-2),N[n]*exp(-Z[n])))
     }
     F <- F*scale
     xx <- getState(N,F)
