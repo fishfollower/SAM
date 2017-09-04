@@ -169,13 +169,13 @@ modeltable <- function(fits){
 ##' @param ageLimit Oldest age used (should be high)
 ##' @export
 ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=15, ageLimit=100){
-  idxF <- fit$conf$keyLogFsta[1,]+1
   barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
   last.year.used=max(fit$data$years)
   idxno<-which(fit$data$years==last.year.used)
   #dim<-fit.current$stateDim
   #idxN<-1:ncol(stock.mean.weight) 
-  F <- exp(fit$pl$logF[idxF,])
+  F <- t(faytable(fit))
+  F[is.na(F)]<-0
   
   sel<-function(){
     Sa<-rep(0,nrow(F))
