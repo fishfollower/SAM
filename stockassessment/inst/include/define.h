@@ -62,7 +62,7 @@ struct confSet{
   int stockRecruitmentModelCode;
   int noScaledYears;
   vector<int> keyScaledYears;
-  array<int> keyParScaledYA;
+  matrix<int> keyParScaledYA;
   vector<int> fbarRange;
   vector<int> keyBiomassTreat;
   int simFlag; 

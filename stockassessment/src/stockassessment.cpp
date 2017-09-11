@@ -83,7 +83,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stockRecruitmentModelCode); confset.stockRecruitmentModelCode=stockRecruitmentModelCode; 
   DATA_INTEGER(noScaledYears); confset.noScaledYears=noScaledYears; 
   DATA_IVECTOR(keyScaledYears); confset.keyScaledYears=keyScaledYears; 
-  DATA_IARRAY(keyParScaledYA); confset.keyParScaledYA=keyParScaledYA; 
+  DATA_IMATRIX(keyParScaledYA); 
+  confset.keyParScaledYA=keyParScaledYA; 
   DATA_IVECTOR(fbarRange); confset.fbarRange=fbarRange; 
   DATA_IVECTOR(keyBiomassTreat); confset.keyBiomassTreat=keyBiomassTreat;   
   DATA_INTEGER(simFlag); confset.simFlag=simFlag;  //1 means simulations should not redo F and N
