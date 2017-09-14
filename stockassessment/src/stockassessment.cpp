@@ -134,6 +134,8 @@ Type objective_function<Type>::operator() ()
   vector<Type> cat = catchFun(dataset, confset, logN, logF);
   vector<Type> logCatch = log(cat);
 
+  vector<Type> varLogCatch = varLogCatchFun(dataset, confset, logN, logF, paraset);
+
   vector<Type> fsb = fsbFun(dataset, confset, logN, logF);
   vector<Type> logfsb = log(fsb);
 
@@ -148,7 +150,7 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, ssb, keep, this);
 
-  ans += nllObs(dataset, confset, paraset, predObs, keep, this);
+  ans += nllObs(dataset, confset, paraset, predObs, varLogCatch, keep,  this);
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;

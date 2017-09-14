@@ -103,7 +103,7 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> &predObs, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> &predObs, vector<Type> &varLogCatch, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   Type nll=0; 
   // setup obs likelihoods
   vector< density::MVNORM_t<Type> >  nllVec(dat.noFleets);
@@ -142,7 +142,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
   }
 
   for(int f=0; f<dat.noFleets; ++f){
-    if(dat.fleetTypes(f)!=5){ 
+    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
       matrix<Type> cov(thisdim,thisdim);
       cov.setZero();
@@ -183,7 +183,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
   for(int y=0;y<dat.noYears;y++){
     int totalParKey = 0;
     for(int f=0;f<dat.noFleets;f++){
-      if(dat.fleetTypes(f)!=5){
+      if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
         if(!isNAINT(dat.idx1(f,y))){
           int idxfrom=dat.idx1(f,y);
           int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
@@ -236,13 +236,32 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
 	      error("Unknown obsLikelihoodFlag");
 	  }
         }
-      }else{ //dat.fleetTypes(f)==5     
-        if(!isNAINT(dat.idx1(f,y))){    
-          for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
-            nll += -keep(i)*dnbinom(dat.logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
-            SIMULATE_F(of){
-	      dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
+      }else{ //dat.fleetTypes(f)==5
+        if(dat.fleetTypes(f)==5){
+          if(!isNAINT(dat.idx1(f,y))){    
+            for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
+              nll += -keep(i)*dnbinom(dat.logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
+              SIMULATE_F(of){
+	        dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
+              }
             }
+          }
+        }else{
+          if(dat.fleetTypes(f)==3){
+            Type sd=0;
+            if(!isNAINT(dat.idx1(f,y))){
+              for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
+                if(conf.keyBiomassTreat(f)==3){
+                  sd = sqrt(varLogCatch(y));
+                }else{
+                  sd = exp(par.logSdLogObs(conf.keyVarObs(f,0)));
+                }  
+                nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
+                SIMULATE_F(of){
+  	          dat.logobs(i) = rnorm(predObs(i),sd);
+                }
+              }
+            }    
           }
         }   
       }   

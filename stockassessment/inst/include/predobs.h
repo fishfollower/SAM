@@ -66,7 +66,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         
       break;
   
-      case 3:// biomass survey
+      case 3:// biomass or catch survey
         if(conf.keyBiomassTreat(f-1)==0){
           pred(i) = logssb(y)+par.logFpar(conf.keyLogFpar(f-1,a));
         }
@@ -76,7 +76,10 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         if(conf.keyBiomassTreat(f-1)==2){
           pred(i) = logfsb(y)+par.logFpar(conf.keyLogFpar(f-1,a));
         }
-      break;
+        if(conf.keyBiomassTreat(f-1)==3){
+          pred(i) = logCatch(y);
+        }
+	break;
   
       case 4:
   	error("Unknown fleet code");
