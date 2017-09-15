@@ -95,6 +95,7 @@ clean.void.catches<-function(dat, conf){
   rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
   dat$aux <- dat$aux[!rmidx,]
   dat$logobs <- dat$logobs[!rmidx]
+  dat$weight <- dat$weight[!rmidx]
   dat$nobs<-sum(!rmidx)
   dat$minAgePerFleet<-as.integer(tapply(dat$aux[,"age"], INDEX=dat$aux[,"fleet"], FUN=min))
   dat$maxAgePerFleet<-as.integer(tapply(dat$aux[,"age"], INDEX=dat$aux[,"fleet"], FUN=max))
