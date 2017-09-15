@@ -148,11 +148,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
       cov.setZero();
       if(conf.obsCorStruct(f)==0){//ID (independent)  
         for(int i=0; i<thisdim; ++i){
-          if(dat.fleetTypes(f)!=3){
-            aidx = i+dat.minAgePerFleet(f)-conf.minAge;
-          }else{
-            aidx = 0;
-          }
+          aidx = i+dat.minAgePerFleet(f)-conf.minAge;
   	  cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
         }
       } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
@@ -177,6 +173,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
         nllVec(f).setSigma(cov);
         obsCov(f) = cov;
       }
+    }else{
+      matrix<Type> dummy(1,1);
+      dummy(0,0) = R_NaReal;
+      obsCov(f) = dummy;
     }
   }
   //eval likelihood 

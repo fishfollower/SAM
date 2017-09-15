@@ -507,7 +507,7 @@ obscov<-function(fit, corr=FALSE){
     stopifnot(class(fit)=="sam")
     res<-fit$rep$obsCov
     for(i in 1:length(res)) rownames(res[[i]])<-fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
-    if(corr) for(i in 1:length(res)) res[[i]]<-cov2cor(res[[i]])
+    if(corr) for(i in 1:length(res)) if(any(is.na(res[[i]])))res[[i]][]<-NA else res[[i]]<-cov2cor(res[[i]])
     res
 }
 
@@ -535,7 +535,9 @@ obscorrplot<-function(fit,...){
         ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
         rownames(xx) <- ages
         colnames(xx) <- ages
-        plotcorr(xx,col=ccolors[5*xx+6],mar=0.1+c(2,2,2,2), main=substr(fn[i], 1, 20),...)
+        if(!any(is.na(xx))){
+          plotcorr(xx,col=ccolors[5*xx+6],mar=0.1+c(2,2,2,2), main=substr(fn[i], 1, 20),...)
+        }
     }
     par(mfrow=c(1,1))
 }
