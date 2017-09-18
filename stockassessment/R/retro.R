@@ -15,6 +15,7 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
   }
   data$aux <- data$aux[idx,]
   data$logobs <- data$logobs[idx]
+  data$weight <- data$weight[idx]
   suf <- sort(unique(data$aux[,"fleet"])) # sort-unique-fleet
   data$noFleets <- length(suf)
   data$fleetTypes <- data$fleetTypes[suf]
