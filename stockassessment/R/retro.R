@@ -61,6 +61,7 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
       conf$keyScaledYears <- as.vector(conf$keyScaledYears)[yidx]
       conf$keyParScaledYA <- .reidx(conf$keyParScaledYA[yidx,,drop=FALSE])
     }
+    conf$keyBiomassTreat <- conf$keyBiomassTreat[suf]
     conf$obsLikelihoodFlag <- conf$obsLikelihoodFlag[suf]
     attr(data, "conf") <- conf
   }
