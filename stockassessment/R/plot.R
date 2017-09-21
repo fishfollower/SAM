@@ -579,5 +579,10 @@ fitplot <- function(fit, log=TRUE, fleets=unique(fit$data$aux[,"fleet"]), ...){
   a <- paste0("a=",aa," ")
   f <- paste0(" f=",strtrim(attr(fit$data,"fleetNames")[fit$data$aux[idx,"fleet"]],50))
   Year <- fit$data$aux[idx,"year"]
-  plotby(Year, o, y.line=p, by=cbind(a,f), y.common=FALSE, ylab="", ...)
+  if(length(fleets)==1){
+    myby <- paste(a, ":", f)
+  }else{
+    myby <- cbind(a,f)
+  }
+  plotby(Year, o, y.line=p, by=myby, y.common=FALSE, ylab="", ...)
 }
