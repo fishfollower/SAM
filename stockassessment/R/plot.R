@@ -129,7 +129,7 @@ addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, interval
 ##' plotby(year,age,perfectres, by=fleet)
 ##' detach(exdat)
 plotby <-function(x=NULL, y=NULL, z=NULL, x.line=NULL, y.line=NULL, z.line=NULL, by=NULL,  bubblescale=1, x.common=!is.null(x), y.common=!is.null(y), z.common=!is.null(z), xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL, zmax=NULL, axes=TRUE, ...){
-  if(is.null(by) | length(unique(by))==1){
+  if(is.null(by)){
     # 0
     if(length(x)==0 & length(y)==0 & length(z)==0){
       if(length(xlim)==0) xlim <- 0:1
@@ -573,8 +573,11 @@ fitplot <- function(fit, log=TRUE, fleets=unique(fit$data$aux[,"fleet"]), ...){
   trans <- function(x)if(log){x}else{exp(x)}  
   p <- trans(fit$obj$report(unlist(fit$pl))$predObs[idx])
   o <- trans(fit$data$logobs[idx])
-  a <- paste0("a=",fit$data$aux[idx,"age"]," ")
-  f <- paste0(" f=",attr(fit$data,"fleetNames")[fit$data$aux[idx,"fleet"]])
+  aa <- fit$data$aux[idx,"age"]
+  neg.age <- (aa < -1.0e-6)
+  aa[neg.age] <- NA
+  a <- paste0("a=",aa," ")
+  f <- paste0(" f=",strtrim(attr(fit$data,"fleetNames")[fit$data$aux[idx,"fleet"]],50))
   Year <- fit$data$aux[idx,"year"]
-  plotby(Year, o, y.line=p, by=if(length(fleets)==1){a}else{cbind(a,f)}, y.common=FALSE, ylab="", ...)
+  plotby(Year, o, y.line=p, by=cbind(a,f), y.common=FALSE, ylab="", ...)
 }

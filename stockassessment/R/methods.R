@@ -132,6 +132,8 @@ plot.samres<-function(x, ...){
     if("bubblescale"%in%names(list(...))) bs <- list(...)$bubblescale
     points(xx,yy,cex=sqrt(abs(zscale))/max(sqrt(abs(zscale)), na.rm=TRUE)*5*bs, pch=19, col=colb)
   }
+  neg.age <- (x$age < -1.0e-6)
+  x$age[neg.age] <- mean(x$age[!neg.age],na.rm=TRUE)
   plotby(x$year, x$age, x$residual, by=attr(x,"fleetNames")[x$fleet], xlab="Year", ylab="Age", ...)
   add_legend(x, ...)
 }
