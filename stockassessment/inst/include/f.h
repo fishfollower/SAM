@@ -5,6 +5,7 @@ Type trans(Type x){
 
 template <class Type>
 Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+  using CppAD::abs;
   Type nll=0; 
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
