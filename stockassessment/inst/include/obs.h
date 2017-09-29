@@ -104,6 +104,7 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 
 template <class Type>
 Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> &predObs, vector<Type> &varLogCatch, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+  using CppAD::abs;
   Type nll=0; 
   // setup obs likelihoods
   vector< density::MVNORM_t<Type> >  nllVec(dat.noFleets);
