@@ -1,17 +1,24 @@
 template <class Type>
+Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i){
+  int stateDimN=logN.dim[0];
+  Type ssb=0;
+  for(int j=0; j<stateDimN; ++j){
+    if(conf.keyLogFsta(0,j)>(-1)){
+      ssb += exp(logN(j,i))*exp(-exp(logF(conf.keyLogFsta(0,j),i))*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
+    }else{
+      ssb += exp(logN(j,i))*exp(-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
+    }
+  }
+  return ssb;
+}
+
+template <class Type>
 vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int timeSteps=logF.dim[1];
-  int stateDimN=logN.dim[0];
   vector<Type> ssb(timeSteps);
   ssb.setZero();
   for(int i=0;i<timeSteps;i++){
-    for(int j=0; j<stateDimN; ++j){
-      if(conf.keyLogFsta(0,j)>(-1)){
-        ssb(i)+=exp(logN(j,i))*exp(-exp(logF(conf.keyLogFsta(0,j),i))*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
-      }else{
-        ssb(i)+=exp(logN(j,i))*exp(-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
-      }
-    }
+    ssb(i)=ssbi(dat,conf,logN,logF,i);
   }
   return ssb;
 }

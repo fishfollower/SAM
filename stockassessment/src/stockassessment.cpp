@@ -32,11 +32,12 @@
 #define TMB_LIB_INIT R_init_stockassessment
 #include <TMB.hpp>
 #include "../inst/include/define.h"
+#include "../inst/include/derived.h"
 #include "../inst/include/f.h"
 #include "../inst/include/n.h"
 #include "../inst/include/predobs.h"
 #include "../inst/include/obs.h"
-#include "../inst/include/derived.h"
+
 
 template<class Type>
 Type objective_function<Type>::operator() ()
@@ -122,14 +123,14 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
-  vector<Type> R = rFun(logN);
-  vector<Type> logR = log(R);  
+  Type ans=0; //negative log-likelihood
+
+  ans += nllF(confset, paraset, logF, keep, this);
+
+  ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
 
   vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
   vector<Type> logssb = log(ssb);
-
-  vector<Type> fbar = fbarFun(confset, logF);
-  vector<Type> logfbar = log(fbar);
 
   vector<Type> cat = catchFun(dataset, confset, logN, logF);
   vector<Type> logCatch = log(cat);
@@ -142,13 +143,13 @@ Type objective_function<Type>::operator() ()
   vector<Type> tsb = tsbFun(dataset, confset, logN);
   vector<Type> logtsb = log(tsb);
 
-  vector<Type> predObs=predObsFun(dataset, confset, paraset, logN, logF, logssb, logfsb, logCatch);
+  vector<Type> R = rFun(logN);
+  vector<Type> logR = log(R);  
 
-  Type ans=0; //negative log-likelihood
+  vector<Type> fbar = fbarFun(confset, logF);
+  vector<Type> logfbar = log(fbar);
 
-  ans += nllF(confset, paraset, logF, keep, this);
-
-  ans += nllN(dataset, confset, paraset, logN, logF, ssb, keep, this);
+  vector<Type> predObs = predObsFun(dataset, confset, paraset, logN, logF, logssb, logfsb, logCatch);
 
   ans += nllObs(dataset, confset, paraset, predObs, varLogCatch, keep,  this);
 

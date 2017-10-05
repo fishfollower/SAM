@@ -1,5 +1,5 @@
 template <class Type>
-Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &ssb, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){ 
+Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){ 
   Type nll=0;
   int stateDimN=logN.dim[0];
   int timeSteps=logN.dim[1];
@@ -22,7 +22,11 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
     if(conf.stockRecruitmentModelCode==0){ // straight RW 
       predN(0)=logN(0,i-1);
     }else{
-      if((i-conf.minAge)>=0){thisSSB=ssb(i-conf.minAge);}else{thisSSB=ssb(0);} // use first in beginning       
+      if((i-conf.minAge)>=0){
+        thisSSB=ssbi(dat,conf,logN,logF,i-conf.minAge);
+      }else{
+        thisSSB=ssbi(dat,conf,logN,logF,0); // use first in beginning       
+      } 
       if(conf.stockRecruitmentModelCode==1){//ricker
         predN(0)=par.rec_loga(0)+log(thisSSB)-exp(par.rec_logb(0))*thisSSB;
       }else{
