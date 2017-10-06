@@ -56,7 +56,7 @@ defcon<-function(dat){
     }
   }  
   ret$keyLogFsta <- x - 1
-  ret$corFlag <- 0
+  ret$corFlag <- 2
   x <- matrix(0, nrow=nFleets, ncol=nAges)
   lastMax <- 0
   for(i in 1:nrow(x)){
