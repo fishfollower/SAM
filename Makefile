@@ -3,7 +3,7 @@ SHELL=/bin/bash
 
 PACKAGE=stockassessment
 VERSION := $(shell sed -n '/^Version: /s///p' stockassessment/DESCRIPTION)
-
+THISSHA := $(shell git log -1 --format="%H")
 TARBALL := $(PACKAGE)_$(VERSION).tar.gz
 ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
@@ -33,7 +33,13 @@ $(PACKAGE)/NAMESPACE: $(PACKAGE)/R/*.R
 
 build-package: $(TARBALL)
 $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
+	sed s/dummySHA/$(THISSHA)/g description-addon > description-addon-tmp
+	mv $(PACKAGE)/DESCRIPTION old-description
+	cat old-description description-addon-tmp > $(PACKAGE)/DESCRIPTION  
+	rm description-addon-tmp
 	$(R) CMD build --resave-data=no $(PACKAGE)
+	rm $(PACKAGE)/DESCRIPTION  
+	mv old-description $(PACKAGE)/DESCRIPTION  
 
 install: $(TARBALL)
 	$(R) CMD INSTALL --preclean $<

@@ -1,0 +1,12 @@
+RemoteType: github
+RemoteHost: https://api.github.com
+RemoteRepo: SAM
+RemoteUsername: fishfollower
+RemoteRef: master
+RemoteSha: dummySHA
+RemoteSubdir: stockassessment
+GithubRepo: SAM
+GithubUsername: fishfollower
+GithubRef: master
+GithubSHA1: dummySHA
+GithubSubdir: stockassessment
