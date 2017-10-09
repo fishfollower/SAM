@@ -13,7 +13,7 @@
 ##' @details ...
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
-##' @importFrom utils relist
+##' @importFrom utils relist packageDescription
 ##' @useDynLib stockassessment
 ##' @export
 ##' @examples
