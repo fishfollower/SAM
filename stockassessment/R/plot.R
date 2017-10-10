@@ -514,12 +514,46 @@ obscov<-function(fit, corr=FALSE){
 ##' Plots the estimated correlation matrices by fleet.
 ##' @param fit the object returned from sam.fit
 ##' @param ... extra arguments to plot
-##' @importFrom ellipse plotcorr 
 ##' @export
 obscorrplot<-function(fit,...){
+    x <- obscov(fit,TRUE)
+    fn <- attr(fit$data,"fleetNames")
+    for(i in 1:length(x)){
+        xx <- x[[i]]
+        ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
+        rownames(xx) <- ages
+        colnames(xx) <- ages
+        x[[i]] <- xx
+    }
+    corplotcommon(x,fn,...)
+}
+
+##' Plots the residual between-age correlation matrices by fleet.
+##' @param res the object returned from residuals.sam
+##' @param ... extra arguments to plot
+##' @importFrom stats cor xtabs
+##' @export
+empirobscorrplot<-function(res,...){
+    dat <- data.frame(resid=res$residual,age=res$age,year=res$year,fleet=res$fleet)
+    fleets <- unique( dat$fleet)
+    fn <- attr(res,"fleetNames")
+    x <- list()
+    for(i in 1:length(fleets)){
+        tmp <- xtabs( resid ~ age + year, data=dat[dat$fleet==fleets[i],])
+        xx <- cor( t(tmp) )
+        x[[ length(x) + 1 ]] <- xx    
+    }
+    corplotcommon(x,fn,...)
+}
+##' Common function for plotting correlation matrices.
+##' @param x a list of correlation matrices
+##' @param fn a vector of fleet names
+##' @param ... extra arguments to plotcorr
+##' @importFrom ellipse plotcorr 
+corplotcommon<-function(x,fn,...){
+    op <- par(no.readonly=TRUE)
     ccolors <- c("#A50F15","#DE2D26","#FB6A4A","#FCAE91","#FEE5D9","white",
                  "#EFF3FF","#BDD7E7","#6BAED6","#3182BD","#08519C")
-    x <- obscov(fit,TRUE)
 
     if(length(x)==3){
       div <- c(3,1)
@@ -529,17 +563,30 @@ obscorrplot<-function(fit,...){
     }
     laym <- matrix(1:(div[1]*div[2]),nrow=div[1], ncol=div[2])
     layout(laym)
-    fn <- attr(fit$data,"fleetNames")
+
     for(i in 1:length(x)){
         xx <- x[[i]]
-        ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
-        rownames(xx) <- ages
-        colnames(xx) <- ages
         if(!any(is.na(xx))){
           plotcorr(xx,col=ccolors[5*xx+6],mar=0.1+c(2,2,2,2), main=substr(fn[i], 1, 20),...)
         }
     }
-    par(mfrow=c(1,1))
+    par(op)
+}
+
+##' Plots between-age correlations by fleet, either estimated or empirical using residuals.
+##' @param x Either a sam fit as returned by sam.fit OR the object returned from residuals.sam
+##' @param ... extra arguments to plot
+##' @importFrom ellipse plotcorr 
+##' @export
+corplot<-function(x,...){
+    cl <- class(x)
+    if(cl=="sam"){
+        obscorrplot(x,...)
+    } else if(cl=="samres"){
+        empirobscorrplot(x,...)
+    } else {
+        stop("x must be of class 'sam' or 'samres'")
+    }
 }
 
 ##' Plots the stock recruitment 
