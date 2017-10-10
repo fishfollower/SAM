@@ -23,5 +23,23 @@ modelDescription <-function (fit,...){
                max(fit$data$years) + '). '+'The data contains '+fit$data$noFleets+' fleets. '
   #ret$Fmod <-
   #ret$Nmod <-
-  cat(ret$modelVersion+ret$modelIntro+ret$ages+ret$data)
+  cat(ret$modelVersion+ret$modelIntro+ret$ages+ret$data, ...)
+}
+
+##' Description of model  
+##' @param fit returned object from sam.fit
+##' @param ... Additional parameters to be passed to ...
+##' @details Writes a string to install the version of the package which was used to run the model.
+##' @export
+modelVersionInfo <-function (fit,...){
+  ret<-c(
+    '# The fit was run with a specific version of stockassessment package.',
+    '# If in the mean time version on your system has been updated',
+    '# you can revert back to the version used by inserting this:',
+    '',
+    paste0('devtools::install_github("fishfollower/SAM/stockassessment@',attr(fit,"RemoteSha"),'")'),
+    '',
+    '# right before the stockassessment package is loaded'
+  )
+  writeLines(ret, ...)
 }
