@@ -316,16 +316,16 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL, pcol="lightblue",
   }  
   fbarRange<-fitlocal$conf$fbarRange
   fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
-  fmat<-fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
+  fmat<-t(faytable(fitlocal))#fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
   if(is.null(page)){
     page<-fbarRange[1]:fbarRange[2]
   }
   idx <- which(fitlocal$conf$minAge:fitlocal$conf$maxAge %in% page)
-  exx <- if(partial){exp(fmat[idx,])}else{numeric(0)}
+  exx <- if(partial){fmat[idx,]}else{numeric(0)}
   .plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
   if(partial){
     idxx <- 1:(length(fitlocal$data$years)-drop)
-    matplot(fitlocal$data$years[idxx], t(exp(fmat[idx,idxx])), add=TRUE, type="b", col=pcol, pch=as.character(page))
+    matplot(fitlocal$data$years[idxx], t(fmat[idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(page))
   }
   addforecast(fit,"fbar")  
 }

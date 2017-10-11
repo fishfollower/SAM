@@ -1,7 +1,7 @@
 ##' small helper function
 ##' @param min from 
 ##' @param max to 
-##' @details ...
+##' @details internal
 setSeq<-function(min,max){
   if(min==max){
     ret <- 1
@@ -9,6 +9,13 @@ setSeq<-function(min,max){
     ret <- c(1:(max-min),max-min)
   }
   return(ret)
+}
+
+##' small helper function
+##' @param x vector if indices  
+##' @details internal
+setS<-function(x){
+  setSeq(1,length(x))
 }
 
 ##' Setup basic minimal configuration for sam assessment
@@ -51,7 +58,9 @@ defcon<-function(dat){
   lastMax <- 0
   for(i in 1:nrow(x)){
     if(fleetTypes[i]==0){
-      x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- setSeq(ages[i,1],ages[i,2])+lastMax
+      aa <- ages[i,1]:ages[i,2]
+      aa<-aa[tapply(dat$logobs[dat$aux[,2]==i], INDEX=dat$aux[,3][dat$aux[,2]==i], function(x)!all(is.na(x)))]
+      x[i,aa-minAge+1] <- setS(aa)+lastMax
       lastMax <- max(x)
     }
   }  
@@ -99,7 +108,12 @@ defcon<-function(dat){
   ret$noScaledYears <- 0
   ret$keyScaledYears <- numeric(0)
   ret$keyParScaledYA <- array(0,c(0,0))
-  ret$fbarRange <- ages[fleetTypes==0,]
+
+  cs <- colSums(dat$catchMeanWeight)
+  ii <- min(which(dat$fleetTypes==0))
+  tc <- tapply(dat$logobs[dat$aux[,2]==ii], INDEX=dat$aux[,3][dat$aux[,2]==ii], function(x)sum(x,na.rm=TRUE))*cs
+  pp <- tc/sum(tc)
+  ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
   ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
   ret$fixVarToWeight <- 0
