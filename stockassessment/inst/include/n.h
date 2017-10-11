@@ -15,8 +15,9 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovN(nvar);
   matrix<Type> LN = lltCovN.matrixL();
   matrix<Type> LinvN = LN.inverse();
- 
-  vector<Type> predN = predNFun(dat,conf,par,logN,logF,i); 
+
+  for(int i = 1; i < timeSteps; ++i){ 
+    vector<Type> predN = predNFun(dat,conf,par,logN,logF,i); 
 
     resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
     nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
