@@ -16,7 +16,7 @@ Help Pages
   ----------------------------------------------------------- -----------------------------------------------------------------------------------------
   [addforecast](addforecast.html)                             SAM add forecasts
   [c.sam](c.sam.html)                                         Collect sam objects
-  [catchplot](catchplot.html)                                 SAM catch plot
+  [catchplot](catchplot.md)                                 SAM catch plot
   [catchtable](catchtable.html)                               Catch table
   [clean.void.catches](clean.void.catches.html)               remove void catches
   [coef.sam](coef.sam.html)                                   Extract fixed coefficients of sam object
