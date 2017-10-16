@@ -96,10 +96,13 @@ updateDocs:
 	mkdir docs
 	echo "library(Rd2md); \
 	      fn<-dir('stockassessment/man'); \
-	      sapply(fn, function(f)Rd2markdown(paste0('stockassessment/man/',f), sub('Rd','md',paste0('docs/',f))))" | R --vanilla
-	#cd docs; sed -i '/<img/d' 00Index.html
-	#cd docs; sed -i '/DESCRIPTION/d' 00Index.html
-	#cd docs; sed -i '/User guides/d' 00Index.html
+	      d<-sapply(fn, function(f)Rd2markdown(paste0('stockassessment/man/',f), sub('Rd','md',paste0('docs/',f))));\
+	      file.copy(paste0(find.package('stockassessment'),'/html/00Index.html'), 'docs/index.html')" | R --vanilla
+	cd docs; sed -i '/<img/d' index.html
+	cd docs; sed -i '/DESCRIPTION/d' index.html
+	cd docs; sed -i '/User guides/d' index.html
+	cd docs; sed -i 's/html/md/' index.html
+	cd docs; pandoc index.html -o index.md
 
 #  for later 
 # 
