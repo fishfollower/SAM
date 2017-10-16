@@ -94,12 +94,12 @@ updateData:
 updateDocs:
 	rm -rf docs
 	mkdir docs
-	echo "library(stockassessment); \
-	      path<-paste0(path.package('stockassessment'),'/html'); \
-	      file.copy(dir(path, full.names=TRUE), 'docs/')" | R --vanilla
-	cd docs; sed -i '/<img/d' 00Index.html
-	cd docs; sed -i '/DESCRIPTION/d' 00Index.html
-	cd docs; sed -i '/User guides/d' 00Index.html
+	echo "library(Rd2md); \
+	      fn<-dir('stockassessment/man'); \
+	      sapply(fn, function(f)Rd2markdown(paste0('stockassessment/man/',f), sub('Rd','md',paste0('docs/',f))))" | R --vanilla
+	#cd docs; sed -i '/<img/d' 00Index.html
+	#cd docs; sed -i '/DESCRIPTION/d' 00Index.html
+	#cd docs; sed -i '/User guides/d' 00Index.html
 
 #  for later 
 # 
