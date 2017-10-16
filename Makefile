@@ -103,8 +103,8 @@ updateDocs:
 	cd docs; sed -i '/User guides/d' index.html
 	cd docs; sed -i 's/html/md/' index.html
 	cd docs; pandoc index.html -o index.md
-	cd docs; sed -i 's/- -/-|-/' index.md
-	cd docs; sed -i 's/)/) |/' index.md
+	cd docs; sed -i 's/- -/- | -/' index.md
+	cd docs; sed -i 's/)/) | /' index.md
 
 #  for later 
 # 
