@@ -31,13 +31,7 @@
 
 #define TMB_LIB_INIT R_init_stockassessment
 #include <TMB.hpp>
-#include "../inst/include/define.h"
-#include "../inst/include/derived.h"
-#include "../inst/include/f.h"
-#include "../inst/include/n.h"
-#include "../inst/include/predobs.h"
-#include "../inst/include/obs.h"
-
+#include "../inst/include/SAM.hpp"
 
 template<class Type>
 Type objective_function<Type>::operator() ()

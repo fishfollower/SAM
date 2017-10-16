@@ -43,7 +43,7 @@ vector<Type> addLogratio(vector<Type> logx){
   for(int i = 0; i < res.size(); ++i)
     res(i) = logx(i) - logx(n-1);
   return res;//log(x.head(x.size()-1)/x.tail(1));
-};
+}
 
 template<class Type>
 vector<Type> multLogratio(vector<Type> logx){
