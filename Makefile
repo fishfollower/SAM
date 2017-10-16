@@ -42,7 +42,7 @@ $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
 	mv old-description $(PACKAGE)/DESCRIPTION  
 
 install: $(TARBALL)
-	$(R) CMD INSTALL --preclean $<
+	$(R) CMD INSTALL --preclean --html $<
 	@touch $@
 
 qi:
@@ -90,6 +90,16 @@ updateData:
 	      save(nscodData, file='stockassessment/data/nscodData.RData'); \
 	      save(nscodConf, file='stockassessment/data/nscodConf.RData'); \
 	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData'); " | R --vanilla
+
+updateDocs:
+	rm -rf docs
+	mkdir docs
+	echo "library(stockassessment); \
+	      path<-paste0(path.package('stockassessment'),'/html'); \
+	      file.copy(dir(path, full.names=TRUE), 'docs/')" | R --vanilla
+	cd docs; sed -i '/<img/d' 00Index.html
+	cd docs; sed -i '/DESCRIPTION/d' 00Index.html
+	cd docs; sed -i '/User guides/d' 00Index.html
 
 #  for later 
 # 
