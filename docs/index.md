@@ -8,6 +8,7 @@ Documentation for package ‘stockassessment’ version 0.5.2
 
 Help Pages
 
+| | |
 |---|---|
   [addforecast](addforecast.md) |                              SAM add forecasts
   [c.sam](c.sam.md) |                                          Collect sam objects
