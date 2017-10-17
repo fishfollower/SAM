@@ -13,6 +13,7 @@ Documentation for package ‘stockassessment’ version 0.5.2
 Help Pages
 ----------
 
+| 
   --------------------------------------------------------- | -----------------------------------------------------------------------------------------
   [addforecast](addforecast.md) |                              SAM add forecasts
   [c.sam](c.sam.md) |                                          Collect sam objects
@@ -84,6 +85,7 @@ Help Pages
   [tsbplot](tsbplot.md) |                                      SAM TSB plot
   [tsbtable](tsbtable.md) |                                    TSB table
   [ypr](ypr.md) |                                              Yield per recruit calculation
+| 
   --------------------------------------------------------- | -----------------------------------------------------------------------------------------
 
 
