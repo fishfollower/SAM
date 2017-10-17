@@ -168,7 +168,7 @@ modeltable <- function(fits){
 ##' @param aveYears Number of years back to use when calculating averages (selection, weights, ...)
 ##' @param ageLimit Oldest age used (should be high)
 ##' @export
-ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=15, ageLimit=100){
+ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100){
   barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
   last.year.used=max(fit$data$years)
   idxno<-which(fit$data$years==last.year.used)
