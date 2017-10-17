@@ -9,6 +9,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   Type nll=0; 
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
+  int noFleets=conf.keyLogFsta.dim[0];
   int stateDimN=conf.keyLogFsta.dim[1];
   vector<Type> sdLogFsta=exp(par.logSdLogFsta);
   array<Type> resF(stateDimF,timeSteps-1);
@@ -42,12 +43,19 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
     } 
   }
 
-  int i,j;
+  int i,ff,j;
   for(i=0; i<stateDimF; ++i){
-    for(j=0; j<stateDimN; ++j){
-      if(conf.keyLogFsta(0,j)==i)break;
+    bool stop = false;
+    for(ff=0; ff<noFleets; ff++){
+      for(j=0; j<stateDimN; j++){
+        if(conf.keyLogFsta(ff,j)==i){
+          stop=true;
+          break;
+        } 
+      }
+      if(stop)break;
     }
-    fsd(i)=sdLogFsta(conf.keyVarF(0,j));
+    fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
   }
  
   for(i=0; i<stateDimF; ++i){
