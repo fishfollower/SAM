@@ -90,21 +90,6 @@ updateData:
 	      save(nscodData, file='stockassessment/data/nscodData.RData'); \
 	      save(nscodConf, file='stockassessment/data/nscodConf.RData'); \
 	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData'); " | R --vanilla
-#updateDocs:
-#	rm -rf docs
-#	mkdir docs
-#	echo "library(Rd2md); \
-#	      fn<-dir('stockassessment/man'); \
-#	      d<-sapply(fn, function(f)Rd2markdown(paste0('stockassessment/man/',f), sub('Rd','md',paste0('docs/',f))));\
-#	      file.copy(paste0(find.package('stockassessment'),'/html/00Index.html'), 'docs/index.html')" | R --vanilla
-#	cd docs; sed -i '/<img/d' index.html
-#	cd docs; sed -i '/DESCRIPTION/d' index.html
-#	cd docs; sed -i '/User guides/d' index.html
-#	cd docs; sed -i 's/html/md/' index.html
-#	cd docs; pandoc index.html -o index.md
-#	cd docs; sed -i 's/- -/- | -/' index.md
-#	cd docs; sed -i 's/)/) | /' index.md
-#	cd docs; sed -i '/- | -/i | | | \  ' index.md
 
 updateDocs:
 	rm -rf docs
@@ -123,6 +108,7 @@ updateDocs:
 	cd docs; sed -i 's/)/) | /' index.md
 	cd docs; sed -i '/Help Pages/!{p;d;};n;a |---|---|' index.md 
 	cd docs; sed -i '/Help Pages/!{p;d;};n;a | | |' index.md 
+	cd docs; rm index.html
 
 #  for later 
 # 
