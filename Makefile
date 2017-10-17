@@ -98,14 +98,9 @@ updateDocs:
 	      fn<-dir('$(PACKAGE)/man'); \
 	      d<-sapply(fn, function(f)Rd2markdown(paste0('$(PACKAGE)/man/',f), sub('Rd','md',paste0('docs/',f))));\
 	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | R --vanilla
-	cd docs; sed -i '/<img/d' index.html
-	cd docs; sed -i '/DESCRIPTION/d' index.html
-	cd docs; sed -i '/User guides/d' index.html
-	cd docs; sed -i 's/html/md/' index.html
+	cd docs; sed -i '/<img/d; /DESCRIPTION/d; /User guides/d; s/html/md/' index.html
 	cd docs; pandoc index.html -o index.md
-	cd docs; sed -i '/</d' index.md
-	cd docs; sed -i '/---/d' index.md
-	cd docs; sed -i 's/)/) | /' index.md
+	cd docs; sed -i '/</d; /---/d; s/)/) | /' index.md
 	cd docs; sed -i '/Help Pages/!{p;d;};n;a |---|---|' index.md 
 	cd docs; sed -i '/Help Pages/!{p;d;};n;a | | |' index.md 
 	cd docs; rm index.html
