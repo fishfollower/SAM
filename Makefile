@@ -95,9 +95,9 @@ updateDocs:
 	rm -rf docs
 	mkdir docs
 	echo "library(Rd2md); \
-	      fn<-dir('stockassessment/man'); \
-	      d<-sapply(fn, function(f)Rd2markdown(paste0('stockassessment/man/',f), sub('Rd','md',paste0('docs/',f))));\
-	      file.copy(paste0(find.package('stockassessment'),'/html/00Index.html'), 'docs/index.html')" | R --vanilla
+	      fn<-dir('$(PACKAGE)/man'); \
+	      d<-sapply(fn, function(f)Rd2markdown(paste0('$(PACKAGE)/man/',f), sub('Rd','md',paste0('docs/',f))));\
+	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | R --vanilla
 	cd docs; sed -i '/<img/d' index.html
 	cd docs; sed -i '/DESCRIPTION/d' index.html
 	cd docs; sed -i '/User guides/d' index.html
