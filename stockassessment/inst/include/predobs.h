@@ -2,7 +2,7 @@ template <class Type>
 vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logssb, vector<Type> &logfsb, vector<Type> &logCatch){
   vector<Type> pred(dat.nobs);
   pred.setZero();
-  array<Type> totF=totFFun(conf, logN, logF);
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> releaseSurvival(par.logitReleaseSurvival.size());
   vector<Type> releaseSurvivalVec(dat.nobs);
   if(par.logitReleaseSurvival.size()>0){

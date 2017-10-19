@@ -1,8 +1,8 @@
 template <class Type>
-array<Type> totFFun(confSet &conf, array<Type> &logN, array<Type> &logF){
+array<Type> totFFun(confSet &conf, array<Type> &logF){
   int noFleets=conf.keyLogFsta.dim[0];
-  int stateDimN=logN.dim[0];
-  int timeSteps=logN.dim[1];
+  int stateDimN=conf.keyLogFsta.dim[1];
+  int timeSteps=logF.dim[1];
   array<Type> totF(stateDimN,timeSteps);
   totF.setZero();  
   for(int i=0;i<timeSteps;i++){ 
@@ -30,7 +30,7 @@ Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &tot
 template <class Type>
 vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int timeSteps=logF.dim[1];
-  array<Type> totF=totFFun(conf, logN, logF);
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> ssb(timeSteps);
   ssb.setZero();
   for(int i=0;i<timeSteps;i++){
@@ -42,7 +42,7 @@ vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
 template <class Type>
 vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.catchMeanWeight.dim(0);
-  array<Type> totF=totFFun(conf, logN, logF);
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> cat(len);
   cat.setZero();
   for(int y=0;y<len;y++){
@@ -133,11 +133,12 @@ vector<Type> rFun(array<Type> &logN){
 template <class Type>
 vector<Type> fbarFun(confSet &conf, array<Type> &logF){
   int timeSteps=logF.dim[1];
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> fbar(timeSteps);
   fbar.setZero();
   for(int y=0;y<timeSteps;y++){  
     for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
-      fbar(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+      fbar(y)+=totF(a-conf.minAge,y);
     }
     fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
   }

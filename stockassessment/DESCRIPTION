@@ -21,10 +21,10 @@ RemoteHost: https://api.github.com
 RemoteRepo: SAM
 RemoteUsername: fishfollower
 RemoteRef: master
-RemoteSha: f51cf4b79be276c15140ad603d6ed087bb514b61
+RemoteSha: a4968621747429fef09d65d83446aca17e220dd7
 RemoteSubdir: stockassessment
 GithubRepo: SAM
 GithubUsername: fishfollower
 GithubRef: master
-GithubSHA1: f51cf4b79be276c15140ad603d6ed087bb514b61
+GithubSHA1: a4968621747429fef09d65d83446aca17e220dd7
 GithubSubdir: stockassessment
