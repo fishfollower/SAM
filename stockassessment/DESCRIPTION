@@ -27,3 +27,4 @@ GithubUsername: fishfollower
 GithubRef: master
 GithubSHA1: a4968621747429fef09d65d83446aca17e220dd7
 GithubSubdir: stockassessment
+RoxygenNote: 6.0.1.9000

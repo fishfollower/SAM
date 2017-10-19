@@ -1,7 +1,7 @@
 ##' Plot helper
 ##' @param fit the fitted object from sam.fit
 ##' @param what quoted name of object to extract
-##' @param x x-alues
+##' @param x x-values
 ##' @param ylab label on y-axis
 ##' @param xlab label on x-axis
 ##' @param ex extra y's to make room for
@@ -11,6 +11,7 @@
 ##' @param cicol color to plot the confidence polygon
 ##' @param addCI logicial plot CI for added fits 
 ##' @param drop number of years to be left unplotted at the end.
+##' @param xlim x axis limit 
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
