@@ -94,7 +94,8 @@ getUpperBounds<-function(parameters){
 ##' @param conf model configuration which can be set up using the \code{\link{defcon}} function and then modified
 ##' @return an updated dataset without the catches where F is fixed to zero
 clean.void.catches<-function(dat, conf){
-  rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
+  rmidx <-(dat$fleetTypes[dat$aux[,2]]==0) & (conf$keyLogFsta[cbind(dat$aux[,2],dat$aux[,3]-conf$minAge+1)]==-1) 
+  #rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
   dat$aux <- dat$aux[!rmidx,]
   dat$logobs <- dat$logobs[!rmidx]
   dat$weight <- dat$weight[!rmidx]

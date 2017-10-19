@@ -19,6 +19,7 @@ all:
 
 doc-update: $(PACKAGE)/R/*.R
 	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\")" | $(R) --slave
+	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 	@touch doc-update
 
 vignette-update: vignettes/*.Rnw vignettes/*.Rmd
