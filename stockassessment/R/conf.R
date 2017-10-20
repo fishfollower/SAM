@@ -177,6 +177,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$keyVarObs <- "Coupling of the variance parameters for the observations."
     txt$obsCorStruct <- "Covariance structure for each fleet (\"ID\" independent, \"AR\" AR(1), or \"US\" for unstructured)."
     txt$keyCorObs <- paste0("Coupling of correlation parameters can only be specified if the AR(1) structure is chosen above.",
+                            "\n# NA's indicate where correlation parameters can be specified (-1 where they cannot).",
                             paste0("\n#",paste0(colnames(x$keyCorObs), collapse=" ")))
     txt$stockRecruitmentModelCode <- "Stock recruitment code (0 for plain random walk, 1 for Ricker, and 2 for Beverton-Holt)."
     txt$noScaledYears <- "Number of years where catch scaling is applied."
