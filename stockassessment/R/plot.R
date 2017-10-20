@@ -11,6 +11,7 @@
 ##' @param cicol color to plot the confidence polygon
 ##' @param addCI logicial plot CI for added fits 
 ##' @param drop number of years to be left unplotted at the end.
+##' @param xlim ...
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
