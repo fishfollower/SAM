@@ -506,7 +506,7 @@ parplot<-function(fit, cor.report.limit=0.95, ...){
 obscov<-function(fit, corr=FALSE){
     stopifnot(class(fit)=="sam")
     res<-fit$rep$obsCov
-    for(i in 1:length(res)) rownames(res[[i]])<-fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
+    for(i in 1:length(res)) rownames(res[[i]])<-fit$data$minAgePerFleet[i]:(fit$data$minAgePerFleet[i]+nrow(res[[i]])-1)
     if(corr) for(i in 1:length(res)) if(any(is.na(res[[i]])))res[[i]][]<-NA else res[[i]]<-cov2cor(res[[i]])
     res
 }
@@ -521,6 +521,7 @@ obscorrplot<-function(fit,...){
     for(i in 1:length(x)){
         xx <- x[[i]]
         ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
+        if( fit$conf$obsLikelihoodFlag[i]=="ALN" ) ages<-ages[ -length(ages) ]
         rownames(xx) <- ages
         colnames(xx) <- ages
         x[[i]] <- xx
