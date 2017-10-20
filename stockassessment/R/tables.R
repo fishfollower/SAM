@@ -1,6 +1,6 @@
 ##' Table helper 
 ##' @param fit returned object from sam.fit
-##' @param quoted name of what to extract
+##' @param what quoted name of what to extract
 ##' @param x rownames of table
 ##' @param trans function to be applied
 ##' @details ...

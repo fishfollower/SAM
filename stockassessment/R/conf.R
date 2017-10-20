@@ -110,8 +110,8 @@ defcon<-function(dat){
   ret$keyParScaledYA <- array(0,c(0,0))
 
   cs <- colSums(dat$catchMeanWeight)
-  ii <- min(which(dat$fleetTypes==0))
-  tc <- tapply(dat$logobs[dat$aux[,2]==ii], INDEX=dat$aux[,3][dat$aux[,2]==ii], function(x)sum(x,na.rm=TRUE))*cs
+  ii <- which(dat$fleetTypes==0)
+  tc <- tapply(dat$logobs[dat$aux[,2]%in%ii], INDEX=dat$aux[,3][dat$aux[,2]%in%ii], function(x)sum(x,na.rm=TRUE))*cs
   pp <- tc/sum(tc)
   ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
   ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)

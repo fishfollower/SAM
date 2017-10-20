@@ -219,7 +219,7 @@ read.ices<-function(filen){
 ##' Combine the data sources to SAM readable object  
 ##' @param fleets comm fleets vith effort (currently unimplemented)
 ##' @param surveys surveys
-##' @param residual.fleet total catch minus commercial 
+##' @param residual.fleets fleet, or list of fleets without effort information 
 ##' @param prop.mature pm
 ##' @param stock.mean.weight sw
 ##' @param catch.mean.weight cw
@@ -233,7 +233,7 @@ read.ices<-function(filen){
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
-setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
+setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
                            natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
@@ -258,11 +258,18 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       weight<<-c(weight,rep(NA,length(year)))
     }
   }
-  if(!is.null(residual.fleet)){
-    doone(residual.fleet)
-    type<-c(type,0)
-    time<-c(time,0)
-    name<-c(name,"Residual catch")
+  if(!is.null(residual.fleets)){
+    if(is.data.frame(residual.fleets)|is.matrix(residual.fleets)){
+      doone(residual.fleets)
+      type<-c(type,0)
+      time<-c(time,0)
+      name<-c(name,"Residual catch")
+    }else{
+      dummy<-lapply(residual.fleets,doone)
+      type<-c(type,rep(0,length(residual.fleets)))
+      time<-c(time,rep(0,length(residual.fleets)))
+      name<-c(name,paste0("Fleet w.o. effort ", 1:length(residual.fleets)))
+    }
   }
   if(!is.null(fleets)){
     if(is.data.frame(fleets)|is.matrix(fleets)){
@@ -292,7 +299,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     }
   }
   if(is.null(land.frac)){
-    land.frac<-matrix(1,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) # should be pure 1 
+    land.frac<-matrix(1,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) # should be pure 1 
   }
   if(is.null(dis.mean.weight)){
     dis.mean.weight<-catch.mean.weight
@@ -301,10 +308,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     land.mean.weight<-catch.mean.weight
   }
   if(is.null(prop.f)){
-    prop.f<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
+    prop.f<-matrix(0,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) 
   }
   if(is.null(prop.m)){
-    prop.m<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
+    prop.m<-matrix(0,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) 
   }
   dat$aux[which(dat$aux<=0)] <- NA
   dat<-dat[!is.na(dat$year),]

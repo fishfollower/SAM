@@ -4,7 +4,7 @@
 \alias{setup.sam.data}
 \title{Combine the data sources to SAM readable object}
 \usage{
-setup.sam.data(fleets = NULL, surveys = NULL, residual.fleet = NULL,
+setup.sam.data(fleets = NULL, surveys = NULL, residual.fleets = NULL,
   prop.mature = NULL, stock.mean.weight = NULL, catch.mean.weight = NULL,
   dis.mean.weight = NULL, land.mean.weight = NULL,
   natural.mortality = NULL, prop.f = NULL, prop.m = NULL,
@@ -15,7 +15,7 @@ setup.sam.data(fleets = NULL, surveys = NULL, residual.fleet = NULL,
 
 \item{surveys}{surveys}
 
-\item{residual.fleet}{total catch minus commercial}
+\item{residual.fleets}{fleet, or list of fleets without effort information}
 
 \item{prop.mature}{pm}
 

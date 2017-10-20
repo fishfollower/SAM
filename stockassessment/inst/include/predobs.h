@@ -2,7 +2,7 @@ template <class Type>
 vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logssb, vector<Type> &logfsb, vector<Type> &logCatch){
   vector<Type> pred(dat.nobs);
   pred.setZero();
-
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> releaseSurvival(par.logitReleaseSurvival.size());
   vector<Type> releaseSurvivalVec(dat.nobs);
   if(par.logitReleaseSurvival.size()>0){
@@ -25,17 +25,14 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     a=dat.aux(i,2)-conf.minAge;
     if(ft==3){a=0;}
     if(ft<3){ 
-      zz = dat.natMor(y,a);
-      if(conf.keyLogFsta(0,a)>(-1)){
-        zz+=exp(logF(conf.keyLogFsta(0,a),y));
-      }
+      zz = dat.natMor(y,a)+totF(a,y);
     }    
 
     switch(ft){
       case 0:
         pred(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
         if(conf.keyLogFsta(f-1,a)>(-1)){
-          pred(i)+=logF(conf.keyLogFsta(0,a),y);
+          pred(i)+=logF(conf.keyLogFsta(f-1,a),y);
         }
         scaleIdx=-1;
         yy=dat.aux(i,0);
