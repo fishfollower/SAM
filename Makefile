@@ -9,7 +9,7 @@ ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
 CPP_SRC := $(PACKAGE)/src/*.cpp
 
-SUBDIRS := $(wildcard tests/*/.)
+SUBDIRS := $(wildcard testmore/*/.)
 
 .PHONY: test testmore $(SUBDIRS) all updateData qi quick-install vignette-update
 
@@ -106,7 +106,7 @@ updateDocs:
 
 testmore: $(SUBDIRS)
 $(SUBDIRS):
-	@cp tests/Makefile $@
+	@cp testmore/Makefile $@
 	@echo -n $@
 	@echo -n ".. "
 	@$(MAKE) -s -C $@
