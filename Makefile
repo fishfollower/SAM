@@ -109,7 +109,7 @@ $(SUBDIRS):
 	@cp testmore/Makefile $@
 	@echo -n $@
 	@echo -n ".. "
-	@$(MAKE) -s -C $@
+	@$(MAKE) -i -s -C $@
 	@rm -f $@/Makefile
 
 #  for later 
