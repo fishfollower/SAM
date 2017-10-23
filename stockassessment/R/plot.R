@@ -65,7 +65,10 @@
     }else{
       d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
     }
-    if(!is.null(names(fit)))legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
+    if(!is.null(names(fit))){
+        legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
+        legend("bottom",legend=leg, lwd=2, col=rep("black", length(leg)), lty="dotted", ncol=3, bty="n")
+    }
   }
   if(class(fit)=="samforecast"){
     xy <- unlist(lapply(fit, function(xx) xx$year))
