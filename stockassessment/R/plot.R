@@ -39,10 +39,12 @@
     }
     if(ci){
       polygon(c(x,rev(x)), y = c(trans(lowhig[,1]),rev(trans(lowhig[,2]))), border = gray(.5,alpha=.5), col = cicol)
+      lines(x, trans(y), lwd=3, col=cicol)
+      lines(x, trans(y), lwd=2, col="black", lty="dotted")
     }
   }
   if(class(fit)=="samset"){ 
-    colSet=c("#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499","#332288")  
+    colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
     idxfrom <- 1
     leg<-names(fit)
     if(is.null(attr(fit,"fit"))){
