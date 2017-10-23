@@ -15,7 +15,7 @@ matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxA
     for(int i=1; i<xvec.size(); i++) { 
       if(rhoMap(i-1+offset)>=0)
 	xvec(i) = xvec(i-1)+rhoVec(rhoMap(i-1+offset)); 
-      if(rhoMap(i-1)>maxrm) maxrm=rhoMap(i-1);
+      if(rhoMap(i-1+offset)>maxrm) maxrm=rhoMap(i-1+offset);
     } 
   }
    
@@ -26,7 +26,6 @@ matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxA
      	ret(i,j)=pow( rho0,dist)*sdVec( sdMap(i+offset) )*sdVec( sdMap(j+offset));
       } else if(i==j) ret(i,j) = sdVec( sdMap(i+offset) )*sdVec( sdMap(j+offset));
     }
-  
   return ret;
 }
 
