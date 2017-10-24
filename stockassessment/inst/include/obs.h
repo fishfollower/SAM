@@ -131,8 +131,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
   int dn=nfleet*(nfleet-1)/2;
   int from=-dn, to=-1; 
   for(int f=0; f<dat.noFleets; f++){
-    if(conf.obsCorStruct(f)!=2) continue;
+    if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
     nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+    if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
     dn = nfleet*(nfleet-1)/2;
     from=to+1;
     to=to+dn;
@@ -166,13 +167,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
         }
         cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
       } else { error("Unkown obsCorStruct code"); }
-      if(conf.obsLikelihoodFlag(f) == 1){ // Additive logistic normal needs smaller covariance matrix
-        nllVec(f).setSigma(cov.block(0,0,thisdim-1,thisdim-1));
-        obsCov(f) = cov.block(0,0,thisdim-1,thisdim-1);
-      }else{
         nllVec(f).setSigma(cov);
         obsCov(f) = cov;
-      }
     }else{
       matrix<Type> dummy(1,1);
       dummy(0,0) = R_NaReal;
