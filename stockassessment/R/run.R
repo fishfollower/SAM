@@ -21,7 +21,12 @@
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE,run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ...){
+  definit <- defpar(data, conf)
+  if(!identical(parameters,relist(unlist(parameters), skeleton=definit))){
+    warning("Initial values are not consistent, so running with default init values from defpar()")
+    parameters<-definit
+  }
   data<-clean.void.catches(data,conf)
   tmball <- c(data, conf, simFlag=as.numeric(sim.condRE))
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  

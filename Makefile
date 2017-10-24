@@ -9,7 +9,9 @@ ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
 CPP_SRC := $(PACKAGE)/src/*.cpp
 
-.PHONY: test all updateData qi quick-install vignette-update
+SUBDIRS := $(wildcard testmore/*/.)
+
+.PHONY: test testmore $(SUBDIRS) all updateData qi quick-install vignette-update
 
 all:
 	#make doc-update
@@ -102,6 +104,14 @@ updateDocs:
 	cd docs; sed -i '/<img/d; /DESCRIPTION/d; /User guides/d; s/html/md/' index.html
 	cd docs; pandoc index.html -t markdown_github -o index.md
 	cd docs; rm index.html
+
+testmore: $(SUBDIRS)
+$(SUBDIRS):
+	@cp testmore/Makefile $@
+	@echo -n $@
+	@echo -n ".. "
+	@$(MAKE) -i -s -C $@
+	@rm -f $@/Makefile
 
 #  for later 
 # 

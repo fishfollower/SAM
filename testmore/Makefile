@@ -8,3 +8,4 @@ all:
 	  echo "Error:"; \
 	  diff res.out res.EXP;\
 	fi
+	rm -f res.out

@@ -39,10 +39,12 @@
     }
     if(ci){
       polygon(c(x,rev(x)), y = c(trans(lowhig[,1]),rev(trans(lowhig[,2]))), border = gray(.5,alpha=.5), col = cicol)
+      lines(x, trans(y), lwd=3, col=cicol)
+      lines(x, trans(y), lwd=2, col="black", lty="dotted")
     }
   }
   if(class(fit)=="samset"){ 
-    colSet=c("#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499","#332288")  
+    colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
     idxfrom <- 1
     leg<-names(fit)
     if(is.null(attr(fit,"fit"))){
@@ -63,7 +65,10 @@
     }else{
       d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
     }
-    if(!is.null(names(fit)))legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
+    if(!is.null(names(fit))){
+        legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
+        legend("bottom",legend=leg, lwd=2, col=rep("black", length(leg)), lty="dotted", ncol=3, bty="n")
+    }
   }
   if(class(fit)=="samforecast"){
     xy <- unlist(lapply(fit, function(xx) xx$year))
@@ -507,7 +512,7 @@ parplot<-function(fit, cor.report.limit=0.95, ...){
 obscov<-function(fit, corr=FALSE){
     stopifnot(class(fit)=="sam")
     res<-fit$rep$obsCov
-    for(i in 1:length(res)) rownames(res[[i]])<-fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
+    for(i in 1:length(res)) rownames(res[[i]])<-fit$data$minAgePerFleet[i]:(fit$data$minAgePerFleet[i]+nrow(res[[i]])-1)
     if(corr) for(i in 1:length(res)) if(any(is.na(res[[i]])))res[[i]][]<-NA else res[[i]]<-cov2cor(res[[i]])
     res
 }
@@ -522,6 +527,7 @@ obscorrplot<-function(fit,...){
     for(i in 1:length(x)){
         xx <- x[[i]]
         ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
+        if( fit$conf$obsLikelihoodFlag[i]=="ALN" ) ages<-ages[ -length(ages) ]
         rownames(xx) <- ages
         colnames(xx) <- ages
         x[[i]] <- xx

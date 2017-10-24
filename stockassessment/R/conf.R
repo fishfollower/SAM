@@ -111,7 +111,8 @@ defcon<-function(dat){
 
   cs <- colSums(dat$catchMeanWeight)
   ii <- which(dat$fleetTypes==0)
-  tc <- tapply(dat$logobs[dat$aux[,2]%in%ii], INDEX=dat$aux[,3][dat$aux[,2]%in%ii], function(x)sum(x,na.rm=TRUE))*cs
+  tc <- tapply(dat$logobs[dat$aux[,2]%in%ii], INDEX=dat$aux[,3][dat$aux[,2]%in%ii], function(x)sum(x,na.rm=TRUE))
+  tc <- tc*cs[names(cs)%in%names(tc)]
   pp <- tc/sum(tc)
   ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
   ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
@@ -143,7 +144,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
 
   writeConf.matrix <- function(x,...){
     if(nrow(x)>0){
-      cat(capture.output(prmatrix(x, rowlab=rep("", nrow(x)), collab=rep("",ncol(x)))), sep="\n", ...)
+      cat(capture.output(prmatrix(x, rowlab=rep("", nrow(x)), collab=rep("   ",ncol(x)))), sep="\n", ...)
     }else{
       cat("\n", ...)
     }
@@ -176,7 +177,9 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$keyVarLogN <- "Coupling of process variance parameters for log(N)-process"
     txt$keyVarObs <- "Coupling of the variance parameters for the observations."
     txt$obsCorStruct <- "Covariance structure for each fleet (\"ID\" independent, \"AR\" AR(1), or \"US\" for unstructured)."
-    txt$keyCorObs <- "Coupling of correlation parameters must be specified if the AR(1) structure is chosen above."
+    txt$keyCorObs <- paste0("Coupling of correlation parameters can only be specified if the AR(1) structure is chosen above.",
+                            "\n# NA's indicate where correlation parameters can be specified (-1 where they cannot).",
+                            paste0("\n#",paste0(colnames(x$keyCorObs), collapse=" ")))
     txt$stockRecruitmentModelCode <- "Stock recruitment code (0 for plain random walk, 1 for Ricker, and 2 for Beverton-Holt)."
     txt$noScaledYears <- "Number of years where catch scaling is applied."
     txt$keyScaledYears <- "A vector of the years where catch scaling is applied."
