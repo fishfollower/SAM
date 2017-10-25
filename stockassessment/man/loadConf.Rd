@@ -4,12 +4,14 @@
 \alias{loadConf}
 \title{Loads a model configuration from a file}
 \usage{
-loadConf(dat, file)
+loadConf(dat, file, patch = FALSE)
 }
 \arguments{
 \item{dat}{sam data list as returned from the function setup.sam.data}
 
 \item{file}{the file to read the configuration from}
+
+\item{patch}{logical if TRUE missing entries will be automatically filled with default values}
 }
 \description{
 Loads a model configuration from a file
