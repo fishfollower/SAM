@@ -7,7 +7,7 @@ THISSHA := $(shell git log -1 --format="%H")
 TARBALL := $(PACKAGE)_$(VERSION).tar.gz
 ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
-CPP_SRC := $(PACKAGE)/src/*.cpp
+CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/inst/include/*.hpp
 
 SUBDIRS := $(wildcard testmore/*/.)
 
