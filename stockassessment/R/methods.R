@@ -221,7 +221,9 @@ nobs.sam<-function(object, ...){
 ##' @details ...
 ##' @export
 residuals.sam<-function(object, discrete=FALSE, ...){
+  cat("One-observation-ahead residuals. Total number of observations: ", nobs(object), "\n")  
   res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete,...)
+  cat("One-observation-ahead residuals. Done\n")  
   ret <- cbind(object$data$aux, res)
   attr(ret,"fleetNames") <- attr(object$data, "fleetNames")
   class(ret)<-"samres"
