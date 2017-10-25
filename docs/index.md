@@ -3,7 +3,7 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.5.2
+Documentation for package ‘stockassessment’ version 0.5.3
 ---------------------------------------------------------
 
 Help Pages
@@ -11,6 +11,8 @@ Help Pages
 
 |                                                         |                                                                                         |
 |---------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [.plotit](dot-plotit.md)                                | Plot helper                                                                             |
+| [.tableit](dot-tableit.md)                              | Table helper                                                                            |
 | [addforecast](addforecast.md)                           | SAM add forecasts                                                                       |
 | [c.sam](c.sam.md)                                       | Collect sam objects                                                                     |
 | [catchplot](catchplot.md)                               | SAM catch plot                                                                          |

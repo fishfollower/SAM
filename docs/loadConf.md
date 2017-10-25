@@ -9,7 +9,7 @@
 ## Usage
 
 ```r
-loadConf(dat, file)
+loadConf(dat, file, patch = FALSE)
 ```
 
 
@@ -19,6 +19,7 @@ Argument      |Description
 ------------- |----------------
 ```dat```     |     sam data list as returned from the function setup.sam.data
 ```file```     |     the file to read the configuration from
+```patch```     |     logical if TRUE missing entries will be automatically filled with default values
 
 ## Details
 
