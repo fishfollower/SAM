@@ -55,6 +55,7 @@ quick-install: $(PACKAGE)/src/stockassessment.so
 	$(R) CMD INSTALL $(PACKAGE)
 
 $(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp $(CPP_SRC)
+	touch $(PACKAGE)/src/stockassessment.cpp
 	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp','-O0 -g')" | $(R) --slave
 
 unexport TEXINPUTS
