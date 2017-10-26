@@ -145,6 +145,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
   for(int f=0; f<dat.noFleets; ++f){
     if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+      if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
       matrix<Type> cov(thisdim,thisdim);
       cov.setZero();
       if(conf.obsCorStruct(f)==0){//ID (independent)  
@@ -154,6 +155,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
         }
       } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
         cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
+	if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
+	  cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
+	}
+
       } else if(conf.obsCorStruct(f)==2){//(US) unstructured
         neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
         matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
