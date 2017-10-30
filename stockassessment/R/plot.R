@@ -1,5 +1,5 @@
 ##' Plot helper
-##' @param fit the fitted object from sam.fit
+##' @param fit the fitted object from sam.fit of a set of such fits c(fit1,fit2)
 ##' @param what quoted name of object to extract
 ##' @param x x-alues
 ##' @param ylab label on y-axis
@@ -9,14 +9,16 @@
 ##' @param add logical, plotting is to be added on existing plot
 ##' @param ci logical, confidence intervals should be plotted
 ##' @param cicol color to plot the confidence polygon
-##' @param addCI logicial plot CI for added fits 
+##' @param addCI A logical vector indicating if confidence intervals should be plotted for the added fits.  
 ##' @param drop number of years to be left unplotted at the end.
+##' @param unnamed.basename the name to assign an unnamed basefit 
 ##' @param xlim ...
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
 ##' @details The basic plotting used bu many of the plotting functions (e.g. ssbplot, fbarplot ...) 
-.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), addCI=FALSE, drop=0, xlim=NULL,...){
+.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
+                    addCI=if(class(fit)=="samset"){rep(FALSE,length(fit))}else{NA}, drop=0, unnamed.basename="current", xlim=NULL,...){
   if(class(fit)=="sam"){ 
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
@@ -43,7 +45,8 @@
       lines(x, trans(y), lwd=2, col="black", lty="dotted")
     }
   }
-  if(class(fit)=="samset"){ 
+  if(class(fit)=="samset"){
+    if(is.logical(addCI) & (length(addCI)==1))addCI=rep(addCI,length(fit))
     colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
     idxfrom <- 1
     leg<-names(fit)
@@ -51,7 +54,7 @@
       attr(fit,"fit") <- fit[[1]]
       idxfrom <- 2
     }else{
-      leg<-c("Base", leg)
+      leg<-c(unnamed.basename, leg)
     }
     if(is.null(x))x=attr(fit,"fit")$data$years
     if(missing(xlim)){
@@ -60,11 +63,8 @@
       xr <- xlim
     }
     .plotit(attr(fit,"fit"), what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
-    if(addCI){
-      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, col=colSet[(i-1)%%length(colSet)+1], cicol=paste0(colSet[(i-1)%%length(colSet)+1],"80"), drop=drop, ...)) 
-    }else{
-      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
-    }
+      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=addCI[i],
+                                                        col=colSet[(i-1)%%length(colSet)+1], cicol=paste0(colSet[(i-1)%%length(colSet)+1],"80"), drop=drop, ...)) 
     if(!is.null(names(fit))){
         legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
         legend("bottom",legend=leg, lwd=2, col=rep("black", length(leg)), lty="dotted", ncol=3, bty="n")
