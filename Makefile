@@ -11,11 +11,15 @@ CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/inst/include/*.hpp
 
 SUBDIRS := $(wildcard testmore/*/.)
 
-.PHONY: test testmore $(SUBDIRS) all updateData qi quick-install vignette-update
+ifeq (webtestone,$(firstword $(MAKECMDGOALS)))
+  ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(ARGS):;@:)
+endif
+
+
+.PHONY: webtestone test testmore $(SUBDIRS) all updateData qi quick-install vignette-update
 
 all:
-	#make doc-update
-	#make build-package
 	make install
 	make pdf
 
@@ -113,7 +117,13 @@ $(SUBDIRS):
 	@$(MAKE) -i -s -C $@
 	@rm -f $@/Makefile
 
-#  for later 
-# 
-#	-cd $(@D); echo "library(stockassessment); source('script.R'); fit.exp<-fit;save(fit.exp,file='fit.expected.Rdata') " | R --vanilla
-# 
+webtestone:
+	@wget -q -r -np -nH --cut-dirs=4 -R index.html* https://www.stockassessment.org/datadisk/stockassessment/userdirs/user3/$(ARGS)/
+	@sed -i 's/useR = Rnewest/useR = R/'  $(ARGS)/Makefile
+	@mv $(ARGS)/run/model.RData $(ARGS); 
+	@touch $(ARGS)/data/*
+	@cd $(ARGS); $(MAKE) -s model
+	@echo "load('$(ARGS)/model.RData'); old<-fit[['pl']]; \
+	       load('$(ARGS)/run/model.RData'); new<-fit[['pl']];\
+	       cat('$(ARGS)...',ifelse(all.equal(old,new,check.attributes=FALSE),'OK','FAIL'),'\n')"   | R --vanilla --slave
+	@rm -rf $(ARGS)
