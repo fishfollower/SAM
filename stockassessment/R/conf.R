@@ -204,10 +204,11 @@ saveConf <- function(x, file="", overwrite=FALSE){
 ##' Loads a model configuration from a file  
 ##' @param dat sam data list as returned from the function setup.sam.data
 ##' @param file the file to read the configuration from
+##' @param patch logical if TRUE missing entries will be automatically filled with default values   
 ##' @details function useful loading a model configuration. Such a configuration can be saved via the saveConf function
 ##' @importFrom utils capture.output
 ##' @export
-loadConf <- function(dat, file){
+loadConf <- function(dat, file, patch=FALSE){
   dconf <- defcon(dat)
   confWithName<-lapply(1:length(dconf), function(i){x<-dconf[[i]]; attr(x,"nam")<-names(dconf)[i]; x})
   lin <- c(readLines(file),"$end")
@@ -248,8 +249,16 @@ loadConf <- function(dat, file){
     nam <- attr(x,"nam")
     factor(scan(textConnection(lin[getIdx(nam)]), what="character", quiet="TRUE"), levels=levels(x))
   }
-  #lapply(confWithName, readConf) does not work?
-  conf <- lapply(1:length(confWithName), function(i)readConf(confWithName[[i]]))
+  isOK <- sapply(names(dconf), function(n)length(grep(paste0("^\\$",n, "( |$)"),lin))==1)
+  if(!all(isOK) & !patch)stop("The configuration file is not compatible with model version. Consider running with patch=TRUE")
+  fun<-function(i){
+    if(isOK[i]){
+      readConf(confWithName[[i]])
+    }else{
+      dconf[[i]]
+    }
+  }
+  conf <- lapply(1:length(confWithName), fun)
   names(conf) <- names(dconf)
   conf
 }

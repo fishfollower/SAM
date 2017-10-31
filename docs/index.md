@@ -3,7 +3,7 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.5.2
+Documentation for package ‘stockassessment’ version 0.5.4
 ---------------------------------------------------------
 
 Help Pages
@@ -52,6 +52,7 @@ Help Pages
 | [plot.samset](plot.samset.md)                           | Plot sam object                                                                         |
 | [plot.samypr](plot.samypr.md)                           | Plot sam object                                                                         |
 | [plotby](plotby.md)                                     | Plot by one or two                                                                      |
+| [plotit](plotit.md)                                     | Plot helper                                                                             |
 | [print.sam](print.sam.md)                               | Print sam object                                                                        |
 | [print.samcoef](print.samcoef.md)                       | Print samcoef object                                                                    |
 | [print.samforecast](print.samforecast.md)               | Print samforecast object                                                                |
@@ -67,6 +68,7 @@ Help Pages
 | [reduce](reduce.md)                                     | reduce helper function to reduce data                                                   |
 | [residuals.sam](residuals.sam.md)                       | Extract residuals from sam object                                                       |
 | [retro](retro.md)                                       | retro run                                                                               |
+| [rmvnorm](rmvnorm.md)                                   | rmvnorm helper function to draw multivariate normal samples                             |
 | [runwithout](runwithout.md)                             | runwithout helper function                                                              |
 | [sam.fit](sam.fit.md)                                   | Fit SAM model                                                                           |
 | [saveConf](saveConf.md)                                 | Saves a model configuration list to a file                                              |
@@ -78,6 +80,7 @@ Help Pages
 | [ssbplot](ssbplot.md)                                   | SAM SSB plot                                                                            |
 | [ssbtable](ssbtable.md)                                 | SSB table                                                                               |
 | [summary.sam](summary.sam.md)                           | Summary of sam object                                                                   |
+| [tableit](tableit.md)                                   | Table helper                                                                            |
 | [tsbplot](tsbplot.md)                                   | SAM TSB plot                                                                            |
 | [tsbtable](tsbtable.md)                                 | TSB table                                                                               |
 | [ypr](ypr.md)                                           | Yield per recruit calculation                                                           |

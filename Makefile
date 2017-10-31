@@ -7,15 +7,25 @@ THISSHA := $(shell git log -1 --format="%H")
 TARBALL := $(PACKAGE)_$(VERSION).tar.gz
 ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
-CPP_SRC := $(PACKAGE)/src/*.cpp
+CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/inst/include/*.hpp
 
 SUBDIRS := $(wildcard testmore/*/.)
 
-.PHONY: test testmore $(SUBDIRS) all updateData qi quick-install vignette-update
+ifeq (webtestone,$(firstword $(MAKECMDGOALS)))
+  ARG := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(ARG):;@:)
+endif
+
+ifeq (webtest,$(firstword $(MAKECMDGOALS)))
+  ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(ARGS):;@:)
+endif
+
+testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
+
+.PHONY: webtestfromfile webtestone webtest test testmore testmorep $(SUBDIRS) all updateData qi quick-install vignette-update
 
 all:
-	#make doc-update
-	#make build-package
 	make install
 	make pdf
 
@@ -55,7 +65,8 @@ qi:
 quick-install: $(PACKAGE)/src/stockassessment.so
 	$(R) CMD INSTALL $(PACKAGE)
 
-$(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp
+$(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp $(CPP_SRC)
+	touch $(PACKAGE)/src/stockassessment.cpp
 	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp','-O0 -g')" | $(R) --slave
 
 unexport TEXINPUTS
@@ -105,15 +116,41 @@ updateDocs:
 	cd docs; pandoc index.html -t markdown_github -o index.md
 	cd docs; rm index.html
 
+NPROCS:=1
+OS:=$(shell uname -s)
+
+ifeq ($(OS),Linux)
+  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
+endif
+
+MAKEFLAGS += --silent
+
+testmorep:
+	$(MAKE) -j $(NPROCS) testmore
+
 testmore: $(SUBDIRS)
+
 $(SUBDIRS):
 	@cp testmore/Makefile $@
-	@echo -n $@
-	@echo -n ".. "
 	@$(MAKE) -i -s -C $@
 	@rm -f $@/Makefile
 
-#  for later 
-# 
-#	-cd $(@D); echo "library(stockassessment); source('script.R'); fit.exp<-fit;save(fit.exp,file='fit.expected.Rdata') " | R --vanilla
-# 
+webtestfromfile:
+	$(MAKE) -j $(NPROCS) webtest $$(< webteststocklist)
+
+webtest: $(testfiles)
+
+webtestone:
+	@wget -q -r -np -nH --cut-dirs=4 -R index.html* https://www.stockassessment.org/datadisk/stockassessment/userdirs/user3/$(ARG)/
+	@sed -i 's/useR = Rnewest/useR = R/' $(ARG)/Makefile
+	@mv $(ARG)/run/model.RData $(ARG); 
+	@touch $(ARG)/data/*
+	@$(MAKE) -s -C $(ARG) model
+	@echo "load('$(ARG)/model.RData'); old<-fit[['pl']]; \
+	       load('$(ARG)/run/model.RData'); new<-fit[['pl']];\
+	       cat('$(ARG)...',ifelse(all.equal(old,new,check.attributes=FALSE),'OK','FAIL'),'\n')"   | R --vanilla --slave
+	@touch $(ARG)/OK
+
+$(testfiles):
+	@$(MAKE) -s webtestone $(@D)
+	@rm -rf $(@D)

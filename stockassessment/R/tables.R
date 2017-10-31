@@ -4,7 +4,7 @@
 ##' @param x rownames of table
 ##' @param trans function to be applied
 ##' @details ...
-.tableit <-function (fit, what, x=fit$data$years, trans=function(x)x){
+tableit <-function (fit, what, x=fit$data$years, trans=function(x)x){
    idx<-names(fit$sdrep$value)==what
    y<-fit$sdrep$value[idx]
    ci<-y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -19,7 +19,7 @@
 ##' @details ...
 ##' @export
 ssbtable<-function(fit){
-   ret<-.tableit(fit, "logssb", trans=exp) 
+   ret<-tableit(fit, "logssb", trans=exp)
    return(ret)
 }
 
@@ -28,7 +28,7 @@ ssbtable<-function(fit){
 ##' @details ...
 ##' @export
 tsbtable<-function(fit){
-   ret<-.tableit(fit, "logtsb", trans=exp) 
+   ret<-tableit(fit, "logtsb", trans=exp)
    return(ret)
 }
 
@@ -37,7 +37,7 @@ tsbtable<-function(fit){
 ##' @details ...
 ##' @export
 fbartable<-function(fit){
-   ret<-.tableit(fit, "logfbar", trans=exp) 
+   ret<-tableit(fit, "logfbar", trans=exp)
    return(ret)
 }
 
@@ -46,7 +46,7 @@ fbartable<-function(fit){
 ##' @details ...
 ##' @export
 rectable<-function(fit){
-   ret<-.tableit(fit, "logR", trans=exp) 
+   ret<-tableit(fit, "logR", trans=exp)
    return(ret)
 }
 
@@ -58,7 +58,7 @@ rectable<-function(fit){
 catchtable<-function(fit, obs.show=FALSE){
    CW <- fit$data$catchMeanWeight 
    xx <- as.integer(rownames(CW))
-   ret <- .tableit(fit, x=xx, "logCatch", trans=exp)
+   ret <- tableit(fit, x=xx, "logCatch", trans=exp)
    if(obs.show){
      aux <- fit$data$aux
      logobs <- fit$data$logobs

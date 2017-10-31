@@ -1,5 +1,5 @@
 ##' Plot helper
-##' @param fit the fitted object from sam.fit
+##' @param fit the fitted object from sam.fit of a set of such fits c(fit1,fit2)
 ##' @param what quoted name of object to extract
 ##' @param x x-values
 ##' @param ylab label on y-axis
@@ -9,14 +9,16 @@
 ##' @param add logical, plotting is to be added on existing plot
 ##' @param ci logical, confidence intervals should be plotted
 ##' @param cicol color to plot the confidence polygon
-##' @param addCI logicial plot CI for added fits 
+##' @param addCI A logical vector indicating if confidence intervals should be plotted for the added fits.  
 ##' @param drop number of years to be left unplotted at the end.
-##' @param xlim x axis limit 
+##' @param unnamed.basename the name to assign an unnamed basefit 
+##' @param xlim ...
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
 ##' @details The basic plotting used bu many of the plotting functions (e.g. ssbplot, fbarplot ...) 
-.plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5), addCI=FALSE, drop=0, xlim=NULL,...){
+plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
+                    addCI=if(class(fit)=="samset"){rep(FALSE,length(fit))}else{NA}, drop=0, unnamed.basename="current", xlim=NULL,...){
   if(class(fit)=="sam"){ 
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
@@ -43,7 +45,8 @@
       lines(x, trans(y), lwd=2, col="black", lty="dotted")
     }
   }
-  if(class(fit)=="samset"){ 
+  if(class(fit)=="samset"){
+    if(is.logical(addCI) & (length(addCI)==1))addCI=rep(addCI,length(fit))
     colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
     idxfrom <- 1
     leg<-names(fit)
@@ -51,7 +54,7 @@
       attr(fit,"fit") <- fit[[1]]
       idxfrom <- 2
     }else{
-      leg<-c("Base", leg)
+      leg<-c(unnamed.basename, leg)
     }
     if(is.null(x))x=attr(fit,"fit")$data$years
     if(missing(xlim)){
@@ -59,12 +62,9 @@
     }else{
       xr <- xlim
     }
-    .plotit(attr(fit,"fit"), what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
-    if(addCI){
-      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, col=colSet[(i-1)%%length(colSet)+1], cicol=paste0(colSet[(i-1)%%length(colSet)+1],"80"), drop=drop, ...)) 
-    }else{
-      d<-lapply(idxfrom:length(fit), function(i).plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=FALSE, col=colSet[(i-1)%%length(colSet)+1], drop=drop, ...))
-    }
+    plotit(attr(fit,"fit"), what=what, x=x, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
+      d<-lapply(idxfrom:length(fit), function(i)plotit(fit[[i]], what=what, trans=trans, add=TRUE, ci=addCI[i],
+                                                        col=colSet[(i-1)%%length(colSet)+1], cicol=paste0(colSet[(i-1)%%length(colSet)+1],"80"), drop=drop, ...)) 
     if(!is.null(names(fit))){
         legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
         legend("bottom",legend=leg, lwd=2, col=rep("black", length(leg)), lty="dotted", ncol=3, bty="n")
@@ -74,8 +74,8 @@
     xy <- unlist(lapply(fit, function(xx) xx$year))
     thisfit<-attr(fit,"fit")
     xr <- range(thisfit$data$years, xy)
-    .plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)    
-  }  
+    plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
+  }
 }
 
 ##' SAM add forecasts 
@@ -328,7 +328,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL, pcol="lightblue",
   }
   idx <- which(fitlocal$conf$minAge:fitlocal$conf$maxAge %in% page)
   exx <- if(partial){fmat[idx,]}else{numeric(0)}
-  .plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
+  plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
   if(partial){
     idxx <- 1:(length(fitlocal$data$years)-drop)
     matplot(fitlocal$data$years[idxx], t(fmat[idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(page))
@@ -345,7 +345,7 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL, pcol="lightblue",
 ##' @details Plot of spawning stock biomass 
 ##' @export
 ssbplot<-function(fit, ...){
-  .plotit(fit, "logssb", ylab="SSB", trans=exp,...)
+  plotit(fit, "logssb", ylab="SSB", trans=exp,...)
   addforecast(fit,"ssb")
 }
 
@@ -358,7 +358,7 @@ ssbplot<-function(fit, ...){
 ##' @details Plot of total stock biomass
 ##' @export
 tsbplot<-function(fit, ...){
-  .plotit(fit, "logtsb", ylab="TSB", trans=exp,...)
+  plotit(fit, "logtsb", ylab="TSB", trans=exp,...)
 }
 
 ##' SAM Recruits plot 
@@ -384,7 +384,7 @@ recplot<-function(fit,...){
     fitlocal <- attr(fit,"fit")
   }
   lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
-  .plotit(fit, "logR", ylab=lab, trans=exp,...)
+  plotit(fit, "logR", ylab=lab, trans=exp,...)
   addforecast(fit, "rec")
 }
 
@@ -418,7 +418,7 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
   }
   CW <- fitlocal$data$catchMeanWeight
   x <- as.numeric(rownames(CW))
-  .plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
   if(obs.show){
     aux <- fitlocal$data$aux
     logobs <- fitlocal$data$logobs
