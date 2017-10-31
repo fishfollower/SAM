@@ -3,7 +3,7 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.5.3
+Documentation for package ‘stockassessment’ version 0.5.4
 ---------------------------------------------------------
 
 Help Pages
@@ -69,6 +69,7 @@ Help Pages
 | [reduce](reduce.md)                                     | reduce helper function to reduce data                                                   |
 | [residuals.sam](residuals.sam.md)                       | Extract residuals from sam object                                                       |
 | [retro](retro.md)                                       | retro run                                                                               |
+| [rmvnorm](rmvnorm.md)                                   | rmvnorm helper function to draw multivariate normal samples                             |
 | [runwithout](runwithout.md)                             | runwithout helper function                                                              |
 | [sam.fit](sam.fit.md)                                   | Fit SAM model                                                                           |
 | [saveConf](saveConf.md)                                 | Saves a model configuration list to a file                                              |
