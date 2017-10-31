@@ -1,5 +1,7 @@
 all: 
 	@echo 'source("script.R")' | R --slave > /dev/null
+	@echo -n $(shell basename $(shell pwd))
+	@echo -n "... "
 	@cmp -s res.out res.EXP; \
 	RETVAL=$$?; \
 	if [ $$RETVAL -eq 0 ]; then \
