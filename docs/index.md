@@ -11,8 +11,6 @@ Help Pages
 
 |                                                         |                                                                                         |
 |---------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| [.plotit](dot-plotit.md)                                | Plot helper                                                                             |
-| [.tableit](dot-tableit.md)                              | Table helper                                                                            |
 | [addforecast](addforecast.md)                           | SAM add forecasts                                                                       |
 | [c.sam](c.sam.md)                                       | Collect sam objects                                                                     |
 | [catchplot](catchplot.md)                               | SAM catch plot                                                                          |
@@ -54,6 +52,7 @@ Help Pages
 | [plot.samset](plot.samset.md)                           | Plot sam object                                                                         |
 | [plot.samypr](plot.samypr.md)                           | Plot sam object                                                                         |
 | [plotby](plotby.md)                                     | Plot by one or two                                                                      |
+| [plotit](plotit.md)                                     | Plot helper                                                                             |
 | [print.sam](print.sam.md)                               | Print sam object                                                                        |
 | [print.samcoef](print.samcoef.md)                       | Print samcoef object                                                                    |
 | [print.samforecast](print.samforecast.md)               | Print samforecast object                                                                |
@@ -81,6 +80,7 @@ Help Pages
 | [ssbplot](ssbplot.md)                                   | SAM SSB plot                                                                            |
 | [ssbtable](ssbtable.md)                                 | SSB table                                                                               |
 | [summary.sam](summary.sam.md)                           | Summary of sam object                                                                   |
+| [tableit](tableit.md)                                   | Table helper                                                                            |
 | [tsbplot](tsbplot.md)                                   | SAM TSB plot                                                                            |
 | [tsbtable](tsbtable.md)                                 | TSB table                                                                               |
 | [ypr](ypr.md)                                           | Yield per recruit calculation                                                           |
