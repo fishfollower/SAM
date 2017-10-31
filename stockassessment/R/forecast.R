@@ -1,3 +1,29 @@
+##' rmvnorm helper function to draw multivariate normal samples
+##' @param n the number of samples.
+##' @param mu the mean vector.
+##' @param Sigma a positive-definite symmetric matrix specifying the covariance matrix.
+##' @details Generates samples via the Cholesky decomposition, which is less platform dependent than eigenvalue decomposition.
+##' @return If n = 1 a vector of the same length as mu, otherwise an n by length(mu) matrix with one sample in each row.
+##' @export
+rmvnorm <- function(n = 1, mu, Sigma){
+  p <- length(mu)
+  if(!all(dim(Sigma) == c(p, p))){
+    stop("incompatible arguments")
+  }
+  if(max(abs(Sigma))<.Machine$double.xmin){
+    L <- matrix(0,p,p)
+  }else{
+    L <- chol(Sigma)
+  }
+  X <- matrix(rnorm(p * n), n)
+  X <- drop(mu) + t(X%*%L)
+  if(n == 1){
+    drop(X)
+  }else{
+    t(X)
+  }
+}
+
 ##' forecast function to do shortterm
 ##' @param fit an assessment object of type sam, as returned from the function sam.fit
 ##' @param fscale a vector of f-scales. See details.  
@@ -13,7 +39,6 @@
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
-##' @importFrom MASS mvrnorm
 ##' @export
 forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE){
     
@@ -164,7 +189,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     stop("State not saved, so cannot proceed from this year")
   }
   if(deterministic)cov<-cov*0
-  sim<-MASS::mvrnorm(nosim, mu=est, Sigma=cov)
+  sim<-rmvnorm(nosim, mu=est, Sigma=cov)
 
   if(is.null(overwriteSelYears)){  
     if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
@@ -204,7 +229,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
     if(i!=0){
       if(deterministic)procVar<-procVar*0  
-      sim <- sim + MASS::mvrnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
+      sim <- sim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
     }
     
     if(!is.na(fscale[i+1])){

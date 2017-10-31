@@ -63,7 +63,6 @@ plot.samset<-function(x, ...){
 ##' @return an object of class \code{samres}
 ##' @details ...
 ##' @importFrom TMB sdreport
-##' @importFrom MASS mvrnorm
 ##' @export
 procres <- function(fit, ...){
   fit.co<-sam.fit(fit$data, fit$conf, fit$pl, run=FALSE)
@@ -78,14 +77,14 @@ procres <- function(fit, ...){
   }
   set.seed(123456)
   idx <- which(names(sdrep$value)=="resN")
-  resN <- mvrnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
+  resN <- rmvnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
   resN <- matrix(resN, nrow=nrow(fit.co$pl$logN))
   resN <- data.frame(year=fit.co$data$years[as.vector(col(resN))],
                      fleet=1,
                      age=ages[as.vector(row(resN))],
                      residual=as.vector(resN))
   idx <- which(names(sdrep$value)=="resF")
-  resF <- mvrnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
+  resF <- rmvnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
   resF <- matrix(resF, nrow=nrow(fit.co$pl$logF))
   resF <- data.frame(year=fit.co$data$years[as.vector(col(resF))],
                      fleet=2,
