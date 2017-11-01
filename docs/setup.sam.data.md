@@ -9,7 +9,7 @@
 ## Usage
 
 ```r
-setup.sam.data(fleets = NULL, surveys = NULL, residual.fleet = NULL,
+setup.sam.data(fleets = NULL, surveys = NULL, residual.fleets = NULL,
   prop.mature = NULL, stock.mean.weight = NULL, catch.mean.weight = NULL,
   dis.mean.weight = NULL, land.mean.weight = NULL,
   natural.mortality = NULL, prop.f = NULL, prop.m = NULL,
@@ -23,7 +23,7 @@ Argument      |Description
 ------------- |----------------
 ```fleets```     |     comm fleets vith effort (currently unimplemented)
 ```surveys```     |     surveys
-```residual.fleet```     |     total catch minus commercial
+```residual.fleets```     |     fleet, or list of fleets without effort information
 ```prop.mature```     |     pm
 ```stock.mean.weight```     |     sw
 ```catch.mean.weight```     |     cw

@@ -23,7 +23,7 @@ Argument      |Description
 ------------- |----------------
 ```fit```     |     the fitted object from sam.fit of a set of such fits c(fit1,fit2)
 ```what```     |     quoted name of object to extract
-```x```     |     x-alues
+```x```     |     x-values
 ```ylab```     |     label on y-axis
 ```xlab```     |     label on x-axis
 ```ex```     |     extra y's to make room for
