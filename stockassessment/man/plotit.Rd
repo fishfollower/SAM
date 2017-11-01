@@ -15,7 +15,7 @@ plotit(fit, what, x = fit$data$years, ylab = what, xlab = "Years",
 
 \item{what}{quoted name of object to extract}
 
-\item{x}{x-alues}
+\item{x}{x-values}
 
 \item{ylab}{label on y-axis}
 
