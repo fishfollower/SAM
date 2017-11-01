@@ -148,7 +148,8 @@ webtestone:
 	@$(MAKE) -s -C $(ARG) model
 	@echo "load('$(ARG)/model.RData'); old<-fit[['pl']]; \
 	       load('$(ARG)/run/model.RData'); new<-fit[['pl']];\
-	       cat('$(ARG)...',ifelse(all.equal(old,new,check.attributes=FALSE),'OK','FAIL'),'\n')"   | R --vanilla --slave
+	       test <- all.equal(old,new,check.attributes=FALSE);\
+	       cat('$(ARG)...',ifelse(test==TRUE,'OK',paste('FAIL:',test)),'\n')"   | R --vanilla --slave
 	@touch $(ARG)/OK
 
 $(testfiles):
