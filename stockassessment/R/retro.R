@@ -140,3 +140,21 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
   class(runs)<-"samset"
   runs
 }
+
+
+##' Mohn's rho calculation
+##' @param fits a samset object as returned from the retro function.
+##' @param what a function computing the quantity to calculate Mohn's rho for (default NULL computes Fbar, SSB, and R).
+##' @param lag lag applied to fits and reference fit.
+##' @param ... extra arguments
+##' @details ...
+##' @export
+mohn <- function(fits, what=NULL, lag=0, ...){
+  if(is.null(what)){
+    what <- function(fit)summary(fit)[,c(1,4,7),drop=FALSE]
+  }
+  ref <- what(attr(fits,"fit"))
+  ret <- lapply(fits, what)
+  bias <- lapply(ret, function(x){y<-rownames(x)[nrow(x)-lag]; (x[rownames(x)==y,]-ref[rownames(ref)==y,])/ref[rownames(ref)==y,]})
+  colMeans(do.call(rbind,bias))
+}
