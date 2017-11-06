@@ -37,6 +37,7 @@ Help Pages
 | [modelDescription](modelDescription.md)                 | Description of model                                                                    |
 | [modeltable](modeltable.md)                             | model table                                                                             |
 | [modelVersionInfo](modelVersionInfo.md)                 | Description of model                                                                    |
+| [mohn](mohn.md)                                         | Mohn's rho calculation                                                                  |
 | [nobs.sam](nobs.sam.md)                                 | Extract number of observations from sam object                                          |
 | [nscodConf](nscodConf.md)                               | nscodConf                                                                               |
 | [nscodData](nscodData.md)                               | nscodData                                                                               |

@@ -102,7 +102,7 @@ updateData:
 	      nscodData <- dat; nscodConf <- conf; nscodParameters <- par; \
 	      save(nscodData, file='stockassessment/data/nscodData.RData'); \
 	      save(nscodConf, file='stockassessment/data/nscodConf.RData'); \
-	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData'); " | R --vanilla
+	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData'); " | R --slave
 
 updateDocs:
 	rm -rf docs
@@ -110,7 +110,7 @@ updateDocs:
 	echo "library(Rd2md); \
 	      fn<-dir('$(PACKAGE)/man'); \
 	      d<-sapply(fn, function(f)Rd2markdown(paste0('$(PACKAGE)/man/',f), sub('Rd','md',paste0('docs/',f))));\
-	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | R --vanilla
+	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | R --slave
 	cd docs; sed -i '/<img/d; /DESCRIPTION/d; /User guides/d; s/html/md/' index.html
 	cd docs; pandoc index.html -t markdown_github -o index.md
 	cd docs; rm index.html
