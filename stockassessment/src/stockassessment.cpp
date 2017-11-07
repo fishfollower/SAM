@@ -119,7 +119,7 @@ Type objective_function<Type>::operator() ()
 
   Type ans=0; //negative log-likelihood
 
-  ans += nllF(dataset, confset, paraset, logF, keep, this);
+  ans += nllF(confset, paraset, logF, keep, this);
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
 
