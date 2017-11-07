@@ -10,10 +10,10 @@ rmvnorm <- function(n = 1, mu, Sigma){
   if(!all(dim(Sigma) == c(p, p))){
     stop("incompatible arguments")
   }
-  if(max(abs(Sigma))<.Machine$double.xmin){
-    L <- matrix(0,p,p)
-  }else{
-    L <- chol(Sigma)
+  idx <- diag(Sigma) > .Machine$double.xmin 
+  L <- matrix(0,p,p)
+  if(any(idx)){
+    L[idx,idx] <- chol(Sigma[idx,idx])
   }
   X <- matrix(rnorm(p * n), n)
   X <- drop(mu) + t(X%*%L)
