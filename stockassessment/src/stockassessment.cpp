@@ -67,7 +67,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
   DATA_INTEGER(maxAgePlusGroup); confset.maxAgePlusGroup=maxAgePlusGroup; 
   DATA_IARRAY(keyLogFsta); confset.keyLogFsta=keyLogFsta; 
-  DATA_INTEGER(corFlag); confset.corFlag=corFlag; 
+  DATA_IVECTOR(corFlag); confset.corFlag=corFlag; 
   DATA_IARRAY(keyLogFpar); confset.keyLogFpar=keyLogFpar; 
   DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
   DATA_IARRAY(keyVarF); confset.keyVarF=keyVarF; 
@@ -119,7 +119,7 @@ Type objective_function<Type>::operator() ()
 
   Type ans=0; //negative log-likelihood
 
-  ans += nllF(confset, paraset, logF, keep, this);
+  ans += nllF(dataset, confset, paraset, logF, keep, this);
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
 

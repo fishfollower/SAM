@@ -4,7 +4,7 @@ Type trans(Type x){
 }
 
 template <class Type>
-Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0; 
   int stateDimF=logF.dim[0];
@@ -16,50 +16,70 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
+  vector<Type> statesFleets(stateDimF);
 
-  if(conf.corFlag==0){
-    fcor.setZero();
+  int noPartFleets = 0;
+  for(int i=0;i<noFleets;i++){
+   if(dat.fleetTypes(i)==0){
+  	noPartFleets+=1;
+    }
+  }
+  //Link fleets to F states
+  int count=-1;
+  for(int f=0;f<noPartFleets;f++){
+  	count++;
+  	for(int j=1;j<stateDimN;j++){
+  	  if(j==1){
+  	  	statesFleets(count)=count;
+	  }
+  	  if(conf.keyLogFsta(f,j)>conf.keyLogFsta(f,j-1)){
+  	    count++;
+		statesFleets(count)=count;
+      }
+	}
   }
 
+  fcor.setZero();
   for(int i=0; i<stateDimF; ++i){
     fcor(i,i)=1.0;
   }
 
-  if(conf.corFlag==1){
-    for(int i=0; i<stateDimF; ++i){
-      for(int j=0; j<i; ++j){
-        fcor(i,j)=trans(par.itrans_rho(0));
-        fcor(j,i)=fcor(i,j);
+  for(int f=0;f<noPartFleets;f++){
+    if(conf.corFlag(f)==1){
+      for(int i=0; i<stateDimF; ++i){
+      	if(statesFleets(i)==f){
+          for(int j=0; j<i; ++j){
+            fcor(i,j)=trans(par.itrans_rho(0));
+            fcor(j,i)=fcor(i,j);
+          }  
+        }   
       }
-    } 
-  }
-
-  if(conf.corFlag==2){
-    for(int i=0; i<stateDimF; ++i){
-      for(int j=0; j<i; ++j){
-        fcor(i,j)=pow(trans(par.itrans_rho(0)),abs(Type(i-j)));
-        fcor(j,i)=fcor(i,j);
-      }
-    } 
-  }
-
-  int i,ff,j;
-  for(i=0; i<stateDimF; ++i){
-    bool stop = false;
-    for(ff=0; ff<noFleets; ff++){
-      for(j=0; j<stateDimN; j++){
-        if(conf.keyLogFsta(ff,j)==i){
-          stop=true;
-          break;
-        } 
-      }
-      if(stop)break;
     }
-    fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
+
+    if(conf.corFlag(f)==2){
+      for(int i=0; i<stateDimF; ++i){
+      	if(statesFleets(i)==f){
+          for(int j=0; j<i; ++j){
+            fcor(i,j)=pow(trans(par.itrans_rho(0)),abs(Type(i-j)));
+            fcor(j,i)=fcor(i,j);
+          }
+        }  
+      }
+    }
+
+    int i,j;
+    for(i=0; i<stateDimF; ++i){
+	  if(statesFleets(i)==f){
+	    for(j=0; j<stateDimN; j++){
+          if(conf.keyLogFsta(f,j)==i)break;
+        }
+		fsd(i)=sdLogFsta(conf.keyVarF(f,j));        
+      }
+    }
   }
  
-  for(i=0; i<stateDimF; ++i){
-    for(j=0; j<stateDimF; ++j){
+  for(int i=0; i<stateDimF; ++i){
+    for(int j=0; j<stateDimF; ++j){
       fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
     }
   }
