@@ -22,7 +22,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
     fcor(i,i)=1.0;
   }
 
-  for(int f=0;f<noPartFleets;f++){
+  for(int f=0;f<noFleets;f++){
     if(conf.corFlag(f)==1){
       for(int i=0; i<stateDimF; ++i){
         for(int j=0; j<i; ++j){
