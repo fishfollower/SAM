@@ -21,14 +21,17 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   for(int i=0; i<stateDimF; ++i){
     fcor(i,i)=1.0;
   }
-
+  
+  
+  int count=0; //corFlags may miss come fleets, need to correct for that
   for(int f=0;f<noFleets;f++){
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
         if(conf.keyLogFsta(f,j)>(-1)){
           if(conf.corFlag(f)==1){
-            fcor(i,j)=trans(par.itrans_rho(f));
+            fcor(i,j)=trans(par.itrans_rho(Type(f-count)));
             fcor(j,i)=fcor(i,j);
+            count++;
           }  
         }   
       }
@@ -38,8 +41,9 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
       for(int j=0; j<i; ++j){
         if(conf.keyLogFsta(f,j)>(-1)){
           if(conf.corFlag(f)==2){
-            fcor(i,j)=pow(trans(par.itrans_rho(f)),abs(Type(i-j)));
+            fcor(i,j)=pow(trans(par.itrans_rho(Type(f-count))),abs(Type(i-j)));
             fcor(j,i)=fcor(i,j);
+            count++;
           }
         }  
       }
