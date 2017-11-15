@@ -16,48 +16,75 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
-
+  vector<Type> statesFleets(stateDimF);
+  
+  //Fill statesFleets: we need this to make the 
+  for(int f=0; f<noFleets;f++){
+  	for(int i=0;i<stateDimF;i++){
+      for(int j=0;j<stateDimN;j++){
+  	    if(conf.keyLogFsta(f,j)==i){
+	      statesFleets(i)==f;
+	    }  
+      }
+    }
+  }
+  
   fcor.setZero();
   for(int i=0; i<stateDimF; ++i){
     fcor(i,i)=1.0;
   }
-
+  
+  int count=0; //if corFlag varies between 0-2, itrans_rho is shorter than comm fleet length
   for(int f=0;f<noFleets;f++){
-    if(conf.corFlag(f)==1){
-      for(int i=0; i<stateDimF; ++i){
-        for(int j=0; j<i; ++j){
-          if(conf.keyLogFsta(f,j)>(-1)){
-            fcor(i,j)=trans(par.itrans_rho(f));
+  	bool stop = false;
+    for(int i=0; i<stateDimF; ++i){
+      for(int j=0; j<i; ++j){
+        if(statesFleets(i)==f){
+   		  if(conf.corFlag(f)==1){
+            fcor(i,j)=trans(par.itrans_rho(count));
             fcor(j,i)=fcor(i,j);
-          }  
-        }   
-      }
-    }
-
-    if(conf.corFlag(f)==2){
-      for(int i=0; i<stateDimF; ++i){
-      	for(int j=0; j<i; ++j){
-          if(conf.keyLogFsta(f,j)>(-1)){
-            fcor(i,j)=pow(trans(par.itrans_rho(f)),abs(Type(i-j)));
-            fcor(j,i)=fcor(i,j);
+            if(stop){
+              count++;
+              stop = true;
+        	}
           }
-        }  
-      }
-    }
-
-    int i,j;
-    for(i=0; i<stateDimF; ++i){
-	  for(j=0; j<stateDimN; j++){
-	    if(conf.keyLogFsta(f,j)>(-1)){
-          if(conf.keyLogFsta(f,j)==i)break;
-          fsd(i)=sdLogFsta(conf.keyVarF(f,j));        
         }
       }
+    } 
+  
+    for(int i=0; i<stateDimF; ++i){
+      for(int j=0; j<i; ++j){
+      	if(statesFleets(i)==f){
+      	  if(conf.corFlag(f)==2){
+            fcor(i,j)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
+            fcor(j,i)=fcor(i,j);
+            if(stop){
+			  count++;
+			  stop = true;
+			}
+	      }
+        }
+      }
+    } 
+  }
+
+  int i,ff,j;
+  for(i=0; i<stateDimF; ++i){
+    bool stop = false;
+    for(ff=0; ff<noFleets; ff++){
+      for(j=0; j<stateDimN; j++){
+        if(conf.keyLogFsta(ff,j)==i){
+          stop=true;
+          break;
+        } 
+      }
+      if(stop)break;
     }
+    fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
   }
  
-  for(int i=0; i<stateDimF; ++i){
-    for(int j=0; j<stateDimF; ++j){
+  for(i=0; i<stateDimF; ++i){
+    for(j=0; j<stateDimF; ++j){
       fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
     }
   }
