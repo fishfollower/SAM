@@ -23,7 +23,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   	for(int i=0;i<stateDimF;i++){
       for(int j=0;j<stateDimN;j++){
   	    if(conf.keyLogFsta(f,j)==i){
-	      statesFleets(i)==f;
+	      statesFleets(i)=f;
 	    }  
       }
     }
