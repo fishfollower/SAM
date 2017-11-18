@@ -44,7 +44,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
    		  	if(cont){
               fcor(i,j)=trans(par.itrans_rho(count));
         	} else {
-        	  fcor(i,j)=trans(par.itrans_rho(count)-1);		
+        	  fcor(i,j)=trans(par.itrans_rho(count-1));		
 			}
             fcor(j,i)=fcor(i,j);
             if(cont){
