@@ -43,14 +43,12 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
    		  if(conf.corFlag(f)==1){
    		  	if(cont){
               fcor(i,j)=trans(par.itrans_rho(count));
+              count++;
+              cont=false;
         	} else {
         	  fcor(i,j)=trans(par.itrans_rho(count-1));		
 			}
             fcor(j,i)=fcor(i,j);
-            if(cont){
-              count++;
-              cont = false;
-        	}
           }
         }
       }
@@ -62,14 +60,12 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
       	  if(conf.corFlag(f)==2){
       	  	if(cont){
 		 	  fcor(i,j)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
+		 	  count++;
+		 	  cont=false;
             } else {
               fcor(i,j)=pow(trans(par.itrans_rho(count-1)),abs(Type(i-j)));
 			}
             fcor(j,i)=fcor(i,j);
-            if(cont){
-			  count++;
-			  cont = false;
-			}
 	      }
         }
       }
