@@ -23,7 +23,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   	for(int i=0;i<stateDimF;i++){
       for(int j=0;j<stateDimN;j++){
   	    if(conf.keyLogFsta(f,j)==i){
-	      statesFleets(i)==f;
+	      statesFleets(i)=f;
 	    }  
       }
     }
@@ -36,17 +36,19 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   
   int count=0; //if corFlag varies between 0-2, itrans_rho is shorter than comm fleet length
   for(int f=0;f<noFleets;f++){
-  	bool stop = false;
+  	bool cont = true;
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
         if(statesFleets(i)==f){
    		  if(conf.corFlag(f)==1){
-            fcor(i,j)=trans(par.itrans_rho(count));
-            fcor(j,i)=fcor(i,j);
-            if(stop){
+   		  	if(cont){
+              fcor(i,j)=trans(par.itrans_rho(count));
               count++;
-              stop = true;
-        	}
+              cont=false;
+        	} else {
+        	  fcor(i,j)=trans(par.itrans_rho(count-1));		
+			}
+            fcor(j,i)=fcor(i,j);
           }
         }
       }
@@ -56,12 +58,14 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
       for(int j=0; j<i; ++j){
       	if(statesFleets(i)==f){
       	  if(conf.corFlag(f)==2){
-            fcor(i,j)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
-            fcor(j,i)=fcor(i,j);
-            if(stop){
-			  count++;
-			  stop = true;
+      	  	if(cont){
+		 	  fcor(i,j)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
+		 	  count++;
+		 	  cont=false;
+            } else {
+              fcor(i,j)=pow(trans(par.itrans_rho(count-1)),abs(Type(i-j)));
 			}
+            fcor(j,i)=fcor(i,j);
 	      }
         }
       }
