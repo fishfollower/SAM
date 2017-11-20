@@ -65,7 +65,10 @@ plot.samset<-function(x, ...){
 ##' @importFrom TMB sdreport
 ##' @export
 procres <- function(fit, ...){
-  fit.co<-sam.fit(fit$data, fit$conf, fit$pl, run=FALSE)
+  pp<-fit$pl
+  attr(pp,"what") <- NULL
+  pp$missing <- NULL
+  fit.co<-sam.fit(fit$data, fit$conf, pp, run=FALSE)
   fit.co$obj$env$data$resFlag<-1
   fit.co$obj$retape()
   sdrep <- sdreport(fit.co$obj,fit$opt$par)  
