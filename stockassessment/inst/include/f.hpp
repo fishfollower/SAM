@@ -39,7 +39,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   	bool cont = true;
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        if(statesFleets(i)==f){
+        if(statesFleets(i)==f && statesFleets(j)==f){
    		  if(conf.corFlag(f)==1){
    		  	if(cont){
               fcor(i,j)=trans(par.itrans_rho(count));
@@ -56,7 +56,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-      	if(statesFleets(i)==f){
+      	if(statesFleets(i)==f && statesFleets(j)==f){
       	  if(conf.corFlag(f)==2){
       	  	if(cont){
 		 	  fcor(i,j)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
