@@ -115,5 +115,6 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   if(conf.resFlag==1){
     ADREPORT_F(resF,of);
   }
+  REPORT_F(fvar,of);
   return nll;
 }
