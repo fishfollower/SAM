@@ -44,9 +44,9 @@ dat<-setup.sam.data(surveys=surveys,
 
 conf<-defcon(dat)
 
-conf$corFlag<-c(0,0,0,0)
+conf$corFlag<-c(2,1,0,2)
 par<-defpar(dat,conf)
 fit<-sam.fit(dat,conf,par)
-
+cor<-round(cov2cor(fit$obj$report()$fvar),3)
 cat(fit$opt$objective,"\n\n", file="res.out")
-cat(capture.output(prmatrix(fbartable(fit))), sep="\n", file="res.out", append=TRUE)
+cat(capture.output(prmatrix(cor)), sep="\n", file="res.out", append=TRUE)
