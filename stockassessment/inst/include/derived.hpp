@@ -18,11 +18,19 @@ array<Type> totFFun(confSet &conf, array<Type> &logF){
 }
 
 template <class Type>
-Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &totF, int i){
+Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &totF, int i, array<Type> &logF){
   int stateDimN=logN.dim[0];
   Type ssb=0;
-  for(int j=0; j<stateDimN; ++j){
-    ssb+=exp(logN(j,i))*exp(-totF(j,i)*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
+  //for(int j=0; j<stateDimN; ++j){
+  //  ssb+=exp(logN(j,i))*exp(-totF(j,i)*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
+  //}
+  int noFleets=conf.keyLogFsta.dim[0];
+  for(int f=0; f<noFleets;f++){
+	for(int j=0; j<stateDimN; ++j){	
+	  if(conf.keyLogFsta(f,j)>(-1)){
+	  	ssb+=exp(logN(j,i))*exp(-exp(logF(conf.keyLogFsta(f,j),i))*dat.propF(i,j,f)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
+	  }
+	}
   }
   return ssb;
 }
@@ -34,7 +42,7 @@ vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
   vector<Type> ssb(timeSteps);
   ssb.setZero();
   for(int i=0;i<timeSteps;i++){
-    ssb(i)=ssbi(dat,conf,logN,totF,i);
+    ssb(i)=ssbi(dat,conf,logN,totF,i,logF);
   }
   return ssb;
 }
@@ -42,15 +50,18 @@ vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
 template <class Type>
 vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.catchMeanWeight.dim(0);
+  int noFleets=conf.keyLogFsta.dim[0];
   array<Type> totF=totFFun(conf, logF);
   vector<Type> cat(len);
   cat.setZero();
   for(int y=0;y<len;y++){
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
       Type z=dat.natMor(y,a-conf.minAge);
-      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-        z+=totF(a-conf.minAge,y);
-        cat(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge);
+      z+=totF(a-conf.minAge,y);
+      for(int f=0; f<noFleets;f++){
+        if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+          cat(y)+=exp(logF(conf.keyLogFsta(f,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge,f);
+        }
       }
     }
   }
@@ -60,6 +71,8 @@ vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, arra
 template <class Type>
 vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, paraSet<Type> par){
   int len=dat.catchMeanWeight.dim(0);
+  int noFleets=conf.keyLogFsta.dim[0];
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> cat(len);
   cat.setZero();
   vector<Type> varLogCat(len);
@@ -69,12 +82,14 @@ vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
   for(int y=0;y<len;y++){
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
       Type z=dat.natMor(y,a-conf.minAge);
-      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-        CW=dat.catchMeanWeight(y,a-conf.minAge);
-        Ca=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z));
-        cat(y)+=Ca*CW;
-        varLogCat(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(0,a-conf.minAge)))*CW*CW*Ca*Ca; 
+      z+=totF(a-conf.minAge,y);
+      for(int f=0; f<noFleets;f++){
+        if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+          CW=dat.catchMeanWeight(y,a-conf.minAge,f);
+          Ca=exp(logF(conf.keyLogFsta(f,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z));
+          cat(y)+=Ca*CW;
+          varLogCat(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(f,a-conf.minAge)))*CW*CW*Ca*Ca; 
+    	}
       }
     }
     varLogCat(y)/=cat(y)*cat(y);
@@ -85,21 +100,27 @@ vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
 template <class Type>
 vector<Type> fsbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.catchMeanWeight.dim(0);
+  int noFleets=conf.keyLogFsta.dim[0];
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> fsb(len);
   fsb.setZero();
   Type sumF;
   for(int y=0;y<len;y++){  // calc logfsb
     sumF=Type(0);
-    for(int a=conf.minAge;a<=conf.maxAge;a++){  
-      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-        sumF+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+	  for(int f=0; f<noFleets;f++){  
+        if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+          sumF+=exp(logF(conf.keyLogFsta(f,a-conf.minAge),y));
+        }
       }
     }
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
       Type z=dat.natMor(y,a-conf.minAge);
-      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-        fsb(y)+=(exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/sumF)*exp(logN(a-conf.minAge,y))*exp(-Type(0.5)*z)*dat.catchMeanWeight(y,a-conf.minAge);
+      z+=totF(a-conf.minAge,y);
+      for(int f=0; f<noFleets;f++){  
+        if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+          fsb(y)+=(exp(logF(conf.keyLogFsta(f,a-conf.minAge),y))/sumF)*exp(logN(a-conf.minAge,y))*exp(-Type(0.5)*z)*dat.catchMeanWeight(y,a-conf.minAge,f);
+        }
       }
     }
   }
