@@ -120,7 +120,6 @@ defcon<-function(dat){
   ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
   ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
-  ret$obsLikelihoodFlag[fleetTypes==7] <- NA
   ret$fixVarToWeight <- 0
   return(ret) 
 }

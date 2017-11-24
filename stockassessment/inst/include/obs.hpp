@@ -184,13 +184,34 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
     if(dat.fleetTypes(f)==7){ 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
       matrix<Type> cov(thisdim,thisdim);
-      cov.setZero();
-      for(int ff=0; ff<dat.noFleets; ++ff){
-        if(dat.sumKey(f,ff)==1){
-          matrix<Type> covPart=nllVec(ff).cov(); // know not correct 
-          if(cov.rows()==covPart.rows()) cov+=covPart; // know not correct 
-        }
-      }
+      cov.setIdentity();
+      //  int Nparts=0
+      //  for(int ff=0; ff<dat.noFleets; ++ff){
+      //    if(dat.sumKey(f,ff)==1)++Nparts;
+      //  }
+      //  matrix<Type> muMat(thisDim,Nparts);
+      //  muMat.setZero();
+      //  matrix<Type> VV(thisDim*Nparts,thisDim*Nparts);
+      //  VV.setZero();
+      //  matrix<Type> G(thisDim*Nparts,thisDim);
+      //  G.setZero();
+      //  
+      //  int element=-1;
+      //  for(int ff=0; ff<dat.noFleets; ++ff){
+      //    if(dat.sumKey(f,ff)==1){
+      //      ++element; 
+      //      for(int aa=dat.minAgePerFleet(ff); aa<=dat.maxAgePerFleet(ff); ++ff){
+      //        //muMat(aa-dat.minAgePerFleet(f),element)=logN(a,y)-log(zz)+log(1-exp(-zz))+logF(conf.keyLogFsta(f-1,a),y)
+      //      }
+      //  	}
+      //  }
+      //  
+      //  for(int ff=0; ff<dat.noFleets; ++ff){
+      //    if(dat.sumKey(f,ff)==1){
+      //      matrix<Type> covPart=nllVec(ff).cov(); // know not correct 
+      //      if(cov.rows()==covPart.rows()) cov+=covPart; // know not correct 
+      //    }
+      //  }
       nllVec(f).setSigma(cov);
       obsCov(f) = cov;
     }
@@ -249,7 +270,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
 	    }
 	    break;
   	    default:
-	      if(!isNAINT(conf.obsLikelihoodFlag(f)))error("Unknown obsLikelihoodFlag");
+	      error("Unknown obsLikelihoodFlag");
 	  }
         }
       }else{ //dat.fleetTypes(f)==5
