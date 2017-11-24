@@ -389,7 +389,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   sumKey <- matrix(0,length(ft),length(ft))
   if(!is.null(sum.residual.fleets)){
     fl7 <- which(ft==7)
-    idxone <- do.call(rbind,lapply(1:length(fl7), function(i)cbind(fl7[i],attr(sum.residual.fleets[[i]],"sumof"))))
+    if(is.data.frame(sum.residual.fleets)|is.matrix(sum.residual.fleets)){
+      idxone <- cbind(fl7,attr(sum.residual.fleets,"sumof"))
+    }else{
+      idxone <- do.call(rbind,lapply(1:length(fl7), function(i)cbind(fl7[i],attr(sum.residual.fleets[[i]],"sumof"))))
+    }
     sumKey[idxone] <- 1
   }
   attr(dat,'sumKey')<-sumKey

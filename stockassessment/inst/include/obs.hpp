@@ -143,7 +143,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
   }
 
   for(int f=0; f<dat.noFleets; ++f){
-    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
+    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7))){ 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
       if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
       matrix<Type> cov(thisdim,thisdim);
@@ -178,6 +178,21 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
       matrix<Type> dummy(1,1);
       dummy(0,0) = R_NaReal;
       obsCov(f) = dummy;
+    }
+  }
+  for(int f=0; f<dat.noFleets; ++f){ // separate loop to insure other fleet's cov has been setup 
+    if(dat.fleetTypes(f)==7){ 
+      int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+      matrix<Type> cov(thisdim,thisdim);
+      cov.setZero();
+      for(int ff=0; ff<dat.noFleets; ++ff){
+        if(dat.sumKey(f,ff)==1){
+          matrix<Type> covPart=nllVec(ff).cov(); // know not correct 
+          if(cov.rows()==covPart.rows()) cov+=covPart; // know not correct 
+        }
+      }
+      nllVec(f).setSigma(cov);
+      obsCov(f) = cov;
     }
   }
   //eval likelihood 
@@ -234,7 +249,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
 	    }
 	    break;
   	    default:
-	      error("Unknown obsLikelihoodFlag");
+	      if(!isNAINT(conf.obsLikelihoodFlag(f)))error("Unknown obsLikelihoodFlag");
 	  }
         }
       }else{ //dat.fleetTypes(f)==5

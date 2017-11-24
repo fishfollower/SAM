@@ -18,6 +18,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   int f, ft, a, y, yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=dat.aux(0,0);
   Type zz=Type(0);
+  Type sumF=Type(0); 
   for(int i=0;i<dat.nobs;i++){
     y=dat.aux(i,0)-minYear;
     f=dat.aux(i,1);
@@ -94,8 +95,16 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
   
       case 7:// sum residual fleets 
-  	error("Unknown fleet code");
-        return 0;
+	pred(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
+        sumF=0;
+        for(int ff=1; ff<=dat.noFleets; ++ff){
+          if(dat.sumKey(f-1,ff-1)==1){
+            if(conf.keyLogFsta(ff-1,a)>(-1)){
+              sumF+=exp(logF(conf.keyLogFsta(ff-1,a),y));
+            }
+          }
+        }
+        pred(i)+=log(sumF);
       break;
   
       default:
