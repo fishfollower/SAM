@@ -5,6 +5,7 @@
 ##' @param trans function to be applied
 ##' @details ...
 tableit <-function (fit, what, x=fit$data$years, trans=function(x)x){
+   if(is.character(fit)) load(file(fit,"r"))
    idx<-names(fit$sdrep$value)==what
    y<-fit$sdrep$value[idx]
    ci<-y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -56,6 +57,7 @@ rectable<-function(fit){
 ##' @details ...
 ##' @export
 catchtable<-function(fit, obs.show=FALSE){
+   if(is.character(fit)) load(file(fit,"r"))
    CW <- fit$data$catchMeanWeight 
    xx <- as.integer(rownames(CW))
    ret <- tableit(fit, x=xx, "logCatch", trans=exp)
@@ -77,6 +79,7 @@ catchtable<-function(fit, obs.show=FALSE){
 ##' @details ...
 ##' @export
 ntable <- function(fit){
+   if(is.character(fit)) load(file(fit,"r"))
    ret <- exp(t(fit$pl$logN))
    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
    rownames(ret) <- fit$data$years
@@ -88,6 +91,7 @@ ntable <- function(fit){
 ##' @details ...
 ##' @export
 faytable <- function(fit){
+   if(is.character(fit)) load(file(fit,"r"))
    idx <- fit$conf$keyLogFsta[1,]+2    
    ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
    ret[,idx==0] <- 0
@@ -101,6 +105,7 @@ faytable <- function(fit){
 ##' @details ...
 ##' @export
 partable <- function(fit){
+  if(is.character(fit)) load(file(fit,"r"))
   param <- coef(fit)
   nam <- names(param)
   dup <- duplicated(nam)
