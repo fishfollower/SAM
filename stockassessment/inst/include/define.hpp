@@ -72,7 +72,7 @@ dataSet(SEXP x) {
     landMeanWeight = asArray<Type>(getListElement(x,"landMeanWeight"));
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
-    propM = asArray<int>(getListElement(x,"sumKey"));
+    sumKey = asArray<int>(getListElement(x,"sumKey"));
   };
 
   dataSet<Type>& operator=(const dataSet<Type>& rhs) {
