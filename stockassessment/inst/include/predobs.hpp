@@ -29,7 +29,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     }    
 
     switch(ft){
-      case 0:
+      case 0:// residual fleets (without effort information)
         pred(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
         if(conf.keyLogFsta(f-1,a)>(-1)){
           pred(i)+=logF(conf.keyLogFsta(f-1,a),y);
@@ -52,7 +52,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         return(0);
       break;
   
-      case 2:
+      case 2:// standard survey 
         pred(i)=logN(a,y)-zz*dat.sampleTimes(f-1);
         if(conf.keyQpow(f-1,a)>(-1)){
           pred(i)*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
@@ -93,7 +93,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         return 0;
       break;
   
-      case 7:
+      case 7:// sum residual fleets 
   	error("Unknown fleet code");
         return 0;
       break;

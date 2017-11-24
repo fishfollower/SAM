@@ -135,7 +135,7 @@ read.ices<-function(filen){
     minA<-head[3]
     maxA<-head[4]
     datatype<-head[5]
-  
+    
     if(!is.whole.positive.number(minY)){
       stop(paste("In file",filen, ": Minimum year is expected to be a positive integer number"))
     }
@@ -230,13 +230,14 @@ read.ices<-function(filen){
 ##' @param prop.m ...
 ##' @param land.frac ...
 ##' @param recapture ...
+##' @param sum.residual.fleets ...
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -245,6 +246,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   name<-NULL  
   dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
   weight<-NULL
+  sumKey<-NULL
   doone<-function(m){
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
@@ -298,6 +300,21 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
       name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
     }
   }
+
+  if(!is.null(sum.residual.fleets)){
+    if(is.data.frame(sum.residual.fleets)|is.matrix(sum.residual.fleets)){
+      doone(sum.residual.fleets)
+      type <- c(type,7)
+      time <- c(time,0)
+      name <- c(name,paste0("Fleet(", paste0(attr(sum.residual.fleets,"sumof"), collapse="+"),")"))
+    }else{
+      dummy<-lapply(sum.residual.fleets,doone)
+      type<-c(type,rep(7,length(sum.residual.fleets)))
+      time<-c(time,rep(0,length(sum.residual.fleets)))
+      name<-c(name,unlist(lapply(sum.residual.fleets,function(x)paste0("Fleet(", paste0(attr(x,"sumof"), collapse="+"),")"))))
+    }
+  }
+    
   if(is.null(land.frac)){
     land.frac<-matrix(1,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) # should be pure 1 
   }
@@ -313,9 +330,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   if(is.null(prop.m)){
     prop.m<-matrix(0,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) 
   }
+    
   dat$aux[which(dat$aux<=0)] <- NA
   dat<-dat[!is.na(dat$year),]
-
+    
   if(!is.null(recapture)){
     tag<-data.frame(year=recapture$ReleaseY)
     fleet.idx <- fleet.idx+1
@@ -330,6 +348,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     time<-c(time,0)
     name<-c(name,"Recaptures")
   }
+
+
+
+
+    
   dat<-dat[complete.cases(dat[,1:3]),]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
@@ -361,6 +384,16 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   attr(dat,'prop.f')<-cutY(prop.f)
   attr(dat,'prop.m')<-cutY(prop.m)
   attr(dat,'land.frac')<-cutY(land.frac)
+  
+  ft <- as.integer(attr(dat,'type'))
+  sumKey <- matrix(0,length(ft),length(ft))
+  if(!is.null(sum.residual.fleets)){
+    fl7 <- which(ft==7)
+    idxone <- do.call(rbind,lapply(1:length(fl7), function(i)cbind(fl7[i],attr(sum.residual.fleets[[i]],"sumof"))))
+    sumKey[idxone] <- 1
+  }
+  attr(dat,'sumKey')<-sumKey
+    
   ret<-list(
     noFleets=length(attr(dat,'type')),
     fleetTypes=as.integer(attr(dat,'type')),
@@ -383,7 +416,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     disMeanWeight=attr(dat,'dis.mean.weight'),
     landMeanWeight=attr(dat,'land.mean.weight'),
     propF=attr(dat,'prop.f'),
-    propM=attr(dat,'prop.m')
+    propM=attr(dat,'prop.m'),
+    sumKey=attr(dat,'sumKey')
   )
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)

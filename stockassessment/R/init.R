@@ -33,7 +33,7 @@ defpar <- function(dat,conf){
   ret$logSdLogTotalObs=numeric(sum(conf$obsLikelihoodFlag %in% c("ALN")))
   ret$transfIRARdist=if(all(is.na(conf$keyCorObs)))numeric(0) else numeric(max(conf$keyCorObs,na.rm=TRUE)+1)+0.05
   nbyfleet = (conf$obsCorStruct=="US")*(dat$maxAgePerFleet-dat$minAgePerFleet+1-(conf$obsLikelihoodFlag=="ALN"))
-  ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2))
+  ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2,na.rm=TRUE))
   ret$rec_loga=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)}
   ret$rec_logb=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)} 
   ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))

@@ -96,12 +96,15 @@ defcon<-function(dat){
   }  
   ret$keyVarObs <- x - 1
   ret$obsCorStruct <- factor(rep("ID",nFleets),levels=c("ID","AR","US"))
+  ret$obsCorStruct[fleetTypes==7] <- NA
   ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=nAges-1)
   colnames(ret$keyCorObs)<-paste(minAge:(maxAge-1),(minAge+1):maxAge,sep="-")
   for(i in 1:nrow(x)){
+    if(fleetTypes[i]!=7){
       if(ages[i,1]<ages[i,2]){
         ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-NA
       }
+    }
   }
     
   ret$stockRecruitmentModelCode <- 0
@@ -117,6 +120,7 @@ defcon<-function(dat){
   ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
   ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
+  ret$obsLikelihoodFlag[fleetTypes==7] <- NA
   ret$fixVarToWeight <- 0
   return(ret) 
 }

@@ -44,6 +44,7 @@ struct dataSet{
   array<Type> landMeanWeight;
   array<Type> propF;
   array<Type> propM;
+  array<int> sumKey;
 
 dataSet() {};
 
@@ -71,6 +72,7 @@ dataSet(SEXP x) {
     landMeanWeight = asArray<Type>(getListElement(x,"landMeanWeight"));
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
+    propM = asArray<int>(getListElement(x,"sumKey"));
   };
 
   dataSet<Type>& operator=(const dataSet<Type>& rhs) {
@@ -97,7 +99,7 @@ dataSet(SEXP x) {
     landMeanWeight = rhs.landMeanWeight;
     propF = rhs.propF;
     propM = rhs.propM;
-    
+    sumKey = rhs.sumKey;    
     return *this;
   };
 };
