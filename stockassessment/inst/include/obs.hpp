@@ -184,7 +184,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
     if(dat.fleetTypes(f)==7){ 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
       matrix<Type> cov(thisdim,thisdim);
-      cov.setIdentity();
+      cov.setIdentity(); // place holder
       //  int Nparts=0
       //  for(int ff=0; ff<dat.noFleets; ++ff){
       //    if(dat.sumKey(f,ff)==1)++Nparts;
