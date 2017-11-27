@@ -102,7 +102,7 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> &predObs, vector<Type> &varLogCatch, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &predObs, vector<Type> &varLogCatch, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0; 
   // setup obs likelihoods
@@ -185,33 +185,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
       matrix<Type> cov(thisdim,thisdim);
       cov.setIdentity(); // place holder
-      //  int Nparts=0
-      //  for(int ff=0; ff<dat.noFleets; ++ff){
-      //    if(dat.sumKey(f,ff)==1)++Nparts;
-      //  }
-      //  matrix<Type> muMat(thisDim,Nparts);
-      //  muMat.setZero();
-      //  matrix<Type> VV(thisDim*Nparts,thisDim*Nparts);
-      //  VV.setZero();
-      //  matrix<Type> G(thisDim*Nparts,thisDim);
-      //  G.setZero();
-      //  
-      //  int element=-1;
-      //  for(int ff=0; ff<dat.noFleets; ++ff){
-      //    if(dat.sumKey(f,ff)==1){
-      //      ++element; 
-      //      for(int aa=dat.minAgePerFleet(ff); aa<=dat.maxAgePerFleet(ff); ++ff){
-      //        //muMat(aa-dat.minAgePerFleet(f),element)=logN(a,y)-log(zz)+log(1-exp(-zz))+logF(conf.keyLogFsta(f-1,a),y)
-      //      }
-      //  	}
-      //  }
-      //  
-      //  for(int ff=0; ff<dat.noFleets; ++ff){
-      //    if(dat.sumKey(f,ff)==1){
-      //      matrix<Type> covPart=nllVec(ff).cov(); // know not correct 
-      //      if(cov.rows()==covPart.rows()) cov+=covPart; // know not correct 
-      //    }
-      //  }
       nllVec(f).setSigma(cov);
       obsCov(f) = cov;
     }
@@ -224,6 +197,53 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
         if(!isNAINT(dat.idx1(f,y))){
           int idxfrom=dat.idx1(f,y);
           int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
+
+          // ----------------if sum fleet need to update covariance matrix
+          if(dat.fleetTypes(f)==7){
+            array<Type> totF=totFFun(conf, logF);             
+            Type zz=0;
+            int thisDim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+            int Nparts=0;
+            int offset=0;
+            for(int ff=0; ff<dat.noFleets; ++ff){
+              if(dat.sumKey(f,ff)==1){++Nparts;}
+            }
+            matrix<Type> muMat(thisDim,Nparts);
+            vector<Type> muSum(thisDim);
+            muMat.setZero();
+            muSum.setZero();
+            matrix<Type> VV(thisDim*Nparts,thisDim*Nparts);
+            VV.setZero();
+            matrix<Type> G(thisDim*Nparts,thisDim); // Gradient 
+            G.setZero();
+            matrix<Type> combiCov(thisDim,thisDim); 
+            combiCov.setZero();
+            int element=-1;
+            for(int ff=0; ff<dat.noFleets; ++ff){
+              if(dat.sumKey(f,ff)==1){
+                ++element; 
+                for(int aa=dat.minAgePerFleet(ff); aa<=dat.maxAgePerFleet(ff); ++aa){
+                  zz = dat.natMor(y,aa-conf.minAge)+totF(aa-conf.minAge,y);
+                  muMat(aa-dat.minAgePerFleet(f),element)=exp(logN(aa-conf.minAge,y)-log(zz)+log(1-exp(-zz))+logF(conf.keyLogFsta(ff,aa-conf.minAge),y));
+                  muSum(aa-dat.minAgePerFleet(f)) += muMat(aa-dat.minAgePerFleet(f),element);
+                }
+                offset=dat.minAgePerFleet(ff)-dat.minAgePerFleet(f);
+                VV.block(thisDim*element+offset,thisDim*element+offset,thisDim-offset,thisDim-offset)=nllVec(ff).cov(); // possibly too simple 
+              }
+            }
+            element=-1;
+            for(int ff=0; ff<dat.noFleets; ++ff){
+              if(dat.sumKey(f,ff)==1){
+                ++element;
+                for(int aa=0; aa<thisDim; ++aa){
+                  G(aa+element*thisDim,aa) = muMat(aa,element)/muSum(aa);
+                } 
+              }
+            }
+            combiCov = G.transpose()*VV*G;
+            nllVec(f).setSigma(combiCov);
+          }
+          // ----------------updating of covariance matrix done
 
           vector<Type> currentVar=nllVec(f).cov().diagonal();
           vector<Type> sqrtW(currentVar.size());

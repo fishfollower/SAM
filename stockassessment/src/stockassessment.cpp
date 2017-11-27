@@ -146,7 +146,7 @@ Type objective_function<Type>::operator() ()
 
   vector<Type> predObs = predObsFun(dataset, confset, paraset, logN, logF, logssb, logfsb, logCatch);
 
-  ans += nllObs(dataset, confset, paraset, predObs, varLogCatch, keep,  this);
+  ans += nllObs(dataset, confset, paraset, logN, logF, predObs, varLogCatch, keep,  this);
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
