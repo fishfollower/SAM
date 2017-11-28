@@ -315,18 +315,95 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     }
   }
     
-  if(is.null(land.frac)){
-    land.frac<-matrix(1,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) # should be pure 1 
+  if(is.null(land.frac)|class(land.frac)=="matrix"){
+    if(is.null(land.frac)){
+      if(class(residual.fleets)=="matrix"){
+        land.frac <- array(1,c(nrow(residual.fleets),ncol(residual.fleets),1),
+                           dimnames=list(rownames(residual.fleets),colnames(residual.fleets),"Residual catch"))
+      } else {
+        land.frac <- array(1,c(nrow(residual.fleets[[1]]),ncol(residual.fleets[[1]]),length(residual.fleets)),
+                           dimnames=list(rownames(residual.fleets),colnames(residual.fleets),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+      }
+    } else {
+      if(is.data.frame(residual.fleets)|is.matrix(residual.fleets)){
+        land.frac <- array(1,c(nrow(residual.fleets),ncol(residual.fleets),1),
+                           dimnames=list(rownames(residual.fleets),colnames(residual.fleets),"Residual catch")) # should be pure 1
+      } else {
+        land.frac<-array(1,c(nrow(residual.fleets[[1]]),ncol(residual.fleets[[1]]),length(residual.fleets)),
+                         dimnames=list(rownames(residual.fleets[[1]]),colnames(residual.fleets[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets)))) # should be pure 1
+      }
+    }
   }
-  if(is.null(dis.mean.weight)){
-    dis.mean.weight<-catch.mean.weight
+  if(is.null(catch.mean.weight)|class(catch.mean.weight)=="matrix"){
+    if(is.null(catch.mean.weight)){
+      stop("specify the catch.mean.weight slot")
+    } else {
+      if((is.data.frame(catch.mean.weight)|is.matrix(catch.mean.weight))&is.matrix(residual.fleets)){
+        catch.mean.weight<-array(catch.mean.weight,c(nrow(catch.mean.weight),ncol(catch.mean.weight),1),
+                                 dimnames=list(rownames(catch.mean.weight),colnames(catch.mean.weight),"Residual catch"))
+      } else {
+        catch.mean.weight<-array(catch.mean.weight,c(nrow(catch.mean.weight),ncol(catch.mean.weight),length(residual.fleets)),
+                                 dimnames=list(rownames(catch.mean.weight),colnames(catch.mean.weight),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+      }
+    }
   }
-  if(is.null(land.mean.weight)){
-    land.mean.weight<-catch.mean.weight
+  if(class(catch.mean.weight) == "list")
+    catch.mean.weight<-array(unlist(catch.mean.weight),c(nrow(catch.mean.weight[[1]]),ncol(catch.mean.weight[[1]]),length(residual.fleets)),
+                             dimnames=list(rownames(catch.mean.weight[[1]]),colnames(catch.mean.weight[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+  if(is.null(dis.mean.weight)|class(dis.mean.weight)=="matrix"){
+    if(is.null(dis.mean.weight)){
+      dis.mean.weight<-catch.mean.weight
+    } else {
+        if((is.data.frame(dis.mean.weight)|is.matrix(dis.mean.weight))&is.matrix(residual.fleets)){
+          dis.mean.weight<-array(dis.mean.weight,c(nrow(dis.mean.weight),ncol(dis.mean.weight),1),
+                                 dimnames=list(rownames(dis.mean.weight),colnames(dis.mean.weight),"Residual catch"))
+        } else {
+          dis.mean.weight<-array(dis.mean.weight,c(nrow(dis.mean.weight),ncol(dis.mean.weight),length(residual.fleets)),
+                                 dimnames=list(rownames(dis.mean.weight),colnames(dis.mean.weight),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+        }
+      }
   }
-  if(is.null(prop.f)){
-    prop.f<-matrix(0,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) 
+  if(class(dis.mean.weight) == "list")
+    dis.mean.weight<-array(unlist(dis.mean.weight),c(nrow(dis.mean.weight[[1]]),ncol(dis.mean.weight[[1]]),length(residual.fleets)),
+                             dimnames=list(rownames(dis.mean.weight[[1]]),colnames(dis.mean.weight[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+  if(is.null(land.mean.weight)|class(land.mean.weight)=="matrix"){
+    if(is.null(land.mean.weight)){
+      land.mean.weight<-catch.mean.weight
+    } else {
+        if((is.data.frame(land.mean.weight)|is.matrix(land.mean.weight))&is.matrix(residual.fleets)){
+          land.mean.weight<-array(land.mean.weight,c(nrow(land.mean.weight),ncol(land.mean.weight),1),
+                                  dimnames=list(rownames(land.mean.weight),colnames(land.mean.weight),"Residual catch"))
+        } else {
+          land.mean.weight<-array(land.mean.weight,c(nrow(land.mean.weight),ncol(land.mean.weight),length(residual.fleets)),
+                                  dimnames=list(rownames(dis.mean.weight),colnames(dis.mean.weight),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+        }
+      }
   }
+  if(class(land.mean.weight) == "list")
+    land.mean.weight<-array(unlist(land.mean.weight),c(nrow(land.mean.weight[[1]]),ncol(land.mean.weight[[1]]),length(residual.fleets)),
+                            dimnames=list(rownames(land.mean.weight[[1]]),colnames(land.mean.weight[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+  if(is.null(prop.f)|class(prop.f)=="matrix"){
+    if(is.null(prop.f)){
+      if(class(residual.fleets)=="matrix"){
+        prop.f <- array(0,c(nrow(residual.fleets),ncol(residual.fleets),1),
+                       dimnames=list(rownames(residual.fleets),colnames(residual.fleets),"Residual catch"))
+      } else {
+        prop.f <- array(0,c(nrow(residual.fleets[[1]]),ncol(residual.fleets[[1]]),length(residual.fleets)),
+                       dimnames=list(rownames(residual.fleets),colnames(residual.fleets),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+      }
+    } else {
+      if((is.data.frame(prop.f)|is.matrix(prop.f))&is.matrix(residual.fleets)){
+        prop.f <- array(prop.f,c(nrow(prop.f),ncol(prop.f),1),
+                       dimnames=list(rownames(residual.fleets),colnames(residual.fleets),"Residual catch"))
+      } else {
+        prop.f <- array(prop.f,c(nrow(prop.f),ncol(prop.f),length(residual.fleets)),
+                       dimnames=list(rownames(residual.fleets[[1]]),colnames(residual.fleets[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+      }
+    }
+  }
+  if(class(prop.f) == "list")
+    prop.f<-array(unlist(prop.f),c(nrow(prop.f[[1]]),ncol(prop.f[[1]]),length(residual.fleets)),
+                            dimnames=list(rownames(prop.f[[1]]),colnames(prop.f[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
   if(is.null(prop.m)){
     prop.m<-matrix(0,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) 
   }
@@ -375,16 +452,17 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
+  cutYA<- function(x)x[dimnames(x)[[1]]%in%newyear,,,drop=F]
   attr(dat,'prop.mature')<-cutY(prop.mature)
   attr(dat,'stock.mean.weight')<-cutY(stock.mean.weight)
-  attr(dat,'catch.mean.weight')<-cutY(catch.mean.weight)
-  attr(dat,'dis.mean.weight')<-cutY(dis.mean.weight)
-  attr(dat,'land.mean.weight')<-cutY(land.mean.weight)
+  attr(dat,'catch.mean.weight')<-cutYA(catch.mean.weight)
+  attr(dat,'dis.mean.weight')<-cutYA(dis.mean.weight)
+  attr(dat,'land.mean.weight')<-cutYA(land.mean.weight)
   attr(dat,'natural.mortality')<-cutY(natural.mortality)
-  attr(dat,'prop.f')<-cutY(prop.f)
+  attr(dat,'prop.f')<-cutYA(prop.f)
   attr(dat,'prop.m')<-cutY(prop.m)
-  attr(dat,'land.frac')<-cutY(land.frac)
-  
+
+  attr(dat,'land.frac')<-cutYA(land.frac)  
   ft <- as.integer(attr(dat,'type'))
   sumKey <- matrix(0,length(ft),length(ft))
   if(!is.null(sum.residual.fleets)){
@@ -397,7 +475,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     sumKey[idxone] <- 1
   }
   attr(dat,'sumKey')<-sumKey
-    
+
   ret<-list(
     noFleets=length(attr(dat,'type')),
     fleetTypes=as.integer(attr(dat,'type')),

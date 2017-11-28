@@ -10,9 +10,9 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
       predN(0)=logN(0,i-1);
     }else{
       if((i-conf.minAge)>=0){
-        thisSSB=ssbi(dat,conf,logN,totF,i-conf.minAge);
+        thisSSB=ssbi(dat,conf,logN,totF,i-conf.minAge,logF);
       }else{
-        thisSSB=ssbi(dat,conf,logN,totF,0); // use first in beginning       
+        thisSSB=ssbi(dat,conf,logN,totF,0,logF); // use first in beginning       
       } 
       if(conf.stockRecruitmentModelCode==1){//ricker
         predN(0)=par.rec_loga(0)+log(thisSSB)-exp(par.rec_logb(0))*thisSSB;

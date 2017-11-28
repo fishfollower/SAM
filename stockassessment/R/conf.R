@@ -112,7 +112,7 @@ defcon<-function(dat){
   ret$keyScaledYears <- numeric(0)
   ret$keyParScaledYA <- array(0,c(0,0))
 
-  cs <- colSums(dat$catchMeanWeight)
+  cs <- colSums(apply(dat$catchMeanWeight,1:2,median,na.rm=T))
   ii <- which(dat$fleetTypes==0)
   tc <- tapply(dat$logobs[dat$aux[,2]%in%ii], INDEX=dat$aux[,3][dat$aux[,2]%in%ii], function(x)sum(x,na.rm=TRUE))
   tc <- tc*cs[names(cs)%in%names(tc)]
