@@ -397,7 +397,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                        dimnames=list(rownames(stock.mean.weight),colnames(stock.mean.weight),"Residual catch"))
       } else {
         prop.f <- array(prop.f,c(nrow(prop.f),ncol(prop.f),length(residual.fleets)),
-                       dimnames=list(rownames(residual.fleets[[1]]),colnames(residual.fleets[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+                       dimnames=list(rownames(stock.mean.weight),colnames(stock.mean.weight),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
       }
     }
   }
