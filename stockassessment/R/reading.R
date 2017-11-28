@@ -368,16 +368,16 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   if(is.null(prop.f)|class(prop.f)=="matrix"){
     if(is.null(prop.f)){
       if(class(residual.fleets)=="matrix"){
-        prop.f <- array(0,c(nrow(residual.fleets),ncol(residual.fleets),1),
-                       dimnames=list(rownames(residual.fleets),colnames(residual.fleets),"Residual catch"))
+        prop.f <- array(0,c(nrow(stock.mean.weight),ncol(stock.mean.weight),1),
+                       dimnames=list(rownames(stock.mean.weight),colnames(stock.mean.weight),"Residual catch"))
       } else {
-        prop.f <- array(0,c(nrow(residual.fleets[[1]]),ncol(residual.fleets[[1]]),length(residual.fleets)),
-                       dimnames=list(rownames(residual.fleets),colnames(residual.fleets),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
+        prop.f <- array(0,c(nrow(stock.mean.weight),ncol(stock.mean.weight),length(residual.fleets)),
+                       dimnames=list(rownames(stock.mean.weight),colnames(stock.mean.weight),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
       }
     } else {
       if((is.data.frame(prop.f)|is.matrix(prop.f))&is.matrix(residual.fleets)){
         prop.f <- array(prop.f,c(nrow(prop.f),ncol(prop.f),1),
-                       dimnames=list(rownames(residual.fleets),colnames(residual.fleets),"Residual catch"))
+                       dimnames=list(rownames(stock.mean.weight),colnames(stock.mean.weight),"Residual catch"))
       } else {
         prop.f <- array(prop.f,c(nrow(prop.f),ncol(prop.f),length(residual.fleets)),
                        dimnames=list(rownames(residual.fleets[[1]]),colnames(residual.fleets[[1]]),paste0("Fleet w.o. effort ", 1:length(residual.fleets))))
