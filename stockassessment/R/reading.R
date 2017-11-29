@@ -381,3 +381,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)
 }
+
+
+##' Read a fitted model from stockassessment.org   
+##' @param stockname The sort-form name of a stock on stockassessment.org. This will (currently?) not for stock defined via the AD Model builder version of SAM.
+##' @details ...
+##' @export
+fitfromweb <- function(stockname){
+  fit<-NULL
+  load(url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData")))
+  fit
+}
