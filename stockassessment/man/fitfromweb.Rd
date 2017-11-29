@@ -7,7 +7,7 @@
 fitfromweb(stockname)
 }
 \arguments{
-\item{stockname}{The sort-form name of a stock on stockassessment.org. This will (currently?) not for stock defined via the AD Model builder version of SAM.}
+\item{stockname}{The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.}
 }
 \description{
 Read a fitted model from stockassessment.org

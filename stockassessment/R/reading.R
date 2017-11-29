@@ -384,7 +384,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
 
 
 ##' Read a fitted model from stockassessment.org   
-##' @param stockname The sort-form name of a stock on stockassessment.org. This will (currently?) not for stock defined via the AD Model builder version of SAM.
+##' @param stockname The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.
 ##' @details ...
 ##' @export
 fitfromweb <- function(stockname){

@@ -17,7 +17,7 @@ fitfromweb(stockname)
 
 Argument      |Description
 ------------- |----------------
-```stockname```     |     The sort-form name of a stock on stockassessment.org. This will (currently?) not for stock defined via the AD Model builder version of SAM.
+```stockname```     |     The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.
 
 ## Details
 
