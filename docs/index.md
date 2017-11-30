@@ -25,6 +25,7 @@ Help Pages
 | [faytable](faytable.md)                                 | F-at-age table                                                                          |
 | [fbarplot](fbarplot.md)                                 | SAM Fbar plot                                                                           |
 | [fbartable](fbartable.md)                               | Fbar table                                                                              |
+| [fitfromweb](fitfromweb.md)                             | Read a fitted model from stockassessment.org                                            |
 | [fitplot](fitplot.md)                                   | Plots fit to data                                                                       |
 | [forecast](forecast.md)                                 | forecast function to do shortterm                                                       |
 | [getLowerBounds](getLowerBounds.md)                     | Bounds                                                                                  |
