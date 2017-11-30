@@ -90,7 +90,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, ...){
 ##' @param ncores the number of cores to attemp to use
 ##' @param ... extra arguments to \code{\link{sam.fit}}
 ##' @details ...
-##' @importFrom parallel detectCores makeCluster clusterEvalQ parLapply stopCluster
+##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster
 ##' @export
 retro <- function(fit, year=NULL, ncores=detectCores(), ...){
   data <- fit$data
@@ -113,8 +113,8 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
 
   setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)cbind(mat[i,ff]:maxy[ff], ff))))
   cl <- makeCluster(ncores) #set up nodes
-  clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
-  runs <- parLapply(cl, setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...))
+  clusterExport(cl, varlist="fit")
+  runs <- parLapply(cl, setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
   stopCluster(cl) #shut it down
   attr(runs, "fit") <- fit
   class(runs)<-"samset"
@@ -127,13 +127,12 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
 ##' @param ncores the number of cores to attemp to use
 ##' @param ... extra arguments to \code{\link{sam.fit}}
 ##' @details ...
-##' @importFrom parallel detectCores makeCluster clusterEvalQ parLapply stopCluster
+##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster 
 ##' @export
 leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores(), ...){
-#  runs <- mclapply(fleet, function(f)runwithout(fit, fleet=f, ...), mc.cores=ncores, mc.silent=mc.silent)
   cl <- makeCluster(ncores) #set up nodes
-  clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
-  runs <- parLapply(cl, fleet, function(f)runwithout(fit, fleet=f, ...))
+  clusterExport(cl, varlist="fit")
+  runs <- parLapply(cl, fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
   stopCluster(cl) #shut it down
   names(runs) <- paste0("w.o. ", lapply(fleet, function(x)paste(attr(fit$data,"fleetNames")[x], collapse=" and ")))
   attr(runs, "fit") <- fit
