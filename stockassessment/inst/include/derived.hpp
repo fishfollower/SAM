@@ -31,8 +31,6 @@ Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &tot
         Z(j) += exp(logF(conf.keyLogFsta(f,j),i))*dat.propF(i,j,f);
       }
     }
-  }
-  for(int j=0; j<stateDimN; ++j){
     ssb+=exp(logN(j,i))*exp(-Z(j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
   }
   return ssb;
