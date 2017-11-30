@@ -20,17 +20,20 @@ array<Type> totFFun(confSet &conf, array<Type> &logF){
 template <class Type>
 Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &totF, int i, array<Type> &logF){
   int stateDimN=logN.dim[0];
-  Type ssb=0;
-  //for(int j=0; j<stateDimN; ++j){
-  //  ssb+=exp(logN(j,i))*exp(-totF(j,i)*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
-  //}
   int noFleets=conf.keyLogFsta.dim[0];
-  for(int f=0; f<noFleets;f++){
-	for(int j=0; j<stateDimN; ++j){	
-	  if(conf.keyLogFsta(f,j)>(-1)){
-	  	ssb+=exp(logN(j,i))*exp(-exp(logF(conf.keyLogFsta(f,j),i))*dat.propF(i,j,f)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
-	  }
-	}
+  Type ssb=0;
+  vector<Type> Z(stateDimN);
+  Z.setZero();
+  for(int j=0; j<stateDimN; ++j){
+    Z(j) += dat.natMor(i,j)*dat.propM(i,j);
+    for(int f=0; f<noFleets;f++){
+      if(conf.keyLogFsta(f,j)>(-1)){
+        Z(j) += exp(logF(conf.keyLogFsta(f,j),i))*dat.propF(i,j,f);
+      }
+    }
+  }
+  for(int j=0; j<stateDimN; ++j){
+    ssb+=exp(logN(j,i))*exp(-Z(j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
   }
   return ssb;
 }
