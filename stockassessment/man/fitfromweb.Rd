@@ -4,10 +4,12 @@
 \alias{fitfromweb}
 \title{Read a fitted model from stockassessment.org}
 \usage{
-fitfromweb(stockname)
+fitfromweb(stockname, character.only = FALSE)
 }
 \arguments{
 \item{stockname}{The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.}
+
+\item{character.only}{a logical indicating whether 'stockname' can be assumed to be a character string}
 }
 \description{
 Read a fitted model from stockassessment.org
