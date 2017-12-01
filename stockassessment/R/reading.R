@@ -374,10 +374,6 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     name<-c(name,"Recaptures")
   }
 
-
-
-
-    
   dat<-dat[complete.cases(dat[,1:3]),]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
@@ -452,7 +448,6 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)
 }
-
 
 ##' Read a fitted model from stockassessment.org   
 ##' @param stockname The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.
