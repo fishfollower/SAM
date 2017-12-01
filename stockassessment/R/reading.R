@@ -508,10 +508,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
 
 ##' Read a fitted model from stockassessment.org   
 ##' @param stockname The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.
+##' @param character.only a logical indicating whether 'stockname' can be assumed to be a character string
 ##' @details ...
 ##' @export
-fitfromweb <- function(stockname){
-  fit<-NULL
+fitfromweb <- function(stockname, character.only=FALSE){
+  if (!character.only) stockname <- as.character(substitute(stockname))
+  fit<-NA
   load(url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData")))
   fit
 }
