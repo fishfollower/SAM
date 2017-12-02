@@ -27,7 +27,6 @@ testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 
 all:
 	make install
-	make pdf
 
 doc-update: $(PACKAGE)/R/*.R
 	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\")" | $(R) --slave
@@ -53,6 +52,7 @@ $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
 	$(R) CMD build --resave-data=no $(PACKAGE)
 	rm $(PACKAGE)/DESCRIPTION  
 	mv old-description $(PACKAGE)/DESCRIPTION  
+	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 
 install: $(TARBALL)
 	$(R) CMD INSTALL --preclean --html $<

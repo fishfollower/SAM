@@ -416,17 +416,10 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
   if(is.null(drop)){
     drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
   }
-  CW <- fitlocal$data$catchMeanWeight
-  x <- as.numeric(rownames(CW))
   plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
   if(obs.show){
-    aux <- fitlocal$data$aux
-    logobs <- fitlocal$data$logobs
-    .goget <- function(y,a){
-        ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
-        ifelse(length(ret)==0,0,ret)
-    }
-    points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
+    ct <- catchtable(fitlocal, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
   }
   addforecast(fit, "catch")
 }

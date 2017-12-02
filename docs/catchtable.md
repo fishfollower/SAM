@@ -17,7 +17,7 @@ catchtable(fit, obs.show = FALSE)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
+```fit```     |     object returned from sam.fit
 ```obs.show```     |     logical add a column with catch sum of product rowsums(C*W)
 
 ## Details

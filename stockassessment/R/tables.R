@@ -51,23 +51,29 @@ rectable<-function(fit){
 }
 
 ##' Catch table 
-##' @param  fit ...
+##' @param  fit object returned from sam.fit
 ##' @param obs.show logical add a column with catch sum of product rowsums(C*W)
 ##' @details ...
 ##' @export
 catchtable<-function(fit, obs.show=FALSE){
-   CW <- fit$data$catchMeanWeight 
-   xx <- as.integer(rownames(CW))
-   ret <- tableit(fit, x=xx, "logCatch", trans=exp)
+   CW <- fit$data$catchMeanWeight
+   if(length(dim(CW))==2)CW<-array(CW,dim=c(dim(CW),1))
+   nf <- dim(CW)[3]
+   yy <- as.integer(rownames(CW[,,1]))
+   aa <- as.integer(colnames(CW[,,1]))
+   ret <- tableit(fit, x=yy, "logCatch", trans=exp)
+   idx <- fit$data$fleetTypes[fit$data$aux[,'fleet']]%in%c(0)
+   o <- exp(fit$data$logobs[idx])
+   f <- fit$data$aux[idx,"fleet"]
+   a <- match(fit$data$aux[idx,"age"],aa)
+   y <- match(fit$data$aux[idx,"year"],yy)
+   w <- CW[cbind(y,a,f)]
+   cw <- o*w
+   sop <- tapply(cw, INDEX=y, FUN=sum)
    if(obs.show){
-     aux <- fit$data$aux
-     logobs <- fit$data$logobs
-     .goget <- function(y,a){
-       ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
-       ifelse(length(ret)==0,0,ret)
-      }
-      sop<-rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE)
-      ret<-cbind(ret,sop.catch=sop)
+      sop.catch <- rep(NA, nrow(ret))
+      sop.catch[as.integer(names(sop))] <- sop
+      ret<-cbind(ret,sop.catch=sop.catch)
    }
    return(ret)
 }
