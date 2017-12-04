@@ -425,6 +425,32 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
 }
 
 
+##' SAM catchbyfleet plot 
+##' @param fit the object returned from sam.fit
+##' @param obs.show if observations are to be shown also
+##' @param ... extra arguments transferred to plot
+##' @details Plot of estimated (and optionally observed) total catch in weight  
+##' @importFrom graphics points
+##' @export
+catchbyfleetplot<-function(fit, obs.show=FALSE, ...){
+  colSet = c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")
+  ciColSet = paste0(colSet,"80")
+  nf <- sum(fit$data$fleetTypes==0)
+  ct <- catchbyfleettable(fit,obs.show=TRUE)
+  x <- as.integer(rownames(ct))
+  matplot(rownames(ct), ct[,1:nf], type="l", lty="solid", lwd=3, ylab="Catch", xlab="Year", col=colSet[1:nf], ylim=range(ct, na.rm=TRUE))
+  for(f in 1:nf){  
+    polygon(c(x,rev(x)), y = c(ct[,nf+f],rev(ct[,2*nf+f])), border = gray(.5,alpha=.5), col = ciColSet[f])
+  }
+  if(obs.show){
+    matplot(rownames(ct), ct[,1:nf+3*nf], cex=1.2, pch=4, lwd=2, add=TRUE, col=colSet[1:nf])
+ }
+ legend("topright", legend=sub("Catch", "", colnames(ct[,1:nf])), col=colSet[1:nf], lty="solid", lwd=3)
+}
+
+
+
+
 ##' SAM parameter plot 
 ##' @param fit the object returned from sam.fit
 ##' @param cor.report.limit correlations with absolute value > this number is reported in the plot 
