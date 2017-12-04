@@ -31,7 +31,7 @@ buildFromGithub <- function(repo,
 ############################################
 #### Get reverse dependencies from CRAN ####
 ############################################
-options(repos = c(CRAN = 'https://cran.r-project.org/'))   
+options(repos = c(CRAN = 'https://cloud.r-project.org/'))
 dbUrl <- utils::available.packages(utils::contrib.url(options("repos")))
 cranPkg <- unlist(tools::package_dependencies("stockassessment",
                                               db = dbUrl,
@@ -73,12 +73,17 @@ tools::check_packages_in_dir("./","--as-cran --no-build-vignettes --no-vignettes
 
 checkOutput <- capture.output(tools::summarize_check_packages_in_dir_results("./"))
 
+packageResult <- checkOutput[(1:length(checkOutput)) > which(grepl("^Check results summary",checkOutput)) & !grepl("^\\*",checkOutput)]
+
+
+                               
 if(length(grep("(WARN|ERROR)",checkOutput)) > 0){
+    packagesNotOK <- unlist(lapply(strsplit(packageResult[grep("(WARN|ERROR)",packageResult)]," ... "),head,n=1))
     checkRes <- "NOT_OK"
 }else{
+    packagesNotOK <- c()
     checkRes <- "OK"
 }
-    
 
 
 
@@ -87,7 +92,7 @@ if(length(grep("(WARN|ERROR)",checkOutput)) > 0){
 ###############
 
 lf <- list.files(".",recursive=TRUE,include.dirs=TRUE)
-wanted <- grepl("^(script.R|res.EXP)$",lf)
+wanted <- grepl(paste0("(",paste(c("^script.R","^res.EXP",unlist(sapply(packagesNotOK,function(x)sprintf("^%s.Rcheck",x)))),collapse="|"),")"),lf)
 file.remove(rev(lf[!wanted]), recursive = TRUE)
         
 
