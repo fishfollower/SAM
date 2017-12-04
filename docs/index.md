@@ -13,6 +13,8 @@ Help Pages
 |---------------------------------------------------------|-----------------------------------------------------------------------------------------|
 | [addforecast](addforecast.md)                           | SAM add forecasts                                                                       |
 | [c.sam](c.sam.md)                                       | Collect sam objects                                                                     |
+| [catchbyfleetplot](catchbyfleetplot.md)                 | SAM catchbyfleet plot                                                                   |
+| [catchbyfleettable](catchbyfleettable.md)               | CatchByFleet table                                                                      |
 | [catchplot](catchplot.md)                               | SAM catch plot                                                                          |
 | [catchtable](catchtable.md)                             | Catch table                                                                             |
 | [clean.void.catches](clean.void.catches.md)             | remove void catches                                                                     |
