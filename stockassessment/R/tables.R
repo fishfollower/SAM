@@ -69,7 +69,7 @@ catchtable<-function(fit, obs.show=FALSE){
    y <- match(fit$data$aux[idx,"year"],yy)
    w <- CW[cbind(y,a,f)]
    cw <- o*w
-   sop <- tapply(cw, INDEX=y, FUN=sum)
+   sop <- tapply(cw, INDEX=y, FUN=sum, na.rm=TRUE)
    if(obs.show){
       sop.catch <- rep(NA, nrow(ret))
       sop.catch[as.integer(names(sop))] <- sop
