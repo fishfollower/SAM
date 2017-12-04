@@ -130,6 +130,14 @@ Type objective_function<Type>::operator() ()
   vector<Type> cat = catchFun(dataset, confset, logN, logF);
   vector<Type> logCatch = log(cat);
 
+  array<Type> catchByFleet = catchByFleetFun(dataset, confset, logN, logF);
+  array<Type> logCatchByFleet(dataset.catchMeanWeight.dim(0), confset.keyLogFsta.dim[0]);
+  for(int i=0; i<logCatchByFleet.dim(0); ++i){
+    for(int j=0; j<logCatchByFleet.dim(1); ++j){
+      logCatchByFleet(i,j)=log(catchByFleet(i,j));
+    }
+  }
+
   vector<Type> varLogCatch = varLogCatchFun(dataset, confset, logN, logF, paraset);
 
   vector<Type> fsb = fsbFun(dataset, confset, logN, logF);
@@ -165,6 +173,7 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logssb);
   ADREPORT(logfbar);
   ADREPORT(logCatch);
+  ADREPORT(logCatchByFleet);
   ADREPORT(logtsb);
   ADREPORT(logR);
 

@@ -70,6 +70,27 @@ vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, arra
 }
 
 template <class Type>
+array<Type> catchByFleetFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+  int len=dat.catchMeanWeight.dim(0);
+  int noFleets=conf.keyLogFsta.dim[0];
+  array<Type> totF=totFFun(conf, logF);
+  array<Type> cat(len,noFleets);
+  cat.setZero();
+  for(int y=0;y<len;y++){
+    for(int a=conf.minAge;a<=conf.maxAge;a++){  
+      Type z=dat.natMor(y,a-conf.minAge);
+      z+=totF(a-conf.minAge,y);
+      for(int f=0; f<noFleets;f++){
+        if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+          cat(y,f)+=exp(logF(conf.keyLogFsta(f,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge,f);
+        }
+      }
+    }
+  }
+  return cat;
+}
+
+template <class Type>
 vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, paraSet<Type> par){
   int len=dat.catchMeanWeight.dim(0);
   int noFleets=conf.keyLogFsta.dim[0];
