@@ -78,6 +78,47 @@ catchtable<-function(fit, obs.show=FALSE){
    return(ret)
 }
 
+##' CatchByFleet table 
+##' @param  fit object returned from sam.fit
+##' @param obs.show logical add a column with catch sum of product rowsums(C*W)
+##' @details ...
+##' @export
+catchbyfleettable<-function(fit, obs.show=FALSE){
+   CW <- fit$data$catchMeanWeight
+   if(length(dim(CW))==2)CW<-array(CW,dim=c(dim(CW),1))
+   nf <- dim(CW)[3]
+   yy <- as.integer(rownames(CW[,,1]))
+   aa <- as.integer(colnames(CW[,,1]))
+   ret <- tableit(fit, x=rep(yy, fit$data$noFleets), "logCatchByFleet", trans=exp)
+   ret <- cbind(ret, fleet=rep(1:fit$data$noFleets, each=length(yy)))
+   allzero<-which(tapply(ret[,"Estimate"], INDEX=ret[,"fleet"], FUN=sum)==0)
+   ret<-ret[!ret[,"fleet"]%in%allzero,]
+   idx <- fit$data$fleetTypes[fit$data$aux[,'fleet']]%in%c(0)  
+   o <- exp(fit$data$logobs[idx])
+   f <- fit$data$aux[idx,"fleet"]
+   a <- match(fit$data$aux[idx,"age"],aa)
+   y <- match(fit$data$aux[idx,"year"],yy)
+   w <- CW[cbind(y,a,f)]
+   cw <- o*w
+   fnam <- attr(fit$data, "fleetNames")[unique(f)]
+   est <- matrix(ret[,"Estimate"], ncol=nf)
+   colnames(est)<-paste0("Catch(",fnam,")")
+   low <- matrix(ret[,"Low"], ncol=nf)
+   colnames(low)<-paste0("Low(",fnam,")")
+   hig <- matrix(ret[,"High"], ncol=nf)
+   colnames(hig)<-paste0("High(",fnam,")")
+   sop <- xtabs(cw~y+f)
+   ret <- cbind(est,low,hig)
+   rownames(ret)<-yy
+   if(obs.show){
+      sop.catch <- matrix(NA, nrow=nrow(est), ncol=ncol(est))
+      sop.catch[as.integer(rownames(sop)),] <- sop
+      colnames(sop.catch)<-paste0("Obs(",fnam,")")
+      ret<-cbind(ret,sop.catch=sop.catch)
+   }
+   return(ret)
+}
+
 ##' N table 
 ##' @param  fit ... 
 ##' @details ...
