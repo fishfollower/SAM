@@ -113,7 +113,7 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
 
   setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)cbind(mat[i,ff]:maxy[ff], ff))))
   cl <- makeCluster(ncores) #set up nodes
-  clusterExport(cl, varlist="fit")
+  clusterExport(cl, varlist="fit", envir=environment())
   runs <- parLapply(cl, setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
   stopCluster(cl) #shut it down
   attr(runs, "fit") <- fit
@@ -131,7 +131,7 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
 ##' @export
 leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores(), ...){
   cl <- makeCluster(ncores) #set up nodes
-  clusterExport(cl, varlist="fit")
+  clusterExport(cl, varlist="fit", envir=environment())
   runs <- parLapply(cl, fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
   stopCluster(cl) #shut it down
   names(runs) <- paste0("w.o. ", lapply(fleet, function(x)paste(attr(fit$data,"fleetNames")[x], collapse=" and ")))
