@@ -17,7 +17,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   // Calculate predicted observations
   int f, ft, a, y, yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=dat.aux(0,0);
-  Type zz=Type(0);
+  Type zz;
   Type sumF=Type(0); 
   for(int i=0;i<dat.nobs;i++){
     y=dat.aux(i,0)-minYear;
@@ -25,7 +25,8 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     ft=dat.fleetTypes(f-1);
     a=dat.aux(i,2)-conf.minAge;
     if(ft==3){a=0;}
-    if(ft<3){ 
+    zz=0;
+    if(ft<3 || ft==7){ 
       zz = dat.natMor(y,a)+totF(a,y);
     }    
 
