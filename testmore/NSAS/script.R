@@ -69,27 +69,29 @@ sumABCD<-cn[idx,]
 attr(sumABCD, "sumof")<-c(1,2,3,4)
 
 # temp fix to convergence problems 
-cnA[cnA==0]<-1
-cnB[cnB==0]<-1
-cnC[cnC==0]<-1
-cnD[cnD==0]<-1
-sumABCD[sumABCD==0] <- 1
+#cnA[cnA==0]<-1
+#cnB[cnB==0]<-1
+#cnC[cnC==0]<-1
+#cnD[cnD==0]<-1
+#sumABCD[sumABCD==0] <- 1
 
-cwAF[which(cwAF==0)] <- 0.01
-cwBF[which(cwBF==0)] <- 0.01
-cwCF[which(cwCF==0)] <- 0.01
-cwDF[which(cwDF==0)] <- 0.01
+#cwAF[which(cwAF==0)] <- 0.01
+#cwBF[which(cwBF==0)] <- 0.01
+#cwCF[which(cwCF==0)] <- 0.01
+#cwDF[which(cwDF==0)] <- 0.01
 
 surveys[[1]] <- surveys[[1]][,-ncol(surveys[[1]])]; attr(surveys[[1]],"time") <- c(0.54,0.56)
 surveys[[2]] <- surveys[[2]][-nrow(surveys[[2]]),1:2]; attr(surveys[[2]],"time") <- c(0.08,0.17)
 surveys[[3]] <- matrix(surveys[[3]][-nrow(surveys[[3]]),],ncol=1,dimnames=list(1992:2016,0)); attr(surveys[[3]],"time") <- c(0.08,0.17)
 
 iSY         <- 1
+cutsum<-sumABCD[iSY:50,]
+attr(cutsum, "sumof")<-c(1,2,3,4)
 dat<-setup.sam.data(surveys=surveys[1:3],
                     #residual.fleets=list(cn), # Notice list
                     #residual.fleets=list(cnAFS, cnBFS, cnCFS, cnDFS), # Notice list
                     residual.fleets=list(cnA, cnB, cnC, cnD), # Notice list
-                    sum.residual.fleets=sumABCD[iSY:50,],
+                    sum.residual.fleets=cutsum,
                     prop.mature=mo[iSY:70,],
                     stock.mean.weight=sw[iSY:70,],
                     catch.mean.weight=cw[iSY:70,],#list(cwAF,cwBF,cwCF,cwDF),
@@ -99,40 +101,23 @@ dat<-setup.sam.data(surveys=surveys[1:3],
                     prop.m=pm[iSY:70,],
                     natural.mortality=nm[iSY:70,],
                     land.frac=lf[iSY:70,])
-conf<-defcon(dat)
-# Potential improvements to get the model to fit
-conf$keyLogFsta[1,] <- c(0:5,6,6,6)
-conf$keyLogFsta[2,] <- c(8,9,10,rep(11,6))-1
-conf$keyLogFsta[3,] <- c(12,13,14,15,16,rep(17,4))-1
-conf$keyLogFsta[4,] <- c(18,19,20,rep(21,6))-1
+#conf<-defcon(dat)
+#conf$fbarRange   <- c(2,6)
+#conf$corFlag<-c(0,0,0,0)
+#saveConf(conf, "model.cfg")
 
-conf$keyVarObs[1,] <- c(rep(0,4),rep(1,5))
-conf$keyVarObs[2,] <- c(rep(2,4),rep(3,5))
-conf$keyVarObs[3,] <- c(rep(4,4),rep(5,5))
-conf$keyVarObs[4,] <- c(rep(6,4),rep(7,5))
-conf$keyVarObs[5,-1] <- conf$keyVarObs[5,-1]+4
-conf$keyVarObs[6,2:3] <- conf$keyVarObs[6,2:3]+4
-conf$keyVarObs[7,1] <- conf$keyVarObs[7,1]+4
-
-conf$keyVarF[1,] <- c(rep(0,4),rep(1,5))
-conf$keyVarF[2,] <- c(rep(2,3),rep(3,6))
-conf$keyVarF[3,] <- c(rep(4,3),rep(5,6))
-conf$keyVarF[4,] <- c(rep(6,3),rep(7,6))
-
-conf$corFlag <- c(2,0,0,0)
-
-#
-conf$fbarRange   <- c(2,6)
+conf<-loadConf(dat,"model.cfg")
 par<-defpar(dat,conf)
+par$logFpar[]<-0
 fit<-sam.fit(dat,conf,par)
 
-save(fit,file="./truesplit.RData")
-save(fit,file="./nosplit.RData")
-save(fit,file="./fakesplit.RData")
+#save(fit,file="./truesplit.RData")
+#save(fit,file="./nosplit.RData")
+#save(fit,file="./fakesplit.RData")
 
-catchplot(fit)
-ssbplot(fit)
-fbarplot(fit)
+#catchplot(fit)
+#ssbplot(fit)
+#fbarplot(fit)
 
-cat(fit$opt$objective,"\n\n", file="res.out")
-cat(capture.output(prmatrix(t(fit$pl$logF))), sep="\n", file="res.out", append=TRUE)
+#cat(fit$opt$objective,"\n\n", file="res.out")
+#cat(capture.output(prmatrix(t(fit$pl$logF))), sep="\n", file="res.out", append=TRUE)

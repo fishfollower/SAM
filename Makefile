@@ -147,8 +147,8 @@ webtestone:
 	@mv $(ARG)/run/model.RData $(ARG); 
 	@touch $(ARG)/data/*
 	@$(MAKE) -s -C $(ARG) model
-	@echo "load('$(ARG)/model.RData'); old<-fit[c('pl','sdrep')]; \
-	       load('$(ARG)/run/model.RData'); new<-fit[c('pl','sdrep')];\
+	@echo "load('$(ARG)/model.RData'); old<-fit[c('pl')]; \
+	       load('$(ARG)/run/model.RData'); new<-fit[c('pl')];\
 	       test <- all.equal(old,new,check.attributes=FALSE);\
 	       cat('$(ARG)...',ifelse(test==TRUE,'OK',paste('FAIL:',test)),'\n')"   | R --slave
 	@touch $(ARG)/OK
