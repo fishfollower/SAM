@@ -205,6 +205,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
             int thisDim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
             int Nparts=0;
             int offset=0;
+            int setoff=0;
             for(int ff=0; ff<dat.noFleets; ++ff){
               if(dat.sumKey(f,ff)==1){++Nparts;}
             }
@@ -228,7 +229,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                   muSum(aa-dat.minAgePerFleet(f)) += muMat(aa-dat.minAgePerFleet(f),element);
                 }
                 offset=dat.minAgePerFleet(ff)-dat.minAgePerFleet(f);
-                VV.block(thisDim*element+offset,thisDim*element+offset,thisDim-offset,thisDim-offset)=nllVec(ff).cov(); // possibly too simple 
+                setoff=dat.maxAgePerFleet(f)-dat.maxAgePerFleet(ff);
+                VV.block(thisDim*element+offset,thisDim*element+offset,thisDim-offset-setoff,thisDim-offset-setoff)=nllVec(ff).cov(); // possibly too simple 
               }
             }
             element=-1;
@@ -240,6 +242,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 } 
               }
             }
+            REPORT_F(VV,of);
             combiCov = G.transpose()*VV*G;
             nllVec(f).setSigma(combiCov);
           }
