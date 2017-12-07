@@ -1,4 +1,3 @@
-
 ##' Download and build an R package from GitHub
 ##'
 ##' @param repo GitHub user and repository separated by /
@@ -24,9 +23,8 @@ buildFromGithub <- function(repo,
     a <- utils::unzip(fil,exdir = topdir)
     descriptionPath <- a[grepl(paste0(subdir,"/DESCRIPTION"),a)]
     pkgPath <- gsub("/DESCRIPTION","",descriptionPath)
-    tools::Rcmd(c("build",pkgPath,buildArgs))
+    tools::Rcmd(c("build",pkgPath,buildArgs), stderr = NULL)
 }
-
 
 ############################################
 #### Get reverse dependencies from CRAN ####
@@ -41,7 +39,6 @@ cranPkg <- unlist(tools::package_dependencies("stockassessment",
                                                         "Suggests",
                                                         "Enhances"),
                                               reverse=TRUE))
-
 #################################################################################
 #### List of reverse dependencies from GitHub (arguments to buildFromGithub) ####
 #################################################################################
@@ -58,7 +55,6 @@ githubPkg <- list("multiStockassessment" = list(repo="calbertsen/multi_SAM",
 ############################
 #### Get package tar.gz ####
 ############################
-
 if(length(cranPkg) > 0)
     sapply(cranPkg,utils::download.packages,destdir="./")
 
@@ -67,16 +63,12 @@ lapply(githubPkg,function(x)do.call("buildFromGithub",x))
 ########################
 #### Check packages ####
 ########################
-
-
-tools::check_packages_in_dir("./","--as-cran --no-build-vignettes --no-vignettes --no-manual")
+checkNames <- capture.output(tools::check_packages_in_dir("./","--as-cran --no-build-vignettes --no-vignettes --no-manual"), type="message")
 
 checkOutput <- capture.output(tools::summarize_check_packages_in_dir_results("./"))
 
 packageResult <- checkOutput[(1:length(checkOutput)) > which(grepl("^Check results summary",checkOutput)) & !grepl("^\\*",checkOutput)]
 
-
-                               
 if(length(grep("(WARN|ERROR)",checkOutput)) > 0){
     packagesNotOK <- unlist(lapply(strsplit(packageResult[grep("(WARN|ERROR)",packageResult)]," ... "),head,n=1))
     checkRes <- "NOT_OK"
