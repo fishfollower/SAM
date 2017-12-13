@@ -2,12 +2,17 @@
 % Please edit documentation in R/tables.R
 \name{tsbtable}
 \alias{tsbtable}
+\alias{tsbtable.default}
 \title{TSB table}
 \usage{
-tsbtable(fit)
+tsbtable(fit, ...)
+
+\method{tsbtable}{default}(fit, ...)
 }
 \arguments{
 \item{fit}{...}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 TSB table

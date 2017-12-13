@@ -2,9 +2,15 @@
 % Please edit documentation in R/plot.R
 \name{corplot}
 \alias{corplot}
+\alias{corplot.sam}
+\alias{corplot.samres}
 \title{Plots between-age correlations by fleet, either estimated or empirical using residuals.}
 \usage{
 corplot(x, ...)
+
+\method{corplot}{sam}(x, ...)
+
+\method{corplot}{samres}(x, ...)
 }
 \arguments{
 \item{x}{Either a sam fit as returned by sam.fit OR the object returned from residuals.sam}

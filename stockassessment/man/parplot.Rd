@@ -2,9 +2,15 @@
 % Please edit documentation in R/plot.R
 \name{parplot}
 \alias{parplot}
+\alias{parplot.sam}
+\alias{parplot.samset}
 \title{SAM parameter plot}
 \usage{
 parplot(fit, cor.report.limit = 0.95, ...)
+
+\method{parplot}{sam}(fit, cor.report.limit = 0.95, ...)
+
+\method{parplot}{samset}(fit, cor.report.limit = 0.95, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

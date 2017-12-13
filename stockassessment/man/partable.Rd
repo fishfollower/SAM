@@ -2,12 +2,17 @@
 % Please edit documentation in R/tables.R
 \name{partable}
 \alias{partable}
+\alias{partable.sam}
 \title{parameter table}
 \usage{
-partable(fit)
+partable(fit, ...)
+
+\method{partable}{sam}(fit, ...)
 }
 \arguments{
 \item{fit}{...}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 parameter table

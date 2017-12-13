@@ -2,12 +2,17 @@
 % Please edit documentation in R/tables.R
 \name{ntable}
 \alias{ntable}
+\alias{ntable.sam}
 \title{N table}
 \usage{
-ntable(fit)
+ntable(fit, ...)
+
+\method{ntable}{sam}(fit, ...)
 }
 \arguments{
 \item{fit}{...}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 N table

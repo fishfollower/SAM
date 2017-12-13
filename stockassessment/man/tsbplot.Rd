@@ -2,9 +2,12 @@
 % Please edit documentation in R/plot.R
 \name{tsbplot}
 \alias{tsbplot}
+\alias{tsbplot.default}
 \title{SAM TSB plot}
 \usage{
 tsbplot(fit, ...)
+
+\method{tsbplot}{default}(fit, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

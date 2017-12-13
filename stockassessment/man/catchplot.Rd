@@ -2,9 +2,19 @@
 % Please edit documentation in R/plot.R
 \name{catchplot}
 \alias{catchplot}
+\alias{catchplot.sam}
+\alias{catchplot.samset}
+\alias{catchplot.samforecast}
 \title{SAM catch plot}
 \usage{
 catchplot(fit, obs.show = TRUE, drop = NULL, ...)
+
+\method{catchplot}{sam}(fit, obs.show = TRUE, drop = NULL, plot = TRUE,
+  ...)
+
+\method{catchplot}{samset}(fit, obs.show = TRUE, drop = NULL, ...)
+
+\method{catchplot}{samforecast}(fit, obs.show = TRUE, drop = NULL, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
@@ -17,6 +27,8 @@ catchplot(fit, obs.show = TRUE, drop = NULL, ...)
 \code{add} logical, plotting is to be added on existing plot \cr
 \code{ci} logical, confidence intervals should be plotted \cr
 \code{cicol} color to plot the confidence polygon}
+
+\item{plot}{true if catch should be plotted}
 }
 \description{
 SAM catch plot
