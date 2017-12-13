@@ -107,8 +107,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
-  int timeSteps=logF.dim[1];
-  int stateDimN=logN.dim[0];
 
   // patch missing 
   int idxmis=0; 
@@ -117,74 +115,19 @@ Type objective_function<Type>::operator() ()
       dataset.logobs(i)=missing(idxmis++);
     }    
   }
-
+  
   Type ans=0; //negative log-likelihood
-
-  ans += nllF(confset, paraset, logF, keep, this);
-
-  ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
-
-  vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
-  vector<Type> logssb = log(ssb);
-
-  vector<Type> cat = catchFun(dataset, confset, logN, logF);
-  vector<Type> logCatch = log(cat);
-
-  array<Type> catchByFleet = catchByFleetFun(dataset, confset, logN, logF);
-  array<Type> logCatchByFleet(dataset.catchMeanWeight.dim(0), confset.keyLogFsta.dim[0]);
-  for(int i=0; i<logCatchByFleet.dim(0); ++i){
-    for(int j=0; j<logCatchByFleet.dim(1); ++j){
-      logCatchByFleet(i,j)=log(catchByFleet(i,j));
-    }
-  }
-
-  vector<Type> varLogCatch = varLogCatchFun(dataset, confset, logN, logF, paraset);
-
-  vector<Type> fsb = fsbFun(dataset, confset, logN, logF);
-  vector<Type> logfsb = log(fsb);
-
-  vector<Type> tsb = tsbFun(dataset, confset, logN);
-  vector<Type> logtsb = log(tsb);
-
-  vector<Type> R = rFun(logN);
-  vector<Type> logR = log(R);  
-
-  vector<Type> fbar = fbarFun(confset, logF);
-  vector<Type> logfbar = log(fbar);
-
-  vector<Type> predObs = predObsFun(dataset, confset, paraset, logN, logF, logssb, logfsb, logCatch);
-
-  ans += nllObs(dataset, confset, paraset, logN, logF, predObs, varLogCatch, keep,  this);
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
 
-  SIMULATE {
-    REPORT(logF);
-    REPORT(logN);
-    logobs=dataset.logobs; 
-    REPORT(logobs);
-  }
-  REPORT(predObs);
-  array<Type> totF=totFFun(confset, logF);
-  REPORT(totF);
-  ADREPORT(logssb);
-  ADREPORT(logfbar);
-  ADREPORT(logCatch);
-  ADREPORT(logCatchByFleet);
-  ADREPORT(logtsb);
-  ADREPORT(logR);
+  ans += nllF(confset, paraset, logF, keep, this);
 
-  vector<Type> lastLogN = logN.col(timeSteps-1);
-  ADREPORT(lastLogN);
-  vector<Type> lastLogF = logF.col(timeSteps-1);
-  ADREPORT(lastLogF);  
+  ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
 
-  vector<Type> beforeLastLogN = logN.col(timeSteps-2);
-  ADREPORT(beforeLastLogN);
-  vector<Type> beforeLastLogF = logF.col(timeSteps-2);
-  ADREPORT(beforeLastLogF);  
+  ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
+
   return ans;
 }
