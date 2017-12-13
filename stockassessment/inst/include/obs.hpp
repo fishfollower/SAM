@@ -102,9 +102,36 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> &predObs, vector<Type> &varLogCatch, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF,
+	    //vector<Type> &predObs, vector<Type> &varLogCatch,
+	    data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
-  Type nll=0; 
+  Type nll=0;
+
+  // Calculate values to report
+  vector<Type> ssb = ssbFun(dat, conf, logN, logF);
+  vector<Type> logssb = log(ssb);
+
+  vector<Type> fsb = fsbFun(dat, conf, logN, logF);
+  vector<Type> logfsb = log(fsb);
+
+  vector<Type> cat = catchFun(dat, conf, logN, logF);
+  vector<Type> logCatch = log(cat);
+
+  vector<Type> varLogCatch = varLogCatchFun(dat, conf, logN, logF, par);
+
+  vector<Type> tsb = tsbFun(dat, conf, logN);
+  vector<Type> logtsb = log(tsb);
+
+  vector<Type> R = rFun(logN);
+  vector<Type> logR = log(R);  
+
+  vector<Type> fbar = fbarFun(conf, logF);
+  vector<Type> logfbar = log(fbar);
+
+  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logfsb, logCatch);
+
+  
   // setup obs likelihoods
   vector< density::MVNORM_t<Type> >  nllVec(dat.noFleets);
   vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
@@ -233,8 +260,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
 	      dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
 	    }
 	    break;
-  	    default:
-	      error("Unknown obsLikelihoodFlag");
+	  default:
+	    error("Unknown obsLikelihoodFlag");
 	  }
         }
       }else{ //dat.fleetTypes(f)==5
@@ -268,6 +295,33 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, vector<Type> 
       }   
     }  
   }
-  REPORT_F(obsCov,of)
+
+  SIMULATE_F(of) {
+    REPORT_F(logF,of);
+    REPORT_F(logN,of);
+    vector<Type> logobs=dat.logobs; 
+    REPORT_F(logobs,of);
+  }
+
+  REPORT_F(obsCov,of);
+  REPORT_F(predObs,of);
+  ADREPORT_F(logssb,of);
+  ADREPORT_F(logfbar,of);
+  ADREPORT_F(logCatch,of);
+  ADREPORT_F(logtsb,of);
+  ADREPORT_F(logR,of);
+
+  int timeSteps=logF.dim[1];
+  
+  vector<Type> lastLogN = logN.col(timeSteps-1);
+  ADREPORT_F(lastLogN,of);
+  vector<Type> lastLogF = logF.col(timeSteps-1);
+  ADREPORT_F(lastLogF,of);  
+
+  vector<Type> beforeLastLogN = logN.col(timeSteps-2);
+  ADREPORT_F(beforeLastLogN,of);
+  vector<Type> beforeLastLogF = logF.col(timeSteps-2);
+  ADREPORT_F(beforeLastLogF,of);  
+  
   return nll;
 }
