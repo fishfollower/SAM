@@ -143,14 +143,13 @@ webtest: $(testfiles)
 webtestone:
 	@wget -q -r -np -nH --cut-dirs=4 -R index.html* https://www.stockassessment.org/datadisk/stockassessment/userdirs/user3/$(ARG)/
 	@sed -i 's/useR = Rnewest/useR = R/' $(ARG)/Makefile
-	@sed -i 's/--vanilla//' $(ARG)/Makefile
+	@sed -i 's/--vanilla/ /' $(ARG)/Makefile
 	@mv $(ARG)/run/model.RData $(ARG); 
 	@touch $(ARG)/data/*
 	@$(MAKE) -s -C $(ARG) model
-	@echo "load('$(ARG)/model.RData'); old<-fit[c('pl')]; \
-	       load('$(ARG)/run/model.RData'); new<-fit[c('pl')];\
-	       test <- all.equal(old,new,check.attributes=FALSE);\
-	       cat('$(ARG)...',ifelse(test==TRUE,'OK',paste('FAIL:',test)),'\n')"   | R --slave
+	@echo "load('$(ARG)/model.RData'); old<-fit[['pl']]; \
+	       load('$(ARG)/run/model.RData'); new<-fit[['pl']];\
+	       cat('$(ARG)...',ifelse(all.equal(old,new,check.attributes=FALSE),'OK','FAIL'),'\n')"   | R --slave
 	@touch $(ARG)/OK
 
 $(testfiles):
