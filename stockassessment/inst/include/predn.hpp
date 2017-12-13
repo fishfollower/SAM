@@ -2,7 +2,6 @@
 template <class Type>
 vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, int i){
   int stateDimN=logN.dim[0];
-  int timeSteps=logN.dim[1];
 
   vector<Type> predN(stateDimN); 
   Type thisSSB=Type(0);
