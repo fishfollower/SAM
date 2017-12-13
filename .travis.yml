@@ -6,7 +6,7 @@ r:
 
 sudo: false
 
-cache: packages
+## cache: packages
 
 os:
   - linux
