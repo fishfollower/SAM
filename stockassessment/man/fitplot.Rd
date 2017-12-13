@@ -2,18 +2,22 @@
 % Please edit documentation in R/plot.R
 \name{fitplot}
 \alias{fitplot}
+\alias{fitplot.sam}
 \title{Plots fit to data}
 \usage{
-fitplot(fit, log = TRUE, fleets = unique(fit$data$aux[, "fleet"]), ...)
+fitplot(fit, log = TRUE, ...)
+
+\method{fitplot}{sam}(fit, log = TRUE, fleets = unique(fit$data$aux[,
+  "fleet"]), ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
 
 \item{log}{should the plot be against log-obs}
 
-\item{fleets}{an integer vector of fleets to plot. Default is all of them}
-
 \item{...}{extra arguments to plot}
+
+\item{fleets}{an integer vector of fleets to plot. Default is all of them}
 }
 \description{
 Plots fit to data

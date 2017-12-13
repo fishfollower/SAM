@@ -2,12 +2,20 @@
 % Please edit documentation in R/tables.R
 \name{modeltable}
 \alias{modeltable}
+\alias{modeltable.sam}
+\alias{modeltable.samset}
 \title{model table}
 \usage{
-modeltable(fits)
+modeltable(fits, ...)
+
+\method{modeltable}{sam}(fits, ...)
+
+\method{modeltable}{samset}(fits, ...)
 }
 \arguments{
 \item{fits}{A sam fit as returned from the sam.fit function, or a collection c(fit1, fit2, ...) of such fits}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 model table

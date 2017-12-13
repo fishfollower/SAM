@@ -3,8 +3,14 @@
 ##' @param what quoted name of what to extract
 ##' @param x rownames of table
 ##' @param trans function to be applied
+##' @param ... extra arguments not currently used
 ##' @details ...
-tableit <-function (fit, what, x=fit$data$years, trans=function(x)x){
+tableit <-function (fit, what, x=fit$data$years, trans=function(x)x,...){
+    UseMethod("tableit")
+}
+##' @rdname tableit
+##' @method tableit sam
+tableit.sam <- function (fit, what, x=fit$data$years, trans=function(x)x,...){
    idx<-names(fit$sdrep$value)==what
    y<-fit$sdrep$value[idx]
    ci<-y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -16,36 +22,60 @@ tableit <-function (fit, what, x=fit$data$years, trans=function(x)x){
 
 ##' SSB table 
 ##' @param  fit ...
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-ssbtable<-function(fit){
-   ret<-tableit(fit, "logssb", trans=exp)
+ssbtable<-function(fit,...){
+    UseMethod("ssbtable")
+}
+##' @rdname ssbtable
+##' @method ssbtable default
+ssbtable.default <- function(fit,...){
+   ret<-tableit(fit, "logssb", trans=exp,...)
    return(ret)
 }
 
 ##' TSB table 
 ##' @param  fit ... 
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-tsbtable<-function(fit){
-   ret<-tableit(fit, "logtsb", trans=exp)
+tsbtable<-function(fit,...){
+    UseMethod("tsbtable")
+}
+##' @rdname tsbtable
+##' @method tsbtable default
+tsbtable.default <- function(fit,...){
+   ret<-tableit(fit, "logtsb", trans=exp,...)
    return(ret)
 }
 
 ##' Fbar table 
 ##' @param  fit ... 
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-fbartable<-function(fit){
+fbartable<-function(fit,...){
+    UseMethod("fbartable")
+}
+##' @rdname fbartable
+##' @method fbartable default
+fbartable.default <- function(fit,...){
    ret<-tableit(fit, "logfbar", trans=exp)
    return(ret)
 }
 
 ##' Recruit table 
 ##' @param  fit ... 
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
 rectable<-function(fit){
+    UseMethod("rectable")
+}
+##' @rdname rectable
+##' @method rectable default
+rectable.default <- function(fit,...){
    ret<-tableit(fit, "logR", trans=exp)
    return(ret)
 }
@@ -53,9 +83,15 @@ rectable<-function(fit){
 ##' Catch table 
 ##' @param  fit ...
 ##' @param obs.show logical add a column with catch sum of product rowsums(C*W)
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-catchtable<-function(fit, obs.show=FALSE){
+catchtable<-function(fit, obs.show=FALSE,...){
+    UseMethod("catchtable")
+}
+##' @rdname catchtable
+##' @method catchtable sam
+catchtable.sam <- function(fit, obs.show=FALSE,...){
    CW <- fit$data$catchMeanWeight 
    xx <- as.integer(rownames(CW))
    ret <- tableit(fit, x=xx, "logCatch", trans=exp)
@@ -74,9 +110,15 @@ catchtable<-function(fit, obs.show=FALSE){
 
 ##' N table 
 ##' @param  fit ... 
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-ntable <- function(fit){
+ntable <- function(fit,...){
+    UseMethod("ntable")
+}
+##' @rdname ntable
+##' @method ntable sam
+ntable.sam <- function(fit,...){
    ret <- exp(t(fit$pl$logN))
    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
    rownames(ret) <- fit$data$years
@@ -85,9 +127,15 @@ ntable <- function(fit){
 
 ##' F-at-age table 
 ##' @param  fit ... 
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-faytable <- function(fit){
+faytable <- function(fit,...){
+    UseMethod("faytable")
+}
+##' @rdname faytable
+##' @method faytable sam
+faytable.sam <- function(fit,...){
    idx <- fit$conf$keyLogFsta[1,]+2    
    ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
    ret[,idx==0] <- 0
@@ -98,9 +146,15 @@ faytable <- function(fit){
 
 ##' parameter table 
 ##' @param  fit ... 
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-partable <- function(fit){
+partable <- function(fit,...){
+    UseMethod("partable")
+}
+##' @rdname partable
+##' @method partable sam
+partable.sam <- function(fit,...){
   param <- coef(fit)
   nam <- names(param)
   dup <- duplicated(nam)
@@ -121,44 +175,49 @@ partable <- function(fit){
 
 ##' model table 
 ##' @param fits A sam fit as returned from the sam.fit function, or a collection c(fit1, fit2, ...) of such fits  
+##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @importFrom stats AIC pchisq
 ##' @export
-modeltable <- function(fits){
-  if(class(fits)=="samset"){
+modeltable <- function(fits,...){
+    UseMethod("modeltable")
+}
+##' @rdname modeltable
+##' @method modeltable sam
+modeltable.sam <- function(fits,...){
+    modeltable(c(fits))
+}
+##' @rdname modeltable
+##' @method modeltable samset
+modeltable.samset <- function(fits,...){
     if(!is.null(attr(fits,"fit"))){
       fits[[length(fits)+1]] <- attr(fits,"fit")
       fits <- fits[c(length(fits),1:(length(fits)-1))]
     }
-  }
-  if(class(fits)=="sam"){
-    fits <- list(fits)
-    class(fits) <- "samset"
-  }
-  fits <- fits[!sapply(fits, is.null)]
-  if(is.null(names(fits))){
-    nam <- paste("M", 1:length(fits), sep="")
-  }else{
-    nam <-ifelse(names(fits)=="",paste("M", 1:length(fits), sep=""), names(fits))
-  }
-  logL <- sapply(fits, logLik)
-  npar <- sapply(fits, function(f)attr(logLik(f),"df"))
-  aic <- sapply(fits, AIC)
-  res <- cbind("log(L)"=logL, "#par"=npar, "AIC"=aic)
-  rownames(res) <- nam
-  o <- 1:length(fits)
-  if(length(fits)==2){
-    o <- order(npar, decreasing=TRUE)
-    if(npar[o[1]]>npar[o[2]]){
-      df <- npar[o[1]]>npar[o[2]]
-      D <- 2*(logL[o[1]]-logL[o[2]])
-      P <- 1-pchisq(D,df)
-      cnam <- paste0("Pval( ",nam[o[1]]," -> ",nam[o[2]], " )")
-      res <- cbind(res, c(NA, P)[o])
-      colnames(res)[ncol(res)] <- cnam
+    fits <- fits[!sapply(fits, is.null)]
+    if(is.null(names(fits))){
+        nam <- paste("M", 1:length(fits), sep="")
+    }else{
+        nam <-ifelse(names(fits)=="",paste("M", 1:length(fits), sep=""), names(fits))
     }
-  }
-  return(res[o,,drop=FALSE])
+    logL <- sapply(fits, logLik)
+    npar <- sapply(fits, function(f)attr(logLik(f),"df"))
+    aic <- sapply(fits, AIC)
+    res <- cbind("log(L)"=logL, "#par"=npar, "AIC"=aic)
+    rownames(res) <- nam
+    o <- 1:length(fits)
+    if(length(fits)==2){
+        o <- order(npar, decreasing=TRUE)
+        if(npar[o[1]]>npar[o[2]]){
+            df <- npar[o[1]]>npar[o[2]]
+            D <- 2*(logL[o[1]]-logL[o[2]])
+            P <- 1-pchisq(D,df)
+            cnam <- paste0("Pval( ",nam[o[1]]," -> ",nam[o[2]], " )")
+            res <- cbind(res, c(NA, P)[o])
+            colnames(res)[ncol(res)] <- cnam
+        }
+    }
+    return(res[o,,drop=FALSE])
 }
 
 ##' Yield per recruit calculation
@@ -167,8 +226,14 @@ modeltable <- function(fits){
 ##' @param Fdelta increments on the Fbar axis 
 ##' @param aveYears Number of years back to use when calculating averages (selection, weights, ...)
 ##' @param ageLimit Oldest age used (should be high)
+##' @param ... extra arguments not currently used
 ##' @export
-ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100){
+ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100,...){
+    UseMethod("ypr")
+}
+##' @rdname ypr
+##' @method ypr sam
+ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100,...){
   barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
   last.year.used=max(fit$data$years)
   idxno<-which(fit$data$years==last.year.used)

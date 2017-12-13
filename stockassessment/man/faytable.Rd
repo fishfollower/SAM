@@ -2,12 +2,17 @@
 % Please edit documentation in R/tables.R
 \name{faytable}
 \alias{faytable}
+\alias{faytable.sam}
 \title{F-at-age table}
 \usage{
-faytable(fit)
+faytable(fit, ...)
+
+\method{faytable}{sam}(fit, ...)
 }
 \arguments{
 \item{fit}{...}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 F-at-age table

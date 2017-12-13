@@ -2,9 +2,18 @@
 % Please edit documentation in R/plot.R
 \name{recplot}
 \alias{recplot}
+\alias{recplot.sam}
+\alias{recplot.samset}
+\alias{recplot.samforecast}
 \title{SAM Recruits plot}
 \usage{
 recplot(fit, ...)
+
+\method{recplot}{sam}(fit, ...)
+
+\method{recplot}{samset}(fit, ...)
+
+\method{recplot}{samforecast}(fit, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
