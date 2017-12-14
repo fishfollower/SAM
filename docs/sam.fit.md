@@ -1,7 +1,3 @@
-|         |                 |
-|---------|-----------------|
-| sam.fit | R Documentation |
-
 Fit SAM model
 -------------
 
