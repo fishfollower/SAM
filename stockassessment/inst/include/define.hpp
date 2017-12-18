@@ -1,7 +1,7 @@
 #define REPORT_F(name,F)					\
 if(isDouble<Type>::value && F->current_parallel_region<0) {     \
   defineVar(install(#name),                                     \
-            PROTECT(asSEXP(name)),F->report);			\
+            asSEXP_protect(name),F->report);                    \
   UNPROTECT(1);                                                 \
 }
 
@@ -31,6 +31,8 @@ struct dataSet{
   int nobs;
   array<int> idx1;
   array<int> idx2;
+  vector<int> minWeek;
+  vector<int> maxWeek;
   array<int> aux;
   vector<Type> logobs;
   vector<Type> weight;
@@ -60,6 +62,8 @@ dataSet(SEXP x) {
     nobs = (int)*REAL(getListElement(x,"nobs"));
     idx1 = asArray<int>(getListElement(x,"idx1"));
     idx2 = asArray<int>(getListElement(x,"idx2"));
+    minWeek = asVector<Type>(getListElement(x,"minWeek"));
+    maxWeek = asVector<Type>(getListElement(x,"maxWeek"));
     aux = asArray<int>(getListElement(x,"aux"));
     logobs = asVector<Type>(getListElement(x,"logobs"));
     weight = asVector<Type>(getListElement(x,"weight"));
@@ -86,6 +90,8 @@ dataSet(SEXP x) {
     nobs = rhs.nobs;
     idx1 = rhs.idx1;
     idx2 = rhs.idx2;
+    minWeek = rhs.minWeek;
+    maxWeek = rhs.maxWeek;
     aux = rhs.aux;
     logobs = rhs.logobs;
     weight = rhs.weight;
@@ -114,6 +120,7 @@ struct confSet{
   array<int> keyQpow;
   array<int> keyVarF;
   vector<int> keyVarLogN; 
+  vector<int> keyVarLogP;
   array<int> keyVarObs;
   vector<int> obsCorStruct; 
   array<int> keyCorObs;
@@ -141,6 +148,7 @@ struct confSet{
     keyQpow = asArray<int>(getListElement(x,"keyQpow"));
     keyVarF = asArray<int>(getListElement(x,"keyVarF"));
     keyVarLogN = asVector<int>(getListElement(x,"keyVarLogN"));
+    keyVarLogP = asVector<int>(getListElement(x,"keyVarLogP"));
     keyVarObs = asArray<int>(getListElement(x,"keyVarObs"));
     obsCorStruct = asVector<int>(getListElement(x,"obsCorStruct"));
     keyCorObs = asArray<int>(getListElement(x,"keyCorObs"));
@@ -166,6 +174,7 @@ struct confSet{
     keyQpow = rhs.keyQpow;
     keyVarF = rhs.keyVarF;
     keyVarLogN = rhs.keyVarLogN;
+    keyVarLogP = rhs.keyVarLogP;
     keyVarObs = rhs.keyVarObs;
     obsCorStruct = rhs.obsCorStruct;
     stockRecruitmentModelCode = rhs.stockRecruitmentModelCode;
@@ -189,6 +198,7 @@ struct paraSet{
   vector<Type> logQpow; 
   vector<Type> logSdLogFsta; 
   vector<Type> logSdLogN; 
+  vector<Type> logSdLogP;
   vector<Type> logSdLogObs;
   vector<Type> logSdLogTotalObs;
   vector<Type> transfIRARdist;
@@ -196,7 +206,9 @@ struct paraSet{
   vector<Type> rec_loga; 
   vector<Type> rec_logb; 
   vector<Type> itrans_rho; 
+  vector<Type> rhop;
   vector<Type> logScale;
   vector<Type> logitReleaseSurvival;   
   vector<Type> logitRecapturePhi;   
+  vector<Type> logAlphaSCB;
 };

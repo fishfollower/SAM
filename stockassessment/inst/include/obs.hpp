@@ -102,44 +102,9 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF,
-	    //vector<Type> &predObs, vector<Type> &varLogCatch,
-	    data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &predObs, vector<Type> &varLogCatch, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
-  Type nll=0;
-
-  // Calculate values to report
-  vector<Type> ssb = ssbFun(dat, conf, logN, logF);
-  vector<Type> logssb = log(ssb);
-
-  vector<Type> fsb = fsbFun(dat, conf, logN, logF);
-  vector<Type> logfsb = log(fsb);
-
-  vector<Type> cat = catchFun(dat, conf, logN, logF);
-  vector<Type> logCatch = log(cat);
-
-  array<Type> catchByFleet = catchByFleetFun(dat, conf, logN, logF);
-  array<Type> logCatchByFleet(dat.catchMeanWeight.dim(0), conf.keyLogFsta.dim(0));
-  for(int i=0; i<logCatchByFleet.dim(0); ++i){
-    for(int j=0; j<logCatchByFleet.dim(1); ++j){
-      logCatchByFleet(i,j)=log(catchByFleet(i,j));
-    }
-  }
-
-  vector<Type> varLogCatch = varLogCatchFun(dat, conf, logN, logF, par);
-
-  vector<Type> tsb = tsbFun(dat, conf, logN);
-  vector<Type> logtsb = log(tsb);
-
-  vector<Type> R = rFun(logN);
-  vector<Type> logR = log(R);  
-
-  vector<Type> fbar = fbarFun(conf, logF);
-  vector<Type> logfbar = log(fbar);
-
-  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logfsb, logCatch);
-
-  
+  Type nll=0; 
   // setup obs likelihoods
   vector< density::MVNORM_t<Type> >  nllVec(dat.noFleets);
   vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
@@ -178,7 +143,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   }
 
   for(int f=0; f<dat.noFleets; ++f){
-    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7))){ 
+    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6))){ 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
       if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
       matrix<Type> cov(thisdim,thisdim);
@@ -228,7 +193,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   for(int y=0;y<dat.noYears;y++){
     int totalParKey = 0;
     for(int f=0;f<dat.noFleets;f++){
-      if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
+      if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6))){ 
         if(!isNAINT(dat.idx1(f,y))){
           int idxfrom=dat.idx1(f,y);
           int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
@@ -327,8 +292,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	      dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
 	    }
 	    break;
-	  default:
-	    error("Unknown obsLikelihoodFlag");
+  	    default:
+	      error("Unknown obsLikelihoodFlag");
 	  }
         }
       }else{ //dat.fleetTypes(f)==5
@@ -342,7 +307,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
             }
           }
         }else{
-          if(dat.fleetTypes(f)==3){
+          if((dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)){
             Type sd=0;
             if(!isNAINT(dat.idx1(f,y))){
               for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
@@ -362,34 +327,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
       }   
     }  
   }
-
-  SIMULATE_F(of) {
-    REPORT_F(logF,of);
-    REPORT_F(logN,of);
-    vector<Type> logobs=dat.logobs; 
-    REPORT_F(logobs,of);
-  }
-
-  REPORT_F(obsCov,of);
-  REPORT_F(predObs,of);
-  ADREPORT_F(logssb,of);
-  ADREPORT_F(logfbar,of);
-  ADREPORT_F(logCatch,of);
-  ADREPORT_F(logCatchByFleet,of);
-  ADREPORT_F(logtsb,of);
-  ADREPORT_F(logR,of);
-
-  int timeSteps=logF.dim[1];
-  
-  vector<Type> lastLogN = logN.col(timeSteps-1);
-  ADREPORT_F(lastLogN,of);
-  vector<Type> lastLogF = logF.col(timeSteps-1);
-  ADREPORT_F(lastLogF,of);  
-
-  vector<Type> beforeLastLogN = logN.col(timeSteps-2);
-  ADREPORT_F(beforeLastLogN,of);
-  vector<Type> beforeLastLogF = logF.col(timeSteps-2);
-  ADREPORT_F(beforeLastLogF,of);  
-  
+  REPORT_F(obsCov,of)
   return nll;
 }

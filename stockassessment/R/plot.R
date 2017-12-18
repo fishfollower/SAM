@@ -644,7 +644,7 @@ srplot<-function(fit, ...){
 fitplot <- function(fit, log=TRUE, fleets=unique(fit$data$aux[,"fleet"]), ...){  
   idx<-fit$data$aux[,"fleet"]%in%fleets  
   trans <- function(x)if(log){x}else{exp(x)}  
-  p <- trans(fit$obj$report(c(fit$sdrep$par.fixed,fit$sdrep$par.random))$predObs[idx])
+  p <- trans(fit$obj$report(unlist(fit$pl))$predObs[idx])
   o <- trans(fit$data$logobs[idx])
   aa <- fit$data$aux[idx,"age"]
   neg.age <- (aa < -1.0e-6)

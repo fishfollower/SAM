@@ -1,8 +1,13 @@
 template <class Type>
-vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logssb, vector<Type> &logfsb, vector<Type> &logCatch){
+vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, array<Type> &logP, vector<Type> &logssb, vector<Type> &logfsb, vector<Type> &logCatch){
   vector<Type> pred(dat.nobs);
   pred.setZero();
   array<Type> totF=totFFun(conf, logF);
+  //LAI parts
+  array<Type> logPs = scalePFun(conf,dat,logP);
+  vector<Type> varAlphaSCB = scaleWeekFun(par,dat,logP);
+  int noYearsLAI = yearsPFun(conf,dat);
+  //END LAI PARTS
   vector<Type> releaseSurvival(par.logitReleaseSurvival.size());
   vector<Type> releaseSurvivalVec(dat.nobs);
   if(par.logitReleaseSurvival.size()>0){
@@ -15,13 +20,25 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   }
 
   // Calculate predicted observations
-  int f, ft, a, y, yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
+  int f, ft, a, y, yy, scaleIdx, LAIf, lyr, alpha;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=dat.aux(0,0);
   Type zz;
   Type sumF=Type(0); 
   for(int i=0;i<dat.nobs;i++){
     y=dat.aux(i,0)-minYear;
     f=dat.aux(i,1);
+    
+    //Get the LAI component
+    LAIf = -1;
+    for(int lf=0;lf<dat.noFleets;lf++){
+  	  if(dat.fleetTypes(lf)==6){
+  	  	++LAIf;
+      }
+      if(lf == f){
+      	break;	
+	  }
+    }
+    
     ft=dat.fleetTypes(f-1);
     a=dat.aux(i,2)-conf.minAge;
     if(ft==3){a=0;}
@@ -91,8 +108,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
   
       case 6:
-  	error("Unknown fleet code");
-        return 0;
+		lyr = y - (dat.noYears - noYearsLAI);
+		alpha = dat.minWeek(LAIf) + a - 1;	
+	    pred(i)=logssb(y) + par.logFpar(conf.keyLogFpar(f-1,a)) + logPs(LAIf,lyr) + varAlphaSCB(alpha);
       break;
   
       case 7:// sum residual fleets 

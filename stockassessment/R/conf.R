@@ -44,7 +44,7 @@ setS<-function(x){
 defcon<-function(dat){
   fleetTypes <- dat$fleetTypes
   ages <- do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
-  ages[fleetTypes%in%c(3,5),] <- NA
+  ages[fleetTypes%in%c(3,5,6),] <- NA
   minAge <- min(ages, na.rm=TRUE)
   maxAge <- max(ages, na.rm=TRUE)
   ages[is.na(ages)] <- minAge
@@ -69,7 +69,7 @@ defcon<-function(dat){
   x <- matrix(0, nrow=nFleets, ncol=nAges)
   lastMax <- 0
   for(i in 1:nrow(x)){
-    if(fleetTypes[i]%in%c(1,2,3)){
+    if(fleetTypes[i]%in%c(1,2,3,6)){
       x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- setSeq(ages[i,1],ages[i,2])+lastMax
       lastMax <- max(x)
     }
@@ -85,16 +85,25 @@ defcon<-function(dat){
     }
   }  
   ret$keyVarF <- x - 1
+
   ret$keyVarLogN <- c(1,rep(2,nAges-1)) - 1 
+
+  ret$keyVarLogP <- numeric(0)
+  if(any(fleetTypes==6))
+    ret$keyVarLogP<- seq(1,length(which(fleetTypes==6))-1)-1
+
   x <- matrix(0, nrow=nFleets, ncol=nAges)
   lastMax <- 0
   for(i in 1:nrow(x)){
-    if(fleetTypes[i]%in%c(0,1,2,3)){
+    if(fleetTypes[i]%in%c(0,1,2,3,6)){
       x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- lastMax+1
       lastMax <- max(x)
     }
+#    if(fleetTypes[i]==6 & i == max(which(fleetTypes==6)))
+#      x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- 0
   }  
   ret$keyVarObs <- x - 1
+
   ret$obsCorStruct <- factor(rep("ID",nFleets),levels=c("ID","AR","US"))
   ret$obsCorStruct[fleetTypes==7] <- NA
   ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=nAges-1)
