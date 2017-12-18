@@ -168,6 +168,7 @@ struct confSet{
     keyVarLogN = rhs.keyVarLogN;
     keyVarObs = rhs.keyVarObs;
     obsCorStruct = rhs.obsCorStruct;
+    keyCorObs = rhs.keyCorObs;
     stockRecruitmentModelCode = rhs.stockRecruitmentModelCode;
     noScaledYears = rhs.noScaledYears;
     keyScaledYears = rhs.keyScaledYears;
