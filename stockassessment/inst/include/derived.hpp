@@ -2,7 +2,7 @@ template <class Type>
 int yearsPFun(confSet &conf, dataSet<Type> &dat){
   
   int noFleets=conf.keyLogFsta.dim[0];
-  Type minYear = 0;
+  Type minYear = dat.years[dat.noYears];
   Type maxYear = 0;
   int noYearsLAI;
   for(int f=0;f<noFleets;f++){
@@ -41,10 +41,10 @@ array<Type> scalePFun(confSet &conf, dataSet<Type> &dat, array<Type> &logP){
   for(int j=0;j<noYearsLAI;j++){
     totProp=0;
     for(int i=0;i<(nlogP-1);i++){
-      totProp += exp(logP(i+1,j));
+      totProp += exp(logP(i,j));
     }
     for(int i=0; i<(nlogP-1);i++){
-      logPS(i+1,j) = log(exp(logP(i+1,j)) / (1+totProp));
+      logPS(i+1,j) = log(exp(logP(i,j)) / (1+totProp));
     }
     logPS(0,j) = log(1 - totProp / (1+totProp));
   }      
@@ -62,7 +62,6 @@ vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &l
   for(int i=0; i<nlogP;i++){
     Type totProp_alpha = 0;
     int idxmin=0; int idxmax=0;
-    //for(int k=0; k<maxLAIsurv;k++){
     idxmin = dat.minWeek[i];
     idxmax = dat.maxWeek[i];
     
