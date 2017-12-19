@@ -52,7 +52,7 @@ array<Type> scalePFun(confSet &conf, dataSet<Type> &dat, array<Type> &logP){
 }
 
 template <class Type>
-vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &logP){
+vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &logP, objective_function<Type> *of){
 
   int nlogP = logP.dim[0]+1;
   int maxLAIsurv = par.logAlphaSCB.size()+nlogP;
@@ -65,8 +65,12 @@ vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &l
     idxmin = dat.minWeek(i);
     idxmax = dat.maxWeek(i);
     
+    int check = 0;
     for(int j=(idxmin+1);j<=idxmax;j++){
       // Substract i because aSCB is only 7 long but I'm estimating 11 valus
+      if(i == 0){
+      	check = 1;
+	  }
       indx = j - 1 - i;
       totProp_alpha += exp(par.logAlphaSCB(indx));
     }
@@ -76,6 +80,7 @@ vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &l
     }
     varAlphaSCB(idxmin) = log(1 - totProp_alpha / (1+totProp_alpha));
   }
+  REPORT_F(check,of);
   return varAlphaSCB;
 }
 
