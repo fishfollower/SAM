@@ -52,12 +52,11 @@ array<Type> scalePFun(confSet &conf, dataSet<Type> &dat, array<Type> &logP){
 }
 
 template <class Type>
-vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &logP, objective_function<Type> *of){
+vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &logP){
 
   int nlogP = logP.dim[0]+1;
   int maxLAIsurv = par.logAlphaSCB.size()+nlogP;
   vector<Type> varAlphaSCB(maxLAIsurv);
-  vector<Type> storepropalpha(nlogP);
   //Take contribution of each survey to component and scale to 1
   int indx; 
   for(int i=0; i<nlogP;i++){
@@ -72,14 +71,12 @@ vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &l
       indx = j - 1 - i;
       totProp_alpha += exp(par.logAlphaSCB(indx));
     }
-    storepropalpha(i)=totProp_alpha;
     for(int j=(idxmin+1); j<=idxmax; ++j){
       indx = j -1 - i;
       varAlphaSCB(j) = log(exp(par.logAlphaSCB(indx)) / (1+totProp_alpha));
     }
     varAlphaSCB(idxmin) = log(1 - totProp_alpha / (1+totProp_alpha));
   }
-  REPORT_F(storepropalpha,of)
   return varAlphaSCB;
 }
 
