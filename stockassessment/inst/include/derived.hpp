@@ -2,23 +2,23 @@ template <class Type>
 int yearsPFun(confSet &conf, dataSet<Type> &dat){
   
   int noFleets=conf.keyLogFsta.dim[0];
-  Type minYear = dat.years[dat.noYears];
+  Type minYear = dat.years(dat.noYears-1);
   Type maxYear = 0;
   int noYearsLAI;
   for(int f=0;f<noFleets;f++){
   	if(dat.fleetTypes(f)==6){
       for(int y=0;y<dat.noYears;y++){
-        if(dat.idx1[f,y]>(-1)){
-          if(dat.years[y]<minYear){
-	  	    minYear = dat.years[y];
+        if(!isNAINT(dat.idx1(f,y))){
+          if(dat.years(y)<minYear){
+	  	    minYear = dat.years(y);
 		    break;	
 		  }
 	    }
 	  }
 	  for(int y=0;y<dat.noYears;y++){
-        if(dat.idx1[f,y]>(-1)){
-          if(dat.years[y]>maxYear){
-	  	    maxYear = dat.years[y];
+        if(!isNAINT(dat.idx1(f,y))){
+          if(dat.years(y)>maxYear){
+	  	    maxYear = dat.years(y);
 	  	  }
         }
 	  }	  
