@@ -62,8 +62,8 @@ vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &l
   for(int i=0; i<nlogP;i++){
     Type totProp_alpha = 0;
     int idxmin=0; int idxmax=0;
-    idxmin = dat.minWeek[i];
-    idxmax = dat.maxWeek[i];
+    idxmin = dat.minWeek(i);
+    idxmax = dat.maxWeek(i);
     
     for(int j=(idxmin+1);j<=idxmax;j++){
       // Substract i because aSCB is only 7 long but I'm estimating 11 valus
