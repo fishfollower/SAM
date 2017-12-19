@@ -316,7 +316,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }else{
                   sd = exp(par.logSdLogObs(conf.keyVarObs(f,0)));
                 }  
-                nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
+                if((dat.fleetTypes(f))==3){
+                  nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
+				}
+				if((dat.fleetTypes(f)==6)){
+				  nll += -dnorm(dat.logobs(i),predObs(i),sd,true);
+				}
                 SIMULATE_F(of){
   	          dat.logobs(i) = rnorm(predObs(i),sd);
                 }

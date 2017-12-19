@@ -20,7 +20,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   }
 
   // Calculate predicted observations
-  int f, ft, a, y, yy, scaleIdx, LAIf, lyr, alpha, check;  // a is no longer just ages, but an attribute (e.g. age or length) 
+  int f, ft, a, y, yy, scaleIdx, LAIf, lyr, alpha;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=dat.aux(0,0);
   Type zz;
   Type sumF=Type(0); 
@@ -110,11 +110,6 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       case 6:
 		lyr = y - (dat.noYears - noYearsLAI);
 		alpha = dat.minWeek(LAIf) + a;	
-		if(LAIf==0){
-		  if(a == 0){
-			check = alpha;
-	      }
-		}
 	    pred(i)=logssb(y) + par.logFpar(conf.keyLogFpar(f-1,0)) + logPs(LAIf,lyr) + varAlphaSCB(alpha);
       break;
   
