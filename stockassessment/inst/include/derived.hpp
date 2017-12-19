@@ -58,6 +58,7 @@ vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &l
   int maxLAIsurv = par.logAlphaSCB.size()+nlogP;
   vector<Type> varAlphaSCB(maxLAIsurv);
   //Take contribution of each survey to component and scale to 1
+  int check = 0;
   int indx; 
   for(int i=0; i<nlogP;i++){
     Type totProp_alpha = 0;
@@ -65,7 +66,7 @@ vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &l
     idxmin = dat.minWeek(i);
     idxmax = dat.maxWeek(i);
     
-    int check = 0;
+
     for(int j=(idxmin+1);j<=idxmax;j++){
       // Substract i because aSCB is only 7 long but I'm estimating 11 valus
       if(i == 0){
