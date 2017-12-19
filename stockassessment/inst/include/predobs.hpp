@@ -108,8 +108,12 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
   
       case 6:
+      	int check = -1;
 		lyr = y - (dat.noYears - noYearsLAI);
 		alpha = dat.minWeek(LAIf) + a;	
+		if(LAIf==0 && a == 0){
+			check = alpha;
+		}
 	    pred(i)=logssb(y) + par.logFpar(conf.keyLogFpar(f-1,0)) + logPs(LAIf,lyr) + varAlphaSCB(alpha);
       break;
   
