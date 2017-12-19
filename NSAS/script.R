@@ -45,10 +45,10 @@ surveys[[6]] <- BUN
 surveys[[7]] <- SNS
 names(surveys)[4:7] <- c("LAI_ORSH","LAI_CNS","LAI_BUN","LAI_SNS")
 
-source("../stockassessment/R/reading.R")
-source("../stockassessment/R/conf.R")
-source("../stockassessment/R/init.R")
-source("../stockassessment/R/run.R")
+#source("../stockassessment/R/reading.R")
+#source("../stockassessment/R/conf.R")
+#source("../stockassessment/R/init.R")
+#source("../stockassessment/R/run.R")
 
 
 
@@ -65,26 +65,26 @@ dat<-setup.sam.data(surveys=surveys,
                     land.frac=lf)
 conf<-defcon(dat)
 par<-defpar(dat,conf)
-save.image("./alldat.RData")
-load("./alldat.RData")
+#save.image("./alldat.RData")
+#load("./alldat.RData")
+#
+#dyn.load("../stockassessment/src/stockassessment.dll")
+#
+#  data <- dat
+#  parameters <- par
+#  data<-clean.void.catches(dat,conf)
+#  tmball <- c(data, conf, simFlag=T)
+#tmball$resFlag <- 0
+#  nmissing <- sum(is.na(dat$logobs))
+#  parameters$missing <- numeric(nmissing)
+#  ran <- c("logN", "logF","logP", "missing")
+#  random <- ran
+#  data <- tmball
+#  DLL <- "stockassessment"
+##  obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment")
+#
 
-dyn.load("../stockassessment/src/stockassessment.dll")
-
-  data <- dat
-  parameters <- par
-  data<-clean.void.catches(dat,conf)
-  tmball <- c(data, conf, simFlag=T)
-tmball$resFlag <- 0
-  nmissing <- sum(is.na(dat$logobs))
-  parameters$missing <- numeric(nmissing)
-  ran <- c("logN", "logF","logP", "missing")
-  random <- ran
-  data <- tmball
-  DLL <- "stockassessment"
-#  obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment")
-
-
-#fit<-sam.fit(dat,conf,par)
+fit<-sam.fit(dat,conf,par)
 
 #cat(fit$opt$objective,"\n\n", file="res.out")
 #cat(capture.output(prmatrix(t(fit$pl$logF))), sep="\n", file="res.out", append=TRUE)
