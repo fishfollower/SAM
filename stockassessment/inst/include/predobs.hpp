@@ -5,7 +5,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   array<Type> totF=totFFun(conf, logF);
   //LAI parts
   array<Type> logPs = scalePFun(conf,dat,logP);
-  vector<Type> varAlphaSCB = scaleWeekFun(par,dat,logP,of);
+  vector<Type> varAlphaSCB = scaleWeekFun(par,dat,logP, objective_function<Type> *of);
   int noYearsLAI = yearsPFun(conf,dat);
   //END LAI PARTS
   vector<Type> releaseSurvival(par.logitReleaseSurvival.size());
