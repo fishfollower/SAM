@@ -163,7 +163,7 @@ Type objective_function<Type>::operator() ()
   array<Type> comps = scalePFun(confset, dataset, logP);
   vector<Type> weekContrib = scaleWeekFun(paraset, dataset, logP);
 
-  vector<Type> predObs = predObsFun(dataset, confset, paraset, logN, logF, logP, logssb, logfsb, logCatch);
+  vector<Type> predObs = predObsFun(dataset, confset, paraset, logN, logF, logP, logssb, logfsb, logCatch, this);
 
   ans += nllObs(dataset, confset, paraset, logN, logF, predObs, varLogCatch, keep,  this);
 

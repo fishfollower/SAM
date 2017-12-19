@@ -1,5 +1,5 @@
 template <class Type>
-vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, array<Type> &logP, vector<Type> &logssb, vector<Type> &logfsb, vector<Type> &logCatch){
+vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, array<Type> &logP, vector<Type> &logssb, vector<Type> &logfsb, vector<Type> &logCatch), objective_function<Type> *of{
   vector<Type> pred(dat.nobs);
   pred.setZero();
   array<Type> totF=totFFun(conf, logF);
@@ -132,5 +132,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
     }    
   }
+  
+  
+  REPORT_F(logPs,of);
+  REPORT_F(varAlphaSCB,of);
   return pred;
 }
