@@ -133,7 +133,6 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     }    
   }
   
-  REPORT_F(check,of); 
   REPORT_F(logPs,of);
   REPORT_F(varAlphaSCB,of);
   return pred;
