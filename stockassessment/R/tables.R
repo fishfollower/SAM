@@ -131,13 +131,18 @@ ntable <- function(fit){
 }
 
 ##' F-at-age table 
-##' @param  fit ... 
+##' @param fit a fitted object of class 'sam' as returned from sam.fit
+##' @param fleet the fleet number(s) to return F summed for (default is to return the sum of all residual fleets).  
 ##' @details ...
 ##' @export
-faytable <- function(fit){
-   idx <- fit$conf$keyLogFsta[1,]+2    
-   ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
-   ret[,idx==0] <- 0
+faytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
+   getfleet <- function(f){
+     idx <- fit$conf$keyLogFsta[f,]+2    
+     ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
+     ret[is.na(ret)] <- 0
+     ret
+   }
+   ret <- do.call("+",lapply(fleet,getfleet)) 
    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
    rownames(ret) <- fit$data$years
    return(ret)
