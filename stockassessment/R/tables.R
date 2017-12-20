@@ -142,7 +142,7 @@ faytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
      ret[is.na(ret)] <- 0
      ret
    }
-   ret <- do.call("+",lapply(fleet,getfleet)) 
+   ret <- Reduce("+",lapply(fleet,getfleet)) 
    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
    rownames(ret) <- fit$data$years
    return(ret)
