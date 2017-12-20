@@ -32,8 +32,14 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
-  ran <- c("logN", "logF","logP", "missing")
-  obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
+  if(dim(par$logP)[1]>1){
+    ran <- c("logN", "logF","logP", "missing")
+    obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",...)
+  } else {
+    ran <- c("logN", "logF", "missing")
+    obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", map=list(logP=as.factor(0)),...)
+  }
+
   if(rm.unidentified){
     skel <- parameters[!names(parameters)%in%ran]
     gr <- obj$gr()
@@ -50,10 +56,15 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
   
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000),lower=lower2,upper=upper2)
-  for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
+  for(i in seq_len(newtonsteps)) { # Take a few extra newton steps
+    mapped <- which(names(opt$par) %in% names(map))
     g <- as.numeric( obj$gr(opt$par) )
     h <- optimHess(opt$par, obj$fn, obj$gr)
-    opt$par <- opt$par - solve(h, g)
+    if(length(mapped)>0){
+      opt$par[-mapped] <- opt$par[-mapped] - solve(h[-mapped,-mapped], g[-mapped])
+    } else {
+      opt$par <- opt$par - solve(h[-mapped,-mapped], g)
+    }
     opt$objective <- obj$fn(opt$par)
   }
   rep <- obj$report()
