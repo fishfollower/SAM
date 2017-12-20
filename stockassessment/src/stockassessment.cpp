@@ -181,7 +181,8 @@ Type objective_function<Type>::operator() ()
   SIMULATE {
     REPORT(logF);
     REPORT(logN);
-    REPORT(logP);
+    if(logP.dim[0]>1){
+    	REPORT(logP);}
     logobs=dataset.logobs; 
     REPORT(logobs);
   }
@@ -194,8 +195,10 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logCatchByFleet);
   ADREPORT(logtsb);
   ADREPORT(logR);
-  ADREPORT(comps);
-  ADREPORT(weekContrib);
+  if(logP.dim[0]>1){
+    ADREPORT(comps);
+    ADREPORT(weekContrib);
+  }
   
   vector<Type> lastLogN = logN.col(timeSteps-1);
   ADREPORT(lastLogN);
