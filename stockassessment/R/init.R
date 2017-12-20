@@ -51,6 +51,8 @@ defpar <- function(dat,conf){
     idxPart <- which(dat$fleetTypes==6)
     colP    <- length(unique(dat$aux[which(dat$aux[,"fleet"] %in% idxPart),"year"]))
     ret$logP=matrix(0, nrow=length(idxPart)-1, ncol=colP)
+  } else {
+    ret$logP=matrix(0)
   }
   return(ret)
 }

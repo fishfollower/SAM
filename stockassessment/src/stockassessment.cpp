@@ -130,7 +130,7 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   
-  if(logP.dim[0]>0){
+  if(logP.dim[0]>1){
   	ans += nllP(confset, paraset, logP, keep, this);}
 
   vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
@@ -164,7 +164,7 @@ Type objective_function<Type>::operator() ()
   array<Type> comps;
   vector<Type> weekContrib;
   
-  if(logP.dim[0]>0){
+  if(logP.dim[0]>1){
 	comps = scalePFun(confset, dataset, logP);
     weekContrib = scaleWeekFun(paraset, dataset, logP);
   }
