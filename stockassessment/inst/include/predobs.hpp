@@ -3,6 +3,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   vector<Type> pred(dat.nobs);
   pred.setZero();
   array<Type> totF=totFFun(conf, logF);
+  int noYearsLAI;
+  vector<Type> varAlphaSCB;
+  array<Type> logPs;
   //LAI parts
   if(logP.dim[0]>0){
     array<Type> logPs = scalePFun(conf,dat,logP);
