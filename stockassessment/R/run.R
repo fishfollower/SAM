@@ -38,8 +38,10 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   } else {
     ran <- c("logN", "logF", "missing")
     extraArgs <- list(...)
-    if("map" %in% names(extraArgs)){
-      map <- c(extraArgs[["map"]],list(logP=as.factor(0)))
+    if(length(extraArgs)>0){
+      if("map" %in% names(extraArgs)){
+        map <- c(extraArgs[["map"]],list(logP=as.factor(0)))
+      }
     } else {
       map <- list(logP=as.factor(0))
     }
