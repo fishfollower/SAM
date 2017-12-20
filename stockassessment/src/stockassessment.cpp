@@ -111,7 +111,10 @@ Type objective_function<Type>::operator() ()
 
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
-  PARAMETER_ARRAY(logP);
+  if(confset.keyVarLogP.size()>0){
+  	PARAMETER_ARRAY(logP);
+  } else {
+   int logP = -1;}
   PARAMETER_VECTOR(missing);
   int timeSteps=logF.dim[1];
   int stateDimN=logN.dim[0];
@@ -130,7 +133,7 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   
-  if(logP.dim[0]>1){
+  if(confset.keyVarLogP.size()>0){
   	ans += nllP(confset, paraset, logP, keep, this);}
 
   vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
@@ -164,7 +167,7 @@ Type objective_function<Type>::operator() ()
   array<Type> comps;
   vector<Type> weekContrib;
   
-  if(logP.dim[0]>1){
+  if(confset.keyVarLogP.size()>0){
 	comps = scalePFun(confset, dataset, logP);
     weekContrib = scaleWeekFun(paraset, dataset, logP);
   }
@@ -181,7 +184,7 @@ Type objective_function<Type>::operator() ()
   SIMULATE {
     REPORT(logF);
     REPORT(logN);
-    if(logP.dim[0]>1){
+    if(confset.keyVarLogP.size()>0){
     	REPORT(logP);}
     logobs=dataset.logobs; 
     REPORT(logobs);
@@ -195,7 +198,7 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logCatchByFleet);
   ADREPORT(logtsb);
   ADREPORT(logR);
-  if(logP.dim[0]>1){
+  if(confset.keyVarLogP.size()>0){
     REPORT(comps);
     REPORT(weekContrib);
   }

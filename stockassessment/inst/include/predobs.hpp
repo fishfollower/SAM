@@ -7,7 +7,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   vector<Type> varAlphaSCB;
   array<Type> logPs;
   //LAI parts
-  if(logP.dim[0]>1){
+  if(conf.keyVarLogP.size()>0){
     logPs = scalePFun(conf,dat,logP);
     varAlphaSCB = scaleWeekFun(par,dat,logP);
     noYearsLAI = yearsPFun(conf,dat);
