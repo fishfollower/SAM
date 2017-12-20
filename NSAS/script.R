@@ -53,7 +53,7 @@ names(surveys)[4:7] <- c("LAI_CNS","LAI_ORSH","LAI_BUN","LAI_SNS")
 
 
 
-dat<-setup.sam.data(surveys=surveys[1:3],
+dat<-setup.sam.data(surveys=surveys,
                     residual.fleets=list(cn), # Notice list
                     prop.mature=mo,
                     stock.mean.weight=sw,
@@ -65,10 +65,10 @@ dat<-setup.sam.data(surveys=surveys[1:3],
                     natural.mortality=nm,
                     land.frac=lf)
 conf<-defcon(dat)
-#conf$keyLogFpar[2,-1]  <- c(1,1,2,2,2,3,3,3)-1
-#conf$keyLogFpar[3,2:3] <- c(4,4)-1
-#conf$keyLogFpar[4,1]   <- 5-1
-#conf$keyLogFpar[5:8,1] <- 6-1
+conf$keyLogFpar[2,-1]  <- c(1,1,2,2,2,3,3,3)-1
+conf$keyLogFpar[3,2:3] <- c(4,4)-1
+conf$keyLogFpar[4,1]   <- 5-1
+conf$keyLogFpar[5:8,1] <- 6-1
 #conf$keyVarObs[4:8,1]  <- 3
 #conf$keyVarLogP <- rep(0,3)
 par<-defpar(dat,conf)
@@ -84,7 +84,7 @@ par<-defpar(dat,conf)
 #  tmball <- c(data, conf, simFlag=T)
 #tmball$resFlag <- 0
 #  nmissing <- sum(is.na(dat$logobs))
-#  parameters$missing <- numeric(nmissing)
+##  parameters$missing <- numeric(nmissing)
 #  ran <- c("logN", "logF","logP", "missing")
 #  random <- ran
 #  data <- tmball

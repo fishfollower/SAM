@@ -84,7 +84,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     if(length(mapped)>0){
       opt$par[-mapped] <- opt$par[-mapped] - solve(h[-mapped,-mapped], g[-mapped])
     } else {
-      opt$par <- opt$par - solve(h[-mapped,-mapped], g)
+      opt$par <- opt$par - solve(h, g)
     }
     opt$objective <- obj$fn(opt$par)
   }
