@@ -32,32 +32,13 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
-  extraArgs <- list(...)
-  map <- list()
-  if(length(extraArgs)>0){
-    if("map" %in% names(extraArgs)){
-      map <- extraArgs[["map"]]
-    }
-  }
   if(dim(parameters$logP)[1]>1){
     ran <- c("logN", "logF","logP", "missing")
-    if(length(map)>0){
-      obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",map=map,...)
-    } else {
-      obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",...)
-    }
+    obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",...)
   } else {
     ran <- c("logN", "logF", "missing")
-    if(length(extraArgs)>0){
-      if("map" %in% names(extraArgs)){
-        map <- c(map,list(logP=as.factor(0)))
-      }
-    } else {
-      map <- list(logP=as.factor(0))
-    }
-    obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", map=map,...)
+    obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",...)
   }
-
 
   if(rm.unidentified){
     skel <- parameters[!names(parameters)%in%ran]
@@ -67,7 +48,6 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
   }
   
-
   lower2<-rep(-Inf,length(obj$par))
   upper2<-rep(Inf,length(obj$par))
   for(nn in names(lower)) lower2[names(obj$par)==nn]=lower[[nn]]
