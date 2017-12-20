@@ -131,7 +131,7 @@ Type objective_function<Type>::operator() ()
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   
   if(logP.dim[0]>0){
-  	ans += nllP(confset, paraset, logP, keep, this)};
+  	ans += nllP(confset, paraset, logP, keep, this);}
 
   vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
   vector<Type> logssb = log(ssb);
