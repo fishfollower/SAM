@@ -1,7 +1,8 @@
 # to install the package from the multi branch 
-#devtools::install_github("fishfollower/SAM/stockassessment", ref="multi")
+devtools::install_github("fishfollower/SAM/stockassessment", ref="components")
 library(TMB)
 setwd("D:/Repository/SAM/SAMMULTILAI/NSAS/")
+setwd("/home/hintz001/SAM/components/SAM/NSAS")
 #compile("../stockassessment/src/stockassessment.cpp")
 library(stockassessment)
 library(reshape2)
@@ -31,19 +32,19 @@ formatLAI <- function(x){
               attr(x,"time") <- c(0.67,0.67)
              return(x)}
 
-ORSH <- formatLAI(ORSH); attr(ORSH,"part") <- 1
-CNS <- formatLAI(CNS);   attr(CNS, "part") <- 2
+ORSH <- formatLAI(ORSH); attr(ORSH,"part") <- 2
+CNS <- formatLAI(CNS);   attr(CNS, "part") <- 1
 BUN <- formatLAI(BUN);   attr(BUN, "part") <- 3
 SNS <- formatLAI(SNS);   attr(SNS, "part") <- 4
 
 surveys[[1]] <- surveys[[1]][,-ncol(surveys[[1]])]; attr(surveys[[1]],"time") <- c(0.54,0.56)
 surveys[[2]] <- surveys[[2]][-nrow(surveys[[2]]),1:2]; attr(surveys[[2]],"time") <- c(0.08,0.17)
 surveys[[3]] <- matrix(surveys[[3]][-nrow(surveys[[3]]),],ncol=1,dimnames=list(1992:2016,0)); attr(surveys[[3]],"time") <- c(0.08,0.17)
-surveys[[4]] <- ORSH
-surveys[[5]] <- CNS
+surveys[[4]] <- CNS
+surveys[[5]] <- ORSH
 surveys[[6]] <- BUN
 surveys[[7]] <- SNS
-names(surveys)[4:7] <- c("LAI_ORSH","LAI_CNS","LAI_BUN","LAI_SNS")
+names(surveys)[4:7] <- c("LAI_CNS","LAI_ORSH","LAI_BUN","LAI_SNS")
 
 #source("../stockassessment/R/reading.R")
 #source("../stockassessment/R/conf.R")
@@ -52,7 +53,7 @@ names(surveys)[4:7] <- c("LAI_ORSH","LAI_CNS","LAI_BUN","LAI_SNS")
 
 
 
-dat<-setup.sam.data(surveys=surveys,
+dat<-setup.sam.data(surveys=surveys[1:3],
                     residual.fleets=list(cn), # Notice list
                     prop.mature=mo,
                     stock.mean.weight=sw,
@@ -64,7 +65,14 @@ dat<-setup.sam.data(surveys=surveys,
                     natural.mortality=nm,
                     land.frac=lf)
 conf<-defcon(dat)
+#conf$keyLogFpar[2,-1]  <- c(1,1,2,2,2,3,3,3)-1
+#conf$keyLogFpar[3,2:3] <- c(4,4)-1
+#conf$keyLogFpar[4,1]   <- 5-1
+#conf$keyLogFpar[5:8,1] <- 6-1
+#conf$keyVarObs[4:8,1]  <- 3
+#conf$keyVarLogP <- rep(0,3)
 par<-defpar(dat,conf)
+
 #save.image("./alldat.RData")
 #load("./alldat.RData")
 #
@@ -84,7 +92,8 @@ par<-defpar(dat,conf)
 ##  obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment")
 #
 
-fit<-sam.fit(dat,conf,par)
+fit<-sam.fit(dat,conf,par,run=T)
+fit$obj$gr()
 
 #cat(fit$opt$objective,"\n\n", file="res.out")
 #cat(capture.output(prmatrix(t(fit$pl$logF))), sep="\n", file="res.out", append=TRUE)
