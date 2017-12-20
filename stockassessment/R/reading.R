@@ -407,12 +407,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   attr(dat,'idx2')<-idx2    
   attr(dat,"minAgePerFleet")<-tapply(as.integer(dat[,"age"]), INDEX=dat[,"fleet"], FUN=min)
   attr(dat,"maxAgePerFleet")<-tapply(as.integer(dat[,"age"]), INDEX=dat[,"fleet"], FUN=max)
-  if(!class(surveys) %in% c("data.frame","matrix")){
-    if(length(partSurveys)>0){
-      attr(dat,"minWeek") <- minWeek
-      attr(dat,"maxWeek") <- maxWeek
-    }
-  }
+  attr(dat,"minWeek") <- minWeek
+  attr(dat,"maxWeek") <- maxWeek
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
