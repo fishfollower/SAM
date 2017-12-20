@@ -306,8 +306,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
         maxWeek <- supP-1
         names(minWeek) <- names(maxWeek)
       } else {
-        minWeek <- numeric(0)
-        maxWeek <- numeric(0)
+        minWeek <- -1
+        maxWeek <- -1
       }
     }
   }
