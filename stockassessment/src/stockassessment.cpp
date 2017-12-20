@@ -111,7 +111,7 @@ Type objective_function<Type>::operator() ()
 
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
-  int logP;
+  array<Type> logP;
   if(confset.keyVarLogP.size()>0){
   	PARAMETER_ARRAY(logP);
   }
