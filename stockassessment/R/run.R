@@ -32,7 +32,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
-  if(dim(parameters$logP)[1]>1){
+  if(length(conf$keyVarLogP)>1){
     ran <- c("logN", "logF","logP", "missing")
     obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",...)
   } else {
