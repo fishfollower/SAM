@@ -132,8 +132,6 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
     }    
   }
-  
-  REPORT_F(logPs,of);
-  REPORT_F(varAlphaSCB,of);
+  REPORT_F(releaseSurvivalVec,of);
   return pred;
 }

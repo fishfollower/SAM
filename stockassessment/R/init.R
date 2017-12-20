@@ -29,7 +29,7 @@ defpar <- function(dat,conf){
   ret$logQpow=numeric(max(conf$keyQpow)+1)
   ret$logSdLogFsta=numeric(max(conf$keyVarF)+1)-.7
   ret$logSdLogN=numeric(max(conf$keyVarLogN)+1)-.35
-  ret$logSdLogP=numeric(max(conf$keyVarLogP)+1)-.7
+  ret$logSdLogP=if(length(conf$keyVarLogP)>0){numeric(max(conf$keyVarLogP)+1)-.7} else { numeric(0)}
   ret$logSdLogObs=numeric(max(conf$keyVarObs)+1)-.35
   ret$logSdLogTotalObs=numeric(sum(conf$obsLikelihoodFlag %in% c("ALN")))
   ret$transfIRARdist=if(all(is.na(conf$keyCorObs)))numeric(0) else numeric(max(conf$keyCorObs,na.rm=TRUE)+1)+0.05

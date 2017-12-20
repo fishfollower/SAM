@@ -130,6 +130,7 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   
+  
   ans += nllP(confset, paraset, logP, keep, this);
 
   vector<Type> ssb = ssbFun(dataset, confset, logN, logF);
@@ -182,7 +183,6 @@ Type objective_function<Type>::operator() ()
   REPORT(predObs);
   array<Type> totF=totFFun(confset, logF);
   REPORT(totF);
-  REPORT(keep);
   ADREPORT(logssb);
   ADREPORT(logfbar);
   ADREPORT(logCatch);
