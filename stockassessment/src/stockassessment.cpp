@@ -196,8 +196,8 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logtsb);
   ADREPORT(logR);
   if(logP.dim[0]>1){
-    ADREPORT(comps);
-    ADREPORT(weekContrib);
+    REPORT(comps);
+    REPORT(weekContrib);
   }
   
   vector<Type> lastLogN = logN.col(timeSteps-1);
