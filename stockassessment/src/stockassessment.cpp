@@ -111,10 +111,10 @@ Type objective_function<Type>::operator() ()
 
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
+  int logP;
   if(confset.keyVarLogP.size()>0){
   	PARAMETER_ARRAY(logP);
-  } else {
-   int logP = -1;}
+  }
   PARAMETER_VECTOR(missing);
   int timeSteps=logF.dim[1];
   int stateDimN=logN.dim[0];
