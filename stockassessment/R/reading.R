@@ -305,6 +305,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
         minWeek <- c(1,supP[-length(supP)]+1)-1
         maxWeek <- supP-1
         names(minWeek) <- names(maxWeek)
+      } else {
+        minWeek <- numeric()
+        maxWeek <- numeric()
       }
     }
   }
@@ -382,7 +385,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     name<-c(name,"Recaptures")
   }
 
-  dat<-dat[complete.cases(dat[,1:3]),]
+  cc <- which(complete.cases(dat[,1:3])==T)
+  ccc<- which(complete.cases(dat[,1:4])==F & dat[,2] %in% which(type==6))
+  keep <- cc[which(!cc %in% ccc)]
+  dat<-dat[keep,]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
   attr(dat,'type')<-type
