@@ -37,7 +37,13 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",...)
   } else {
     ran <- c("logN", "logF", "missing")
-    obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", map=list(logP=as.factor(0)),...)
+    extraArgs <- list(...)
+    if("map" %in% names(extraArgs)){
+      map <- c(extraArgs[["map"]],list(logP=as.factor(0)))
+    } else {
+      map <- list(logP=as.factor(0))
+    }
+    obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", map=map,...)
   }
 
   if(rm.unidentified){
