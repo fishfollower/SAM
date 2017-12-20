@@ -160,6 +160,9 @@ Type objective_function<Type>::operator() ()
 
   vector<Type> fbar = fbarFun(confset, logF);
   vector<Type> logfbar = log(fbar);
+ 
+  array<Type> comps;
+  vector<Type> weekContrib;
   
   if(logP.dim[0]>0){
 	array<Type> comps = scalePFun(confset, dataset, logP);
@@ -178,8 +181,7 @@ Type objective_function<Type>::operator() ()
   SIMULATE {
     REPORT(logF);
     REPORT(logN);
-    if(logP.dim[0]>0){
-      REPORT(logP)};
+    REPORT(logP);
     logobs=dataset.logobs; 
     REPORT(logobs);
   }
@@ -192,10 +194,8 @@ Type objective_function<Type>::operator() ()
   ADREPORT(logCatchByFleet);
   ADREPORT(logtsb);
   ADREPORT(logR);
-  if(logP.dim[0]>0){
-    ADREPORT(comps);
-    ADREPORT(weekContrib);
-  }
+  ADREPORT(comps);
+  ADREPORT(weekContrib);
   
   vector<Type> lastLogN = logN.col(timeSteps-1);
   ADREPORT(lastLogN);
