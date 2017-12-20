@@ -165,8 +165,8 @@ Type objective_function<Type>::operator() ()
   vector<Type> weekContrib;
   
   if(logP.dim[0]>0){
-	array<Type> comps = scalePFun(confset, dataset, logP);
-    vector<Type> weekContrib = scaleWeekFun(paraset, dataset, logP);
+	comps = scalePFun(confset, dataset, logP);
+    weekContrib = scaleWeekFun(paraset, dataset, logP);
   }
 
   vector<Type> predObs = predObsFun(dataset, confset, paraset, logN, logF, logP, logssb, logfsb, logCatch, this);

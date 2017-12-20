@@ -8,9 +8,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   array<Type> logPs;
   //LAI parts
   if(logP.dim[0]>0){
-    array<Type> logPs = scalePFun(conf,dat,logP);
-    vector<Type> varAlphaSCB = scaleWeekFun(par,dat,logP);
-    int noYearsLAI = yearsPFun(conf,dat);
+    logPs = scalePFun(conf,dat,logP);
+    varAlphaSCB = scaleWeekFun(par,dat,logP);
+    noYearsLAI = yearsPFun(conf,dat);
   }
   //END LAI PARTS
   vector<Type> releaseSurvival(par.logitReleaseSurvival.size());
