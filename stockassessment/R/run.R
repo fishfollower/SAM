@@ -32,7 +32,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
-  if(dim(par$logP)[1]>1){
+  if(dim(parameters$logP)[1]>1){
     ran <- c("logN", "logF","logP", "missing")
     obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment",...)
   } else {
@@ -48,6 +48,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", map=map,...)
   }
 
+
   if(rm.unidentified){
     skel <- parameters[!names(parameters)%in%ran]
     gr <- obj$gr()
@@ -56,6 +57,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
   }
   
+
   lower2<-rep(-Inf,length(obj$par))
   upper2<-rep(Inf,length(obj$par))
   for(nn in names(lower)) lower2[names(obj$par)==nn]=lower[[nn]]
@@ -63,6 +65,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
 
   if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
   
+
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000),lower=lower2,upper=upper2)
   for(i in seq_len(newtonsteps)) { # Take a few extra newton steps
     mapped <- which(names(opt$par) %in% names(map))
