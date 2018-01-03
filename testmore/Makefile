@@ -1,4 +1,6 @@
 all: 
+	@if [ -f "ignore" ]; then echo -n $(shell basename $(shell pwd)); echo "... ignored"; else $(MAKE) doit; fi
+doit:
 	@echo 'source("script.R")' | R --slave > /dev/null
 	@echo -n $(shell basename $(shell pwd))
 	@echo -n "... "
