@@ -15,7 +15,7 @@ fbarplot(fit, ...)
 \method{fbarplot}{samset}(fit, partial = FALSE, drop = NULL,
   pcol = "lightblue", page = NULL, ...)
 
-\method{fbarplot}{samset}(fit, partial = FALSE, drop = NULL,
+\method{fbarplot}{samforecast}(fit, partial = FALSE, drop = NULL,
   pcol = "lightblue", page = NULL, ...)
 }
 \arguments{

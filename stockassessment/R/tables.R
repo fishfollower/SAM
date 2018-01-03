@@ -10,6 +10,7 @@ tableit <-function (fit, what, x=fit$data$years, trans=function(x)x,...){
 }
 ##' @rdname tableit
 ##' @method tableit sam
+##' @export
 tableit.sam <- function (fit, what, x=fit$data$years, trans=function(x)x,...){
    idx<-names(fit$sdrep$value)==what
    y<-fit$sdrep$value[idx]
@@ -30,6 +31,7 @@ ssbtable<-function(fit,...){
 }
 ##' @rdname ssbtable
 ##' @method ssbtable default
+##' @export
 ssbtable.default <- function(fit,...){
    ret<-tableit(fit, "logssb", trans=exp,...)
    return(ret)
@@ -45,6 +47,7 @@ tsbtable<-function(fit,...){
 }
 ##' @rdname tsbtable
 ##' @method tsbtable default
+##' @export
 tsbtable.default <- function(fit,...){
    ret<-tableit(fit, "logtsb", trans=exp,...)
    return(ret)
@@ -60,6 +63,7 @@ fbartable<-function(fit,...){
 }
 ##' @rdname fbartable
 ##' @method fbartable default
+##' @export
 fbartable.default <- function(fit,...){
    ret<-tableit(fit, "logfbar", trans=exp)
    return(ret)
@@ -75,6 +79,7 @@ rectable<-function(fit){
 }
 ##' @rdname rectable
 ##' @method rectable default
+##' @export
 rectable.default <- function(fit,...){
    ret<-tableit(fit, "logR", trans=exp)
    return(ret)
@@ -91,6 +96,7 @@ catchtable<-function(fit, obs.show=FALSE,...){
 }
 ##' @rdname catchtable
 ##' @method catchtable sam
+##' @export
 catchtable.sam <- function(fit, obs.show=FALSE,...){
    CW <- fit$data$catchMeanWeight 
    xx <- as.integer(rownames(CW))
@@ -118,6 +124,7 @@ ntable <- function(fit,...){
 }
 ##' @rdname ntable
 ##' @method ntable sam
+##' @export
 ntable.sam <- function(fit,...){
    ret <- exp(t(fit$pl$logN))
    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
@@ -135,6 +142,7 @@ faytable <- function(fit,...){
 }
 ##' @rdname faytable
 ##' @method faytable sam
+##' @export
 faytable.sam <- function(fit,...){
    idx <- fit$conf$keyLogFsta[1,]+2    
    ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
@@ -154,6 +162,7 @@ partable <- function(fit,...){
 }
 ##' @rdname partable
 ##' @method partable sam
+##' @export
 partable.sam <- function(fit,...){
   param <- coef(fit)
   nam <- names(param)
@@ -184,11 +193,13 @@ modeltable <- function(fits,...){
 }
 ##' @rdname modeltable
 ##' @method modeltable sam
+##' @export
 modeltable.sam <- function(fits,...){
     modeltable(c(fits))
 }
 ##' @rdname modeltable
 ##' @method modeltable samset
+##' @export
 modeltable.samset <- function(fits,...){
     if(!is.null(attr(fits,"fit"))){
       fits[[length(fits)+1]] <- attr(fits,"fit")
@@ -233,6 +244,7 @@ ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)
 }
 ##' @rdname ypr
 ##' @method ypr sam
+##' @export
 ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100,...){
   barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
   last.year.used=max(fit$data$years)
