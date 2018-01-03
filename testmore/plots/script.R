@@ -23,21 +23,6 @@ retro <- retro(fit,year=3,ncores=1)
 td <- tempdir()
 f <- file.path(td,"SAMplot_%03d.pdf")
 
-srplot0<-function(fit, ...){
-  X <- summary(fit)
-  n<-nrow(X)
-  lag <- fit$conf$minAge
-  idxR <- (lag+1):n
-  idxS <- 1:(n-lag)
-  R<-X[idxR,1]
-  S<-X[idxS,4]
-  Rnam<-colnames(X)[1]
-  Snam<-colnames(X)[4]
-  y<-rownames(X)
-  plot(S,R, xlab=Snam, ylab=Rnam, type="l", xlim=range(0,S), ylim=range(0,R), ...)
-  text(S,R, labels=y[idxR], cex=.7, col="red" )
-}
-
 txt <- c(
     ## Calibration plot - if this changes something else is wrong
     'plot(1:10,col=c("black","red",rgb(0.5,0.9,0.1,0.700000)))',
@@ -51,7 +36,6 @@ txt <- c(
     'catchplot(fit)',
     'parplot(fit)',
     'srplot(fit)',
-    'srplot0(fit)',
     'fitplot(fit)',
     ## samset plots
     'fbarplot(retro)',
