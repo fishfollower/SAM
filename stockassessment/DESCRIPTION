@@ -9,7 +9,7 @@ Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.d
 	    person(c("Christoffer","Moesgaard"), "Albertsen", role="aut"))
 Description: Fitting SAM...
 License: GPL-2
-Imports: TMB, ellipse, MASS
+Imports: TMB, ellipse, Matrix
 LinkingTo: TMB, RcppEigen
 Suggests: testthat
 URL: https://github.com/fishfollower/SAM
