@@ -34,5 +34,6 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
     Type huge = 10;
     for (int i = 0; i < stateDimN; i++) nll -= dnorm(logN(i, 0), Type(0), huge, true);  
   } 
+  REPORT_F(nvar,of);
   return nll;
 }

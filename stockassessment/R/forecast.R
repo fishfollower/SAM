@@ -39,8 +39,13 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
+##' @importFrom Matrix bdiag
 ##' @export
 forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE){
+
+  idxN <- 1:nrow(fit$rep$nvar)
+    
+  idxF <- 1:nrow(fit$rep$fvar)+nrow(fit$rep$nvar)
     
   resample <- function(x, ...){
     if(deterministic){
@@ -70,11 +75,14 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     fixedsel <- fixedsel/mean(fixedsel[fromto[1]:fromto[2]])
   }
     
-  getF <- function(x){
-    idx <- fit$conf$keyLogFsta[1,]+1
-    nsize <- length(idx)
-    ret <- exp(x[nsize+idx])
-    ret[idx==0] <- 0
+  getF <- function(x, fleet=which(fit$data$fleetTypes==0)){
+    getfleet <- function(f){
+      idx <- fit$conf$keyLogFsta[f,]+2    
+      ret <- c(NA,exp(x[idxF]))[idx]
+      ret[is.na(ret)] <- 0
+      ret
+    }
+    ret <- Reduce("+",lapply(fleet,getfleet)) 
     if(!is.null(overwriteSelYears)){
       fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
       thisfbar<-mean(ret[fromto[1]:fromto[2]])
@@ -95,44 +103,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     ret
   }
 
-  getState <- function(N,F){
-    k <- fit$conf$keyLogFsta[1,]
-    F <- F[k>=0]
-    k <- unique(k[k>=0]+1)
-    x <- log(c(N,F[k]))
-    x
-  }    
-
-  getProcessVar <- function(fit){
-    cof <- coef(fit)
-    sdN <- exp(cof[names(cof)=="logSdLogN"][fit$conf$keyVarLogN+1])
-    sdN[1]<-0
-    nN <- length(sdN)
-    sdF <- exp(cof[names(cof)=="logSdLogFsta"][fit$conf$keyVarF+1])
-    k<-fit$conf$keyLogFsta[1,]
-    sdF <- sdF[k>=0]
-    k <- unique(k[k >= 0] + 1)
-    sdF <-sdF[k]
-    nF <- length(sdF)
-    if(fit$conf$corFlag==0){
-      corr <- diag(nF)    
+  getProcessVar <- function(fit, set.rec.var.zero=TRUE){
+    cov <- bdiag(fit$rep[c("nvar","fvar")])
+    if(set.rec.var.zero){
+      cov[1,1] <- 0
     }
-    if(fit$conf$corFlag==1){
-      y <- cof[names(cof)=="itrans_rho"]
-      rho <- 2/(1+exp(-2*y))-1
-      corr <- matrix(rho, nrow=nF, ncol=nF)
-      diag(corr) <- 1
-    }
-    if(fit$conf$corFlag==2){
-      y <- cof[names(cof)=="itrans_rho"]
-      rho <- 2/(1+exp(-2*y))-1
-      corr <- diag(sdF)
-      corr <- rho^abs(row(corr)-col(corr))
-    }
-    cov <- matrix(0,nrow=nN+nF,ncol=nN+nF)
-    cov[1:nN,1:nN] <- diag(sdN^2)
-    cov[nN+1:nF,nN+1:nF] <- (sdF%*%t(sdF))*corr
-    cov
+    as.matrix(cov)
   }
     
   step <- function(x, nm, recpool, scale, inyear=FALSE){
@@ -143,16 +119,15 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
       n <- length(N)
       N <- c(resample(recpool,1),N[-n]*exp(-Z[-n])+c(rep(0,n-2),N[n]*exp(-Z[n])))
     }
-    F <- F*scale
-    xx <- getState(N,F)
+    xx <- rep(NA,length=length(x))
+    xx[idxN] <- log(N)
+    xx[idxF] <- x[idxF]+log(scale)
     return(xx)
   }
     
   scaleF <- function(x, scale){
-    F <- getF(x)*scale
-    N <- getN(x)
-    xx <- getState(N,F)
-    return(xx)
+    x[idxF] <- x[idxF]+log(scale)
+    return(x)
   }
     
   sel<-function(x){
@@ -188,14 +163,20 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   if(year.base<(max(fit$data$years)-1)){
     stop("State not saved, so cannot proceed from this year")
   }
-  if(deterministic)cov<-cov*0
-  sim<-rmvnorm(nosim, mu=est, Sigma=cov)
-
-  if(is.null(overwriteSelYears)){  
-    if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
+  if(deterministic){
+    cov<-cov*0
   }
+  sim <- rmvnorm(nosim, mu=est, Sigma=cov)
     
-  doAve <- function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
+  doAve <- function(x){
+    if(length(dim(x))==2){
+      ret <- colMeans(x[rownames(x)%in%ave.years,,drop=FALSE])
+    }
+    if(length(dim(x))==3){
+      ret <- colMeans(x[rownames(x)%in%ave.years,,1,drop=FALSE][,,1]) ### WRONG NOT SOLUTION
+    }
+    ret
+  }
   ave.sw <- doAve(fit$data$stockMeanWeight)
   ave.cw <- doAve(fit$data$catchMeanWeight)
   ave.mo <- doAve(fit$data$propMat)
@@ -206,7 +187,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   ave.pf <- doAve(fit$data$propF)
   getThisOrAve <- function(x,y, ave){
     if(y %in% rownames(x)){
-      ret <- x[which(rownames(x)==y),]
+      if(length(dim(x))==2){  
+        ret <- x[which(rownames(x)==y),]
+      }else{
+        ret <- x[which(rownames(x)==y),,]
+      }
     }else{
       ret <- ave
     }
@@ -215,8 +200,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   procVar<-getProcessVar(fit)  
   simlist<-list()
   for(i in 0:(length(fscale)-1)){
-    y<-year.base+i  
-
+    y<-year.base+i
+    
     sw<-getThisOrAve(fit$data$stockMeanWeight, y, ave.sw)
     cw<-getThisOrAve(fit$data$catchMeanWeight, y, ave.cw)
     mo<-getThisOrAve(fit$data$propMat, y, ave.mo)
