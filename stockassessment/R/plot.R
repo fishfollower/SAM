@@ -502,7 +502,7 @@ catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,plot=TRUE,...){
             points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
         obs <- list(x=x,y=rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE))
     }
-    invisible(list(drop=drop,obs))
+    invisible(list(drop=drop,obs=obs))
 }
 ##' @rdname catchplot
 ##' @method catchplot samset
