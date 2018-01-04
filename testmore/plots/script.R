@@ -91,4 +91,7 @@ invisible(sapply(lf, function(ff){
     close(con)
 }))
 
-cat(tools::md5sum(lf),"\n",sep="\n", file="res.out")
+res <- cbind(txt,tools::md5sum(lf))
+oo <- options(width=1000)
+cat(capture.output(prmatrix(res, rowlab = rep("",nrow(res)), collab = c("",""), quote=FALSE)), sep = "\n", file="res.out")
+options(oo)
