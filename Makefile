@@ -11,6 +11,11 @@ CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/inst/include/*.hpp
 
 SUBDIRS := $(wildcard testmore/*/.)
 
+ifeq (testonemore,$(firstword $(MAKECMDGOALS)))
+  ARG := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(ARG):;@:)
+endif
+
 ifeq (webtestone,$(firstword $(MAKECMDGOALS)))
   ARG := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(ARG):;@:)
@@ -23,7 +28,7 @@ endif
 
 testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 
-.PHONY: webtestfromfile webtestone webtest test testmore testmorep $(SUBDIRS) all updateData qi quick-install vignette-update
+.PHONY: webtestfromfile webtestone webtest test testmoreseq testonemore testmore $(SUBDIRS) all updateData qi quick-install vignette-update
 
 all:
 	make install
@@ -128,10 +133,13 @@ endif
 
 MAKEFLAGS += --silent
 
-testmorep:
-	$(MAKE) -j $(NPROCS) testmore
+testmore:
+	$(MAKE) -j $(NPROCS) testmoreseq
 
-testmore: $(SUBDIRS)
+testmoreseq: $(SUBDIRS)
+
+testonemore:
+	@$(MAKE) testmore/$(ARG)/.
 
 $(SUBDIRS):
 	@cp testmore/Makefile $@
