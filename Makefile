@@ -28,7 +28,7 @@ endif
 
 testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 
-.PHONY: webtestfromfile webtestone webtest test testmoreseq testonemore testmore $(SUBDIRS) all updateData qi quick-install vignette-update
+.PHONY: webtestfromfile webtestone webtest test testmoreseq testonemore testmore $(SUBDIRS) all updateData qi quick-install vignette-update 
 
 all:
 	make install
