@@ -155,6 +155,7 @@ webtestone:
 	@sed -i 's/useR = Rnewest/useR = R/' $(ARG)/Makefile
 	@sed -i 's/--vanilla/ /' $(ARG)/Makefile
 	@mv $(ARG)/run/model.RData $(ARG); 
+	@rm -f $(ARG)/run/curver
 	@touch $(ARG)/data/*
 	@$(MAKE) -s -C $(ARG) model
 	@echo "load('$(ARG)/model.RData'); old<-fit[['pl']]; \
