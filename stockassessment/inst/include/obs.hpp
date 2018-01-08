@@ -118,7 +118,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> cat = catchFun(dat, conf, logN, logF);
   vector<Type> logCatch = log(cat);
 
+  vector<Type> land = landFun(dat, conf, logN, logF);
+  vector<Type> logLand = log(land);
+
+
   vector<Type> varLogCatch = varLogCatchFun(dat, conf, logN, logF, par);
+
+  vector<Type> varLogLand = varLogLandFun(dat, conf, logN, logF, par);
 
   vector<Type> tsb = tsbFun(dat, conf, logN);
   vector<Type> logtsb = log(tsb);
@@ -129,7 +135,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> fbar = fbarFun(conf, logF);
   vector<Type> logfbar = log(fbar);
 
-  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logfsb, logCatch);
+  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logfsb, logCatch, logLand);
 
   
   // setup obs likelihoods
@@ -282,7 +288,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 if(conf.keyBiomassTreat(f)==3){
                   sd = sqrt(varLogCatch(y));
                 }else{
-                  sd = exp(par.logSdLogObs(conf.keyVarObs(f,0)));
+                  if(conf.keyBiomassTreat(f)==4){
+                    sd = sqrt(varLogLand(y));
+                  }else{
+                    sd = exp(par.logSdLogObs(conf.keyVarObs(f,0)));
+                  }
                 }  
                 nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
                 SIMULATE_F(of){
@@ -308,6 +318,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logssb,of);
   ADREPORT_F(logfbar,of);
   ADREPORT_F(logCatch,of);
+  ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
   ADREPORT_F(logR,of);
 

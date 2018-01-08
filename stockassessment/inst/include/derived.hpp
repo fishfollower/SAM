@@ -66,6 +66,48 @@ vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
 }
 
 template <class Type>
+vector<Type> landFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+  int len=dat.catchMeanWeight.dim(0);
+  vector<Type> cat(len);
+  cat.setZero();
+  for(int y=0;y<len;y++){
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+      Type z=dat.natMor(y,a-conf.minAge);
+      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
+        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+        cat(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge)*dat.landFrac(y,a-conf.minAge);
+      }
+    }
+  }
+  return cat;
+}
+
+template <class Type>
+vector<Type> varLogLandFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, paraSet<Type> par){
+  int len=dat.catchMeanWeight.dim(0);
+  vector<Type> cat(len);
+  cat.setZero();
+  vector<Type> varLogCat(len);
+  varLogCat.setZero();
+  Type CW=0;
+  Type Ca=0;
+  for(int y=0;y<len;y++){
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+      Type z=dat.natMor(y,a-conf.minAge);
+      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
+        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+        CW=dat.catchMeanWeight(y,a-conf.minAge)*dat.landFrac(y,a-conf.minAge);
+        Ca=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z));
+        cat(y)+=Ca*CW;
+        varLogCat(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(0,a-conf.minAge)))*CW*CW*Ca*Ca;
+      }
+    }
+    varLogCat(y)/=cat(y)*cat(y);
+  }
+  return varLogCat;
+}
+
+template <class Type>
 vector<Type> fsbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.catchMeanWeight.dim(0);
   vector<Type> fsb(len);
