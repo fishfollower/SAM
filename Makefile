@@ -28,7 +28,7 @@ endif
 
 testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 
-.PHONY: webtestfromfile webtestone webtest test testmoreseq testonemore testmore $(SUBDIRS) all updateData qi quick-install vignette-update
+.PHONY: webtestfromfile webtestone webtest test testmoreseq testonemore testmore $(SUBDIRS) all updateData qi quick-install vignette-update 
 
 all:
 	make install
@@ -156,6 +156,7 @@ webtestone:
 	@sed -i 's/useR = Rnewest/useR = R/' $(ARG)/Makefile
 	@sed -i 's/--vanilla/ /' $(ARG)/Makefile
 	@mv $(ARG)/run/model.RData $(ARG); 
+	@rm -f $(ARG)/run/curver
 	@touch $(ARG)/data/*
 	@$(MAKE) -s -C $(ARG) model
 	@echo "load('$(ARG)/model.RData'); old<-fit[['pl']]; \

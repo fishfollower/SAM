@@ -120,6 +120,62 @@ vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
 }
 
 template <class Type>
+vector<Type> landFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+  int len=dat.landMeanWeight.dim(0);
+  vector<Type> land(len);
+  land.setZero();
+  Type LW=0;
+  Type LF=0;
+  Type LWLF=0;
+  for(int y=0;y<len;y++){
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+      Type z=dat.natMor(y,a-conf.minAge);
+      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
+        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+        LW=dat.landMeanWeight(y,a-conf.minAge);
+        if(LW<0){LW=0;}
+	LF=dat.landFrac(y,a-conf.minAge);
+        if(LF<0){LF=0;}
+        LWLF=LW*LF;
+        land(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*LWLF;
+      }
+    }
+  }
+  return land;
+}
+
+template <class Type>
+vector<Type> varLogLandFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, paraSet<Type> par){
+  int len=dat.landMeanWeight.dim(0);
+  vector<Type> land(len);
+  land.setZero();
+  vector<Type> varLogLand(len);
+  varLogLand.setZero();
+  Type LW=0;
+  Type LF=0;
+  Type LWLF=0;
+  Type Ca=0;
+  for(int y=0;y<len;y++){
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+      Type z=dat.natMor(y,a-conf.minAge);
+      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
+        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+        LW=dat.landMeanWeight(y,a-conf.minAge);
+        if(LW<0){LW=0;}
+        LF=dat.landFrac(y,a-conf.minAge);
+        if(LF<0){LF=0;}
+        LWLF=LW*LF;
+        Ca=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z));
+        land(y)+=Ca*LWLF;
+        varLogLand(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(0,a-conf.minAge)))*LWLF*LWLF*Ca*Ca;
+      }
+    }
+    varLogLand(y)/=land(y)*land(y);
+  }
+  return varLogLand;
+}
+
+template <class Type>
 vector<Type> fsbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.catchMeanWeight.dim(0);
   int noFleets=conf.keyLogFsta.dim[0];
