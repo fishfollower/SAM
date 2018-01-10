@@ -122,6 +122,8 @@ vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
 template <class Type>
 vector<Type> landFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.landMeanWeight.dim(0);
+  int noFleets=conf.keyLogFsta.dim(0);
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> land(len);
   land.setZero();
   Type LW=0;
@@ -130,14 +132,16 @@ vector<Type> landFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array
   for(int y=0;y<len;y++){
     for(int a=conf.minAge;a<=conf.maxAge;a++){
       Type z=dat.natMor(y,a-conf.minAge);
-      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-        LW=dat.landMeanWeight(y,a-conf.minAge);
-        if(LW<0){LW=0;}
-	LF=dat.landFrac(y,a-conf.minAge);
-        if(LF<0){LF=0;}
-        LWLF=LW*LF;
-        land(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*LWLF;
+      z+=totF(a-conf.minAge,y);
+      for(int f=0; f<noFleets;f++){
+        if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+          LW=dat.landMeanWeight(y,a-conf.minAge,f);
+          if(LW<0){LW=0;}
+          LF=dat.landFrac(y,a-conf.minAge,f);
+          if(LF<0){LF=0;}
+          LWLF=LW*LF;
+          land(y)+=exp(logF(conf.keyLogFsta(f,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*LWLF;
+        }
       }
     }
   }
@@ -147,6 +151,8 @@ vector<Type> landFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array
 template <class Type>
 vector<Type> varLogLandFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, paraSet<Type> par){
   int len=dat.landMeanWeight.dim(0);
+  int noFleets=conf.keyLogFsta.dim[0];
+  array<Type> totF=totFFun(conf, logF);
   vector<Type> land(len);
   land.setZero();
   vector<Type> varLogLand(len);
@@ -158,16 +164,18 @@ vector<Type> varLogLandFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN,
   for(int y=0;y<len;y++){
     for(int a=conf.minAge;a<=conf.maxAge;a++){
       Type z=dat.natMor(y,a-conf.minAge);
-      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-        LW=dat.landMeanWeight(y,a-conf.minAge);
-        if(LW<0){LW=0;}
-        LF=dat.landFrac(y,a-conf.minAge);
-        if(LF<0){LF=0;}
-        LWLF=LW*LF;
-        Ca=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z));
-        land(y)+=Ca*LWLF;
-        varLogLand(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(0,a-conf.minAge)))*LWLF*LWLF*Ca*Ca;
+      z+=totF(a-conf.minAge,y);
+      for(int f=0; f<noFleets;f++){
+        if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+          LW=dat.landMeanWeight(y,a-conf.minAge,f);
+          if(LW<0){LW=0;}
+          LF=dat.landFrac(y,a-conf.minAge,f);
+          if(LF<0){LF=0;}
+          LWLF=LW*LF;
+          Ca=exp(logF(conf.keyLogFsta(f,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z));
+          land(y)+=Ca*LWLF;
+          varLogLand(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(f,a-conf.minAge)))*LWLF*LWLF*Ca*Ca;
+        }
       }
     }
     varLogLand(y)/=land(y)*land(y);
