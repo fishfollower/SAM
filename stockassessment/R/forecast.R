@@ -82,12 +82,15 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
       ret[is.na(ret)] <- 0
       ret
     }
-    ret <- Reduce("+",lapply(fleet,getfleet)) 
+    FF <- lapply(fleet,getfleet)
+    ret <- Reduce("+",FF) 
     if(!is.null(overwriteSelYears)){
       fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
       thisfbar<-mean(ret[fromto[1]:fromto[2]])
       ret<-fixedsel*thisfbar
+      FF[]<-NA
     }
+    attr(ret,"byFleet") <- do.call(cbind,FF)
     ret
   }
 
@@ -136,15 +139,20 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
 
   catch <- function(x, nm, cw){
     F <- getF(x)
+    FF <- attr(F,"byFleet")
     Z <- F+nm
     N <- getN(x)
-    C <- F/Z*(1-exp(-Z))*N
-    return(sum(cw*C))
+    C <- FF/Z*(1-exp(-Z))*N
+    TCW <- sum(C*cw)
+    attr(TCW, "byFleet") <- colSums(C*cw)
+    return(TCW)
   }
 
   ssb <- function(x, nm, sw, mo, pm, pf){
     F <- getF(x)
-    N <- getN(x)*exp(-pm*nm-pf*F)
+    FF <- attr(F,"byFleet")
+    ZZ <- pm*nm+rowSums(pf*FF)
+    N <- getN(x)*exp(-ZZ)
     return(sum(N*mo*sw))
   }
 
@@ -173,10 +181,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
       ret <- colMeans(x[rownames(x)%in%ave.years,,drop=FALSE])
     }
     if(length(dim(x))==3){
-      ret <- colMeans(x[rownames(x)%in%ave.years,,1,drop=FALSE][,,1]) ### WRONG NOT SOLUTION
+      ret <- apply(x[rownames(x)%in%ave.years,,,drop=FALSE],c(2,3),mean)
     }
     ret
   }
+
   ave.sw <- doAve(fit$data$stockMeanWeight)
   ave.cw <- doAve(fit$data$catchMeanWeight)
   ave.mo <- doAve(fit$data$propMat)
