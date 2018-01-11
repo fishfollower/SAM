@@ -251,9 +251,9 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
     ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
     recsim <- exp(sim[,1])
-    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y)
+    catchbysim <- apply(sim, 1, function(x)attr(catch(x, nm=nm, cw=cw), "byFleet"))
+    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y, catchby=catchbysim)
   }
-    
   attr(simlist, "fit")<-fit
 
   collect <- function(x){
@@ -264,14 +264,22 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
   ssb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$ssb))))
   catch <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$catch))))
-  tab <- cbind(fbar, rec,ssb,catch)
+  if(sum(fit$data$fleetTypes==0)==1){
+    catchby <- catch
+  }else{
+    catchby <- round(do.call(rbind, lapply(simlist,function(xx)as.vector(apply(xx$catchby,1,collect)))))
+  }
+  tab <- cbind(fbar, rec, ssb, catch)
   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
+  rownames(catchby) <- rownames(tab)
   nam <- c("median","low","high")
   colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
-  attr(simlist, "tab")<-tab
-  shorttab<-t(tab[,grep("median",colnames(tab))])
-  rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
-  attr(simlist, "shorttab")<-shorttab
+  colnames(catchby) <- paste0(rep(paste0("F",1:sum(fit$data$fleetTypes==0),":"), each=length(nam)), nam)
+  attr(simlist, "tab") <- tab
+  attr(simlist, "catchby") <- catchby
+  shorttab <- t(tab[,grep("median",colnames(tab))])
+  rownames(shorttab) <- sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
+  attr(simlist, "shorttab") <- shorttab
   attr(simlist, "label") <- label  
   class(simlist) <- "samforecast"
   simlist
