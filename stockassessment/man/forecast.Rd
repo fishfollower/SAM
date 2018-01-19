@@ -7,7 +7,10 @@
 forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL, deterministic = FALSE)
+  overwriteSelYears = NULL, deterministic = FALSE,
+  cf.cv.keep.cv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0), nrow =
+  length(catchval)), cf.cv.keep.fv = matrix(NA, ncol = 2 *
+  sum(fit$data$fleetTypes == 0), nrow = length(catchval)))
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
