@@ -34,6 +34,10 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
 \item{overwriteSelYears}{if a vector of years is specified, then the average selectivity of those years is used (not recommended)}
 
 \item{deterministic}{option to turn all process noise off (not recommended, as it will likely cause bias)}
+
+\item{cf.cv.keep.cv}{exotic option}
+
+\item{cf.cv.keep.fv}{exotic option}
 }
 \value{
 an object of type samforecast
