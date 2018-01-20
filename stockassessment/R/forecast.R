@@ -287,6 +287,34 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
       ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
       sim <- simtmp
     }
+
+    if(any(!is.na(cf.cv.keep.fv[i+1,]))){
+      cfcv <- cf.cv.keep.fv[i+1,]  
+      cf <- cfcv[1:noCatchFleets]
+      cv <- cfcv[1:noCatchFleets+noCatchFleets]
+      cfcvtfv<-c(cfcv,fval[i+1])
+      ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
+      theta <- rep(1,length(ii)+1)
+      if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.fv")
+      lsfun <- function(th){
+        s <- rep(NA,noCatchFleets)
+        s[ii] <- th[1:length(ii)]
+        s[-ii] <- th[length(ii)+1]
+        simtmp <<- t(apply(sim, 1, scaleFbyFleet, scale=s))
+        cvfun <- function(x){
+          tcv <- catch(x,nm=nm,cw=cw)
+          cv <- attr(tcv,"byFleet")
+          return(cv)
+        }
+        simcat <- apply(simtmp, 1, cvfun)
+        simfbar <- apply(simtmp, 1, fbar)
+        medcv <- apply(simcat,1,mean)
+        med <- c(medcv/sum(medcv),medcv,mean(simfbar))
+        return(sum(((cfcvtfv-med)/cfcvtfv)^2, na.rm=TRUE))
+      }
+      ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
+      sim <- simtmp
+    }
     
     fbarsim <- apply(sim, 1, fbar)
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
