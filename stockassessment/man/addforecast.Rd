@@ -2,10 +2,14 @@
 % Please edit documentation in R/plot.R
 \name{addforecast}
 \alias{addforecast}
+\alias{addforecast.samforecast}
 \title{SAM add forecasts}
 \usage{
 addforecast(fit, what, dotcol = "black", dotpch = 19, dotcex = 1.5,
-  intervalcol = gray(0.5, alpha = 0.5))
+  intervalcol = gray(0.5, alpha = 0.5), ...)
+
+\method{addforecast}{samforecast}(fit, what, dotcol = "black", dotpch = 19,
+  dotcex = 1.5, intervalcol = gray(0.5, alpha = 0.5), ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
@@ -19,6 +23,8 @@ addforecast(fit, what, dotcol = "black", dotpch = 19, dotcex = 1.5,
 \item{dotcex}{cex for dot}
 
 \item{intervalcol}{color for interval}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 SAM add forecasts

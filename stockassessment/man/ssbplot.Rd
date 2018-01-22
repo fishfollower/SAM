@@ -2,9 +2,15 @@
 % Please edit documentation in R/plot.R
 \name{ssbplot}
 \alias{ssbplot}
+\alias{ssbplot.default}
+\alias{ssbplot.samforecast}
 \title{SAM SSB plot}
 \usage{
 ssbplot(fit, ...)
+
+\method{ssbplot}{default}(fit, ...)
+
+\method{ssbplot}{samforecast}(fit, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

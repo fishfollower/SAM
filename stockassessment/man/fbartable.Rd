@@ -2,12 +2,17 @@
 % Please edit documentation in R/tables.R
 \name{fbartable}
 \alias{fbartable}
+\alias{fbartable.default}
 \title{Fbar table}
 \usage{
-fbartable(fit)
+fbartable(fit, ...)
+
+\method{fbartable}{default}(fit, ...)
 }
 \arguments{
 \item{fit}{...}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 Fbar table

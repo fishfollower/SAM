@@ -2,13 +2,29 @@
 % Please edit documentation in R/plot.R
 \name{fbarplot}
 \alias{fbarplot}
+\alias{fbarplot.sam}
+\alias{fbarplot.samset}
+\alias{fbarplot.samforecast}
 \title{SAM Fbar plot}
 \usage{
-fbarplot(fit, partial = (class(fit) == "sam"), drop = NULL,
+fbarplot(fit, ...)
+
+\method{fbarplot}{sam}(fit, partial = TRUE, drop = NULL,
+  pcol = "lightblue", page = NULL, plot = TRUE, ...)
+
+\method{fbarplot}{samset}(fit, partial = FALSE, drop = NULL,
+  pcol = "lightblue", page = NULL, ...)
+
+\method{fbarplot}{samforecast}(fit, partial = FALSE, drop = NULL,
   pcol = "lightblue", page = NULL, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
+
+\item{...}{extra arguments transferred to plot including the following: \cr
+\code{add} logical, plotting is to be added on existing plot \cr
+\code{ci} logical, confidence intervals should be plotted \cr
+\code{cicol} color to plot the confidence polygon}
 
 \item{partial}{true if included partial F's are to be plotted}
 
@@ -18,10 +34,7 @@ fbarplot(fit, partial = (class(fit) == "sam"), drop = NULL,
 
 \item{page}{partial ages to plot}
 
-\item{...}{extra arguments transferred to plot including the following: \cr
-\code{add} logical, plotting is to be added on existing plot \cr
-\code{ci} logical, confidence intervals should be plotted \cr
-\code{cicol} color to plot the confidence polygon}
+\item{plot}{true if fbar should be plotted}
 }
 \description{
 SAM Fbar plot
