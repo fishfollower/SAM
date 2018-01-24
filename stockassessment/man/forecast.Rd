@@ -10,7 +10,9 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
   overwriteSelYears = NULL, deterministic = FALSE,
   cf.cv.keep.cv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0), nrow =
   length(catchval)), cf.cv.keep.fv = matrix(NA, ncol = 2 *
-  sum(fit$data$fleetTypes == 0), nrow = length(catchval)))
+  sum(fit$data$fleetTypes == 0), nrow = length(catchval)),
+  cf.keep.fv.offset = matrix(0, ncol = sum(fit$data$fleetTypes == 0), nrow =
+  length(catchval)))
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -38,6 +40,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
 \item{cf.cv.keep.cv}{exotic option}
 
 \item{cf.cv.keep.fv}{exotic option}
+
+\item{cf.keep.fv.offset}{exotic option}
 }
 \value{
 an object of type samforecast

@@ -38,12 +38,13 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
 ##' @param cf.cv.keep.cv exotic option 
 ##' @param cf.cv.keep.fv exotic option
+##' @param cf.keep.fv.offset exotic option
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom Matrix bdiag
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval))){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval))){
 
   idxN <- 1:nrow(fit$rep$nvar)
     
@@ -309,7 +310,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
         simcat <- apply(simtmp, 1, cvfun)
         simfbar <- apply(simtmp, 1, fbar)
         medcv <- apply(simcat,1,mean)
-        med <- c(medcv/sum(medcv),medcv,mean(simfbar))
+        med <- c((medcv-cf.keep.fv.offset[i+1,])/sum(medcv),medcv,mean(simfbar))
         return(sum(((cfcvtfv-med)/cfcvtfv)^2, na.rm=TRUE))
       }
       ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
