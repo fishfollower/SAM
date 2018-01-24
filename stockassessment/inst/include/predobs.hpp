@@ -114,6 +114,11 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   
       case 6:
 		lyr = y - (dat.noYears - noYearsLAI);
+		//Correct for surveys with more years than the partial survey
+		if(lyr<0){
+		  int diffyears = -1 * lyr;
+		}
+		lyr = lyr + diffyears;
 		alpha = dat.minWeek(LAIf) + a;	
 	    pred(i)=logssb(y) + par.logFpar(conf.keyLogFpar(f-1,0)) + logPs(LAIf,lyr) + varAlphaSCB(alpha);
       break;
