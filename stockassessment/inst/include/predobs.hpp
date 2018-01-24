@@ -51,6 +51,14 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     if(ft<3 || ft==7){ 
       zz = dat.natMor(y,a)+totF(a,y);
     }    
+    if(ft==6){
+      lyr = y - (dat.noYears - noYearsLAI);
+	  //Correct for surveys with more years than the partial survey
+	  if(lyr<0){
+	    diffyears = -1 * lyr;
+	  }
+	  lyr = lyr + diffyears;
+	}
 
     switch(ft){
       case 0:// residual fleets (without effort information)
@@ -113,12 +121,6 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
   
       case 6:
-		lyr = y - (dat.noYears - noYearsLAI);
-		//Correct for surveys with more years than the partial survey
-		if(lyr<0){
-		  diffyears = -1 * lyr;
-		}
-		lyr = lyr + diffyears;
 		alpha = dat.minWeek(LAIf) + a;	
 	    pred(i)=logssb(y) + par.logFpar(conf.keyLogFpar(f-1,0)) + logPs(LAIf,lyr) + varAlphaSCB(alpha);
       break;
