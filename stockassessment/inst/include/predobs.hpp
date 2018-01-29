@@ -53,6 +53,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     }    
     if(ft==6){
       lyr = y - (dat.noYears - noYearsLAI);
+      diffyears = 0;
 	  //Correct for surveys with more years than the partial survey
 	  if(lyr<0){
 	    diffyears = -1 * lyr;
