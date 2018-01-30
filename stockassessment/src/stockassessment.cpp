@@ -202,6 +202,7 @@ Type objective_function<Type>::operator() ()
   if(confset.keyVarLogP.size()>0){
     REPORT(comps);
     REPORT(weekContrib);
+    ADREPORT(comps);
   }
   
   vector<Type> lastLogN = logN.col(timeSteps-1);

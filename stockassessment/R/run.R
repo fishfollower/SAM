@@ -78,7 +78,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   pl <- as.list(sdrep,"Est")
   plsd <- as.list(sdrep,"Std")
 
-  sdrep$cov<-NULL # save memory
+  #sdrep$cov<-NULL # save memory
 
   ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower2, hig=upper2)
   attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
