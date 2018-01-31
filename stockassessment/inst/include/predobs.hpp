@@ -124,6 +124,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       case 6:
 		alpha = dat.minWeek(LAIf) + a;	
 	    pred(i)=logssb(y) + par.logFpar(conf.keyLogFpar(f-1,0)) + logPs(LAIf,lyr) + varAlphaSCB(alpha);
+	    if(conf.keyQpow(f-1,0)>(-1)){
+          pred(i)*=exp(par.logQpow(conf.keyQpow(f-1,0))); 
+        }
       break;
   
       case 7:// sum residual fleets 
