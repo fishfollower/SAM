@@ -93,6 +93,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         if(conf.keyLogFpar(f-1,a)>(-1)){
           pred(i)+=par.logFpar(conf.keyLogFpar(f-1,a));
         }
+        if(conf.keyVarF(f-1,a)<(-2)){				//Testing MIK no downs
+          pred(i)+=log(1-exp(logPs(3,lyr)));		//Testing MIK no downs
+    	}											//Testing MIK no downs
         
       break;
   
