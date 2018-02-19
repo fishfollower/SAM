@@ -74,7 +74,7 @@ fbartable.default <- function(fit,...){
 ##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-rectable<-function(fit){
+rectable<-function(fit,...){
     UseMethod("rectable")
 }
 ##' @rdname rectable
