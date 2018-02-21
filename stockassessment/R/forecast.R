@@ -39,12 +39,13 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param cf.cv.keep.cv exotic option 
 ##' @param cf.cv.keep.fv exotic option
 ##' @param cf.keep.fv.offset exotic option
+##' @param estimate the summary function used (typically mean or median) 
 ##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom Matrix bdiag
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval))){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
 
   idxN <- 1:nrow(fit$rep$nvar)
     
@@ -52,7 +53,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
 
   catchFleets <- which(fit$data$fleetType==0)
   noCatchFleets <- length(catchFleets)  
-  idxFbyFleet <- apply(fit$conf$keyLogFsta[catchFleets,], 1, function(x)unique(x[x>-.5])+nrow(fit$rep$nvar)+1) 
+  idxFbyFleet <- apply(fit$conf$keyLogFsta[catchFleets,,drop=FALSE], 1, function(x)unique(x[x>-.5])+nrow(fit$rep$nvar)+1) 
     
   resample <- function(x, ...){
     if(deterministic){
@@ -246,7 +247,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     }
 
     if(!is.na(fval[i+1])){
-      curfbar<-mean(apply(sim, 1, fbar))
+      curfbar<-estimate(apply(sim, 1, fbar))
       adj<-fval[i+1]/curfbar
       sim<-t(apply(sim, 1, scaleF, scale=adj))    
     }
@@ -256,7 +257,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
       fun<-function(s){
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))      
         simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
-        return(catchval[i+1]-mean(simcat))
+        return(catchval[i+1]-estimate(simcat))
       }
       ff <- uniroot(fun, c(0,100))$root
       sim <- simtmp
@@ -281,8 +282,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
           return(cv)
         }
         simcat <- apply(simtmp, 1, cvfun)
-        medcv <- apply(simcat,1,mean)
-        med <- c(medcv/sum(medcv),medcv,mean(apply(simcat,2,sum)))
+        medcv <- apply(simcat,1,estimate)
+        med <- c(medcv/sum(medcv),medcv,estimate(apply(simcat,2,sum)))
         return(sum(((cfcvtcv-med)/cfcvtcv)^2, na.rm=TRUE))
       }
       ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
@@ -309,8 +310,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
         }
         simcat <- apply(simtmp, 1, cvfun)
         simfbar <- apply(simtmp, 1, fbar)
-        medcv <- apply(simcat,1,mean)
-        med <- c((medcv-cf.keep.fv.offset[i+1,])/sum(medcv),medcv,mean(simfbar))
+        medcv <- apply(simcat,1,estimate)
+        med <- c((medcv-cf.keep.fv.offset[i+1,])/sum(medcv),medcv,estimate(simfbar))
         return(sum(((cfcvtfv-med)/cfcvtfv)^2, na.rm=TRUE))
       }
       ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
@@ -328,7 +329,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
 
   collect <- function(x){
     quan <- quantile(x, c(.50,.025,.975))
-    c(mean=mean(x), low=quan[2], high=quan[3])
+    c(Estimate=estimate(x), low=quan[2], high=quan[3])
   }
   fbar <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbar))),3)
   rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
@@ -342,13 +343,13 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   tab <- cbind(fbar, rec, ssb, catch)
   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
   rownames(catchby) <- rownames(tab)
-  nam <- c("mean","low","high")
+  nam <- c("Estimate","low","high")
   colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
   colnames(catchby) <- paste0(rep(paste0("F",1:sum(fit$data$fleetTypes==0),":"), each=length(nam)), nam)
   attr(simlist, "tab") <- tab
   attr(simlist, "catchby") <- catchby
-  shorttab <- t(tab[,grep("mean",colnames(tab))])
-  rownames(shorttab) <- sub(":mean","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
+  shorttab <- t(tab[,grep("Estimate",colnames(tab))])
+  rownames(shorttab) <- sub(":Estimate","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
   attr(simlist, "shorttab") <- shorttab
   attr(simlist, "label") <- label  
   class(simlist) <- "samforecast"

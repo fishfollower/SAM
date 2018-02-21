@@ -12,7 +12,7 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
   length(catchval)), cf.cv.keep.fv = matrix(NA, ncol = 2 *
   sum(fit$data$fleetTypes == 0), nrow = length(catchval)),
   cf.keep.fv.offset = matrix(0, ncol = sum(fit$data$fleetTypes == 0), nrow =
-  length(catchval)))
+  length(catchval)), estimate = median)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -42,6 +42,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
 \item{cf.cv.keep.fv}{exotic option}
 
 \item{cf.keep.fv.offset}{exotic option}
+
+\item{estimate}{the summary function used (typically mean or median)}
 }
 \value{
 an object of type samforecast

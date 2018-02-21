@@ -99,7 +99,7 @@ addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, interval
                                  }
                                }
                     )
-    points(y,x[,paste(what,"mean", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
+    points(y,x[,paste(what,"Estimate", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
   }
 }
 

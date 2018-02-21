@@ -148,6 +148,27 @@ faytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
    return(ret)
 }
 
+##' Catch-at-age in numbers table 
+##' @param fit a fitted object of class 'sam' as returned from sam.fit
+##' @param fleet the fleet number(s) to return catch summed for (default is to return the sum of all residual fleets).  
+##' @details ...
+##' @export
+caytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
+   getfleet <- function(f){
+     idx <- fit$conf$keyLogFsta[f,]+2    
+     F <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
+     F[is.na(F)] <- 0
+     M <- fit$data$natMor
+     N <- exp(t(fit$pl$logN))
+     F/(F+M)*N*(1-exp(-F-M))
+   }
+   ret <- Reduce("+",lapply(fleet,getfleet)) 
+   colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
+   rownames(ret) <- fit$data$years
+   return(ret)
+}
+
+
 ##' parameter table 
 ##' @param  fit ... 
 ##' @details ...
@@ -224,8 +245,6 @@ ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)
   barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
   last.year.used=max(fit$data$years)
   idxno<-which(fit$data$years==last.year.used)
-  #dim<-fit.current$stateDim
-  #idxN<-1:ncol(stock.mean.weight) 
   F <- t(faytable(fit))
   F[is.na(F)]<-0
   
@@ -247,13 +266,16 @@ ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)
     ret
   }
 
+  aveByCatch <- function(X){
+    Reduce("+",lapply(which(fit$data$fleetTypes==0), function(f)caytable(fit,f)*X[,,f]/caytable(fit)))
+  }
   ave.sl<-sel()
   ave.sw<-colMeans(fit$data$stockMeanWeight[(idxno-aveYears+1):idxno,,drop=FALSE])
-  ave.cw<-colMeans(fit$data$catchMeanWeight[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.cw<-colMeans(aveByCatch(fit$data$catchMeanWeight)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
   ave.pm<-colMeans(fit$data$propMat[(idxno-aveYears+1):idxno,,drop=FALSE])
   ave.nm<-colMeans(fit$data$natMor[(idxno-aveYears+1):idxno,,drop=FALSE])
-  ave.lf<-colMeans(fit$data$landFrac[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
-  ave.cw.land<-colMeans(fit$data$landMeanWeight[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.lf<-colMeans(aveByCatch(fit$data$landFrac)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.cw.land<-colMeans(aveByCatch(fit$data$landMeanWeight)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
 
   N<-numeric(ageLimit)
   N[1]<-1.0
