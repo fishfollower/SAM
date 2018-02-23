@@ -111,7 +111,7 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
   if(nrow(mat)>length(unique(y)))stop("The number of retro runs exceeds number of years")
   if(ncol(mat)!=length(suf))stop("Number of retro fleets does not match")
 
-  setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)cbind(mat[i,ff]:maxy[ff], ff))))
+  setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)if(mat[i,ff]<=maxy[ff]){cbind(mat[i,ff]:maxy[ff], ff)})))
   cl <- makeCluster(ncores) #set up nodes
   clusterExport(cl, varlist="fit", envir=environment())
   runs <- parLapply(cl, setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))

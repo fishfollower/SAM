@@ -2,12 +2,17 @@
 % Please edit documentation in R/tables.R
 \name{ssbtable}
 \alias{ssbtable}
+\alias{ssbtable.default}
 \title{SSB table}
 \usage{
-ssbtable(fit)
+ssbtable(fit, ...)
+
+\method{ssbtable}{default}(fit, ...)
 }
 \arguments{
 \item{fit}{...}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 SSB table

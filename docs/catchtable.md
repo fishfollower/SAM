@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-catchtable(fit, obs.show = FALSE)
+catchtable(fit, obs.show = FALSE, ...)
+list(list("catchtable"), list("sam"))(fit, obs.show = FALSE, ...)
 ```
 
 
@@ -19,6 +20,7 @@ Argument      |Description
 ------------- |----------------
 ```fit```     |     object returned from sam.fit
 ```obs.show```     |     logical add a column with catch sum of product rowsums(C*W)
+```...```     |     extra arguments not currently used
 
 ## Details
 

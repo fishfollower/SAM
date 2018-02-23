@@ -2,14 +2,21 @@
 % Please edit documentation in R/plot.R
 \name{srplot}
 \alias{srplot}
+\alias{srplot.sam}
 \title{Plots the stock recruitment}
 \usage{
 srplot(fit, ...)
+
+\method{srplot}{sam}(fit, textcol = "red", add = FALSE, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
 
 \item{...}{extra arguments to plot}
+
+\item{textcol}{color of years on plot}
+
+\item{add}{false if a new plot should be created}
 }
 \description{
 Plots the stock recruitment

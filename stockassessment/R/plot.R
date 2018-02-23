@@ -17,9 +17,14 @@
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
 ##' @details The basic plotting used bu many of the plotting functions (e.g. ssbplot, fbarplot ...) 
-plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
-                    addCI=if(class(fit)=="samset"){rep(FALSE,length(fit))}else{NA}, drop=0, unnamed.basename="current", xlim=NULL,...){
-  if(class(fit)=="sam"){ 
+plotit <-function (fit, what,...){
+    UseMethod("plotit")
+}
+##' @rdname plotit
+##' @method plotit sam
+##' @export
+plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
     lowhig <- y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -44,8 +49,12 @@ plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=nume
       lines(x, trans(y), lwd=3, col=cicol)
       lines(x, trans(y), lwd=2, col="black", lty="dotted")
     }
-  }
-  if(class(fit)=="samset"){
+}
+##' @rdname plotit
+##' @method plotit samset
+##' @export
+plotit.samset <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
+                   addCI=rep(FALSE,length(fit)), drop=0, unnamed.basename="current", xlim=NULL,...){
     if(is.logical(addCI) & (length(addCI)==1))addCI=rep(addCI,length(fit))
     colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
     idxfrom <- 1
@@ -69,14 +78,18 @@ plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=nume
         legend("bottom",legend=leg, lwd=3, col=c(par("col"),colSet[((idxfrom:length(fit))-1)%%length(colSet)+1]), ncol=3, bty="n")
         legend("bottom",legend=leg, lwd=2, col=rep("black", length(leg)), lty="dotted", ncol=3, bty="n")
     }
-  }
-  if(class(fit)=="samforecast"){
+}
+##' @rdname plotit
+##' @method plotit samforecast
+##' @export
+plotit.samforecast <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
     xy <- unlist(lapply(fit, function(xx) xx$year))
     thisfit<-attr(fit,"fit")
     xr <- range(thisfit$data$years, xy)
     plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
-  }
 }
+
 
 ##' SAM add forecasts 
 ##' @param fit the object returned from sam.fit
@@ -85,23 +98,29 @@ plotit <-function (fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=nume
 ##' @param dotpch pch for dot
 ##' @param dotcex cex for dot
 ##' @param intervalcol color for interval
+##' @param ... extra arguments not currently used
 ##' @details internal plotting fun
 ##' @importFrom graphics arrows
-addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5)){
-  if(class(fit)=="samforecast"){
+addforecast<-function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5),...){
+    UseMethod("addforecast")
+}
+##' @rdname addforecast
+##' @method addforecast samforecast
+##' @export
+addforecast.samforecast <- function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5),...){
     x <- attr(fit,"tab")
     y <- as.numeric(rownames(x))
     dummy <- sapply(1:length(y),
                     function(i){
-                                 xx<-c(x[i,paste(what,"low", sep=":")],x[i,paste(what,"high", sep=":")]);
-                                 if(abs(diff(xx))>0.01){
-                                   arrows(y[i],xx[1],y[i],xx[2],lwd=3, col=intervalcol, angle=90, code=3, length=.1)
-                                 }
-                               }
+                        xx<-c(x[i,paste(what,"low", sep=":")],x[i,paste(what,"high", sep=":")]);
+                        if(abs(diff(xx))>0.01){
+                            arrows(y[i],xx[1],y[i],xx[2],lwd=3, col=intervalcol, angle=90, code=3, length=.1)
+                        }
+                    }
                     )
     points(y,x[,paste(what,"Estimate", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
-  }
 }
+
 
 
 ##' Plot by one or two  
@@ -303,38 +322,64 @@ plotby <-function(x=NULL, y=NULL, z=NULL, x.line=NULL, y.line=NULL, z.line=NULL,
 ##' @importFrom graphics matplot
 ##' @details Plot the defined fbar. 
 ##' @export
-fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL, pcol="lightblue", page=NULL,...){
-  if(class(fit)=="sam"){
-    fitlocal <- fit
-  }
-  if(class(fit)=="samset"){
-    if(!is.null(attr(fit,"fit"))){
-      fitlocal <- attr(fit,"fit")
-    }else{
-      fitlocal <- fit[[1]]
-    }
-  }
-  if(class(fit)=="samforecast"){
-    fitlocal <- attr(fit,"fit")
-  }
-  if(is.null(drop)){
-    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
-  }  
-  fbarRange<-fitlocal$conf$fbarRange
-  fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
-  fmat<-t(faytable(fitlocal))#fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
-  if(is.null(page)){
-    page<-fbarRange[1]:fbarRange[2]
-  }
-  idx <- which(fitlocal$conf$minAge:fitlocal$conf$maxAge %in% page)
-  exx <- if(partial){fmat[idx,]}else{numeric(0)}
-  plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
-  if(partial){
-    idxx <- 1:(length(fitlocal$data$years)-drop)
-    matplot(fitlocal$data$years[idxx], t(fmat[idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(page))
-  }
-  addforecast(fit,"fbar")  
+fbarplot<-function(fit,...){
+    UseMethod("fbarplot")
 }
+##' @rdname fbarplot
+##' @method fbarplot sam
+##' @param plot true if fbar should be plotted
+##' @export
+fbarplot.sam <- function(fit,partial = TRUE, drop=NULL, pcol="lightblue", page=NULL, plot = TRUE,...){
+     if(is.null(drop)){
+        drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
+    }  
+    fbarRange<-fit$conf$fbarRange
+    fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
+    fmat<-t(faytable(fit))#fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
+    if(is.null(page)){
+        page<-fbarRange[1]:fbarRange[2]
+    }
+    idx <- which(fit$conf$minAge:fit$conf$maxAge %in% page)
+    exx <- if(partial){fmat[idx,]}else{numeric(0)}
+    if(plot){
+        plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
+        if(partial){
+            idxx <- 1:(length(fit$data$years)-drop)
+            matplot(fit$data$years[idxx], t(fmat[idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(page))
+        }
+    }
+    invisible(list(drop=drop,fbarRange=fbarRange,fbarlab=fbarlab,fmat=fmat,page=page,idx=idx,exx=exx))
+}
+##' @rdname fbarplot
+##' @method fbarplot samset
+##' @export
+fbarplot.samset <- function(fit,partial = FALSE, drop=NULL, pcol="lightblue", page=NULL,...){
+    if(!is.null(attr(fit,"fit"))){
+        fitlocal <- attr(fit,"fit")
+    }else{
+        fitlocal <- fit[[1]]
+    }
+    tmp <- fbarplot(fitlocal,partial,drop,pcol,page,plot=FALSE,...)
+    plotit(fit, "logfbar", ylab=tmp$fbarlab, trans=exp, ex=tmp$exx, drop=tmp$drop, ...)
+    if(partial){
+        idxx <- 1:(length(fitlocal$data$years)-tmp$drop)
+        matplot(fitlocal$data$years[idxx], t(tmp$fmat[tmp$idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(tmp$page))
+    }
+}
+##' @rdname fbarplot
+##' @method fbarplot samforecast
+##' @export
+fbarplot.samforecast <- function(fit,partial = FALSE, drop=NULL, pcol="lightblue", page=NULL,...){
+    fitlocal <- attr(fit,"fit")
+    tmp <- fbarplot(fitlocal,partial,drop,pcol,page,plot=FALSE,...)
+    plotit(fit, "logfbar", ylab=tmp$fbarlab, trans=exp, ex=tmp$exx, drop=tmp$drop, ...)
+    if(partial){
+        idxx <- 1:(length(fitlocal$data$years)-tmp$drop)
+        matplot(fitlocal$data$years[idxx], t(tmp$fmat[tmp$idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(tmp$page))
+    }
+    addforecast(fit,"fbar")
+}
+
 
 ##' SAM SSB plot 
 ##' @param fit the object returned from sam.fit
@@ -345,8 +390,20 @@ fbarplot<-function(fit,partial=(class(fit)=="sam"), drop=NULL, pcol="lightblue",
 ##' @details Plot of spawning stock biomass 
 ##' @export
 ssbplot<-function(fit, ...){
-  plotit(fit, "logssb", ylab="SSB", trans=exp,...)
-  addforecast(fit,"ssb")
+    UseMethod("ssbplot")
+}
+##' @rdname ssbplot
+##' @method ssbplot default
+##' @export
+ssbplot.default <- function(fit,...){
+    plotit(fit, "logssb", ylab="SSB", trans=exp,...)
+}
+##' @rdname ssbplot
+##' @method ssbplot samforecast
+##' @export
+ssbplot.samforecast <- function(fit,...){
+    plotit(fit, "logssb", ylab="SSB", trans=exp,...)
+    addforecast(fit,"ssb")
 }
 
 ##' SAM TSB plot 
@@ -358,7 +415,13 @@ ssbplot<-function(fit, ...){
 ##' @details Plot of total stock biomass
 ##' @export
 tsbplot<-function(fit, ...){
-  plotit(fit, "logtsb", ylab="TSB", trans=exp,...)
+    UseMethod("tsbplot")
+}
+##' @rdname tsbplot
+##' @method tsbplot default
+##' @export
+tsbplot.default <- function(fit,...){
+    plotit(fit, "logtsb", ylab="TSB", trans=exp,...)
 }
 
 ##' SAM Recruits plot 
@@ -370,22 +433,35 @@ tsbplot<-function(fit, ...){
 ##' @details Plot of numbers of recruits (youngest age class)
 ##' @export
 recplot<-function(fit,...){
-  if(class(fit)=="sam"){
-    fitlocal <- fit
-  }
-  if(class(fit)=="samset"){
+    UseMethod("recplot")
+}
+##' @rdname recplot
+##' @method recplot sam
+##' @export
+recplot.sam <- function(fit, ...){
+    lab<-paste("Recruits (age ", fit$conf$minAge, ")", sep="")
+    plotit(fit, "logR", ylab=lab, trans=exp,...)
+}
+##' @rdname recplot
+##' @method recplot samset
+##' @export
+recplot.samset <- function(fit, ...){
     if(!is.null(attr(fit,"fit"))){
-      fitlocal <- attr(fit,"fit")
+        fitlocal <- attr(fit,"fit")
     }else{
-      fitlocal <- fit[[1]]
+        fitlocal <- fit[[1]]
     }
-  }
-  if(class(fit)=="samforecast"){
+    lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
+    plotit(fit, "logR", ylab=lab, trans=exp,...)
+}
+##' @rdname recplot
+##' @method recplot samforecast
+##' @export
+recplot.samforecast <- function(fit, ...){
     fitlocal <- attr(fit,"fit")
-  }
-  lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
-  plotit(fit, "logR", ylab=lab, trans=exp,...)
-  addforecast(fit, "rec")
+    lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
+    plotit(fit, "logR", ylab=lab, trans=exp,...)
+    addforecast(fit, "rec")
 }
 
 ##' SAM catch plot 
@@ -400,19 +476,47 @@ recplot<-function(fit,...){
 ##' @importFrom graphics points
 ##' @export
 catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
-  if(class(fit)=="sam"){
-    fitlocal <- fit
+    UseMethod("catchplot")
+}
+
+##' @rdname catchplot
+##' @method catchplot sam
+##' @export
+catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,...){
+  if(is.null(drop)){
+    drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
   }
-  if(class(fit)=="samset"){
-    if(!is.null(attr(fit,"fit"))){
-      fitlocal <- attr(fit,"fit")
-    }else{
-      fitlocal <- fit[[1]]
-    }
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  if(obs.show){
+    ct <- catchtable(fit, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
   }
-  if(class(fit)=="samforecast"){
+}
+
+##' @rdname catchplot
+##' @method catchplot samset
+##' @export
+catchplot.samset <- function(fit, obs.show=TRUE, drop=NULL,...){
+  if(!is.null(attr(fit,"fit"))){
     fitlocal <- attr(fit,"fit")
+  }else{
+    fitlocal <- fit[[1]]
   }
+  if(is.null(drop)){
+    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
+  }
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  if(obs.show){
+    ct <- catchtable(fitlocal, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
+  }
+}
+
+##' @rdname catchplot
+##' @method catchplot samforecast
+##' @export
+catchplot.samforecast <- function(fit, obs.show=TRUE, drop=NULL,...){
+  fitlocal <- attr(fit,"fit")
   if(is.null(drop)){
     drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
   }
@@ -423,7 +527,6 @@ catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
   }
   addforecast(fit, "catch")
 }
-
 
 ##' SAM catchbyfleet plot 
 ##' @param fit the object returned from sam.fit
@@ -448,9 +551,6 @@ catchbyfleetplot<-function(fit, obs.show=FALSE, ...){
  legend("topright", legend=sub("Catch", "", colnames(ct[,1:nf])), col=colSet[1:nf], lty="solid", lwd=3)
 }
 
-
-
-
 ##' SAM parameter plot 
 ##' @param fit the object returned from sam.fit
 ##' @param cor.report.limit correlations with absolute value > this number is reported in the plot 
@@ -459,10 +559,18 @@ catchbyfleetplot<-function(fit, obs.show=FALSE, ...){
 ##' @export
 ##' @importFrom stats cov2cor
 parplot<-function(fit, cor.report.limit=0.95, ...){
-  if(class(fit)=="sam"){
-    fit <- list(fit)
-    class(fit) <- "samset"
-  }
+    UseMethod("parplot")
+}
+##' @rdname parplot
+##' @method parplot sam
+##' @export
+parplot.sam <- function(fit, cor.report.limit=0.95, ...){
+    parplot(c(fit),cor.report.limit,...)
+}
+##' @rdname parplot
+##' @method parplot samset
+##' @export
+parplot.samset <- function(fit, cor.report.limit=0.95, ...){
   if(!is.null(attr(fit,"fit"))){
     fit <- c(list(attr(fit,"fit")), fit)
   }
@@ -526,14 +634,26 @@ parplot<-function(fit, cor.report.limit=0.95, ...){
 ##' Extract observation covariance matrices from a SAM fit
 ##' @param fit the object returned from sam.fit
 ##' @param corr if TRUE return correlation matrices rather than covariances
+##' @param ... extra arguments not currently used
 ##' @return a list of matrices
 ##' @export
-obscov<-function(fit, corr=FALSE){
-    stopifnot(class(fit)=="sam")
+obscov<-function(fit, corr=FALSE,...){
+    UseMethod("obscov")
+}
+##' @rdname obscov
+##' @method obscov sam
+##' @export
+obscov.sam<-function(fit, corr=FALSE,...){
     res<-fit$rep$obsCov
     for(i in 1:length(res)) rownames(res[[i]])<-fit$data$minAgePerFleet[i]:(fit$data$minAgePerFleet[i]+nrow(res[[i]])-1)
     if(corr) for(i in 1:length(res)) if(any(is.na(res[[i]])))res[[i]][]<-NA else res[[i]]<-cov2cor(res[[i]])
     res
+}
+##' @rdname obscov
+##' @method obscov samset
+##' @export
+obscov.samset <- function(fit, corr=FALSE,...){
+    return(lapply(fit,obscov))
 }
 
 ##' Plots the estimated correlation matrices by fleet.
@@ -541,6 +661,12 @@ obscov<-function(fit, corr=FALSE){
 ##' @param ... extra arguments to plot
 ##' @export
 obscorrplot<-function(fit,...){
+    UseMethod("obscorrplot")
+}
+##' @rdname obscorrplot
+##' @method obscorrplot sam
+##' @export
+obscorrplot.sam <- function(fit,...){
     x <- obscov(fit,TRUE)
     fn <- attr(fit$data,"fleetNames")
     for(i in 1:length(x)){
@@ -560,6 +686,12 @@ obscorrplot<-function(fit,...){
 ##' @importFrom stats cor xtabs
 ##' @export
 empirobscorrplot<-function(res,...){
+    UseMethod("empirobscorrplot")
+}
+##' @rdname empirobscorrplot
+##' @method empirobscorrplot samres
+##' @export
+empirobscorrplot.samres <- function(res,...){
     dat <- data.frame(resid=res$residual,age=res$age,year=res$year,fleet=res$fleet)
     fleets <- unique( dat$fleet)
     fn <- attr(res,"fleetNames")
@@ -575,7 +707,8 @@ empirobscorrplot<-function(res,...){
 ##' @param x a list of correlation matrices
 ##' @param fn a vector of fleet names
 ##' @param ... extra arguments to plotcorr
-##' @importFrom ellipse plotcorr 
+##' @importFrom ellipse plotcorr
+##' @export
 corplotcommon<-function(x,fn,...){
     op <- par(no.readonly=TRUE)
     ccolors <- c("#A50F15","#DE2D26","#FB6A4A","#FCAE91","#FEE5D9","white",
@@ -605,22 +738,35 @@ corplotcommon<-function(x,fn,...){
 ##' @importFrom ellipse plotcorr 
 ##' @export
 corplot<-function(x,...){
-    cl <- class(x)
-    if(cl=="sam"){
-        obscorrplot(x,...)
-    } else if(cl=="samres"){
-        empirobscorrplot(x,...)
-    } else {
-        stop("x must be of class 'sam' or 'samres'")
-    }
+    UseMethod("corplot")
 }
-
+##' @rdname corplot
+##' @method corplot sam
+##' @export
+corplot.sam <- function(x,...){
+    obscorrplot(x,...)
+}
+##' @rdname corplot
+##' @method corplot samres
+##' @export
+corplot.samres <- function(x,...){
+    empirobscorrplot(x,...)
+}
+ 
 ##' Plots the stock recruitment 
 ##' @param fit the object returned from sam.fit
 ##' @param ... extra arguments to plot
 ##' @importFrom graphics text
 ##' @export
 srplot<-function(fit, ...){
+    UseMethod("srplot")
+}
+##' @rdname srplot
+##' @method srplot sam
+##' @param textcol color of years on plot
+##' @param add false if a new plot should be created
+##' @export
+srplot.sam <- function(fit,textcol="red",add=FALSE, ...){
   X <- summary(fit)
   n<-nrow(X)
   lag <- fit$conf$minAge
@@ -631,8 +777,12 @@ srplot<-function(fit, ...){
   Rnam<-colnames(X)[1]
   Snam<-colnames(X)[4]
   y<-rownames(X)
-  plot(S,R, xlab=Snam, ylab=Rnam, type="l", xlim=range(0,S), ylim=range(0,R), ...)
-  text(S,R, labels=y[idxR], cex=.7, col="red" )
+  if(add){
+      lines(S,R)
+  }else{
+      plot(S,R, xlab=Snam, ylab=Rnam, type="l", xlim=range(0,S), ylim=range(0,R), ...)
+  }
+  text(S,R, labels=y[idxR], cex=.7, col=textcol )
 }
 
 ##' Plots fit to data 
@@ -641,7 +791,13 @@ srplot<-function(fit, ...){
 ##' @param fleets an integer vector of fleets to plot. Default is all of them
 ##' @param ... extra arguments to plot
 ##' @export
-fitplot <- function(fit, log=TRUE, fleets=unique(fit$data$aux[,"fleet"]), ...){  
+fitplot <- function(fit, log=TRUE, ...){
+    UseMethod("fitplot")
+}
+##' @rdname fitplot
+##' @method fitplot sam
+##' @export
+fitplot.sam <- function(fit, log=TRUE,fleets=unique(fit$data$aux[,"fleet"]), ...){  
   idx<-fit$data$aux[,"fleet"]%in%fleets  
   trans <- function(x)if(log){x}else{exp(x)}  
   p <- trans(fit$obj$report(c(fit$sdrep$par.fixed,fit$sdrep$par.random))$predObs[idx])

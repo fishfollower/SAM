@@ -2,9 +2,13 @@
 % Please edit documentation in R/tables.R
 \name{tableit}
 \alias{tableit}
+\alias{tableit.sam}
 \title{Table helper}
 \usage{
-tableit(fit, what, x = fit$data$years, trans = function(x) x)
+tableit(fit, what, x = fit$data$years, trans = function(x) x, ...)
+
+\method{tableit}{sam}(fit, what, x = fit$data$years, trans = function(x) x,
+  ...)
 }
 \arguments{
 \item{fit}{returned object from sam.fit}
@@ -14,6 +18,8 @@ tableit(fit, what, x = fit$data$years, trans = function(x) x)
 \item{x}{rownames of table}
 
 \item{trans}{function to be applied}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 Table helper

@@ -2,9 +2,12 @@
 % Please edit documentation in R/plot.R
 \name{obscorrplot}
 \alias{obscorrplot}
+\alias{obscorrplot.sam}
 \title{Plots the estimated correlation matrices by fleet.}
 \usage{
 obscorrplot(fit, ...)
+
+\method{obscorrplot}{sam}(fit, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

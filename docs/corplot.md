@@ -10,6 +10,8 @@
 
 ```r
 corplot(x, ...)
+list(list("corplot"), list("sam"))(x, ...)
+list(list("corplot"), list("samres"))(x, ...)
 ```
 
 

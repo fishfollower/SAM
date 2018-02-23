@@ -2,9 +2,18 @@
 % Please edit documentation in R/plot.R
 \name{catchplot}
 \alias{catchplot}
+\alias{catchplot.sam}
+\alias{catchplot.samset}
+\alias{catchplot.samforecast}
 \title{SAM catch plot}
 \usage{
 catchplot(fit, obs.show = TRUE, drop = NULL, ...)
+
+\method{catchplot}{sam}(fit, obs.show = TRUE, drop = NULL, ...)
+
+\method{catchplot}{samset}(fit, obs.show = TRUE, drop = NULL, ...)
+
+\method{catchplot}{samforecast}(fit, obs.show = TRUE, drop = NULL, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

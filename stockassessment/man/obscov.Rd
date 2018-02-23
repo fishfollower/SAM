@@ -2,14 +2,22 @@
 % Please edit documentation in R/plot.R
 \name{obscov}
 \alias{obscov}
+\alias{obscov.sam}
+\alias{obscov.samset}
 \title{Extract observation covariance matrices from a SAM fit}
 \usage{
-obscov(fit, corr = FALSE)
+obscov(fit, corr = FALSE, ...)
+
+\method{obscov}{sam}(fit, corr = FALSE, ...)
+
+\method{obscov}{samset}(fit, corr = FALSE, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
 
 \item{corr}{if TRUE return correlation matrices rather than covariances}
+
+\item{...}{extra arguments not currently used}
 }
 \value{
 a list of matrices

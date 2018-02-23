@@ -2,10 +2,14 @@
 % Please edit documentation in R/tables.R
 \name{ypr}
 \alias{ypr}
+\alias{ypr.sam}
 \title{Yield per recruit calculation}
 \usage{
 ypr(fit, Flimit = 2, Fdelta = 0.01, aveYears = min(15,
-  length(fit$data$years)), ageLimit = 100)
+  length(fit$data$years)), ageLimit = 100, ...)
+
+\method{ypr}{sam}(fit, Flimit = 2, Fdelta = 0.01, aveYears = min(15,
+  length(fit$data$years)), ageLimit = 100, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
@@ -17,6 +21,8 @@ ypr(fit, Flimit = 2, Fdelta = 0.01, aveYears = min(15,
 \item{aveYears}{Number of years back to use when calculating averages (selection, weights, ...)}
 
 \item{ageLimit}{Oldest age used (should be high)}
+
+\item{...}{extra arguments not currently used}
 }
 \description{
 Yield per recruit calculation
