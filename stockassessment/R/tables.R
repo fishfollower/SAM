@@ -341,15 +341,16 @@ ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$
     ret[-c(1:length(x))]<-x[length(x)]
     ret
   }
-
-  aveByCatch <- function(X){
-    fun <- function(f){
-      cay <- caytable(fit,f)
-      XX <- X[,,f]
-      cay <- cay[rownames(cay)%in%rownames(XX),]
-      cay*XX/cay 
+  aveByCatch <- function(X) {
+    fun <- function(f) {
+      cay <- caytable(fit, f)
+      XX <- X[, , f]
+      cay <- cay[rownames(cay) %in% rownames(XX), ]
+      cay.safe<-cay
+      cay.safe[cay==0]<-1
+      cay * XX/cay.safe
     }
-    Reduce("+",lapply(which(fit$data$fleetTypes==0),fun))
+    Reduce("+", lapply(which(fit$data$fleetTypes == 0), fun))
   }
   ave.sl<-sel()
   ave.sw<-colMeans(fit$data$stockMeanWeight[(idxno-aveYears+1):idxno,,drop=FALSE])
