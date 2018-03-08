@@ -51,21 +51,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, n
     }
     return(ret)
   }
-    
+  ns<-max(length(fscale), length(catchval), length(fval), length(nextssb))    
   if(missing(fscale)&missing(fval)&missing(catchval)&missing(nextssb))stop("No scenario is specified")    
-  if(missing(fscale)&!missing(fval))fscale<-rep(NA,length(fval))
-  if(missing(fscale)&!missing(catchval))fscale<-rep(NA,length(catchval))
-  if(missing(fscale)&!missing(nextssb))fscale<-rep(NA,length(nextssb))  
-  if(missing(fval)&!missing(fscale))fval<-rep(NA,length(fscale))
-  if(missing(fval)&!missing(catchval))fval<-rep(NA,length(catchval))
-  if(missing(fval)&!missing(nextssb))fval<-rep(NA,length(nextssb))    
-  if(missing(catchval)&!missing(fval))catchval<-rep(NA,length(fval))
-  if(missing(catchval)&!missing(fscale))catchval<-rep(NA,length(fscale))
-  if(missing(catchval)&!missing(nextssb))catchval<-rep(NA,length(nextssb))
-  if(missing(nextssb)&!missing(fval))nextssb<-rep(NA,length(fval))
-  if(missing(nextssb)&!missing(fscale))nextssb<-rep(NA,length(fscale))
-  if(missing(nextssb)&!missing(catchval))nextssb<-rep(NA,length(catchval))
-    
+  if(missing(fscale)) fscale <- rep(NA,ns)
+  if(missing(fval)) fval <- rep(NA,ns)
+  if(missing(catchval)) catchval <- rep(NA,ns)
+  if(missing(nextssb)) nextssb <-rep(NA,ns)
         
   if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
