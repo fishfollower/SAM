@@ -10,7 +10,9 @@
 
 ```r
 addforecast(fit, what, dotcol = "black", dotpch = 19, dotcex = 1.5,
-  intervalcol = gray(0.5, alpha = 0.5))
+  intervalcol = gray(0.5, alpha = 0.5), ...)
+list(list("addforecast"), list("samforecast"))(fit, what, dotcol = "black", dotpch = 19,
+  dotcex = 1.5, intervalcol = gray(0.5, alpha = 0.5), ...)
 ```
 
 
@@ -24,6 +26,7 @@ Argument      |Description
 ```dotpch```     |     pch for dot
 ```dotcex```     |     cex for dot
 ```intervalcol```     |     color for interval
+```...```     |     extra arguments not currently used
 
 ## Details
 

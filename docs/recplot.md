@@ -10,6 +10,9 @@
 
 ```r
 recplot(fit, ...)
+list(list("recplot"), list("sam"))(fit, ...)
+list(list("recplot"), list("samset"))(fit, ...)
+list(list("recplot"), list("samforecast"))(fit, ...)
 ```
 
 

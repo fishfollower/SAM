@@ -10,6 +10,7 @@
 
 ```r
 tsbplot(fit, ...)
+list(list("tsbplot"), list("default"))(fit, ...)
 ```
 
 

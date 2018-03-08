@@ -9,7 +9,9 @@
 ## Usage
 
 ```r
-obscov(fit, corr = FALSE)
+obscov(fit, corr = FALSE, ...)
+list(list("obscov"), list("sam"))(fit, corr = FALSE, ...)
+list(list("obscov"), list("samset"))(fit, corr = FALSE, ...)
 ```
 
 
@@ -19,6 +21,7 @@ Argument      |Description
 ------------- |----------------
 ```fit```     |     the object returned from sam.fit
 ```corr```     |     if TRUE return correlation matrices rather than covariances
+```...```     |     extra arguments not currently used
 
 ## Value
 

@@ -10,6 +10,8 @@
 
 ```r
 parplot(fit, cor.report.limit = 0.95, ...)
+list(list("parplot"), list("sam"))(fit, cor.report.limit = 0.95, ...)
+list(list("parplot"), list("samset"))(fit, cor.report.limit = 0.95, ...)
 ```
 
 

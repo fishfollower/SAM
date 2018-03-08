@@ -10,6 +10,7 @@
 
 ```r
 obscorrplot(fit, ...)
+list(list("obscorrplot"), list("sam"))(fit, ...)
 ```
 
 

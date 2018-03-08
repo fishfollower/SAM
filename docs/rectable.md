@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-rectable(fit)
+rectable(fit, ...)
+list(list("rectable"), list("default"))(fit, ...)
 ```
 
 
@@ -18,6 +19,7 @@ rectable(fit)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     ...
+```...```     |     extra arguments not currently used
 
 ## Details
 

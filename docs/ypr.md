@@ -10,7 +10,9 @@
 
 ```r
 ypr(fit, Flimit = 2, Fdelta = 0.01, aveYears = min(15,
-  length(fit$data$years)), ageLimit = 100)
+  length(fit$data$years)), ageLimit = 100, ...)
+list(list("ypr"), list("sam"))(fit, Flimit = 2, Fdelta = 0.01, aveYears = min(15,
+  length(fit$data$years)), ageLimit = 100, ...)
 ```
 
 
@@ -23,4 +25,5 @@ Argument      |Description
 ```Fdelta```     |     increments on the Fbar axis
 ```aveYears```     |     Number of years back to use when calculating averages (selection, weights, ...)
 ```ageLimit```     |     Oldest age used (should be high)
+```...```     |     extra arguments not currently used
 

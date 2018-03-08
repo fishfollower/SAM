@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-fbartable(fit)
+fbartable(fit, ...)
+list(list("fbartable"), list("default"))(fit, ...)
 ```
 
 
@@ -18,6 +19,7 @@ fbartable(fit)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     ...
+```...```     |     extra arguments not currently used
 
 ## Details
 

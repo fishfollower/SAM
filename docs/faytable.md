@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-faytable(fit)
+faytable(fit, ...)
+list(list("faytable"), list("sam"))(fit, ...)
 ```
 
 
@@ -18,6 +19,7 @@ faytable(fit)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     ...
+```...```     |     extra arguments not currently used
 
 ## Details
 

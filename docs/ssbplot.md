@@ -10,6 +10,8 @@
 
 ```r
 ssbplot(fit, ...)
+list(list("ssbplot"), list("default"))(fit, ...)
+list(list("ssbplot"), list("samforecast"))(fit, ...)
 ```
 
 

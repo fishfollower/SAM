@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-ntable(fit)
+ntable(fit, ...)
+list(list("ntable"), list("sam"))(fit, ...)
 ```
 
 
@@ -18,6 +19,7 @@ ntable(fit)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     ...
+```...```     |     extra arguments not currently used
 
 ## Details
 

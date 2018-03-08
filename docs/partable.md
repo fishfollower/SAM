@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-partable(fit)
+partable(fit, ...)
+list(list("partable"), list("sam"))(fit, ...)
 ```
 
 
@@ -18,6 +19,7 @@ partable(fit)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     ...
+```...```     |     extra arguments not currently used
 
 ## Details
 

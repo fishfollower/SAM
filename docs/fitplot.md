@@ -9,7 +9,9 @@
 ## Usage
 
 ```r
-fitplot(fit, log = TRUE, fleets = unique(fit$data$aux[, "fleet"]), ...)
+fitplot(fit, log = TRUE, ...)
+list(list("fitplot"), list("sam"))(fit, log = TRUE, fleets = unique(fit$data$aux[,
+  "fleet"]), ...)
 ```
 
 
@@ -19,6 +21,6 @@ Argument      |Description
 ------------- |----------------
 ```fit```     |     the object returned from sam.fit
 ```log```     |     should the plot be against log-obs
-```fleets```     |     an integer vector of fleets to plot. Default is all of them
 ```...```     |     extra arguments to plot
+```fleets```     |     an integer vector of fleets to plot. Default is all of them
 

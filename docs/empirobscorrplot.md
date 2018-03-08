@@ -10,6 +10,7 @@
 
 ```r
 empirobscorrplot(res, ...)
+list(list("empirobscorrplot"), list("samres"))(res, ...)
 ```
 
 

@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-tsbtable(fit)
+tsbtable(fit, ...)
+list(list("tsbtable"), list("default"))(fit, ...)
 ```
 
 
@@ -18,6 +19,7 @@ tsbtable(fit)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     ...
+```...```     |     extra arguments not currently used
 
 ## Details
 
