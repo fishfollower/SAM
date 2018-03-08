@@ -5,9 +5,10 @@
 \title{forecast function to do shortterm}
 \usage{
 forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
-  nextssb = NULL, nosim = 1000, year.base = max(fit$data$years),
-  ave.years = max(fit$data$years) + (-4:0), rec.years = max(fit$data$years)
-  + (-9:0), label = NULL, overwriteSelYears = NULL, deterministic = FALSE)
+  nextssb = NULL, cwF = NULL, nosim = 1000,
+  year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
+  rec.years = max(fit$data$years) + (-9:0), label = NULL,
+  overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -19,6 +20,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
 \item{fval}{a vector of target f values. See details.}
 
 \item{nextssb}{a vector target SSB values the following year. See details}
+
+\item{cwF}{a vector target custom weighted F values. customWeights must also be specified}
 
 \item{nosim}{number of simulations default is 1000}
 
@@ -33,6 +36,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
 \item{overwriteSelYears}{if a vector of years is specified, then the average selectivity of those years is used (not recommended)}
 
 \item{deterministic}{option to turn all process noise off (not recommended, as it will likely cause bias)}
+
+\item{customWeights}{a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)}
 }
 \value{
 an object of type samforecast

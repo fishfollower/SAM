@@ -30,6 +30,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param catchval a vector of target catches. See details.   
 ##' @param fval a vector of target f values. See details.
 ##' @param nextssb a vector target SSB values the following year. See details
+##' @param cwF a vector target custom weighted F values. customWeights must also be specified
 ##' @param nosim number of simulations default is 1000
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
@@ -37,11 +38,12 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param label optional label to appear in short table
 ##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 ##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
+##' @param customWeights a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -51,14 +53,15 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, n
     }
     return(ret)
   }
-  ns<-max(length(fscale), length(catchval), length(fval), length(nextssb))    
-  if(missing(fscale)&missing(fval)&missing(catchval)&missing(nextssb))stop("No scenario is specified")    
+  ns<-max(length(fscale), length(catchval), length(fval), length(nextssb), length(cwF))    
+  if(missing(fscale)&missing(fval)&missing(catchval)&missing(nextssb)&missing(cwF))stop("No scenario is specified")    
   if(missing(fscale)) fscale <- rep(NA,ns)
   if(missing(fval)) fval <- rep(NA,ns)
   if(missing(catchval)) catchval <- rep(NA,ns)
   if(missing(nextssb)) nextssb <-rep(NA,ns)
+  if(missing(cwF)) cwF <-rep(NA,ns)  
         
-  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb)))==1)){
+  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb, cwF)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
 
@@ -85,6 +88,10 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, n
   fbar<-function(x){
     fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
     mean(getF(x)[fromto[1]:fromto[2]])
+  }    
+
+  getCWF<-function(x,w){
+    sum(getF(x)*w)
   }    
     
   getN <- function(x){
@@ -241,6 +248,13 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, n
       sim<-t(apply(sim, 1, scaleF, scale=adj))    
     }
 
+    if(!is.na(cwF[i+1])){
+      if(missing(customWeights))stop("customWeights must be supplied when using the cwF option")  
+      curcwF<-median(apply(sim, 1, getCWF, w=customWeights))
+      adj<-cwF[i+1]/curcwF
+      sim<-t(apply(sim, 1, scaleF, scale=adj))    
+    }
+
     if(!is.na(catchval[i+1])){
       simtmp<-NA
       fun<-function(s){
@@ -273,7 +287,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, n
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
     ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
     recsim <- exp(sim[,1])
-    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y)
+    cwFsim <- rep(NA,nrow(sim))
+    if(!missing(customWeights)){
+      cwFsim <- apply(sim, 1, getCWF, w=customWeights)
+    }
+    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, year=y)
   }
     
   attr(simlist, "fit")<-fit
@@ -286,10 +304,15 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, n
   rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
   ssb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$ssb))))
   catch <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$catch))))
-  tab <- cbind(fbar, rec,ssb,catch)
+  tab <- cbind(fbar,rec,ssb,catch)
+  if(!missing(customWeights)) tab <- cbind(tab,cwF=round(do.call(rbind, lapply(simlist, function(xx)collect(xx$cwF))),3))
   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
   nam <- c("median","low","high")
-  colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
+  if(missing(customWeights)){    
+    colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
+  }else{
+    colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:", "cwF"), each=length(nam)), nam)
+  }
   attr(simlist, "tab")<-tab
   shorttab<-t(tab[,grep("median",colnames(tab))])
   rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
