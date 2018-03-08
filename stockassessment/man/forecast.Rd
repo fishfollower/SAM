@@ -4,10 +4,10 @@
 \alias{forecast}
 \title{forecast function to do shortterm}
 \usage{
-forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
-  year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
-  rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL, deterministic = FALSE)
+forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
+  nextssb = NULL, nosim = 1000, year.base = max(fit$data$years),
+  ave.years = max(fit$data$years) + (-4:0), rec.years = max(fit$data$years)
+  + (-9:0), label = NULL, overwriteSelYears = NULL, deterministic = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -17,6 +17,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
 \item{catchval}{a vector of target catches. See details.}
 
 \item{fval}{a vector of target f values. See details.}
+
+\item{nextssb}{a vector target SSB values the following year. See details}
 
 \item{nosim}{number of simulations default is 1000}
 
@@ -39,5 +41,5 @@ an object of type samforecast
 forecast function to do shortterm
 }
 \details{
-There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run.
+There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run.
 }

@@ -28,7 +28,8 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param fit an assessment object of type sam, as returned from the function sam.fit
 ##' @param fscale a vector of f-scales. See details.  
 ##' @param catchval a vector of target catches. See details.   
-##' @param fval a vector of target f values. See details.  
+##' @param fval a vector of target f values. See details.
+##' @param nextssb a vector target SSB values the following year. See details
 ##' @param nosim number of simulations default is 1000
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
@@ -36,11 +37,11 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param label optional label to appear in short table
 ##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 ##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
-##' @details There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
+##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -51,15 +52,22 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     return(ret)
   }
     
-  if(missing(fscale)&missing(fval)&missing(catchval))stop("No scenario is specified")    
+  if(missing(fscale)&missing(fval)&missing(catchval)&missing(nextssb))stop("No scenario is specified")    
   if(missing(fscale)&!missing(fval))fscale<-rep(NA,length(fval))
   if(missing(fscale)&!missing(catchval))fscale<-rep(NA,length(catchval))
+  if(missing(fscale)&!missing(nextssb))fscale<-rep(NA,length(nextssb))  
   if(missing(fval)&!missing(fscale))fval<-rep(NA,length(fscale))
   if(missing(fval)&!missing(catchval))fval<-rep(NA,length(catchval))
+  if(missing(fval)&!missing(nextssb))fval<-rep(NA,length(nextssb))    
   if(missing(catchval)&!missing(fval))catchval<-rep(NA,length(fval))
   if(missing(catchval)&!missing(fscale))catchval<-rep(NA,length(fscale))
+  if(missing(catchval)&!missing(nextssb))catchval<-rep(NA,length(nextssb))
+  if(missing(nextssb)&!missing(fval))nextssb<-rep(NA,length(fval))
+  if(missing(nextssb)&!missing(fscale))nextssb<-rep(NA,length(fscale))
+  if(missing(nextssb)&!missing(catchval))nextssb<-rep(NA,length(catchval))
+    
         
-  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval)))==1)){
+  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
 
@@ -248,6 +256,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))      
         simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
         return(catchval[i+1]-median(simcat))
+      }
+      ff <- uniroot(fun, c(0,100))$root
+      sim <- simtmp
+    }
+
+    if(!is.na(nextssb[i+1])){
+      if((sum(pm)!=0) | (sum(pf)!=0))stop("nextssb option only available if SSB is calculated in the beginning of the year")  
+      simtmp<-NA
+      fun<-function(s){
+        simtmp<<-t(apply(sim, 1, scaleF, scale=s))
+        simsim<-t(apply(simtmp, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
+        if(i!=0){
+          if(deterministic)procVar<-procVar*0  
+          simsim <- simsim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
+        }
+        simnextssb<-apply(simsim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
+        return(nextssb[i+1]-median(simnextssb))
       }
       ff <- uniroot(fun, c(0,100))$root
       sim <- simtmp
