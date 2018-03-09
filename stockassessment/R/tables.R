@@ -220,7 +220,7 @@ modeltable.samset <- function(fits,...){
     if(length(fits)==2){
         o <- order(npar, decreasing=TRUE)
         if(npar[o[1]]>npar[o[2]]){
-            df <- npar[o[1]]>npar[o[2]]
+            df <- npar[o[1]]-npar[o[2]]
             D <- 2*(logL[o[1]]-logL[o[2]])
             P <- 1-pchisq(D,df)
             cnam <- paste0("Pval( ",nam[o[1]]," -> ",nam[o[2]], " )")
