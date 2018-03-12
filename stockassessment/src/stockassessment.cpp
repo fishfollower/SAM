@@ -193,6 +193,7 @@ Type objective_function<Type>::operator() ()
   REPORT(predObs);
   array<Type> totF=totFFun(confset, logF);
   REPORT(totF);
+  REPORT(logN);
   ADREPORT(logssb);
   ADREPORT(logfbar);
   ADREPORT(logCatch);
