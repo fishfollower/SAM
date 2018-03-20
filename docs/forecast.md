@@ -13,7 +13,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
   nextssb = NULL, cwF = NULL, nosim = 1000,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL)
+  overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL,
+  customSel = NULL)
 ```
 
 
@@ -35,6 +36,7 @@ Argument      |Description
 ```overwriteSelYears```     |     if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 ```deterministic```     |     option to turn all process noise off (not recommended, as it will likely cause bias)
 ```customWeights```     |     a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)
+```customSel```     |     supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
 
 ## Details
 
