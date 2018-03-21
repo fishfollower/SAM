@@ -39,7 +39,6 @@ conf$corFlag <- 2
 conf$fixVarToWeight<-1
 
 par<-defpar(dat,conf)
-
+par$logSdLogObs[]<-0
 fit<-sam.fit(dat,conf,par)
-
 cat(fit$opt$objective,"\n", file="res.out") 
