@@ -194,6 +194,8 @@ Type objective_function<Type>::operator() ()
   array<Type> totF=totFFun(confset, logF);
   REPORT(totF);
   REPORT(logN);
+  if(confset.keyVarLogP.size()>0){
+	REPORT(logP);}
   ADREPORT(logssb);
   ADREPORT(logfbar);
   ADREPORT(logCatch);
