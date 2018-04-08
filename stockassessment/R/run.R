@@ -56,34 +56,36 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
   
 
-  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000),lower=lower2,upper=upper2)
-  for(i in seq_len(newtonsteps)) { # Take a few extra newton steps
-    g <- as.numeric( obj$gr(opt$par) )
-    h <- optimHess(opt$par, obj$fn, obj$gr)
-    opt$par <- opt$par - solve(h, g)
-    opt$objective <- obj$fn(opt$par)
-  }
-  rep <- obj$report()
-  sdrep <- sdreport(obj,opt$par)
+  opt <- try(nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000),lower=lower2,upper=upper2))
+  if(class(opt)!="try-error"){
+    for(i in seq_len(newtonsteps)) { # Take a few extra newton steps
+      g <- as.numeric( obj$gr(opt$par) )
+      h <- optimHess(opt$par, obj$fn, obj$gr)
+      opt$par <- opt$par - solve(h, g)
+      opt$objective <- obj$fn(opt$par)
+    }
+    rep <- obj$report()
+    sdrep <- sdreport(obj,opt$par)
 
-  # Last two states
-  idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
-  sdrep$estY <- sdrep$value[idx]
-  sdrep$covY <- sdrep$cov[idx,idx]
+    # Last two states
+    idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
+    sdrep$estY <- sdrep$value[idx]
+    sdrep$covY <- sdrep$cov[idx,idx]
 
-  idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
-  sdrep$estYm1 <- sdrep$value[idx]
-  sdrep$covYm1 <- sdrep$cov[idx,idx]
+    idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
+    sdrep$estYm1 <- sdrep$value[idx]
+    sdrep$covYm1 <- sdrep$cov[idx,idx]
 
-  pl <- as.list(sdrep,"Est")
-  plsd <- as.list(sdrep,"Std")
+    pl <- as.list(sdrep,"Est")
+    plsd <- as.list(sdrep,"Std")
 
-  #sdrep$cov<-NULL # save memory
+    #sdrep$cov<-NULL # save memory
 
-  ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower2, hig=upper2)
-  attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
-  attr(ret, "Version") <- packageDescription("stockassessment")$Version
-  class(ret)<-"sam"
+    ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower2, hig=upper2)
+    attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
+    attr(ret, "Version") <- packageDescription("stockassessment")$Version
+    class(ret)<-"sam"
+    } else { ret <- opt}
   return(ret)
 }
 
