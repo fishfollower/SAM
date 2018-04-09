@@ -70,7 +70,8 @@ fbartable.default <- function(fit,...){
 }
 
 ##' Recruit table 
-##' @param  fit ... 
+##' @param  fit ...
+##' @param lagR use the age after the youngest as R 
 ##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export

@@ -12,6 +12,8 @@ rectable(fit, lagR = FALSE, ...)
 \arguments{
 \item{fit}{...}
 
+\item{lagR}{use the age after the youngest as R}
+
 \item{...}{extra arguments not currently used}
 }
 \description{
