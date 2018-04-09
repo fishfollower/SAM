@@ -13,7 +13,7 @@ recplot(fit, lagR = FALSE, ...)
 
 \method{recplot}{samset}(fit, lagR = FALSE, ...)
 
-\method{recplot}{samforecast}(fit, ...)
+\method{recplot}{samforecast}(fit, lagR = FALSE, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
