@@ -9,7 +9,7 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL,
-  customSel = NULL)
+  customSel = NULL, lagR = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -41,6 +41,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
 \item{customWeights}{a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)}
 
 \item{customSel}{supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)}
+
+\item{lagR}{if the second youngest age should be reported as recruits}
 }
 \value{
 an object of type samforecast

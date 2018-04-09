@@ -40,11 +40,12 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
 ##' @param customWeights a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)
 ##' @param customSel supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
+##' @param lagR if the second youngest age should be reported as recruits
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL, lagR=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -298,7 +299,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     fbarsim <- apply(sim, 1, fbar)
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
     ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
-    recsim <- exp(sim[,1])
+    if(lagR){
+      recsim <- exp(sim[,2])
+    }else{
+      recsim <- exp(sim[,1])
+    }
     cwFsim <- rep(NA,nrow(sim))
     if(!missing(customWeights)){
       cwFsim <- apply(sim, 1, getCWF, w=customWeights)

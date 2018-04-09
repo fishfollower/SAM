@@ -475,24 +475,9 @@ recplot.samforecast <- function(fit, lagR=FALSE, ...){
       plotit(fit, "logR", ylab=lab, trans=exp,...)
       addforecast(fit, "rec")
     }else{
-      dotcol="black"
-      dotpch=19
-      dotcex=1.5
-      intervalcol=gray(.5,alpha=.5)  
       lab<-paste("Recruits (age ", fitlocal$conf$minAge+1, ")", sep="")
       plotit(fit, "logLagR", ylab=lab, trans=exp,...)
-      x <- attr(fit,"tab")
-      y <- as.numeric(rownames(x))
-      dummy <- sapply(1:length(y),
-                    function(i){
-                        elh<-exp(quantile(fc[[i]]$sim[,2], probs=c(0.5, 0.025, 0.975)))
-                        xx<-c(elh[2],elh[3]);
-                        if(abs(diff(xx))>0.01){
-                            arrows(y[i],xx[1],y[i],xx[2],lwd=3, col=intervalcol, angle=90, code=3, length=.1)
-                        }
-                        points(y[i],elh[1], pch=dotpch, cex=dotcex, col=dotcol)
-                    }
-                )
+      addforecast(fit, "rec")
     }
 }
 
