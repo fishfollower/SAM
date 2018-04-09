@@ -320,7 +320,14 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logCatch,of);
   ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
+
+
+  vector<Type> logLagR(logR.size());
+  for(int i=0; i<logR.size(); ++i){
+    logLagR(i) = logN(1,i);
+  }
   ADREPORT_F(logR,of);
+  ADREPORT_F(logLagR,of);
 
   int timeSteps=logF.dim[1];
   

@@ -426,33 +426,44 @@ tsbplot.default <- function(fit,...){
 
 ##' SAM Recruits plot 
 ##' @param fit the object returned from sam.fit
+##' @param lagR use the age after the youngest as R 
 ##' @param ... extra arguments transferred to plot including the following: \cr
 ##' \code{add} logical, plotting is to be added on existing plot \cr
 ##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @details Plot of numbers of recruits (youngest age class)
 ##' @export
-recplot<-function(fit,...){
+recplot<-function(fit, lagR=FALSE, ...){
     UseMethod("recplot")
 }
 ##' @rdname recplot
 ##' @method recplot sam
 ##' @export
-recplot.sam <- function(fit, ...){
-    lab<-paste("Recruits (age ", fit$conf$minAge, ")", sep="")
-    plotit(fit, "logR", ylab=lab, trans=exp,...)
+recplot.sam <- function(fit, lagR=FALSE, ...){
+    if(!lagR){
+      lab<-paste("Recruits (age ", fit$conf$minAge, ")", sep="")
+      plotit(fit, "logR", ylab=lab, trans=exp,...)
+    }else{
+      lab<-paste("Recruits (age ", fit$conf$minAge+1, ")", sep="")
+      plotit(fit, "logLagR", ylab=lab, trans=exp,...)
+    }
 }
 ##' @rdname recplot
 ##' @method recplot samset
 ##' @export
-recplot.samset <- function(fit, ...){
+recplot.samset <- function(fit, lagR=FALSE, ...){
     if(!is.null(attr(fit,"fit"))){
         fitlocal <- attr(fit,"fit")
     }else{
         fitlocal <- fit[[1]]
     }
-    lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
-    plotit(fit, "logR", ylab=lab, trans=exp,...)
+    if(!lagR){
+      lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
+      plotit(fit, "logR", ylab=lab, trans=exp,...)
+    }else{
+      lab<-paste("Recruits (age ", fitlocal$conf$minAge+1, ")", sep="")
+      plotit(fit, "logLagR", ylab=lab, trans=exp,...)
+    }
 }
 ##' @rdname recplot
 ##' @method recplot samforecast

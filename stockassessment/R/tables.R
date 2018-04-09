@@ -74,14 +74,14 @@ fbartable.default <- function(fit,...){
 ##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-rectable<-function(fit,...){
+rectable<-function(fit, lagR=FALSE, ...){
     UseMethod("rectable")
 }
 ##' @rdname rectable
 ##' @method rectable default
 ##' @export
-rectable.default <- function(fit,...){
-   ret<-tableit(fit, "logR", trans=exp)
+rectable.default <- function(fit, lagR=FALSE,...){ 
+   ret<-tableit(fit, ifelse(lagR,"logLagR","logR"), trans=exp)
    return(ret)
 }
 

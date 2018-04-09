@@ -239,8 +239,15 @@ residuals.sam<-function(object, discrete=FALSE, ...){
 ##' @details ...
 ##' @export
 summary.sam<-function(object, ...){
-  ret <- cbind(round(rectable(object)), round(ssbtable(object)), round(fbartable(object),3))
-  colnames(ret)[1] <- paste("R(age ", object$conf$minAge, ")", sep="") 
+  dots<-list(...)  
+  ret <- cbind(round(rectable(object,...)), round(ssbtable(object)), round(fbartable(object),3))
+  add <- 0
+  if(!is.null(dots$lagR)){
+    if(dots$lagR==TRUE){
+      add <- 1
+    }
+  }
+  colnames(ret)[1] <- paste("R(age ", object$conf$minAge+add, ")", sep="") 
   colnames(ret)[4] <- "SSB"
   colnames(ret)[7] <- paste("Fbar(",object$conf$fbarRange[1], "-", object$conf$fbarRange[2], ")", sep="")
   ret

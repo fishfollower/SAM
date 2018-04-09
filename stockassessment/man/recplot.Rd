@@ -7,16 +7,18 @@
 \alias{recplot.samforecast}
 \title{SAM Recruits plot}
 \usage{
-recplot(fit, ...)
+recplot(fit, lagR = FALSE, ...)
 
-\method{recplot}{sam}(fit, ...)
+\method{recplot}{sam}(fit, lagR = FALSE, ...)
 
-\method{recplot}{samset}(fit, ...)
+\method{recplot}{samset}(fit, lagR = FALSE, ...)
 
 \method{recplot}{samforecast}(fit, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
+
+\item{lagR}{use the age after the youngest as R}
 
 \item{...}{extra arguments transferred to plot including the following: \cr
 \code{add} logical, plotting is to be added on existing plot \cr

@@ -5,9 +5,9 @@
 \alias{rectable.default}
 \title{Recruit table}
 \usage{
-rectable(fit, ...)
+rectable(fit, lagR = FALSE, ...)
 
-\method{rectable}{default}(fit, ...)
+\method{rectable}{default}(fit, lagR = FALSE, ...)
 }
 \arguments{
 \item{fit}{...}
