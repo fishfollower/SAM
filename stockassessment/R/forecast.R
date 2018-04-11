@@ -80,21 +80,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
   }
    
     
-  getF <- function(x){
+  getF <- function(x, allowSelOverwrite=FALSE){
     idx <- fit$conf$keyLogFsta[1,]+1
     nsize <- length(idx)
     ret <- exp(x[nsize+idx])
     ret[idx==0] <- 0
-    if(!is.null(overwriteSelYears)){
-      fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
-      thisfbar<-mean(ret[fromto[1]:fromto[2]])
-      ret<-fixedsel*thisfbar
+    if(allowSelOverwrite){
+      if(!is.null(overwriteSelYears)){
+        fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
+        thisfbar<-mean(ret[fromto[1]:fromto[2]])
+        ret<-fixedsel*thisfbar
+      }
+      if(!is.null(customSel)){
+        fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
+        thisfbar<-mean(ret[fromto[1]:fromto[2]])
+        ret<-customSel*thisfbar
+      }
     }
-    if(!is.null(customSel)){
-      fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
-      thisfbar<-mean(ret[fromto[1]:fromto[2]])
-      ret<-customSel*thisfbar
-    }    
     ret
   }
 
@@ -155,7 +157,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
   }
     
   step <- function(x, nm, recpool, scale, inyear=FALSE){
-    F <- getF(x)
+    F <- getF(x, allowSelOverwrite=!inyear)
     N <- getN(x)
     if(!inyear){
       Z <- F+nm
@@ -184,6 +186,14 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     N <- getN(x)
     C <- F/Z*(1-exp(-Z))*N
     return(sum(cw*C))
+  }
+
+  catchatage <- function(x, nm){
+    F <- getF(x)
+    Z <- F+nm
+    N <- getN(x)
+    C <- F/Z*(1-exp(-Z))*N
+    return(C)
   }
 
   ssb <- function(x, nm, sw, mo, pm, pf){
@@ -247,7 +257,9 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
 
     sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
     if(i!=0){
-      if(deterministic)procVar<-procVar*0  
+      if(deterministic){procVar<-procVar*0}
+      if(!is.null(overwriteSelYears)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
+      if(!is.null(customSel)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
       sim <- sim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
     }
     
@@ -298,6 +310,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     
     fbarsim <- apply(sim, 1, fbar)
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
+    catchatagesim <- apply(sim, 1, catchatage, nm=nm)
     ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
     if(lagR){
       recsim <- exp(sim[,2])
@@ -308,7 +321,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     if(!missing(customWeights)){
       cwFsim <- apply(sim, 1, getCWF, w=customWeights)
     }
-    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, year=y)
+    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, catchatage=catchatagesim, year=y)
   }
     
   attr(simlist, "fit")<-fit
@@ -317,10 +330,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     quan <- quantile(x, c(.50,.025,.975))
     c(median=quan[1], low=quan[2], high=quan[3])
   }
+  
   fbar <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbar))),3)
   rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
   ssb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$ssb))))
   catch <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$catch))))
+  caytable<-round(do.call(rbind, lapply(simlist, function(xx)apply(xx$catchatage,1,collect)))) 
   tab <- cbind(fbar,rec,ssb,catch)
   if(!missing(customWeights)) tab <- cbind(tab,cwF=round(do.call(rbind, lapply(simlist, function(xx)collect(xx$cwF))),3))
   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
@@ -334,7 +349,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
   shorttab<-t(tab[,grep("median",colnames(tab))])
   rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
   attr(simlist, "shorttab")<-shorttab
-  attr(simlist, "label") <- label  
+  attr(simlist, "label") <- label
+  attr(simlist, "caytable")<-caytable    
   class(simlist) <- "samforecast"
   simlist
 }
