@@ -56,7 +56,8 @@ plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=
 plotit.samset <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
                    addCI=rep(FALSE,length(fit)), drop=0, unnamed.basename="current", xlim=NULL,...){
     if(is.logical(addCI) & (length(addCI)==1))addCI=rep(addCI,length(fit))
-    colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
+    #colSet <- c("#FF0000", "#FF7B00", "#FFF500", "#A8FF00", "#14FF00", "#00FFA3", "#00A4FF", "#5100FF", "#CC00FF", "#969696")
+    colSet <- c("#332288"  , "#88CCEE"  , "#44AA99"  , "#117733"  , "#999933"  , "#DDCC77"  , "#661100"  , "#CC6677"  , "#882255"  , "#AA4499")  
     idxfrom <- 1
     leg<-names(fit)
     if(is.null(attr(fit,"fit"))){
