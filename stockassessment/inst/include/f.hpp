@@ -3,7 +3,12 @@ Type trans(Type x){
   return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);
 }
 
-
+template<class Type>
+Type logdrobust(Type x, Type p){
+  Type logres=log((1.0-p)*dnorm(x,Type(0.0),Type(1.0),false)+p*dt(x,Type(1),false));
+  return logres;
+}
+VECTORIZE2_tt(logdrobust)
 
 
 #define TYPEDEFS(scalartype_)			\
@@ -23,12 +28,14 @@ template <class scalartype_>
 class MVMIX_t{
   TYPEDEFS(scalartype_);
   scalartype logdetS; /* log-determinant of Q */
+  scalartype p; /*fraction t*/
   matrixtype Sigma;   /* Keep for convenience - not used */
   matrixtype inv_L_Sigma; /* Used by simulate() */
 public:
   MVMIX_t(){}
-  MVMIX_t(matrixtype Sigma_){
+  MVMIX_t(matrixtype Sigma_, scalartype p_){
     setSigma(Sigma_);
+    p=p_;
   }
   matrixtype cov(){return Sigma;}
   void setSigma(matrixtype Sigma_){
@@ -45,7 +52,7 @@ public:
   /** \brief Evaluate the negative log density */
   scalartype operator()(vectortype x){
     vectortype z=inv_L_Sigma*x;
-    return -sum(dnorm(z,scalartype(0.0),scalartype(1.0),true))+scalartype(0.5)*logdetS;
+    return -sum(logdrobust(z,p))+scalartype(0.5)*logdetS;
   }
 };
 
@@ -112,7 +119,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
     }
   }
   //density::MVNORM_t<Type> neg_log_densityF(fvar);
-  MVMIX_t<Type> neg_log_densityF(fvar);
+  MVMIX_t<Type> neg_log_densityF(fvar,Type(0.05));
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovF(fvar);
   matrix<Type> LF = lltCovF.matrixL();
   matrix<Type> LinvF = LF.inverse();
