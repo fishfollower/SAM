@@ -11,60 +11,38 @@ Type logdrobust(Type x, Type p){
 VECTORIZE2_tt(logdrobust)
 
 
-#define TYPEDEFS(scalartype_)			\
-public:						\
-typedef scalartype_ scalartype;			\
-typedef vector<scalartype> vectortype;		\
-typedef matrix<scalartype> matrixtype;		\
-typedef array<scalartype> arraytype
-
-#define VARIANCE_NOT_YET_IMPLEMENTED            \
-private:                                        \
-vectortype variance(){return vectortype();}     \
-public:
-
-
-template <class scalartype_>
+template <class Type>
 class MVMIX_t{
-  TYPEDEFS(scalartype_);
-  scalartype logdetS; /* log-determinant of Q */
-  scalartype p; /*fraction t*/
-  matrixtype Sigma;   /* Keep for convenience - not used */
-  matrixtype inv_L_Sigma; /* Used by simulate() */
+  Type logdetS;             /* log-determinant of Q */
+  Type p;                   /*fraction t*/
+  matrix<Type> Sigma;       /* Keep for convenience - not used */
+  matrix<Type> inv_L_Sigma; /* Used by simulate() */
 public:
   MVMIX_t(){}
-  MVMIX_t(matrixtype Sigma_, scalartype p_){
+  MVMIX_t(matrix<Type> Sigma_, Type p_){
     setSigma(Sigma_);
     p=p_;
   }
-  matrixtype cov(){return Sigma;}
-  void setSigma(matrixtype Sigma_){
+  matrix<Type> cov(){return Sigma;}
+  void setSigma(matrix<Type> Sigma_){
     Sigma = Sigma_;
-    matrixtype I(Sigma.rows(),Sigma.cols());
-    I.setIdentity();
-    Eigen::LDLT<Eigen::Matrix<scalartype,Eigen::Dynamic,Eigen::Dynamic> > ldlt(Sigma);
-    vectortype D = ldlt.vectorD();
-    logdetS = D.log().sum();
-    Eigen::LLT<Eigen::Matrix<scalartype,Eigen::Dynamic,Eigen::Dynamic> > llt(Sigma);
-    matrixtype L_Sigma = llt.matrixL();
+    Eigen::LLT<Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> > llt(Sigma);
+    matrix<Type> L_Sigma = llt.matrixL();
+    vector<Type> D=L_Sigma.diagonal();
+    logdetS = Type(2.0)*sum(log(D));
     inv_L_Sigma = L_Sigma.inverse();
   }
   /** \brief Evaluate the negative log density */
-  scalartype operator()(vectortype x){
-    vectortype z=inv_L_Sigma*x;
-    return -sum(logdrobust(z,p))+scalartype(0.5)*logdetS;
+  Type operator()(vector<Type> x){
+    vector<Type> z=inv_L_Sigma*x;
+    return -sum(logdrobust(z,p))+Type(0.5)*logdetS;
   }
 };
 
-template <class scalartype>
-MVMIX_t<scalartype> MVMIX(matrix<scalartype> Sigma){
-  return MVMIX_t<scalartype>(Sigma);
+template <class Type>
+MVMIX_t<Type> MVMIX(matrix<Type> Sigma){
+  return MVMIX_t<Type>(Sigma);
 }
-
-
-
-
-
 
 template <class Type>
 Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
