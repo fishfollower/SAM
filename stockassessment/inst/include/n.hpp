@@ -18,7 +18,6 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
 
   for(int i = 1; i < timeSteps; ++i){ 
     vector<Type> predN = predNFun(dat,conf,par,logN,logF,i); 
-
     resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
     nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
     SIMULATE_F(of){

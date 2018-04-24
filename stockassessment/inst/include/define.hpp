@@ -125,7 +125,7 @@ struct confSet{
   int resFlag; 
   vector<int> obsLikelihoodFlag;
   int fixVarToWeight;
-
+  double fracMixF;
   confSet() {};
 
   confSet(SEXP x){
@@ -152,6 +152,7 @@ struct confSet{
     resFlag = (int)*REAL(getListElement(x,"resFlag"));
     obsLikelihoodFlag = asVector<int>(getListElement(x,"obsLikelihoodFlag"));
     fixVarToWeight = (int)*REAL(getListElement(x,"fixVarToWeight"));
+    fracMixF = (double)*REAL(getListElement(x,"fracMixF"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -177,7 +178,7 @@ struct confSet{
     resFlag = rhs.resFlag;
     obsLikelihoodFlag = rhs.obsLikelihoodFlag;
     fixVarToWeight = rhs.fixVarToWeight;
-
+    fracMixF = rhs.fracMixF;
     return *this;
   };
 };
@@ -199,3 +200,46 @@ struct paraSet{
   vector<Type> logitReleaseSurvival;   
   vector<Type> logitRecapturePhi;   
 };
+
+
+
+template<class Type>
+Type logdrobust(Type x, Type p){
+  Type logres=log((1.0-p)*dnorm(x,Type(0.0),Type(1.0),false)+p*dt(x,Type(1),false));
+  return logres;
+}
+VECTORIZE2_tt(logdrobust)
+
+
+template <class Type>
+class MVMIX_t{
+  Type halfLogDetS;         /* 0.5* log-determinant of Q */
+  Type p;                   /*fraction t*/
+  matrix<Type> Sigma;       /* Keep for convenience - not used */
+  matrix<Type> inv_L_Sigma; /* Used by simulate() */
+public:
+  MVMIX_t(){}
+  MVMIX_t(matrix<Type> Sigma_, Type p_){
+    setSigma(Sigma_);
+    p=p_;
+  }
+  matrix<Type> cov(){return Sigma;}
+  void setSigma(matrix<Type> Sigma_){
+    Sigma = Sigma_;
+    Eigen::LLT<Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> > llt(Sigma);
+    matrix<Type> L_Sigma = llt.matrixL();
+    vector<Type> D=L_Sigma.diagonal();
+    halfLogDetS = sum(log(D));
+    inv_L_Sigma = L_Sigma.inverse();
+  }
+  /** \brief Evaluate the negative log density */
+  Type operator()(vector<Type> x){
+    vector<Type> z=inv_L_Sigma*x;
+    return -sum(logdrobust(z,p))+halfLogDetS;
+  }
+};
+
+template <class Type>
+MVMIX_t<Type> MVMIX(matrix<Type> Sigma){
+  return MVMIX_t<Type>(Sigma);
+}

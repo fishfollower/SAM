@@ -86,6 +86,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(resFlag); confset.resFlag=resFlag;  
   DATA_FACTOR(obsLikelihoodFlag); confset.obsLikelihoodFlag=obsLikelihoodFlag; 
   DATA_INTEGER(fixVarToWeight); confset.fixVarToWeight=fixVarToWeight; 
+  DATA_SCALAR(fracMixF); confset.fracMixF=asDouble(fracMixF); 
 
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  

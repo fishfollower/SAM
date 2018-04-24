@@ -15,6 +15,3 @@ Suggests: testthat
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
 BugReports: https://github.com/fishfollower/SAM/issues
-RoxygenNote: 6.0.1.9000
-RemoteType: github
-RemoteHost: https://api.github.com
