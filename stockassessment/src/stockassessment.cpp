@@ -61,7 +61,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(landMeanWeight); dataset.landMeanWeight=landMeanWeight; 
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
-
+  DATA_STRUCT(stoxCor,listMatrixFromR); dataset.stoxCor=stoxCor; //Include the correlation structures from SToX
+  
   confSet confset;
   DATA_INTEGER(minAge); confset.minAge=minAge; 
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
