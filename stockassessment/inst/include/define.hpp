@@ -5,6 +5,19 @@ if(isDouble<Type>::value && F->current_parallel_region<0) {     \
   UNPROTECT(1);                                                 \
 }
 
+
+//This function returns a vector with matrices based on a list of matrices from R
+template<class Type>
+struct listMatrixFromR : vector<matrix<Type> > {
+  listMatrixFromR(SEXP x){ 
+    (*this).resize(LENGTH(x));
+    for(int i=0; i<LENGTH(x); i++){
+      SEXP sm = VECTOR_ELT(x, i);
+      (*this)(i) = asMatrix<Type>(sm);
+    }
+  }
+};
+
 #define ADREPORT_F(name,F) F->reportvector.push(name,#name);
 
 #define SIMULATE_F(F)						\
@@ -44,7 +57,7 @@ struct dataSet{
   array<Type> landMeanWeight;
   array<Type> propF;
   array<Type> propM;
-
+  vector<matrix<Type> > stoxCor;
 dataSet() {};
 
 dataSet(SEXP x) {
@@ -97,7 +110,6 @@ dataSet(SEXP x) {
     landMeanWeight = rhs.landMeanWeight;
     propF = rhs.propF;
     propM = rhs.propM;
-    
     return *this;
   };
 };
