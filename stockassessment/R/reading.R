@@ -242,7 +242,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   fleet.idx<-0
   type<-NULL
   time<-NULL
-  name<-NULL  
+  name<-NULL
+  corList <- list()
+  idxCor <- matrix(NA, nrow=length(fleets)+length(surveys)+1, ncol=nrow(natural.mortality))
+  colnames(idxCor)<-rownames(natural.mortality)
   dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
   weight<-NULL
   doone<-function(m){
@@ -256,6 +259,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       weight<<-c(weight,as.vector(attr(m,"weight")))
     }else{
       weight<<-c(weight,rep(NA,length(year)))
+    }
+    if("cor"%in%names(attributes(m))){
+      corList <<- c(corList,attr(m,"cor"))
+      nextIdx <- if(all(is.na(idxCor))){0}else{max(idxCor,na.rm=TRUE)}
+      idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)] <<- nextIdx:(nextIdx+length(attr(m,"cor"))-1)
     }
   }
   if(!is.null(residual.fleet)){
@@ -365,6 +373,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     nobs=nrow(dat),
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
+    idxCor=idxCor,
     aux=data.matrix(dat[,-4]),
     logobs=log(dat[,4]),
     weight=as.numeric(weight),
@@ -376,7 +385,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     disMeanWeight=attr(dat,'dis.mean.weight'),
     landMeanWeight=attr(dat,'land.mean.weight'),
     propF=attr(dat,'prop.f'),
-    propM=attr(dat,'prop.m')
+    propM=attr(dat,'prop.m'),
+    corList=corList
   )
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)
