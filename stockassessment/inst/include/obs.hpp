@@ -239,9 +239,21 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }
               }
             }
-
-	    nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
-            nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+            if(isNA(idxCor(f,y)))){
+  	      nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
+              nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+	    }else{
+	      matrix<Type> thiscor=corList(idxCor(f,y));
+              vector<Type> thisvar(currentVar.size());
+              thisvar=currentVar;
+              for(int idxV=0; idxV<currentVar.size(); ++idxV){
+                if(conf.fixVarToWeight==1){
+                  thisvar(idxV)=dat.weight(idxfrom+idxV);
+                }
+              }
+              thicscov=...; // NOT DONE
+	      nll+=density::MVNORM(dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength), thiscov);              
+            }
 	    SIMULATE_F(of){
 	      dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
 	    }
