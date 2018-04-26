@@ -9,7 +9,7 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL,
-  customSel = NULL, lagR = FALSE)
+  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -43,6 +43,10 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
 \item{customSel}{supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)}
 
 \item{lagR}{if the second youngest age should be reported as recruits}
+
+\item{splitLD}{if TRUE the result is split in landing and discards}
+
+\item{addTSB}{if TRUE the total stock biomass (TSB) is added}
 }
 \value{
 an object of type samforecast
