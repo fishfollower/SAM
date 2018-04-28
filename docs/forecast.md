@@ -10,12 +10,11 @@
 
 ```r
 forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
-  nextssb = NULL, cwF = NULL, nosim = 1000,
+  nextssb = NULL, landval = NULL, cwF = NULL, nosim = 1000,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL,
-  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE,
-  targetL = FALSE)
+  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
 ```
 
 
@@ -28,6 +27,7 @@ Argument      |Description
 ```catchval```     |     a vector of target catches. See details.
 ```fval```     |     a vector of target f values. See details.
 ```nextssb```     |     a vector target SSB values the following year. See details
+```landval```     |     a vector of target catches. See details.
 ```cwF```     |     a vector target custom weighted F values. customWeights must also be specified
 ```nosim```     |     number of simulations default is 1000
 ```year.base```     |     starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before
@@ -41,7 +41,6 @@ Argument      |Description
 ```lagR```     |     if the second youngest age should be reported as recruits
 ```splitLD```     |     if TRUE the result is split in landing and discards
 ```addTSB```     |     if TRUE the total stock biomass (TSB) is added
-```targetL```     |     TRUE if fval and catchval should refer to landings (not catches).
 
 ## Details
 
