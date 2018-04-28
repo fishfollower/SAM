@@ -67,7 +67,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, l
   if(missing(landval)) landval <-rep(NA,ns)  
   if(missing(cwF)) cwF <-rep(NA,ns)  
         
-  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb, cwF)))==1)){
+  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb, landval, cwF)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
 
