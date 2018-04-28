@@ -40,14 +40,15 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
 ##' @param customWeights a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)
 ##' @param customSel supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
+##' @param lagR if the second youngest age should be reported as recruits
 ##' @param splitLD if TRUE the result is split in landing and discards
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
-##' @param lagR if the second youngest age should be reported as recruits
+##' @param targetL TRUE if fval and catchval should refer to landings (not catches). 
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, targetL=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -289,7 +290,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     }
 
     if(!is.na(fval[i+1])){
-      curfbar<-median(apply(sim, 1, fbar))
+      if(targetL){
+        curfbar<-median(apply(sim, 1, fbarFrac, lf=lf))   
+      }else{
+        curfbar<-median(apply(sim, 1, fbar))
+      }
       adj<-fval[i+1]/curfbar
       sim<-t(apply(sim, 1, scaleF, scale=adj))    
     }
@@ -304,8 +309,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     if(!is.na(catchval[i+1])){
       simtmp<-NA
       fun<-function(s){
-        simtmp<<-t(apply(sim, 1, scaleF, scale=s))      
-        simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
+        simtmp<<-t(apply(sim, 1, scaleF, scale=s))
+        if(targetL){
+          simcat<-apply(simtmp, 1, catchFrac, nm=nm, w=lw, frac=lf)
+        }else{
+          simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
+        }
         return(catchval[i+1]-median(simcat))
       }
       ff <- uniroot(fun, c(0,100))$root

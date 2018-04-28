@@ -14,7 +14,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
   year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL,
-  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
+  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE,
+  targetL = FALSE)
 ```
 
 
@@ -40,6 +41,7 @@ Argument      |Description
 ```lagR```     |     if the second youngest age should be reported as recruits
 ```splitLD```     |     if TRUE the result is split in landing and discards
 ```addTSB```     |     if TRUE the total stock biomass (TSB) is added
+```targetL```     |     TRUE if fval and catchval should refer to landings (not catches).
 
 ## Details
 
