@@ -3,7 +3,7 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.5.4
+Documentation for package ‘stockassessment’ version 0.5.5
 ---------------------------------------------------------
 
 Help Pages

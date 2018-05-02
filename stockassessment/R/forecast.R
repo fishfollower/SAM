@@ -30,6 +30,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param catchval a vector of target catches. See details.   
 ##' @param fval a vector of target f values. See details.
 ##' @param nextssb a vector target SSB values the following year. See details
+##' @param landval a vector of target catches. See details.   
 ##' @param cwF a vector target custom weighted F values. customWeights must also be specified
 ##' @param nosim number of simulations default is 1000
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
@@ -41,11 +42,13 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param customWeights a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)
 ##' @param customSel supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
 ##' @param lagR if the second youngest age should be reported as recruits
+##' @param splitLD if TRUE the result is split in landing and discards
+##' @param addTSB if TRUE the total stock biomass (TSB) is added
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL, lagR=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -61,9 +64,10 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
   if(missing(fval)) fval <- rep(NA,ns)
   if(missing(catchval)) catchval <- rep(NA,ns)
   if(missing(nextssb)) nextssb <-rep(NA,ns)
+  if(missing(landval)) landval <-rep(NA,ns)  
   if(missing(cwF)) cwF <-rep(NA,ns)  
         
-  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb, cwF)))==1)){
+  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb, landval, cwF)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
 
@@ -103,6 +107,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
   fbar<-function(x){
     fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
     mean(getF(x)[fromto[1]:fromto[2]])
+  }
+    
+  fbarFrac<-function(x, lf){
+    fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
+    mean((lf*getF(x))[fromto[1]:fromto[2]])
   }    
 
   getCWF<-function(x,w){
@@ -188,6 +197,14 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     return(sum(cw*C))
   }
 
+  catchFrac <- function(x, nm, w, frac){
+    F <- getF(x)
+    Z <- F+nm
+    N <- getN(x)
+    C <- F/Z*(1-exp(-Z))*N
+    return(sum(frac*w*C))
+  }
+    
   catchatage <- function(x, nm){
     F <- getF(x)
     Z <- F+nm
@@ -200,6 +217,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     F <- getF(x)
     N <- getN(x)*exp(-pm*nm-pf*F)
     return(sum(N*mo*sw))
+  }
+
+  tsb <- function(x, sw){
+    F <- getF(x)
+    N <- getN(x)
+    return(sum(N*sw))
   }
 
   rectab<-rectable(fit)
@@ -283,9 +306,20 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     if(!is.na(catchval[i+1])){
       simtmp<-NA
       fun<-function(s){
-        simtmp<<-t(apply(sim, 1, scaleF, scale=s))      
+        simtmp<<-t(apply(sim, 1, scaleF, scale=s))
         simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
         return(catchval[i+1]-median(simcat))
+      }
+      ff <- uniroot(fun, c(0,100))$root
+      sim <- simtmp
+    }
+
+    if(!is.na(landval[i+1])){
+      simtmp<-NA
+      fun<-function(s){
+        simtmp<<-t(apply(sim, 1, scaleF, scale=s))
+        simcat<-apply(simtmp, 1, catchFrac, nm=nm, w=lw, frac=lf)
+        return(landval[i+1]-median(simcat))
       }
       ff <- uniroot(fun, c(0,100))$root
       sim <- simtmp
@@ -309,9 +343,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     }
     
     fbarsim <- apply(sim, 1, fbar)
+    fbarLsim <- apply(sim, 1, fbarFrac, lf=lf)
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
+    landsim <- apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
     catchatagesim <- apply(sim, 1, catchatage, nm=nm)
     ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
+    tsbsim <- apply(sim, 1, tsb, sw=sw)
     if(lagR){
       recsim <- exp(sim[,2])
     }else{
@@ -321,7 +358,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
     if(!missing(customWeights)){
       cwFsim <- apply(sim, 1, getCWF, w=customWeights)
     }
-    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, catchatage=catchatagesim, year=y)
+    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim,
+                           cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, year=y)
   }
     
   attr(simlist, "fit")<-fit
@@ -332,19 +370,34 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, c
   }
   
   fbar <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbar))),3)
+  fbarL <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbarL))),3)  
   rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
   ssb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$ssb))))
+  tsb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$tsb))))
   catch <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$catch))))
+  land <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$land))))  
   caytable<-round(do.call(rbind, lapply(simlist, function(xx)apply(xx$catchatage,1,collect)))) 
   tab <- cbind(fbar,rec,ssb,catch)
+  if(splitLD){
+    tab<-cbind(tab,fbarL,fbar-fbarL,land,catch-land)
+  }
+  if(addTSB){
+    tab<-cbind(tab,tsb)
+  }
   if(!missing(customWeights)) tab <- cbind(tab,cwF=round(do.call(rbind, lapply(simlist, function(xx)collect(xx$cwF))),3))
   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
   nam <- c("median","low","high")
-  if(missing(customWeights)){    
-    colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
-  }else{
-    colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:", "cwF"), each=length(nam)), nam)
+  basename<-c("fbar:","rec:","ssb:","catch:")
+  if(splitLD){
+    basename<-c(basename,"fbarL:","fbarD:","Land:","Discard:")    
   }
+  if(addTSB){
+    basename<-c(basename,"tsb:")    
+  }
+  if(!missing(customWeights)){
+    basename<-c(basename,"cwF:")    
+  }
+  colnames(tab)<-paste0(rep(basename, each=length(nam)), nam)
   attr(simlist, "tab")<-tab
   shorttab<-t(tab[,grep("median",colnames(tab))])
   rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
