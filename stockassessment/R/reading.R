@@ -261,9 +261,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       weight<<-c(weight,rep(NA,length(year)))
     }
     if("cor"%in%names(attributes(m))){
-      corList <<- c(corList,attr(m,"cor"))
+      thisCorList <- attr(m,"cor")
+      whichCorOK <- which(unlist(lapply(thisCorList, function(x)!any(is.na(x)))))
+      thisCorList <- thisCorList[whichCorOK]
+      corList <<- c(corList,thisCorList)
       nextIdx <- if(all(is.na(idxCor))){0}else{max(idxCor,na.rm=TRUE)}
-      idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)] <<- nextIdx:(nextIdx+length(attr(m,"cor"))-1)
+      idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
     }
   }
   if(!is.null(residual.fleet)){
