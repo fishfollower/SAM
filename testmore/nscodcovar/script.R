@@ -11,7 +11,7 @@ pm<-read.ices("pm.dat")
 sw<-read.ices("sw.dat")
 surveys<-read.ices("survey.dat")
 
-attr(surveys[[2]], "cor") <- lapply(1:23, function(i)diag(4))
+## Estimate a correlation 
 
 dat<-setup.sam.data(surveys=surveys,
                     residual.fleet=cn, 
@@ -26,25 +26,35 @@ dat<-setup.sam.data(surveys=surveys,
                     land.frac=lf)
 
 conf<-defcon(dat)
-conf$keyLogFsta[1,] <- c(0, 1, 2, 3, 4, 5)
-conf$corFlag <- 2
-conf$keyLogFpar <- matrix(
-         c(-1, -1, -1, -1, -1, -1,
-            0,  1,  2,  3,  4, -1,
-            5,  6,  7,  8, -1, -1
-           ), nrow=3, byrow=TRUE)
-conf$keyVarF[1,] <- c(0, 1, 1, 1, 1, 1)
-conf$keyVarObs <- matrix(
-         c( 0,  1,  2,  2,  2,  2,
-            3,  4,  4,  4,  4, -1,
-            5,  6,  6,  6, -1, -1
-           ), nrow=3, byrow=TRUE)
-conf$noScaledYears <- 13
-conf$keyScaledYears <- 1993:2005
-conf$keyParScaledYA <- row(matrix(NA, nrow=13, ncol=6))-1
 conf$fbarRange <- c(2,4)
+conf$obsCorStruct[] <- c("ID","ID","AR")
+conf$keyCorObs[3,1:3] <- 0
 
 par<-defpar(dat,conf)
 fit<-sam.fit(dat,conf,par)
 
-cat(fit$opt$objective,"\n", file="res.out")
+## assign same correlation 
+
+estcor<-cov2cor(fit$rep$obsCov[[3]])
+attr(surveys[[2]], "cor") <- lapply(1:23, function(i)estcor)
+
+dat<-setup.sam.data(surveys=surveys,
+                    residual.fleet=cn, 
+                    prop.mature=mo, 
+                    stock.mean.weight=sw, 
+                    catch.mean.weight=cw, 
+                    dis.mean.weight=dw, 
+                    land.mean.weight=lw,
+                    prop.f=pf, 
+                    prop.m=pm, 
+                    natural.mortality=nm, 
+                    land.frac=lf)
+
+conf<-defcon(dat)
+conf$fbarRange <- c(2,4)
+par<-defpar(dat,conf)
+fit2<-sam.fit(dat,conf,par)
+
+sink("res.out")
+modeltable(c(ESTMATED=fit,ASSIGNED=fit2))
+sink()
