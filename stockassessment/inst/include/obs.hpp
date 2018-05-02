@@ -242,6 +242,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
             if(isNAINT(dat.idxCor(f,y))){
   	      nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
               nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+  	      SIMULATE_F(of){
+	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+	      }
 	    }else{
 	      int thisdim=currentVar.size();
 	      matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
@@ -259,12 +262,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }
               } 
               density::MVNORM_t<Type> thisnll(thiscov);
-              obsCov(f)=thiscov*0.001;
-	      nll+=thisnll(dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength));              
+	      nll+=thisnll(dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength), keep.segment(idxfrom,idxlength));              
+	      SIMULATE_F(of){
+	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
+	      }
             }
-	    SIMULATE_F(of){
-	      dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
-	    }
 	    break;
 	  case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
 	    nll +=  nllVec(f)(addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
