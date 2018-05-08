@@ -15,3 +15,15 @@ Suggests: testthat
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
 BugReports: https://github.com/fishfollower/SAM/issues
+RemoteType: github
+RemoteHost: https://api.github.com
+RemoteRepo: SAM
+RemoteUsername: fishfollower
+RemoteRef: master
+RemoteSha: 1700562b476d241ba9321f57398e842e5ae0a13d
+RemoteSubdir: stockassessment
+GithubRepo: SAM
+GithubUsername: fishfollower
+GithubRef: master
+GithubSHA1: 1700562b476d241ba9321f57398e842e5ae0a13d
+GithubSubdir: stockassessment
