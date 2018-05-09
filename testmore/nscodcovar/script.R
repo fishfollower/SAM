@@ -55,6 +55,54 @@ conf$fbarRange <- c(2,4)
 par<-defpar(dat,conf)
 fit2<-sam.fit(dat,conf,par)
 
+
+## assign same covariance
+
+estcov<-fit$rep$obsCov[[3]]
+attr(surveys[[2]], "cov") <- lapply(1:23, function(i)estcov)
+
+dat<-setup.sam.data(surveys=surveys,
+                    residual.fleet=cn, 
+                    prop.mature=mo, 
+                    stock.mean.weight=sw, 
+                    catch.mean.weight=cw, 
+                    dis.mean.weight=dw, 
+                    land.mean.weight=lw,
+                    prop.f=pf, 
+                    prop.m=pm, 
+                    natural.mortality=nm, 
+                    land.frac=lf)
+
+conf<-defcon(dat)
+conf$fbarRange <- c(2,4)
+conf$fixVarToWeight <- 1
+par<-defpar(dat,conf)
+fit3<-sam.fit(dat,conf,par,rm.unidentified=TRUE)
+
+
+
+## assign same with cov-weight. Here the corelation is fixed, but inverse variance is used as relative weight only.
+
+estcov<-fit$rep$obsCov[[3]]
+attr(surveys[[2]], "cov-weight") <- lapply(1:23, function(i)estcov)
+
+dat<-setup.sam.data(surveys=surveys,
+                    residual.fleet=cn, 
+                    prop.mature=mo, 
+                    stock.mean.weight=sw, 
+                    catch.mean.weight=cw, 
+                    dis.mean.weight=dw, 
+                    land.mean.weight=lw,
+                    prop.f=pf, 
+                    prop.m=pm, 
+                    natural.mortality=nm, 
+                    land.frac=lf)
+
+conf<-defcon(dat)
+conf$fbarRange <- c(2,4)
+par<-defpar(dat,conf)
+fit4<-sam.fit(dat,conf,par)
+
 sink("res.out")
-modeltable(c(ESTMATED=fit,ASSIGNED=fit2))
+print(modeltable(c("ESTMATED"=fit, "ASSIGNEDcor"=fit2,  "ASSIGNEDcov"=fit3,  "ASSIGNEDcov-weight"=fit4)))
 sink()
