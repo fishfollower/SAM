@@ -48,6 +48,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(nobs); dataset.nobs=nobs; 
   DATA_IARRAY(idx1); dataset.idx1=idx1;     // minimum index of obs by fleet x year
   DATA_IARRAY(idx2); dataset.idx2=idx2;     // maximum index of obs by fleet x year
+  DATA_IARRAY(idxCor); dataset.idxCor=idxCor;    
   DATA_IARRAY(aux); dataset.aux=aux; 
   DATA_VECTOR(logobs); dataset.logobs=logobs; 
   DATA_VECTOR(weight); dataset.weight=weight; 
@@ -61,7 +62,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(landMeanWeight); dataset.landMeanWeight=landMeanWeight; 
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
-
+  DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
+  
   confSet confset;
   DATA_INTEGER(minAge); confset.minAge=minAge; 
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 

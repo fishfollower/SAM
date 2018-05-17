@@ -5,6 +5,19 @@ if(isDouble<Type>::value && F->current_parallel_region<0) {     \
   UNPROTECT(1);                                                 \
 }
 
+
+//This function returns a vector with matrices based on a list of matrices from R
+template<class Type>
+struct listMatrixFromR : vector<matrix<Type> > {
+  listMatrixFromR(SEXP x){ 
+    (*this).resize(LENGTH(x));
+    for(int i=0; i<LENGTH(x); i++){
+      SEXP sm = VECTOR_ELT(x, i);
+      (*this)(i) = asMatrix<Type>(sm);
+    }
+  }
+};
+
 #define ADREPORT_F(name,F) F->reportvector.push(name,#name);
 
 #define SIMULATE_F(F)						\
@@ -31,6 +44,7 @@ struct dataSet{
   int nobs;
   array<int> idx1;
   array<int> idx2;
+  array<int> idxCor;
   array<int> aux;
   vector<Type> logobs;
   vector<Type> weight;
@@ -44,7 +58,7 @@ struct dataSet{
   array<Type> landMeanWeight;
   array<Type> propF;
   array<Type> propM;
-
+  vector<matrix<Type> > corList;
 dataSet() {};
 
 dataSet(SEXP x) {
@@ -59,6 +73,7 @@ dataSet(SEXP x) {
     nobs = (int)*REAL(getListElement(x,"nobs"));
     idx1 = asArray<int>(getListElement(x,"idx1"));
     idx2 = asArray<int>(getListElement(x,"idx2"));
+    idxCor = asArray<int>(getListElement(x,"idxCor"));
     aux = asArray<int>(getListElement(x,"aux"));
     logobs = asVector<Type>(getListElement(x,"logobs"));
     weight = asVector<Type>(getListElement(x,"weight"));
@@ -71,6 +86,7 @@ dataSet(SEXP x) {
     landMeanWeight = asArray<Type>(getListElement(x,"landMeanWeight"));
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
+    corList = asVector<matrix<Type> >(getListElement(x,"corList"));
   };
 
   dataSet<Type>& operator=(const dataSet<Type>& rhs) {
@@ -84,6 +100,7 @@ dataSet(SEXP x) {
     nobs = rhs.nobs;
     idx1 = rhs.idx1;
     idx2 = rhs.idx2;
+    idxCor = rhs.idxCor;
     aux = rhs.aux;
     logobs = rhs.logobs;
     weight = rhs.weight;
@@ -97,7 +114,7 @@ dataSet(SEXP x) {
     landMeanWeight = rhs.landMeanWeight;
     propF = rhs.propF;
     propM = rhs.propM;
-    
+    corList = rhs.corList;
     return *this;
   };
 };

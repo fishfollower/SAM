@@ -242,7 +242,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   fleet.idx<-0
   type<-NULL
   time<-NULL
-  name<-NULL  
+  name<-NULL
+  corList <- list()
+  idxCor <- matrix(NA, nrow=length(fleets)+length(surveys)+1, ncol=nrow(natural.mortality))
+  colnames(idxCor)<-rownames(natural.mortality)
   dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
   weight<-NULL
   doone<-function(m){
@@ -255,7 +258,29 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     if("weight"%in%names(attributes(m))){
       weight<<-c(weight,as.vector(attr(m,"weight")))
     }else{
-      weight<<-c(weight,rep(NA,length(year)))
+      if("cov"%in%names(attributes(m))){
+        weight<<-c(weight,unlist(lapply(attr(m,"cov"),diag)))
+      }else{
+        if("cov-weight"%in%names(attributes(m))){
+          weight<<-c(weight,1/unlist(lapply(attr(m,"cov-weight"),diag)))
+        }else{
+          weight<<-c(weight,rep(NA,length(year)))
+        }
+      }
+    }
+    if("cov"%in%names(attributes(m))){
+      attr(m,"cor") <- lapply(attr(m,"cov"),cov2cor)
+    }
+    if("cov-weight"%in%names(attributes(m))){
+      attr(m,"cor")<-lapply(attr(m,"cov-weight"),cov2cor)
+    }    
+    if("cor"%in%names(attributes(m))){
+      thisCorList <- attr(m,"cor")
+      whichCorOK <- which(unlist(lapply(thisCorList, function(x)!any(is.na(x)))))
+      thisCorList <- thisCorList[whichCorOK]
+      corList <<- c(corList,thisCorList)
+      nextIdx <- if(all(is.na(idxCor))){0}else{max(idxCor,na.rm=TRUE)}
+      idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
     }
   }
   if(!is.null(residual.fleet)){
@@ -365,6 +390,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     nobs=nrow(dat),
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
+    idxCor=idxCor,
     aux=data.matrix(dat[,-4]),
     logobs=log(dat[,4]),
     weight=as.numeric(weight),
@@ -376,7 +402,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     disMeanWeight=attr(dat,'dis.mean.weight'),
     landMeanWeight=attr(dat,'land.mean.weight'),
     propF=attr(dat,'prop.f'),
-    propM=attr(dat,'prop.m')
+    propM=attr(dat,'prop.m'),
+    corList=corList
   )
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)
