@@ -66,7 +66,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
     nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
     SIMULATE_F(of){
       if(conf.simFlag==0){
-        //logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+        logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
       }
     }
   }

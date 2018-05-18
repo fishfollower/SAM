@@ -218,8 +218,6 @@ struct paraSet{
   vector<Type> logitRecapturePhi;   
 };
 
-
-
 template<class Type>
 Type logdrobust(Type x, Type p){
   Type logres=log((1.0-p)*dnorm(x,Type(0.0),Type(1.0),false)+p*dt(x,Type(1),false));
@@ -227,13 +225,13 @@ Type logdrobust(Type x, Type p){
 }
 VECTORIZE2_tt(logdrobust)
 
-
 template <class Type>
 class MVMIX_t{
   Type halfLogDetS;         /* 0.5* log-determinant of Q */
   Type p;                   /*fraction t*/
   matrix<Type> Sigma;       /* Keep for convenience - not used */
-  matrix<Type> inv_L_Sigma; /* Used by simulate() */
+  matrix<Type> L_Sigma;
+  matrix<Type> inv_L_Sigma;
 public:
   MVMIX_t(){}
   MVMIX_t(matrix<Type> Sigma_, Type p_){
@@ -244,7 +242,7 @@ public:
   void setSigma(matrix<Type> Sigma_){
     Sigma = Sigma_;
     Eigen::LLT<Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> > llt(Sigma);
-    matrix<Type> L_Sigma = llt.matrixL();
+    L_Sigma = llt.matrixL();
     vector<Type> D=L_Sigma.diagonal();
     halfLogDetS = sum(log(D));
     inv_L_Sigma = L_Sigma.inverse();
@@ -253,6 +251,20 @@ public:
   Type operator()(vector<Type> x){
     vector<Type> z=inv_L_Sigma*x;
     return -sum(logdrobust(z,p))+halfLogDetS;
+  }
+  vector<Type> simulate() {
+    int siz = Sigma.rows();
+    vector<Type> x(siz);
+    for(int i=0; i<siz; ++i){
+      Type u = runif(0.0,1.0);
+      if(u<p){
+        x(i) = rt(1.0);
+      }else{
+        x(i) = rnorm(0.0,1.0);
+      }
+    }
+    x = L_Sigma*x;
+    return x;
   }
 };
 
