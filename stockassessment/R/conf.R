@@ -119,6 +119,7 @@ defcon<-function(dat){
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
   ret$fixVarToWeight <- 0
   ret$fracMixF <- 0
+  ret$fracMixFID <- 0
   return(ret) 
 }
 
@@ -190,7 +191,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$obsLikelihoodFlag <- "Option for observational likelihood"
     txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
     txt$fracMixF <- "The fraction of t(1) distribution used in logF increment distribution" 
-      
+    txt$fracMixFID <- "The fraction of independent t(1) distribution used in logF increment distribution"       
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)
