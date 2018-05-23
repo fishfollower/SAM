@@ -210,7 +210,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
 ##' @details function useful loading a model configuration. Such a configuration can be saved via the saveConf function
 ##' @importFrom utils capture.output
 ##' @export
-loadConf <- function(dat, file, patch=FALSE){
+loadConf <- function(dat, file, patch=TRUE){
   dconf <- defcon(dat)
   confWithName<-lapply(1:length(dconf), function(i){x<-dconf[[i]]; attr(x,"nam")<-names(dconf)[i]; x})
   lin <- c(readLines(file),"$end")

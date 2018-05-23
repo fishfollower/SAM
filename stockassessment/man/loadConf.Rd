@@ -4,7 +4,7 @@
 \alias{loadConf}
 \title{Loads a model configuration from a file}
 \usage{
-loadConf(dat, file, patch = FALSE)
+loadConf(dat, file, patch = TRUE)
 }
 \arguments{
 \item{dat}{sam data list as returned from the function setup.sam.data}
