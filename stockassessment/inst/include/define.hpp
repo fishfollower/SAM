@@ -143,7 +143,7 @@ struct confSet{
   vector<int> obsLikelihoodFlag;
   int fixVarToWeight;
   double fracMixF;
-  double fracMixFID;
+  double fracMixN;
   confSet() {};
 
   confSet(SEXP x){
@@ -171,7 +171,7 @@ struct confSet{
     obsLikelihoodFlag = asVector<int>(getListElement(x,"obsLikelihoodFlag"));
     fixVarToWeight = (int)*REAL(getListElement(x,"fixVarToWeight"));
     fracMixF = (double)*REAL(getListElement(x,"fracMixF"));
-    fracMixFID = (double)*REAL(getListElement(x,"fracMixFID"));
+    fracMixN = (double)*REAL(getListElement(x,"fracMixN"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -198,7 +198,7 @@ struct confSet{
     obsLikelihoodFlag = rhs.obsLikelihoodFlag;
     fixVarToWeight = rhs.fixVarToWeight;
     fracMixF = rhs.fracMixF;
-    fracMixFID = rhs.fracMixFID;
+    fracMixN = rhs.fracMixN;
     return *this;
   };
 };
@@ -226,6 +226,7 @@ Type logspace_add_p (Type logx, Type logy, Type p) {
   Type mid=Type(0.5)*(logx+logy);
   return log(p*exp(logx-mid)+(Type(1.0)-p)*exp(logy-mid))+mid;
 }
+VECTORIZE3_ttt(logspace_add_p)
 
 template<class Type>
 Type logdrobust(Type x, Type p){
@@ -241,17 +242,15 @@ template <class Type>
 class MVMIX_t{
   Type halfLogDetS;         /* 0.5* log-determinant of Q */
   Type p1;                   /*fraction t*/
-  Type p2;                   /*fraction independent t*/
   matrix<Type> Sigma;       /* Keep for convenience - not used */
   vector<Type> sd;
   matrix<Type> L_Sigma;
   matrix<Type> inv_L_Sigma;
 public:
   MVMIX_t(){}
-  MVMIX_t(matrix<Type> Sigma_, Type p1_,  Type p2_){
+  MVMIX_t(matrix<Type> Sigma_, Type p1_){
     setSigma(Sigma_);
     p1=p1_;
-    p2=p2_;
   }
   matrix<Type> cov(){return Sigma;}
   void setSigma(matrix<Type> Sigma_){
@@ -265,36 +264,26 @@ public:
   }
   /** \brief Evaluate the negative log density */
   Type operator()(vector<Type> x){
-    Type newp1=p1/(Type(1)-p2);
-    vector<Type> z=inv_L_Sigma*x;
-    Type llpart1 = sum(logdrobust(z,newp1))-halfLogDetS;
-    Type llpart2 = sum(vector<Type>(dt(vector<Type>(x/sd),Type(1),true)-log(sd)));
-    return -logspace_add_p(llpart2,llpart1,p2);
+    vector<Type> z = inv_L_Sigma*x;
+    return -sum(logdrobust(z,p1))+halfLogDetS;
   }
   vector<Type> simulate() {
-    Type newp1=p1/(Type(1)-p2);
     int siz = Sigma.rows();
     vector<Type> x(siz);
     for(int i=0; i<siz; ++i){
       Type u = runif(0.0,1.0);
-      if(u<newp1){
+      if(u<p1){
         x(i) = rt(1.0);
       }else{
         x(i) = rnorm(0.0,1.0);
       }
     }
     x = L_Sigma*x;
-    for(int i=0; i<siz; ++i){
-      Type u = runif(0.0,1.0);
-      if(u<p2){
-        x(i) = sd(i)*rt(1.0);
-      }
-    }    
     return x;
   }
 };
 
 template <class Type>
-MVMIX_t<Type> MVMIX(matrix<Type> Sigma, Type p1, Type p2){
-  return MVMIX_t<Type>(Sigma,p1,p2);
+MVMIX_t<Type> MVMIX(matrix<Type> Sigma, Type p1){
+  return MVMIX_t<Type>(Sigma,p1);
 }
