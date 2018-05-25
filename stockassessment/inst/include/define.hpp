@@ -144,6 +144,7 @@ struct confSet{
   int fixVarToWeight;
   double fracMixF;
   double fracMixN;
+  vector<double> fracMixObs;
   confSet() {};
 
   confSet(SEXP x){
@@ -172,6 +173,7 @@ struct confSet{
     fixVarToWeight = (int)*REAL(getListElement(x,"fixVarToWeight"));
     fracMixF = (double)*REAL(getListElement(x,"fracMixF"));
     fracMixN = (double)*REAL(getListElement(x,"fracMixN"));
+    fracMixObs = asVector<double>(getListElement(x,"fracMixObs"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -199,6 +201,7 @@ struct confSet{
     fixVarToWeight = rhs.fixVarToWeight;
     fracMixF = rhs.fracMixF;
     fracMixN = rhs.fracMixN;
+    fracMixObs = rhs.fracMixObs;
     return *this;
   };
 };
@@ -223,7 +226,15 @@ struct paraSet{
 
 template<class Type>
 Type logspace_add_p (Type logx, Type logy, Type p) {
-  return log(p*exp(logx-logy)+(Type(1.0)-p))+logy;
+  return log((Type(1)-p)*exp(logy-logx)+p)+logx;
+  //Type ret; 
+  //Type mid=0.5*(logx+logy);
+  //if(p<Type(1.0e-6)){
+  //  ret=logy;
+  //}else{
+  //  ret=log(p*exp(logx-mid)+(Type(1)-p)*exp(logy-mid))+mid;
+  //}
+  //return ret;
 }
 //VECTORIZE3_ttt(logspace_add_p)
 
@@ -260,6 +271,10 @@ public:
     vector<Type> D=L_Sigma.diagonal();
     halfLogDetS = sum(log(D));
     inv_L_Sigma = L_Sigma.inverse();
+  }
+  void setSigma(matrix<Type> Sigma_, Type p1_){
+    setSigma(Sigma_);
+    p1=p1_;
   }
   /** \brief Evaluate the negative log density */
   Type operator()(vector<Type> x){
