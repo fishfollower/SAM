@@ -266,6 +266,18 @@ public:
     vector<Type> z = inv_L_Sigma*x;
     return -sum(logdrobust(z,p1))+halfLogDetS;
   }
+  Type operator()(vector<Type> x, vector<Type> keep){
+    matrix<Type> S = Sigma;
+    vector<Type> not_keep = Type(1.0) - keep;
+    for(int i = 0; i < S.rows(); i++){
+      for(int j = 0; j < S.cols(); j++){
+	S(i,j) = S(i,j) * keep(i) * keep(j);
+      }
+      S(i,i) += not_keep(i) * pow((Type(1)-p1)*sqrt(Type(0.5)/M_PI)+p1*(Type(1)/M_PI),2);
+    }
+    return MVMIX_t<Type>(S,p1)(x * keep);
+  }
+
   vector<Type> simulate() {
     int siz = Sigma.rows();
     vector<Type> x(siz);
