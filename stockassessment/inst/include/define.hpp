@@ -223,10 +223,9 @@ struct paraSet{
 
 template<class Type>
 Type logspace_add_p (Type logx, Type logy, Type p) {
-  Type mid=Type(0.5)*(logx+logy);
-  return log(p*exp(logx-mid)+(Type(1.0)-p)*exp(logy-mid))+mid;
+  return log(p*exp(logx-logy)+(Type(1.0)-p))+logy;
 }
-VECTORIZE3_ttt(logspace_add_p)
+//VECTORIZE3_ttt(logspace_add_p)
 
 template<class Type>
 Type logdrobust(Type x, Type p){
