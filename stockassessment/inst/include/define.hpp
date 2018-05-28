@@ -226,33 +226,27 @@ struct paraSet{
 
 template<class Type>
 Type logspace_add_p (Type logx, Type logy, Type p) {
-  return log((Type(1)-p)*exp(logy-logx)+p)+logx;
-  //Type ret; 
-  //Type mid=0.5*(logx+logy);
-  //if(p<Type(1.0e-6)){
-  //  ret=logy;
-  //}else{
-  //  ret=log(p*exp(logx-mid)+(Type(1)-p)*exp(logy-mid))+mid;
-  //}
-  //return ret;
+  return log((Type(1)-p)*exp(logy-logx)+p)+logx; // the order of x and y is taylored for this application 
 }
-//VECTORIZE3_ttt(logspace_add_p)
 
 template<class Type>
 Type logdrobust(Type x, Type p){
   Type ld1=dnorm(x,Type(0.0),Type(1.0),true);
-  Type ld2=dt(x,Type(1),true);
-  //Type logres=log((1.0-p)*dnorm(x,Type(0.0),Type(1.0),false)+p*dt(x,Type(1),false));
-  Type logres=logspace_add_p(ld2,ld1,p);
-  return logres;
+  if(p<Type(1.0e-6)){
+    return ld1;
+  }else{
+    Type ld2=dt(x,Type(1),true);
+    Type logres=logspace_add_p(ld2,ld1,p);
+    return logres;
+  }
 }
 VECTORIZE2_tt(logdrobust)
 
 template <class Type>
 class MVMIX_t{
-  Type halfLogDetS;         /* 0.5* log-determinant of Q */
-  Type p1;                   /*fraction t*/
-  matrix<Type> Sigma;       /* Keep for convenience - not used */
+  Type halfLogDetS;         
+  Type p1;                  /*fraction t*/
+  matrix<Type> Sigma;       
   vector<Type> sd;
   matrix<Type> L_Sigma;
   matrix<Type> inv_L_Sigma;
