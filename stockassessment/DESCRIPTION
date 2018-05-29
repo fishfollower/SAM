@@ -1,6 +1,6 @@
 Package: stockassessment
 Title: State-Space Assessment Model
-Version: 0.6.0
+Version: 0.7.0
 Date: 2018-05-09
 Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.dk"),
 	    person("Casper","Berg",role="aut"),
@@ -16,4 +16,4 @@ Suggests: testthat
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
 BugReports: https://github.com/fishfollower/SAM/issues
-RoxygenNote: 6.0.1.9000
+
