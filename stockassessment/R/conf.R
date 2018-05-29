@@ -191,9 +191,9 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$keyBiomassTreat <- "To be defined only if a biomass survey is used (0 SSB index, 1 catch index, and 2 FSB index)."
     txt$obsLikelihoodFlag <- "Option for observational likelihood"
     txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
-    txt$fracMixF <- "The fraction of t(1) distribution used in logF increment distribution" 
-    txt$fracMixN <- "The fraction of t(1) distribution used in logN increment distribution"
-    txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(1) distribution used in the distribution of that fleet" 
+    txt$fracMixF <- "The fraction of t(3) distribution used in logF increment distribution" 
+    txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution"
+    txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet" 
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)
