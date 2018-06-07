@@ -232,7 +232,7 @@ Type logspace_add_p (Type logx, Type logy, Type p) {
 template<class Type>
 Type logdrobust(Type x, Type p){
   Type ld1=dnorm(x,Type(0.0),Type(1.0),true);
-  if(p<Type(1.0e-6)){
+  if(p<Type(1.0e-16)){
     return ld1;
   }else{
     Type ld2=dt(x,Type(3),true);
