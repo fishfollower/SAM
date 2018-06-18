@@ -73,14 +73,16 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 ##' @param fit a fitted model object as returned from sam.fit
 ##' @param year a vector of years to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
 ##' @param fleet a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
+##' @param map map from original fit 
 ##' @param ... extra arguments to sam.fit
 ##' @details ...
 ##' @export
-runwithout <- function(fit, year=NULL, fleet=NULL, ...){
+runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
   par <- defpar(data,conf)
-  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, ...)
+  par[!names(par)%in%c("logN", "logF")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF")]
+  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, ...)
   return(ret)
 }
 

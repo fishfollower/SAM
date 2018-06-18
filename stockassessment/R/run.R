@@ -57,11 +57,22 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ran <- c("logN", "logF", "missing")
   obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
   if(rm.unidentified){
-    skel <- parameters[!names(parameters)%in%ran]
     gr <- obj$gr()
-    safemap <- relist(gr,skel)
+    #grNA[abs(grNA)<1.0e-15] <- NA
+    safemap <- obj$env$parList(gr)
+    safemap <- safemap[!names(safemap)%in%ran]
     safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
-    obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
+    ddd<-list(...)
+    if(!is.null(ddd$map)){
+      safemap <- c(ddd$map,safemap)
+      ddd$map <- safemap
+      ddd$data <- tmball
+      ddd$parameters <- parameters
+      ddd$random <- ran
+      obj <- do.call(MakeADFun,ddd)
+    }else{
+      obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
+    }
   }
   
   lower2<-rep(-Inf,length(obj$par))

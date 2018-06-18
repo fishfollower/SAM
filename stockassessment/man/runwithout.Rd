@@ -4,7 +4,7 @@
 \alias{runwithout}
 \title{runwithout helper function}
 \usage{
-runwithout(fit, year = NULL, fleet = NULL, ...)
+runwithout(fit, year = NULL, fleet = NULL, map = fit$obj$env$map, ...)
 }
 \arguments{
 \item{fit}{a fitted model object as returned from sam.fit}
@@ -12,6 +12,8 @@ runwithout(fit, year = NULL, fleet = NULL, ...)
 \item{year}{a vector of years to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded}
 
 \item{fleet}{a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded}
+
+\item{map}{map from original fit}
 
 \item{...}{extra arguments to sam.fit}
 }
