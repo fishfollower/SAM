@@ -124,7 +124,7 @@ plot.samres<-function(x, ...){
                 mar=c(0, 0, 0, 0), new=TRUE)
     on.exit(par(opar))
     plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
-    zscale <- pretty(x$residual,min.n=5)
+    zscale <- pretty(x$residual,min.n=4)
     uu<-par("usr")
     yy<-rep(uu[3]+.03*(uu[4]-uu[3]), length(zscale))
     xx<-seq(uu[1]+.10*(uu[2]-uu[1]),uu[1]+.4*(uu[2]-uu[1]), length=length(zscale))
