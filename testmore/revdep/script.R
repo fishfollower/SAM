@@ -63,6 +63,7 @@ lapply(githubPkg,function(x)do.call("buildFromGithub",x))
 ########################
 #### Check packages ####
 ########################
+Sys.setenv("_R_CHECK_CRAN_INCOMING_" = "false")
 checkNames <- capture.output(tools::check_packages_in_dir("./","--as-cran --no-build-vignettes --no-vignettes --no-manual"), type="message")
 
 checkOutput <- capture.output(tools::summarize_check_packages_in_dir_results("./"))
