@@ -91,6 +91,8 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(fracMixF); confset.fracMixF=asDouble(fracMixF); 
   DATA_SCALAR(fracMixN); confset.fracMixN=asDouble(fracMixN); 
   DATA_VECTOR(fracMixObs); vector<double> fracMixObsDouble(fracMixObs.size()); for(int i=0; i<fracMixObs.size(); ++i){fracMixObsDouble(i)=asDouble(fracMixObs(i));} confset.fracMixObs=fracMixObsDouble; 
+  DATA_INTEGER(assignProcessNoiseToM); confset.assignProcessNoiseToM=assignProcessNoiseToM; 
+
 
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  

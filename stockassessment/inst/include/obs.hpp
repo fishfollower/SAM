@@ -135,8 +135,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> fbar = fbarFun(conf, logF);
   vector<Type> logfbar = log(fbar);
 
-  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logfsb, logCatch, logLand);
-
+  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logfsb, logCatch, logLand, of);
+  vector<Type> predSd(predObs.size());
+  predSd.setZero();             
   
   // setup obs likelihoods
   vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
@@ -244,6 +245,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
             if(isNAINT(dat.idxCor(f,y))){
   	      nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
               nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+              predSd.segment(idxfrom,idxlength)=sqrt(vector<Type>(currentVar))*sqrtW;
   	      SIMULATE_F(of){
 	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
 	      }
@@ -264,7 +266,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }
               } 
               MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
-	      nll+=thisnll(dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength), keep.segment(idxfrom,idxlength));              
+	      nll+=thisnll(dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength), keep.segment(idxfrom,idxlength));
+              predSd.segment(idxfrom,idxlength)=sqrt(vector<Type>(thisnll.cov().diagonal()));
 	      SIMULATE_F(of){
 	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
 	      }
@@ -319,6 +322,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                   }
                 }  
                 nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
+                predSd(i)=sd;
                 SIMULATE_F(of){
   	          dat.logobs(i) = rnorm(predObs(i),sd);
                 }
@@ -339,6 +343,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
   REPORT_F(obsCov,of);
   REPORT_F(predObs,of);
+  REPORT_F(predSd,of);
   ADREPORT_F(logssb,of);
   ADREPORT_F(logfbar,of);
   ADREPORT_F(logCatch,of);
