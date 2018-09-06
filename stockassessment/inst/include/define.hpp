@@ -86,7 +86,7 @@ dataSet(SEXP x) {
     landMeanWeight = asArray<Type>(getListElement(x,"landMeanWeight"));
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
-    corList = asVector<matrix<Type> >(getListElement(x,"corList"));
+    corList = listMatrixFromR<Type>(getListElement(x,"corList"));
   };
 
   dataSet<Type>& operator=(const dataSet<Type>& rhs) {

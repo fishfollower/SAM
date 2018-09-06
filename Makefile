@@ -1,4 +1,4 @@
-R=R
+R?=R
 SHELL=/bin/bash
 
 PACKAGE=stockassessment
