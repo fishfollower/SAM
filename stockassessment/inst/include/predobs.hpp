@@ -36,8 +36,8 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
           if(conf.keyLogFsta(0,a)>(-1)){
             tmpDev-=exp(logF(conf.keyLogFsta(0,a),y));
           }
-          logNdev(a,y)=0.1*tmpDev;
-          logNdev(a+1,y)=0.1*tmpDev;
+          logNdev(a,y)=0;
+          logNdev(a+1,y)=0;
         }else{
           logNdev(a,y)=logN(a,y)-dat.natMor(y,a)-logN(a+1,y+1);
           if(conf.keyLogFsta(0,a)>(-1)){
