@@ -264,7 +264,7 @@ public:
     L_Sigma = llt.matrixL();
     vector<Type> D=L_Sigma.diagonal();
     halfLogDetS = sum(log(D));
-    inv_L_Sigma = L_Sigma.inverse();
+    inv_L_Sigma = atomic::matinv(L_Sigma);
   }
   void setSigma(matrix<Type> Sigma_, Type p1_){
     setSigma(Sigma_);
