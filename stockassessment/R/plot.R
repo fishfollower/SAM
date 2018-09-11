@@ -814,3 +814,30 @@ fitplot.sam <- function(fit, log=TRUE,fleets=unique(fit$data$aux[,"fleet"]), ...
   }
   plotby(Year, o, y.line=p, by=myby, y.common=FALSE, ylab="", ...)
 }
+
+##' Plots the stock recruitment 
+##' @export
+qtableplot<-function(qt, exp=FALSE){
+    UseMethod("qtableplot")
+}
+
+##' plot survey catchabilities
+##' @param qt An object of class 'samqtable' as returned from qtable
+##' @param exp if true return on natural scale rather than log
+##' @rdname qtableplot
+##' @method qtableplot samqtable
+##' @importFrom grDevices n2mfrow
+##' @export
+qtableplot.samqtable<-function(qt,exp=FALSE){
+    sds<-attr(qt,"sd")
+    hi <- qt + 2*sds
+    lo <- qt - 2*sds
+    if(exp == TRUE) { qt<-exp(qt); hi<-exp(hi); lo<-exp(lo) }
+    op<-par(mfrow=n2mfrow(nrow(qt)))
+    on.exit(par(op))
+    for(f in 1:nrow(qt)){
+        yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]))
+        plot(colnames(qt),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab="logQ",xlab="Age")
+        arrows(1:ncol(qt),lo[f,],y1=hi[f,],angle=90,code=3,length=0.1)
+    }
+}
