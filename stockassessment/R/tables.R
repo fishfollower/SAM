@@ -233,9 +233,19 @@ modeltable.samset <- function(fits,...){
 }
 
 ##' table of survey catchabilities
-##' @param fit A sam fit as returned from the sam.fit function
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
 ##' @export
-qtable<-function(fit){
+qtable<-function(fit,...){
+    UseMethod("qtable")
+}
+
+##' table of survey catchabilities
+##' @param fit A sam fit as returned from the sam.fit function
+##' @param ... extra arguments not currently used
+##' @export
+qtable.sam<-function(fit,...){
   key<-fit$conf$keyLogFpar[-1,]+1
   key[key==0]<-NA
   noSurveys<-nrow(key)-1
