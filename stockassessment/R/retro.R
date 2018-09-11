@@ -118,6 +118,8 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
   clusterExport(cl, varlist="fit", envir=environment())
   runs <- parLapply(cl, setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
   stopCluster(cl) #shut it down
+  converg <- unlist(lapply(runs, function(x)x$opt$conv))
+  if(any(converg!=0)) warning(paste0("retro run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))
   attr(runs, "fit") <- fit
   class(runs)<-"samset"
   runs
@@ -136,6 +138,8 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
   clusterExport(cl, varlist="fit", envir=environment())
   runs <- parLapply(cl, fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
   stopCluster(cl) #shut it down
+  converg <- unlist(lapply(runs, function(x)x$opt$conv))
+  if(any(converg!=0)) warning(paste0("leavout run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))
   names(runs) <- paste0("w.o. ", lapply(fleet, function(x)paste(attr(fit$data,"fleetNames")[x], collapse=" and ")))
   attr(runs, "fit") <- fit
   class(runs)<-"samset"
