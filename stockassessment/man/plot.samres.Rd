@@ -4,10 +4,12 @@
 \alias{plot.samres}
 \title{Plot sam residuals}
 \usage{
-\method{plot}{samres}(x, ...)
+\method{plot}{samres}(x, type = "bubble", ...)
 }
 \arguments{
-\item{x}{...}
+\item{x}{an object of type 'samres' as returned from residuals or procres.}
+
+\item{type}{either "bubble" (default) or "summary"}
 
 \item{...}{extra arguments}
 }

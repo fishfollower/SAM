@@ -105,9 +105,12 @@ procres <- function(fit, ...){
 
 ##' Plot sam residuals 
 ##' @method plot samres 
-##' @param  x ...
-##' @param  ... extra arguments
+##' @param x an object of type 'samres' as returned from residuals or procres.
+##' @param type either "bubble" (default) or "summary"
+##' @param ... extra arguments
 ##' @details ...
+##' @importFrom graphics abline
+##' @importFrom stats acf na.pass qqnorm
 ##' @export
 ##' @examples
 ##' \dontrun{
@@ -118,26 +121,44 @@ procres <- function(fit, ...){
 ##' par(ask=FALSE)
 ##' plot(residuals(fit))
 ##' }
-plot.samres<-function(x, ...){
-  add_legend <- function(x, ...) {
-    opar <- par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), 
-                mar=c(0, 0, 0, 0), new=TRUE)
-    on.exit(par(opar))
-    plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
-    zscale <- pretty(x$residual,min.n=4)
-    uu<-par("usr")
-    yy<-rep(uu[3]+.03*(uu[4]-uu[3]), length(zscale))
-    xx<-seq(uu[1]+.10*(uu[2]-uu[1]),uu[1]+.4*(uu[2]-uu[1]), length=length(zscale))
-    text(xx,yy,labels=zscale)
-    colb <- ifelse(zscale<0, rgb(1, 0, 0, alpha=.5), rgb(0, 0, 1, alpha=.5))
-    bs<-1
-    if("bubblescale"%in%names(list(...))) bs <- list(...)$bubblescale
-    points(xx,yy,cex=sqrt(abs(zscale))/max(sqrt(abs(zscale)), na.rm=TRUE)*5*bs, pch=19, col=colb)
-  }
-  neg.age <- (x$age < -1.0e-6)
-  x$age[neg.age] <- mean(x$age[!neg.age],na.rm=TRUE)
-  plotby(x$year, x$age, x$residual, by=attr(x,"fleetNames")[x$fleet], xlab="Year", ylab="Age", ...)
-  add_legend(x, ...)
+plot.samres<-function(x, type="bubble",...){
+  if(type=="bubble"){
+    add_legend <- function(x, ...) {
+      opar <- par(fig=c(0, 1, 0, 1), oma=c(0, 0, 0, 0), 
+                  mar=c(0, 0, 0, 0), new=TRUE)
+      on.exit(par(opar))
+      plot(0, 0, type='n', bty='n', xaxt='n', yaxt='n')
+      zscale <- pretty(x$residual,min.n=4)
+      uu<-par("usr")
+      yy<-rep(uu[3]+.03*(uu[4]-uu[3]), length(zscale))
+      xx<-seq(uu[1]+.10*(uu[2]-uu[1]),uu[1]+.4*(uu[2]-uu[1]), length=length(zscale))
+      text(xx,yy,labels=zscale)
+      colb <- ifelse(zscale<0, rgb(1, 0, 0, alpha=.5), rgb(0, 0, 1, alpha=.5))
+      bs<-1
+      if("bubblescale"%in%names(list(...))) bs <- list(...)$bubblescale
+      points(xx,yy,cex=sqrt(abs(zscale))/max(sqrt(abs(zscale)), na.rm=TRUE)*5*bs, pch=19, col=colb)
+    }
+    neg.age <- (x$age < -1.0e-6)
+    x$age[neg.age] <- mean(x$age[!neg.age],na.rm=TRUE)
+    plotby(x$year, x$age, x$residual, by=attr(x,"fleetNames")[x$fleet], xlab="Year", ylab="Age", ...)
+    add_legend(x, ...)
+  } else if(type=="summary"){
+      tmp <- xtabs( x$residual ~ x$year + x$age + x$fleet)
+      nfleets <- dim(tmp)[3]
+      op<-par(mfrow=rev(n2mfrow(3*nfleets)),mar=c(4,5,1,1))
+      on.exit(par(op))
+      fnames <- attr(x,"fleetNames")
+      for(f in 1:nfleets){
+          sel<-which(x$fleet==f)
+          plot(factor(x$age[sel]),x$residual[sel])
+          mtext(fnames[f],side=2,line=3) 
+          tmp2 <- t(tmp[,,f])
+          tmp2 <- rbind(tmp2, matrix(NA,nrow=nrow(tmp2),ncol=ncol(tmp2)))
+          acf(as.vector(tmp2),na.action=na.pass,lag.max=dim(tmp)[2])
+          qqnorm(x$residual[sel])
+          abline(0,1)
+      }
+  } else stop(paste0("unknown type: ",type))
 }
 
 ##' Print sam object 

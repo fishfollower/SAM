@@ -815,11 +815,6 @@ fitplot.sam <- function(fit, log=TRUE,fleets=unique(fit$data$aux[,"fleet"]), ...
   plotby(Year, o, y.line=p, by=myby, y.common=FALSE, ylab="", ...)
 }
 
-##' Plots the stock recruitment 
-##' @export
-qtableplot<-function(qt, exp=FALSE){
-    UseMethod("qtableplot")
-}
 
 ##' plot survey catchabilities
 ##' @param qt An object of class 'samqtable' as returned from qtable
@@ -828,6 +823,13 @@ qtableplot<-function(qt, exp=FALSE){
 ##' @method qtableplot samqtable
 ##' @importFrom grDevices n2mfrow
 ##' @export
+qtableplot<-function(qt, exp=FALSE){
+    UseMethod("qtableplot")
+}
+
+##' plot survey catchabilities
+##' @rdname qtableplot
+##' @method qtableplot samqtable
 qtableplot.samqtable<-function(qt,exp=FALSE){
     sds<-attr(qt,"sd")
     hi <- qt + 2*sds
