@@ -9,7 +9,7 @@
 ## Usage
 
 ```r
-loadConf(dat, file, patch = FALSE)
+loadConf(dat, file, patch = TRUE)
 ```
 
 

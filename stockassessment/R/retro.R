@@ -73,14 +73,16 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 ##' @param fit a fitted model object as returned from sam.fit
 ##' @param year a vector of years to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
 ##' @param fleet a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
+##' @param map map from original fit 
 ##' @param ... extra arguments to sam.fit
 ##' @details ...
 ##' @export
-runwithout <- function(fit, year=NULL, fleet=NULL, ...){
+runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
   par <- defpar(data,conf)
-  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, ...)
+  par[!names(par)%in%c("logN", "logF")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF")]
+  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, ...)
   return(ret)
 }
 
@@ -116,6 +118,8 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
   clusterExport(cl, varlist="fit", envir=environment())
   runs <- parLapply(cl, setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
   stopCluster(cl) #shut it down
+  converg <- unlist(lapply(runs, function(x)x$opt$conv))
+  if(any(converg!=0)) warning(paste0("retro run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))
   attr(runs, "fit") <- fit
   class(runs)<-"samset"
   runs
@@ -134,6 +138,8 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
   clusterExport(cl, varlist="fit", envir=environment())
   runs <- parLapply(cl, fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
   stopCluster(cl) #shut it down
+  converg <- unlist(lapply(runs, function(x)x$opt$conv))
+  if(any(converg!=0)) warning(paste0("leavout run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))
   names(runs) <- paste0("w.o. ", lapply(fleet, function(x)paste(attr(fit$data,"fleetNames")[x], collapse=" and ")))
   attr(runs, "fit") <- fit
   class(runs)<-"samset"

@@ -9,8 +9,8 @@
 ## Usage
 
 ```r
-rectable(fit, ...)
-list(list("rectable"), list("default"))(fit, ...)
+rectable(fit, lagR = FALSE, ...)
+list(list("rectable"), list("default"))(fit, lagR = FALSE, ...)
 ```
 
 
@@ -19,6 +19,7 @@ list(list("rectable"), list("default"))(fit, ...)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     ...
+```lagR```     |     use the age after the youngest as R
 ```...```     |     extra arguments not currently used
 
 ## Details

@@ -139,7 +139,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
   
   // setup obs likelihoods
-  vector< density::MVNORM_t<Type> >  nllVec(dat.noFleets);
+  vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
   vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
   vector< vector<Type> > obsCovScaleVec(dat.noFleets);
   vector<Type> varLogObs=exp(par.logSdLogObs*Type(2.0));
@@ -204,9 +204,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	  obsCovScaleVec(f)(i) = tmp(i,i);
         }
         cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
-      } else { error("Unkown obsCorStruct code"); }
-        nllVec(f).setSigma(cov);
-        obsCov(f) = cov;
+      } else { 
+        error("Unkown obsCorStruct code"); 
+      }
+      nllVec(f).setSigma(cov, conf.fracMixObs(f));
+      obsCov(f) = cov;
     }else{
       matrix<Type> dummy(1,1);
       dummy(0,0) = R_NaReal;
@@ -239,12 +241,34 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }
               }
             }
-
-	    nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
-            nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
-	    SIMULATE_F(of){
-	      dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
-	    }
+            if(isNAINT(dat.idxCor(f,y))){
+  	      nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
+              nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+  	      SIMULATE_F(of){
+	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+	      }
+	    }else{
+	      int thisdim=currentVar.size();
+	      matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
+              vector<Type> thisvar(thisdim);
+              thisvar=currentVar;
+              for(int idxV=0; idxV<thisdim; ++idxV){
+                if(conf.fixVarToWeight==1){
+                  thisvar(idxV)=dat.weight(idxfrom+idxV);
+                }
+              }
+              matrix<Type> thiscov(thisdim,thisdim);
+              for(int r=0;r<thisdim;++r){
+                for(int c=0;c<thisdim;++c){
+                  thiscov(r,c)=thiscor(r,c)*sqrt(thisvar(r)*thisvar(c));
+                }
+              } 
+              MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
+	      nll+=thisnll(dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength), keep.segment(idxfrom,idxlength));              
+	      SIMULATE_F(of){
+	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
+	      }
+            }
 	    break;
 	  case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
 	    nll +=  nllVec(f)(addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));

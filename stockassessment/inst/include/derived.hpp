@@ -1,3 +1,6 @@
+
+
+
 template <class Type>
 Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i){
   int stateDimN=logN.dim[0];

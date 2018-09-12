@@ -55,7 +55,8 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
       fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
     }
   }
-  density::MVNORM_t<Type> neg_log_densityF(fvar);
+  //density::MVNORM_t<Type> neg_log_densityF(fvar);
+  MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovF(fvar);
   matrix<Type> LF = lltCovF.matrixL();
   matrix<Type> LinvF = LF.inverse();

@@ -56,7 +56,8 @@ plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=
 plotit.samset <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
                    addCI=rep(FALSE,length(fit)), drop=0, unnamed.basename="current", xlim=NULL,...){
     if(is.logical(addCI) & (length(addCI)==1))addCI=rep(addCI,length(fit))
-    colSet=c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")  
+    #colSet <- c("#FF0000", "#FF7B00", "#FFF500", "#A8FF00", "#14FF00", "#00FFA3", "#00A4FF", "#5100FF", "#CC00FF", "#969696")
+    colSet <- c("#332288"  , "#88CCEE"  , "#44AA99"  , "#117733"  , "#999933"  , "#DDCC77"  , "#661100"  , "#CC6677"  , "#882255"  , "#AA4499")  
     idxfrom <- 1
     leg<-names(fit)
     if(is.null(attr(fit,"fit"))){
@@ -812,4 +813,33 @@ fitplot.sam <- function(fit, log=TRUE,fleets=unique(fit$data$aux[,"fleet"]), ...
     myby <- cbind(a,f)
   }
   plotby(Year, o, y.line=p, by=myby, y.common=FALSE, ylab="", ...)
+}
+
+
+##' plot survey catchabilities
+##' @param qt An object of class 'samqtable' as returned from qtable
+##' @param exp if true return on natural scale rather than log
+##' @rdname qtableplot
+##' @method qtableplot samqtable
+##' @importFrom grDevices n2mfrow
+##' @export
+qtableplot<-function(qt, exp=FALSE){
+    UseMethod("qtableplot")
+}
+
+##' plot survey catchabilities
+##' @rdname qtableplot
+##' @method qtableplot samqtable
+qtableplot.samqtable<-function(qt,exp=FALSE){
+    sds<-attr(qt,"sd")
+    hi <- qt + 2*sds
+    lo <- qt - 2*sds
+    if(exp == TRUE) { qt<-exp(qt); hi<-exp(hi); lo<-exp(lo) }
+    op<-par(mfrow=n2mfrow(nrow(qt)))
+    on.exit(par(op))
+    for(f in 1:nrow(qt)){
+        yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]))
+        plot(colnames(qt),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab="logQ",xlab="Age")
+        arrows(1:ncol(qt),lo[f,],y1=hi[f,],angle=90,code=3,length=0.1)
+    }
 }

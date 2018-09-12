@@ -232,6 +232,35 @@ modeltable.samset <- function(fits,...){
     return(res[o,,drop=FALSE])
 }
 
+##' table of survey catchabilities
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+qtable<-function(fit,...){
+    UseMethod("qtable")
+}
+
+##' table of survey catchabilities
+##' @param fit A sam fit as returned from the sam.fit function
+##' @param ... extra arguments not currently used
+##' @export
+qtable.sam<-function(fit,...){
+  key<-fit$conf$keyLogFpar[-1,]+1
+  key[key==0]<-NA
+  noSurveys<-nrow(key)-1
+  cf<-coef(fit)
+  cfsd <- attr(cf,"sd")
+  qt <- matrix( cf[ names(cf)=="logFpar" ][key],nrow=nrow(key),ncol=ncol(key) )
+  rownames(qt)<-attr(fit$data, "fleetNames")[-1]
+  colnames(qt)<-fit$conf$minAge:fit$conf$maxAge
+  sds <- qt
+  sds[] <- cfsd[ names(cf)=="logFpar" ][key]
+  attr(qt,"sd") <- sds
+  class(qt) <- "samqtable"
+  qt
+}
+
 ##' Yield per recruit calculation
 ##' @param fit the object returned from sam.fit
 ##' @param Flimit Upper limit for Fbar

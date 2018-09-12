@@ -1,12 +1,13 @@
 Package: stockassessment
 Title: State-Space Assessment Model
-Version: 0.5.5
-Date: 2018-03-20
+Version: 0.8.0
+Date: 2018-06-14
 Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.dk"),
 	    person("Casper","Berg",role="aut"),
+            person(c("Christoffer","Moesgaard"), "Albertsen", role="aut"),
             person("Kasper","Kristensen",role="aut"), 
             person("Mollie", "Brooks", role="aut"),
-	    person(c("Christoffer","Moesgaard"), "Albertsen", role="aut"))
+            person(c("Olav","Nikolai"), "Brevik", role="aut"))
 Description: Fitting SAM...
 License: GPL-2
 Imports: TMB, ellipse
@@ -15,16 +16,4 @@ Suggests: testthat
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
 BugReports: https://github.com/fishfollower/SAM/issues
-RoxygenNote: 6.0.1.9000
-RemoteType: github
-RemoteHost: https://api.github.com
-RemoteRepo: SAM
-RemoteUsername: fishfollower
-RemoteRef: master
-RemoteSha: ee98cafe370a60278036638a9e466c294bca7883
-RemoteSubdir: stockassessment
-GithubRepo: SAM
-GithubUsername: fishfollower
-GithubRef: master
-GithubSHA1: ee98cafe370a60278036638a9e466c294bca7883
-GithubSubdir: stockassessment
+RoxygenNote: 6.0.1
