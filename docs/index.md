@@ -3,13 +3,15 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.7.0
+Documentation for package ‘stockassessment’ version 0.8.1
 ---------------------------------------------------------
+
+[Package NEWS](../NEWS).
 
 Help Pages
 ----------
 
-[A](#A) [C](#C) [D](#D) [E](#E) [F](#F) [G](#G) [I](#I) [J](#J) [L](#L) [M](#M) [N](#N) [O](#O) [P](#P) [R](#R) [S](#S) [T](#T) [Y](#Y)
+[A](#A) [C](#C) [D](#D) [E](#E) [F](#F) [G](#G) [I](#I) [J](#J) [L](#L) [M](#M) [N](#N) [O](#O) [P](#P) [Q](#Q) [R](#R) [S](#S) [T](#T) [Y](#Y)
 
 <span id="A">-- A --</span>
 ---------------------------
@@ -166,6 +168,16 @@ Help Pages
 | [print.samypr](print.samypr.md)           | Print samypr object                             |
 | [procres](procres.md)                     | Compute process residuals (single joint sample) |
 
+<span id="Q">-- Q --</span>
+---------------------------
+
+|                                       |                                |
+|---------------------------------------|--------------------------------|
+| [qtable](qtable.md)                   | table of survey catchabilities |
+| [qtable.sam](qtable.sam.md)           | table of survey catchabilities |
+| [qtableplot](qtableplot.md)           | plot survey catchabilities     |
+| [qtableplot.samqtable](qtableplot.md) | plot survey catchabilities     |
+
 <span id="R">-- R --</span>
 ---------------------------
 
@@ -189,22 +201,23 @@ Help Pages
 <span id="S">-- S --</span>
 ---------------------------
 
-|                                     |                                                 |
-|-------------------------------------|-------------------------------------------------|
-| [sam.fit](sam.fit.md)               | Fit SAM model                                   |
-| [saveConf](saveConf.md)             | Saves a model configuration list to a file      |
-| [setS](setS.md)                     | small helper function                           |
-| [setSeq](setSeq.md)                 | small helper function                           |
-| [setup.sam.data](setup.sam.data.md) | Combine the data sources to SAM readable object |
-| [simulate.sam](simulate.sam.md)     | Simulate from a sam object                      |
-| [srplot](srplot.md)                 | Plots the stock recruitment                     |
-| [srplot.sam](srplot.md)             | Plots the stock recruitment                     |
-| [ssbplot](ssbplot.md)               | SAM SSB plot                                    |
-| [ssbplot.default](ssbplot.md)       | SAM SSB plot                                    |
-| [ssbplot.samforecast](ssbplot.md)   | SAM SSB plot                                    |
-| [ssbtable](ssbtable.md)             | SSB table                                       |
-| [ssbtable.default](ssbtable.md)     | SSB table                                       |
-| [summary.sam](summary.sam.md)       | Summary of sam object                           |
+|                                     |                                                               |
+|-------------------------------------|---------------------------------------------------------------|
+| [sam.fit](sam.fit.md)               | Fit SAM model                                                 |
+| [saveConf](saveConf.md)             | Saves a model configuration list to a file                    |
+| [setS](setS.md)                     | small helper function                                         |
+| [setSeq](setSeq.md)                 | small helper function                                         |
+| [setup.sam.data](setup.sam.data.md) | Combine the data sources to SAM readable object               |
+| [simstudy](simstudy.md)             | Simulate data from fitted model and re-estimate from each run |
+| [simulate.sam](simulate.sam.md)     | Simulate from a sam object                                    |
+| [srplot](srplot.md)                 | Plots the stock recruitment                                   |
+| [srplot.sam](srplot.md)             | Plots the stock recruitment                                   |
+| [ssbplot](ssbplot.md)               | SAM SSB plot                                                  |
+| [ssbplot.default](ssbplot.md)       | SAM SSB plot                                                  |
+| [ssbplot.samforecast](ssbplot.md)   | SAM SSB plot                                                  |
+| [ssbtable](ssbtable.md)             | SSB table                                                     |
+| [ssbtable.default](ssbtable.md)     | SSB table                                                     |
+| [summary.sam](summary.sam.md)       | Summary of sam object                                         |
 
 <span id="T">-- T --</span>
 ---------------------------
