@@ -59,16 +59,17 @@ plot.samset<-function(x, ...){
 
 ##' Compute process residuals (single joint sample) 
 ##' @param fit the fitted object as returned from the sam.fit function
+##' @param map map from original fit 
 ##' @param ... extra arguments (not currently used)
 ##' @return an object of class \code{samres}
 ##' @details ...
 ##' @importFrom TMB sdreport
 ##' @export
-procres <- function(fit, ...){
+procres <- function(fit, map = fit$obj$env$map, ...){
   pp<-fit$pl
   attr(pp,"what") <- NULL
   pp$missing <- NULL
-  fit.co<-sam.fit(fit$data, fit$conf, pp, run=FALSE)
+  fit.co<-sam.fit(fit$data, fit$conf, pp, run=FALSE, map = map)
   fit.co$obj$env$data$resFlag<-1
   fit.co$obj$retape()
   sdrep <- sdreport(fit.co$obj,fit$opt$par)  

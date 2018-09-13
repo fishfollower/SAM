@@ -4,10 +4,12 @@
 \alias{procres}
 \title{Compute process residuals (single joint sample)}
 \usage{
-procres(fit, ...)
+procres(fit, map = fit$obj$env$map, ...)
 }
 \arguments{
 \item{fit}{the fitted object as returned from the sam.fit function}
+
+\item{map}{map from original fit}
 
 \item{...}{extra arguments (not currently used)}
 }
