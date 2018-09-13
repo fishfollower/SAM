@@ -5,12 +5,14 @@
 \alias{fselectivityplot.sam}
 \title{SAM F-selectivity plot}
 \usage{
-fselectivityplot(fit, ...)
+fselectivityplot(fit, cexAge = 1, ...)
 
-\method{fselectivityplot}{sam}(fit, ...)
+\method{fselectivityplot}{sam}(fit, cexAge = 1, ...)
 }
 \arguments{
 \item{fit}{An object returned from sam.fit}
+
+\item{cexAge}{cex variable giving the size of the age numbers}
 
 \item{...}{extra arguments transferred to barplot and text}
 }

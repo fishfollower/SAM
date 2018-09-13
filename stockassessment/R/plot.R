@@ -385,20 +385,21 @@ fbarplot.samforecast <- function(fit,partial = FALSE, drop=NULL, pcol="lightblue
 
 ##' SAM F-selectivity plot 
 ##' @param fit An object returned from sam.fit 
+##' @param cexAge cex variable giving the size of the age numbers 
 ##' @param ... extra arguments transferred to barplot and text
 ##' @importFrom graphics barplot text
 ##' @details Plots selectivity in F. 
 ##' @export
-fselectivityplot<-function(fit, ...){
+fselectivityplot<-function(fit, cexAge = 1,...){
   UseMethod("fselectivityplot")
 }
 ##' @rdname fselectivityplot
 ##' @method fselectivityplot sam
 ##' @export
-fselectivityplot.sam <- function(fit,...){
+fselectivityplot.sam <- function(fit, cexAge = 1,...){
     fmat<- faytable(fit)
     barplot(t(fmat/rowSums(fmat)),border=NA,space=c(0),xlab="Year", main = "Selectivity in F", ...)
-    text(1,cumsum(t(fmat/rowSums(fmat))[,1]) - 0.5*t(fmat/rowSums(fmat))[,1] ,label=as.character(1:ncol(fmat)),adj=c(0.0,0.2), ...)
+    text(1,cumsum(t(fmat/rowSums(fmat))[,1]) - 0.5*t(fmat/rowSums(fmat))[,1] ,label=as.character(1:ncol(fmat)),adj=c(0.0,0.2), cex = cexAge)
 }
 
 
