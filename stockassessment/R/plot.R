@@ -385,7 +385,8 @@ fbarplot.samforecast <- function(fit,partial = FALSE, drop=NULL, pcol="lightblue
 
 ##' SAM F-selectivity plot 
 ##' @param fit An object returned from sam.fit 
-##' @importFrom graphics
+##' @param ... extra arguments transferred to barplot
+##' @importFrom graphics barplot text
 ##' @details Plots selectivity in F. 
 ##' @export
 fSelectivityPlot<-function(fit,...){
@@ -393,11 +394,10 @@ fSelectivityPlot<-function(fit,...){
 }
 ##' @rdname fSelectivityPlot
 ##' @method fSelectivityPlot sam
-##' @param fit SAM fit
 ##' @export
-fSelectivityPlot.sam <- function(fit){
+fSelectivityPlot.sam <- function(fit, ...){
     fmat<- faytable(fit)
-    barplot(t(fmat/rowSums(fmat)),border=NA,space=c(0),xlab="Year", main = "Selectivity in F", cex.main = 2)
+    barplot(t(fmat/rowSums(fmat)),border=NA,space=c(0),xlab="Year", main = "Selectivity in F", cex.main = 2, ...)
     text(1,cumsum(t(fmat/rowSums(fmat))[,1]) - 0.5*t(fmat/rowSums(fmat))[,1] ,label=as.character(1:ncol(fmat)),cex=1.5,adj=c(0.0,0.2))
 }
 
