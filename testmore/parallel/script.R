@@ -1,4 +1,4 @@
-## Tests t
+## Tests runwithout using maps and bounds
 library(stockassessment)
 
 prefix <- "WHITEHAKE_"

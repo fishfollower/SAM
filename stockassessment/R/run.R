@@ -164,9 +164,9 @@ jit <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=de
   pars <- lapply(1:nojit, function(i)relist(parv+rnorm(length(parv),sd=sd), par))
   if(ncores>1){
     cl <- makeCluster(ncores) #set up nodes
+    on.exit(stopCluster(cl)) #shut it down
     clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
     fits <- parLapply(cl, pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))
-    stopCluster(cl) #shut it down
   } else {
     fits <- lapply(pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))   
   }

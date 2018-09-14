@@ -116,9 +116,9 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
   setup <- lapply(1:nrow(mat),function(i)do.call(rbind,lapply(suf,function(ff)if(mat[i,ff]<=maxy[ff]){cbind(mat[i,ff]:maxy[ff], ff)})))
   if(ncores>1){
     cl <- makeCluster(ncores) #set up nodes
+    on.exit(stopCluster(cl)) #shut it down
     clusterExport(cl, varlist="fit", envir=environment())
     runs <- parLapply(cl, setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
-    stopCluster(cl) #shut it down
   } else {
     runs <- lapply( setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
   }
@@ -140,9 +140,9 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
 leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores(), ...){
   if(ncores>1){
     cl <- makeCluster(ncores) #set up nodes
+    on.exit(stopCluster(cl)) #shut it down
     clusterExport(cl, varlist="fit", envir=environment())
     runs <- parLapply(cl, fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
-    stopCluster(cl) #shut it down
   } else {
     runs <- lapply(fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
   }
