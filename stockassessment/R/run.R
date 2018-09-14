@@ -162,10 +162,14 @@ clean.void.catches<-function(dat, conf){
 jit <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=detectCores()){
   parv <- unlist(par)
   pars <- lapply(1:nojit, function(i)relist(parv+rnorm(length(parv),sd=sd), par))
-  cl <- makeCluster(ncores) #set up nodes
-  clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
-  fits <- parLapply(cl, pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))
-  stopCluster(cl) #shut it down
+  if(ncores>1){
+    cl <- makeCluster(ncores) #set up nodes
+    clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
+    fits <- parLapply(cl, pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))
+    stopCluster(cl) #shut it down
+  } else {
+    fits <- lapply(pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))   
+  }
   attr(fits,"fit") <- fit
   attr(fits,"jitflag") <- 1
   class(fits) <- c("samset")
