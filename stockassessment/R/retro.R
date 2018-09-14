@@ -82,7 +82,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   conf <- attr(data, "conf")
   par <- defpar(data,conf)
   par[!names(par)%in%c("logN", "logF")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF")]
-  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, ...)
+  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, lower=fit$low, upper=fit$hig, ...)
   return(ret)
 }
 
@@ -144,7 +144,7 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
     runs <- parLapply(cl, fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
     stopCluster(cl) #shut it down
   } else {
-    runs <- lapply<-function(fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
+    runs <- lapply(fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
   }
   converg <- unlist(lapply(runs, function(x)x$opt$conv))
   if(any(converg!=0)) warning(paste0("leavout run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))
