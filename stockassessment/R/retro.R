@@ -102,6 +102,7 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
   maxy <- sapply(suf, function(ff)max(y[f==ff]))
   if(length(year)==1){
     mat <- sapply(suf,function(ff){my<-maxy[ff];my:(my-year+1)})
+    if(year==1)mat <- matrix(mat, nrow=1)
   }
   if(is.vector(year) & length(year)>1){
     mat <- sapply(suf,function(ff)year)
