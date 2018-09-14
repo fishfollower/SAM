@@ -40,7 +40,7 @@ RETRO <- retro(fit, year=2, newtonsteps=0)
 
 res <- c(  RETRO[[1]]$pl$itrans_rho - par$itrans_rho, ## should be zero if map is working 
            RETRO[[1]]$pl$logSdLogN) ## should not be lower than -4
-cat(res,"\n", file="res.out")
+cat(round(res,4),"\n", file="res.out")
 
 
 
