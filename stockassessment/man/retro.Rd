@@ -11,7 +11,7 @@ retro(fit, year = NULL, ncores = detectCores(), ...)
 
 \item{year}{either 1) a single integer n in which case runs where all fleets are reduced by 1, 2, ..., n are returned, 2) a vector of years in which case runs where years from and later are excluded for all fleets, and 3 a matrix of years were each column is a fleet and each column corresponds to a run where the years and later are excluded.}
 
-\item{ncores}{the number of cores to attemp to use}
+\item{ncores}{the number of cores to attempt to use}
 
 \item{...}{extra arguments to \code{\link{sam.fit}}}
 }
