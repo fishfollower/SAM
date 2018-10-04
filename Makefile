@@ -1,5 +1,5 @@
 R=R
-SHELL=/bin/bash
+
 
 PACKAGE=stockassessment
 VERSION := $(shell sed -n '/^Version: /s///p' stockassessment/DESCRIPTION)
@@ -95,9 +95,9 @@ ex-test:
 	echo "library(stockassessment); example(sam.fit)" | $(R) --slave
 
 clean:
-	\rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/*.so $(PACKAGE)/src/*.o
-	\rm -rf $(PACKAGE).Rcheck
-	\rm -f stockassessment/vignettes/stockassessment.{aux,log,out,pdf,tex}
+	rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/*.so $(PACKAGE)/src/*.o
+	rm -rf $(PACKAGE).Rcheck
+	rm -f stockassessment/vignettes/stockassessment.{aux,log,out,pdf,tex}
 
 test:
 	echo "devtools::test('stockassessment')" | $(R) --slave
