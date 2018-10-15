@@ -4,15 +4,16 @@
 \alias{forecast}
 \title{forecast function to do shortterm}
 \usage{
-forecast(fit, fscale = NULL, catchval = NULL, fval = NULL, nosim = 1000,
-  year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
+forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
+  nosim = 1000, year.base = max(fit$data$years),
+  ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
-  cf.cv.keep.cv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0), nrow =
-  length(catchval)), cf.cv.keep.fv = matrix(NA, ncol = 2 *
+  cf.cv.keep.cv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0),
+  nrow = length(catchval)), cf.cv.keep.fv = matrix(NA, ncol = 2 *
   sum(fit$data$fleetTypes == 0), nrow = length(catchval)),
-  cf.keep.fv.offset = matrix(0, ncol = sum(fit$data$fleetTypes == 0), nrow =
-  length(catchval)), estimate = median)
+  cf.keep.fv.offset = matrix(0, ncol = sum(fit$data$fleetTypes == 0),
+  nrow = length(catchval)), estimate = median)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
