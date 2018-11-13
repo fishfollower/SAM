@@ -841,17 +841,15 @@ fitplot.sam <- function(fit, log=TRUE,fleets=unique(fit$data$aux[,"fleet"]), ...
 ##' plot survey catchabilities
 ##' @param qt An object of class 'samqtable' as returned from qtable
 ##' @param exp if true return on natural scale rather than log
-##' @rdname qtableplot
-##' @method qtableplot samqtable
 ##' @importFrom grDevices n2mfrow
 ##' @export
 qtableplot<-function(qt, exp=FALSE){
     UseMethod("qtableplot")
 }
-
 ##' plot survey catchabilities
 ##' @rdname qtableplot
 ##' @method qtableplot samqtable
+##' @export
 qtableplot.samqtable<-function(qt,exp=FALSE){
     sds<-attr(qt,"sd")
     hi <- qt + 2*sds
@@ -860,7 +858,7 @@ qtableplot.samqtable<-function(qt,exp=FALSE){
     op<-par(mfrow=n2mfrow(nrow(qt)))
     on.exit(par(op))
     for(f in 1:nrow(qt)){
-        yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]))
+        yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]),na.rm=TRUE)
         plot(colnames(qt),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab="logQ",xlab="Age")
         arrows(1:ncol(qt),lo[f,],y1=hi[f,],angle=90,code=3,length=0.1)
     }
