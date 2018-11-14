@@ -63,7 +63,10 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
-  
+  DATA_STRUCT(forecast, forecastSet); dataset.forecast = forecast;
+
+  prepareForForecast(dataset);
+    
   confSet confset;
   DATA_INTEGER(minAge); confset.minAge=minAge; 
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
@@ -91,8 +94,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(fixVarToWeight); confset.fixVarToWeight=fixVarToWeight; 
   DATA_SCALAR(fracMixF); confset.fracMixF=asDouble(fracMixF); 
   DATA_SCALAR(fracMixN); confset.fracMixN=asDouble(fracMixN); 
-  DATA_VECTOR(fracMixObs); vector<double> fracMixObsDouble(fracMixObs.size()); for(int i=0; i<fracMixObs.size(); ++i){fracMixObsDouble(i)=asDouble(fracMixObs(i));} confset.fracMixObs=fracMixObsDouble; 
-
+  DATA_VECTOR(fracMixObs); vector<double> fracMixObsDouble(fracMixObs.size()); for(int i=0; i<fracMixObs.size(); ++i){fracMixObsDouble(i)=asDouble(fracMixObs(i));} confset.fracMixObs=fracMixObsDouble;
+ 
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
@@ -128,10 +131,9 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
 
-  ans += nllF(confset, paraset, logF, keep, this);
-
+  ans += nllF(dataset, confset, paraset, logF, keep, this);
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
-
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
+
   return ans;
 }

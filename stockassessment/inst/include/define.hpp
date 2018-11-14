@@ -32,6 +32,54 @@ bool isNAINT(int x){
   return NA_INTEGER==x;
 }
 
+
+
+template <class Type>
+struct forecastSet {
+  int nYears;
+  int aveYears;
+  vector<Type> forecastYear;
+  vector<Type> Fval;
+  vector<Type> selectivity;
+  int recruitmentIID;
+  Type recruitmentMedian;
+  Type recruitmentCV;
+
+  forecastSet() : nYears(0) {};
+  
+  forecastSet(SEXP x){
+    // If nYears is NULL or 0; only set nYears to 0 -> no forecast
+    if(Rf_isNull(getListElement(x,"nYears")) ||
+       (int)*REAL(getListElement(x,"nYears")) == 0){
+      nYears = 0;
+    }else{
+      using tmbutils::asArray;
+      nYears = (int)*REAL(getListElement(x,"nYears"));
+      aveYears = (int)*REAL(getListElement(x,"aveYears"));
+      forecastYear = asVector<Type>(getListElement(x,"forecastYear"));
+      Fval = asVector<Type>(getListElement(x,"Fval"));
+      selectivity = asVector<Type>(getListElement(x,"selectivity"));
+      recruitmentIID = (int)*REAL(getListElement(x,"recruitmentIID"));
+      recruitmentMedian = (Type)*REAL(getListElement(x,"recruitmentMedian"));
+      recruitmentCV = (Type)*REAL(getListElement(x,"recruitmentCV"));
+    }
+  };
+
+    forecastSet<Type>& operator=(const forecastSet<Type>& rhs) {
+      nYears = rhs.nYears;
+      aveYears = rhs.aveYears;
+      forecastYear = rhs.forecastYear;
+      Fval = rhs.Fval;
+      selectivity = rhs.selectivity;
+      recruitmentIID = rhs.recruitmentIID;
+      recruitmentMedian = rhs.recruitmentMedian;
+      recruitmentCV = rhs.recruitmentCV;
+      return *this;
+    }
+};
+
+
+
 template <class Type>
 struct dataSet{
   int noFleets;
@@ -59,6 +107,8 @@ struct dataSet{
   array<Type> propF;
   array<Type> propM;
   vector<matrix<Type> > corList;
+  forecastSet<Type> forecast;
+
 dataSet() {};
 
 dataSet(SEXP x) {
@@ -87,6 +137,7 @@ dataSet(SEXP x) {
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
     corList = listMatrixFromR<Type>(getListElement(x,"corList"));
+    forecast = forecastSet<Type>(getListElement(x,"forecast"));
   };
 
   dataSet<Type>& operator=(const dataSet<Type>& rhs) {
@@ -115,9 +166,65 @@ dataSet(SEXP x) {
     propF = rhs.propF;
     propM = rhs.propM;
     corList = rhs.corList;
+    forecast = rhs.forecast;
     return *this;
   };
 };
+
+
+
+
+template <class Type>
+void extendArray(array<Type>& x, int nYears, int aveYears){
+  vector<int> dim = x.dim;
+  array<Type> tmp(dim(0)+nYears,dim(1));
+  vector<Type> ave(dim(1));
+  ave.setZero();
+  for(int i = 0; i < x.dim(0); ++i)
+    for(int j = 0; j < x.dim(1); ++j){
+      tmp(i,j) = x(i,j);
+      if(i > x.dim(0) - 1 - aveYears)
+	ave(j) += x(i,j);
+    }
+  for(int i = x.dim(0); i < tmp.dim(0); ++i)
+    for(int j = 0; j < tmp.dim(1); ++j)
+      tmp(i,j) = ave(j) / Type(aveYears);
+  // NOTE: x must be resized first, otherwise x=tmp will not work.
+  x.initZeroArray(tmp.dim);
+  x = tmp;
+  return;
+}
+
+template <class Type>
+void prepareForForecast(dataSet<Type>& dat){
+  int nFYears = dat.forecast.nYears;
+  if(nFYears == 0)
+    return;
+  int aveYears = dat.forecast.aveYears;
+  // propMat
+  extendArray(dat.propMat, nFYears, aveYears);
+  // stockMeanWeight
+  extendArray(dat.stockMeanWeight, nFYears, aveYears);
+  // catchMeanWeight
+  extendArray(dat.catchMeanWeight, nFYears, aveYears);
+  // natMor
+  extendArray(dat.natMor, nFYears, aveYears);
+  // landFrac
+  extendArray(dat.landFrac, nFYears, aveYears);
+  // disMeanWeight
+  extendArray(dat.disMeanWeight, nFYears, aveYears);
+  // landMeanWeight
+  extendArray(dat.landMeanWeight, nFYears, aveYears);
+  // propF
+  extendArray(dat.propF, nFYears, aveYears);
+  // propM
+  extendArray(dat.propM, nFYears, aveYears);
+  return;  
+}
+
+
+
+
 
 struct confSet{
   int minAge;
@@ -146,6 +253,7 @@ struct confSet{
   double fracMixF;
   double fracMixN;
   vector<double> fracMixObs;
+  
   confSet() {};
 
   confSet(SEXP x){
