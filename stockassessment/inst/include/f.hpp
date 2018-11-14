@@ -27,7 +27,7 @@ Type jacobiUVtrans( array<Type> logF){
 }
 
 template <class Type>
-Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllF(dataSet<Type> &data, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0; 
   int stateDimF=logF.dim[0];
@@ -90,11 +90,17 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   matrix<Type> LinvF = LF.inverse();
 
   for(int i=1;i<timeSteps;i++){
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));    
-    nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
-    SIMULATE_F(of){
-      if(conf.simFlag==0){
-        logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
+    if(data.forecast.nYears > 0 && data.forecast.forecastYear(i) > 0){
+      // Forecast
+      Type timeScale = sqrt(data.forecast.forecastYear(i));
+      nll += neg_log_densityF((logF.col(i) - (log(data.forecast.Fval(CppAD::Integer(data.forecast.forecastYear(i))-1)) + log(data.forecast.selectivity)))/timeScale) + log(timeScale); 
+    }else{
+      nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+      SIMULATE_F(of){
+	if(conf.simFlag==0){
+	  logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+	}
       }
     }
   }
