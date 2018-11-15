@@ -9,8 +9,8 @@
 \usage{
 catchplot(fit, obs.show = TRUE, drop = NULL, ...)
 
-\method{catchplot}{sam}(fit, obs.show = TRUE, drop = NULL, plot = TRUE,
-  ...)
+\method{catchplot}{sam}(fit, obs.show = TRUE, drop = NULL,
+  plot = TRUE, ...)
 
 \method{catchplot}{samset}(fit, obs.show = TRUE, drop = NULL, ...)
 
