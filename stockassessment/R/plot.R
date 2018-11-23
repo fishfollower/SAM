@@ -114,7 +114,9 @@ addforecast.samforecast <- function(fit, what, dotcol="black", dotpch=19, dotcex
     dummy <- sapply(1:length(y),
                     function(i){
                         xx<-c(x[i,paste(what,"low", sep=":")],x[i,paste(what,"high", sep=":")]);
-                        if(abs(diff(xx))>0.01){
+                        units = par(c('usr', 'pin'))
+                        xx_to_inches = with(units, pin[2L]/diff(usr[3:4]))
+                        if(abs(xx_to_inches * diff(xx))>0.01){
                             arrows(y[i],xx[1],y[i],xx[2],lwd=3, col=intervalcol, angle=90, code=3, length=.1)
                         }
                     }

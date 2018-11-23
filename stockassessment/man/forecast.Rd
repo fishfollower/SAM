@@ -4,10 +4,11 @@
 \alias{forecast}
 \title{forecast function to do shortterm}
 \usage{
-forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
-  nextssb = NULL, landval = NULL, cwF = NULL, nosim = 1000,
-  year.base = max(fit$data$years), ave.years = max(fit$data$years) +
-  (-4:0), rec.years = max(fit$data$years) + (-9:0), label = NULL,
+forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
+  fval = NULL, nextssb = NULL, landval = NULL, cwF = NULL,
+  nosim = 1000, year.base = max(fit$data$years),
+  ave.years = max(fit$data$years) + (-4:0),
+  rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
   customWeights = NULL, customSel = NULL, lagR = FALSE,
   splitLD = FALSE, addTSB = FALSE)
@@ -18,6 +19,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
 \item{fscale}{a vector of f-scales. See details.}
 
 \item{catchval}{a vector of target catches. See details.}
+
+\item{catchval.exact}{a vector of target catches which will be met without noise. See details.}
 
 \item{fval}{a vector of target f values. See details.}
 
