@@ -107,10 +107,11 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
   PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
-
+  PARAMETER_VECTOR(logRecaptureSd); paraset.logRecaptureSd=logRecaptureSd;    
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
+  PARAMETER_VECTOR(logRecapEps);
 
   // patch missing 
   int idxmis=0; 
@@ -121,6 +122,10 @@ Type objective_function<Type>::operator() ()
   }
   
   Type ans=0; //negative log-likelihood
+ 
+  for(int i=0; i<logRecapEps.size(); ++i){
+    ans += -dnorm(logRecapEps(i),Type(0),exp(paraset.logRecaptureSd(0)),true);
+  }
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
@@ -131,6 +136,6 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
 
-  ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
+  ans += nllObs(dataset, confset, paraset, logN, logF, logRecapEps, keep,  this);
   return ans;
 }

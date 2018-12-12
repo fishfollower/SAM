@@ -42,7 +42,9 @@ defpar <- function(dat,conf){
                            }else{numeric(0)}
   ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(ret$logitReleaseSurvival))
                         }else{numeric(0)}
+  ret$logRecaptureSd=if(any(dat$fleetTypes==5)){numeric(1)}else{numeric(0)}
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
+  ret$logRecapEps=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,9]),9])))}else{numeric(0)}
   return(ret)
 }

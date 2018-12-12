@@ -340,7 +340,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     tag$fleet <- fleet.idx
     tag$age <- recapture$ReleaseY-recapture$Yearclass
     tag$aux <- exp(recapture$r)
-    tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type")])
+    tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type", "Group")])
     dat[names(tag)[!names(tag)%in%names(dat)]]<-NA
     dat<-rbind(dat, tag)
     weight<-c(weight,rep(NA,nrow(tag)))
