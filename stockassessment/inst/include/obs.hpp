@@ -102,7 +102,7 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logRecapEps,
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, const vector<Type> &logRecapEps,
 	    //vector<Type> &predObs, vector<Type> &varLogCatch,
 	    data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
@@ -154,8 +154,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   if(par.logitRecapturePhi.size()>0){
     recapturePhi=invlogit(par.logitRecapturePhi);
     for(int j=0; j<dat.nobs; ++j){
-      if(!isNAINT(dat.aux(j,7))){
-        recapturePhiVec(j)=recapturePhi(dat.aux(j,7)-1);
+      if(!isNAINT(dat.aux(j,8))){
+        recapturePhiVec(j)=recapturePhi(dat.aux(j,8)-1);
       }
     }
   }
@@ -296,9 +296,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
         }
       }else{ //dat.fleetTypes(f)==5
         if(dat.fleetTypes(f)==5){
-          if(!isNAINT(dat.idx1(f,y))){    
+          if(!isNAINT(dat.idx1(f,y))){
+	    Type thisEps;
             for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
-              nll += -keep(i)*dnbinom(dat.logobs(i),(predObs(i)*exp(logRecapEps(dat.aux(i,8))))*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
+	      thisEps=1.0;
+	      if(!isNAINT(dat.aux(i,9))){thisEps=exp(logRecapEps(dat.aux(i,9)));}
+              nll += -keep(i)*dnbinom(dat.logobs(i),(predObs(i)*thisEps)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
               SIMULATE_F(of){
 	        dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
               }

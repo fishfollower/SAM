@@ -335,12 +335,15 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   dat<-dat[!is.na(dat$year),]
 
   if(!is.null(recapture)){
+    if(is.null(recapture$Type))recapture$Type <- rep(1,nrow(recapture))
+    if(is.null(recapture$splitPhi))recapture$splitPhi <- recapture$Type
+    if(is.null(recapture$Group))recapture$Group <- rep(NA,nrow(recapture))    
     tag<-data.frame(year=recapture$ReleaseY)
     fleet.idx <- fleet.idx+1
     tag$fleet <- fleet.idx
     tag$age <- recapture$ReleaseY-recapture$Yearclass
     tag$aux <- exp(recapture$r)
-    tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type", "Group")])
+    tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type", "splitPhi", "Group")])
     dat[names(tag)[!names(tag)%in%names(dat)]]<-NA
     dat<-rbind(dat, tag)
     weight<-c(weight,rep(NA,nrow(tag)))

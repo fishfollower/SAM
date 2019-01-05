@@ -110,8 +110,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logRecaptureSd); paraset.logRecaptureSd=logRecaptureSd;    
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
+  PARAMETER_VECTOR(logRecapEps);  
   PARAMETER_VECTOR(missing);
-  PARAMETER_VECTOR(logRecapEps);
 
   // patch missing 
   int idxmis=0; 
@@ -136,6 +136,6 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
 
-  ans += nllObs(dataset, confset, paraset, logN, logF, logRecapEps, keep,  this);
+  ans += nllObs(dataset, confset, paraset, logN, logF, vector<Type>(logRecapEps), keep,  this);
   return ans;
 }
