@@ -230,13 +230,14 @@ read.ices<-function(filen){
 ##' @param prop.m ...
 ##' @param land.frac ...
 ##' @param recapture ...
+##' @param recaptureSpawningTime ...
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, recaptureSpawningTime=NULL){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -348,6 +349,24 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     dat<-rbind(dat, tag)
     weight<-c(weight,rep(NA,nrow(tag)))
     type<-c(type,5)
+    time<-c(time,0)
+    name<-c(name,"Recaptures")
+  }
+  if(!is.null(recaptureSpawningTime)){
+    recapture<-recaptureSpawningTime      
+    if(is.null(recapture$Type))recapture$Type <- rep(1,nrow(recapture))
+    if(is.null(recapture$splitPhi))recapture$splitPhi <- recapture$Type
+    if(is.null(recapture$Group))recapture$Group <- rep(NA,nrow(recapture))    
+    tag<-data.frame(year=recapture$ReleaseY)
+    fleet.idx <- fleet.idx+1
+    tag$fleet <- fleet.idx
+    tag$age <- recapture$ReleaseY-recapture$Yearclass
+    tag$aux <- exp(recapture$r)
+    tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type", "splitPhi", "Group")])
+    dat[names(tag)[!names(tag)%in%names(dat)]]<-NA
+    dat<-rbind(dat, tag)
+    weight<-c(weight,rep(NA,nrow(tag)))
+    type<-c(type,6)
     time<-c(time,0)
     name<-c(name,"Recaptures")
   }

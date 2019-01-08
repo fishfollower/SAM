@@ -17,6 +17,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   // Calculate predicted observations
   int f, ft, a, y, yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=dat.aux(0,0);
+  Type thisLogN;
   Type zz=Type(0);
   for(int i=0;i<dat.nobs;i++){
     y=dat.aux(i,0)-minYear;
@@ -95,8 +96,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
   
       case 6:
-  	error("Unknown fleet code");
-        return 0;
+	if((a+conf.minAge)>conf.maxAge){a=conf.maxAge-conf.minAge;} 
+	thisLogN=logN(a,y)-exp(logF(conf.keyLogFsta(0,a),y))*dat.propF(y,a)-dat.natMor(y,a)*dat.propM(y,a);
+       	pred(i)=exp(log(dat.aux(i,6))+log(dat.aux(i,5))-thisLogN-log(1000))*releaseSurvivalVec(i);
       break;
   
       case 7:

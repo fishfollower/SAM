@@ -38,13 +38,13 @@ defpar <- function(dat,conf){
   ret$rec_logb=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)} 
   ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
   ret$logScale=if(conf$noScaledYears==0){numeric(0)}else{numeric(max(conf$keyParScaledYA)+1)}
-  ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))
+  ret$logitReleaseSurvival=if(any(dat$fleetTypes%in%c(5,6))){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))
                            }else{numeric(0)}
-  ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,9]),9])))
+  ret$logitRecapturePhi=if(any(dat$fleetTypes%in%c(5,6))){numeric(length(unique(dat$aux[!is.na(dat$aux[,9]),9])))
                         }else{numeric(0)}
-  ret$logRecaptureSd=if(any(dat$fleetTypes==5)){numeric(ifelse(all(is.na(dat$aux[,10])),0,1))}else{numeric(0)}
+  ret$logRecaptureSd=if(any(dat$fleetTypes%in%c(5,6))){numeric(ifelse(all(is.na(dat$aux[,10])),0,1))}else{numeric(0)}
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
-  ret$logRecapEps=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,10]),10])))}else{numeric(0)}
+  ret$logRecapEps=if(any(dat$fleetTypes%in%c(5,6))){numeric(length(unique(dat$aux[!is.na(dat$aux[,10]),10])))}else{numeric(0)}
   return(ret)
 }

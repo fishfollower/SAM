@@ -176,7 +176,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   }
 
   for(int f=0; f<dat.noFleets; ++f){
-    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
+    if(!((dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==6))){ 
       int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
       if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
       matrix<Type> cov(thisdim,thisdim);
@@ -219,7 +219,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   for(int y=0;y<dat.noYears;y++){
     int totalParKey = 0;
     for(int f=0;f<dat.noFleets;f++){
-      if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
+      if(!((dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==6))){ 
         if(!isNAINT(dat.idx1(f,y))){
           int idxfrom=dat.idx1(f,y);
           int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
@@ -295,7 +295,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	  }
         }
       }else{ //dat.fleetTypes(f)==5
-        if(dat.fleetTypes(f)==5){
+        if(dat.fleetTypes(f)==5 || dat.fleetTypes(f)==6){
           if(!isNAINT(dat.idx1(f,y))){
 	    Type thisEps;
             for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
