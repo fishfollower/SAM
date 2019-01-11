@@ -6,10 +6,11 @@
 \usage{
 forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
   nextssb = NULL, landval = NULL, cwF = NULL, nosim = 1000,
-  year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
-  rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL,
-  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
+  year.base = max(fit$data$years), ave.years = max(fit$data$years) +
+  (-4:0), rec.years = max(fit$data$years) + (-9:0), label = NULL,
+  overwriteSelYears = NULL, deterministic = FALSE,
+  customWeights = NULL, customSel = NULL, lagR = FALSE,
+  splitLD = FALSE, addTSB = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
