@@ -135,6 +135,8 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
 
+  dataset.forecast.calculateForecast(logF,logN, fbarRange(0)-minAge, fbarRange(1)-minAge);
+  
   ans += nllF(dataset, confset, paraset, logF, keep, this);
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
