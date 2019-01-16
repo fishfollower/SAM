@@ -33,18 +33,78 @@ bool isNAINT(int x){
 }
 
 
-
 template <class Type>
 struct forecastSet {
+
+  enum FModelType {
+		   asFModel,
+		   useFscale,
+		   useFval,
+		   useCatchval,
+		   useNextssb,
+		   useLandval
+  };
+  enum recModelType {
+		   asRecModel,
+		   useIID
+  };
+  
   int nYears;
   int aveYears;
+  Type initialFbar;
   vector<Type> forecastYear;
+  vector<FModelType> FModel;
   vector<Type> Fval;
+  vector<Type> Fscale;
   vector<Type> selectivity;
-  int recruitmentIID;
+  matrix<Type> forecastCalculatedMedian;
+  vector<Type> forecastCalculatedLogSdCorrection;
+  vector<recModelType> recModel;
   Type recruitmentMedian;
-  Type recruitmentCV;
+  Type recruitmentVar;
 
+  void calculateForecast(array<Type>& logF, array<Type>& logN, int fbarFirst, int fbarLast){
+    forecastCalculatedMedian = matrix<Type>(logF.rows(), nYears);
+    forecastCalculatedMedian.setZero();
+    forecastCalculatedLogSdCorrection = vector<Type>(nYears);
+    forecastCalculatedLogSdCorrection.setZero();
+
+    if(nYears == 0)
+      return;
+    
+    vector<Type> sel = exp(logF.col(forecastYear.size() - nYears - 1));
+    sel /= sel.segment(fbarFirst,fbarLast-fbarFirst + 1).mean();
+    if(selectivity.size() > 0)
+      sel = selectivity;
+
+    for(int i = 0; i < nYears; ++i){
+      int indx = forecastYear.size() - nYears + i;
+      Type y = forecastYear(indx);
+      // Calculate CV correction
+       switch(FModel(i)) {
+      case asFModel:
+	forecastCalculatedLogSdCorrection(i) = 1.0;
+	forecastCalculatedMedian.col(i) = logF.col(indx - 1);
+	break;
+      case useFscale:
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	if(i == 0){
+	  forecastCalculatedMedian.col(i) = log(Fscale(i)) + log(initialFbar) + log(sel);
+	}else{
+	  forecastCalculatedMedian.col(i) = log(Fscale(i)) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	break;
+      case useFval:
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	forecastCalculatedMedian.col(i) = log(Fval(i)) + log(sel);
+	break;
+      default:
+	Rf_error("Forecast type not implemented");
+      }      
+    }
+    
+  }
+  
   forecastSet() : nYears(0) {};
   
   forecastSet(SEXP x){
@@ -56,24 +116,38 @@ struct forecastSet {
       using tmbutils::asArray;
       nYears = (int)*REAL(getListElement(x,"nYears"));
       aveYears = (int)*REAL(getListElement(x,"aveYears"));
+      initialFbar = (Type)*REAL(getListElement(x,"initialFbar"));
       forecastYear = asVector<Type>(getListElement(x,"forecastYear"));
+      vector<int> FModelTmp = asVector<int>(getListElement(x,"FModel"));
+      FModel = vector<FModelType>(FModelTmp.size());
+      for(int i = 0; i < FModel.size(); ++i)
+	FModel(i) = static_cast<FModelType>(FModelTmp(i));
       Fval = asVector<Type>(getListElement(x,"Fval"));
+      Fscale = asVector<Type>(getListElement(x,"Fscale"));
       selectivity = asVector<Type>(getListElement(x,"selectivity"));
-      recruitmentIID = (int)*REAL(getListElement(x,"recruitmentIID"));
+      vector<int> recModelTmp = asVector<int>(getListElement(x,"recModel"));
+      recModel = vector<recModelType>(recModelTmp.size());
+      for(int i = 0; i < recModel.size(); ++i)
+	recModel(i) = static_cast<recModelType>(recModelTmp(i));
       recruitmentMedian = (Type)*REAL(getListElement(x,"recruitmentMedian"));
-      recruitmentCV = (Type)*REAL(getListElement(x,"recruitmentCV"));
+      recruitmentVar = (Type)*REAL(getListElement(x,"recruitmentVar"));
     }
   };
 
     forecastSet<Type>& operator=(const forecastSet<Type>& rhs) {
       nYears = rhs.nYears;
       aveYears = rhs.aveYears;
+      initialFbar = rhs.initialFbar;
       forecastYear = rhs.forecastYear;
+      FModel = rhs.FModel;
       Fval = rhs.Fval;
+      Fscale = rhs.Fscale;
       selectivity = rhs.selectivity;
-      recruitmentIID = rhs.recruitmentIID;
+      forecastCalculatedMedian = rhs.forecastCalculatedMedian;
+      forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
+      recModel = rhs.recModel;
       recruitmentMedian = rhs.recruitmentMedian;
-      recruitmentCV = rhs.recruitmentCV;
+      recruitmentVar = rhs.recruitmentVar;
       return *this;
     }
 };
