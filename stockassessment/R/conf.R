@@ -121,6 +121,7 @@ defcon<-function(dat){
   ret$fracMixF <- 0
   ret$fracMixN <- 0
   ret$fracMixObs <- rep(0,nFleets)
+  ret$ageRangeTSB <- c(minAge, maxAge) 
   return(ret) 
 }
 

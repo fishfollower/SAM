@@ -154,7 +154,7 @@ vector<Type> tsbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN){
   vector<Type> tsb(timeSteps);
   tsb.setZero();  
   for(int y=0;y<timeSteps;y++){  
-    for(int a=conf.minAge;a<=conf.maxAge;a++){  
+    for(int a=conf.ageRangeTSB[0];a<=conf.ageRangeTSB[1];a++){  
       tsb(y)+=exp(logN(a-conf.minAge,y))*dat.stockMeanWeight(y,a-conf.minAge);
     }
   }

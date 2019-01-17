@@ -145,6 +145,7 @@ struct confSet{
   double fracMixF;
   double fracMixN;
   vector<double> fracMixObs;
+  vector<int> ageRangeTSB;
   confSet() {};
 
   confSet(SEXP x){
@@ -174,6 +175,7 @@ struct confSet{
     fracMixF = (double)*REAL(getListElement(x,"fracMixF"));
     fracMixN = (double)*REAL(getListElement(x,"fracMixN"));
     fracMixObs = asVector<double>(getListElement(x,"fracMixObs"));
+    ageRangeTSB = asVector<int>(getListElement(x,"ageRangeTSB"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -202,6 +204,7 @@ struct confSet{
     fracMixF = rhs.fracMixF;
     fracMixN = rhs.fracMixN;
     fracMixObs = rhs.fracMixObs;
+    ageRangeTSB = rhs.ageRangeTSB;
     return *this;
   };
 };
