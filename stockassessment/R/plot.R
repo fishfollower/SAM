@@ -449,6 +449,25 @@ tsbplot.default <- function(fit,...){
     plotit(fit, "logtsb", ylab="TSB", trans=exp,...)
 }
 
+
+##' SAM FSB plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of total stock biomass
+##' @export
+fsbplot<-function(fit, ...){
+    UseMethod("fsbplot")
+}
+##' @rdname fsbplot
+##' @method fsbplot default
+##' @export
+fsbplot.default <- function(fit,...){
+    plotit(fit, "logfsb", ylab="FSB", trans=exp,...)
+}
+
 ##' SAM Recruits plot 
 ##' @param fit the object returned from sam.fit
 ##' @param lagR use the age after the youngest as R 

@@ -9,8 +9,8 @@
 ## Usage
 
 ```r
-list(list("simulate"), list("sam"))(object, nsim = 1, seed = NULL, full.data = TRUE,
-  ...)
+list(list("simulate"), list("sam"))(object, nsim = 1, seed = NULL,
+  full.data = TRUE, ...)
 ```
 
 

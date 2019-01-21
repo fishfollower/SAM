@@ -9,11 +9,11 @@
 ## Usage
 
 ```r
-plotby(x = NULL, y = NULL, z = NULL, x.line = NULL, y.line = NULL,
-  z.line = NULL, by = NULL, bubblescale = 1, x.common = !is.null(x),
-  y.common = !is.null(y), z.common = !is.null(z), xlab = NULL,
-  ylab = NULL, xlim = NULL, ylim = NULL, zmax = NULL, axes = TRUE,
-  ...)
+plotby(x = NULL, y = NULL, z = NULL, x.line = NULL,
+  y.line = NULL, z.line = NULL, by = NULL, bubblescale = 1,
+  x.common = !is.null(x), y.common = !is.null(y),
+  z.common = !is.null(z), xlab = NULL, ylab = NULL, xlim = NULL,
+  ylim = NULL, zmax = NULL, axes = TRUE, ...)
 ```
 
 

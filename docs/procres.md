@@ -9,7 +9,7 @@
 ## Usage
 
 ```r
-procres(fit, ...)
+procres(fit, map = fit$obj$env$map, ...)
 ```
 
 
@@ -18,6 +18,7 @@ procres(fit, ...)
 Argument      |Description
 ------------- |----------------
 ```fit```     |     the fitted object as returned from the sam.fit function
+```map```     |     map from original fit
 ```...```     |     extra arguments (not currently used)
 
 ## Details

@@ -11,17 +11,20 @@
 ```r
 plotit(fit, what, ...)
 list(list("plotit"), list("sam"))(fit, what, x = fit$data$years, ylab = what,
-  xlab = "Years", ex = numeric(0), trans = function(x) x, add = FALSE,
-  ci = TRUE, cicol = gray(0.5, alpha = 0.5), addCI = NA, drop = 0,
-  unnamed.basename = "current", xlim = NULL, ...)
+  xlab = "Years", ex = numeric(0), trans = function(x) x,
+  add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
+  addCI = NA, drop = 0, unnamed.basename = "current", xlim = NULL,
+  ...)
 list(list("plotit"), list("samset"))(fit, what, x = fit$data$years, ylab = what,
-  xlab = "Years", ex = numeric(0), trans = function(x) x, add = FALSE,
-  ci = TRUE, cicol = gray(0.5, alpha = 0.5), addCI = rep(FALSE,
-  length(fit)), drop = 0, unnamed.basename = "current", xlim = NULL, ...)
-list(list("plotit"), list("samforecast"))(fit, what, x = fit$data$years, ylab = what,
-  xlab = "Years", ex = numeric(0), trans = function(x) x, add = FALSE,
-  ci = TRUE, cicol = gray(0.5, alpha = 0.5), addCI = NA, drop = 0,
+  xlab = "Years", ex = numeric(0), trans = function(x) x,
+  add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
+  addCI = rep(FALSE, length(fit)), drop = 0,
   unnamed.basename = "current", xlim = NULL, ...)
+list(list("plotit"), list("samforecast"))(fit, what, x = fit$data$years,
+  ylab = what, xlab = "Years", ex = numeric(0), trans = function(x)
+  x, add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
+  addCI = NA, drop = 0, unnamed.basename = "current", xlim = NULL,
+  ...)
 ```
 
 

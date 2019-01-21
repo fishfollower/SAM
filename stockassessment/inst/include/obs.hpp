@@ -344,6 +344,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logCatch,of);
   ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
+  ADREPORT_F(logfsb,of);
 
 
   vector<Type> logLagR(logR.size());

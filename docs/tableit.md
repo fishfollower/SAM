@@ -10,8 +10,8 @@
 
 ```r
 tableit(fit, what, x = fit$data$years, trans = function(x) x, ...)
-list(list("tableit"), list("sam"))(fit, what, x = fit$data$years, trans = function(x) x,
-  ...)
+list(list("tableit"), list("sam"))(fit, what, x = fit$data$years,
+  trans = function(x) x, ...)
 ```
 
 

@@ -59,20 +59,26 @@ Help Pages
 <span id="F">-- F --</span>
 ---------------------------
 
-|                                     |                                              |
-|-------------------------------------|----------------------------------------------|
-| [faytable](faytable.md)             | F-at-age table                               |
-| [faytable.sam](faytable.md)         | F-at-age table                               |
-| [fbarplot](fbarplot.md)             | SAM Fbar plot                                |
-| [fbarplot.sam](fbarplot.md)         | SAM Fbar plot                                |
-| [fbarplot.samforecast](fbarplot.md) | SAM Fbar plot                                |
-| [fbarplot.samset](fbarplot.md)      | SAM Fbar plot                                |
-| [fbartable](fbartable.md)           | Fbar table                                   |
-| [fbartable.default](fbartable.md)   | Fbar table                                   |
-| [fitfromweb](fitfromweb.md)         | Read a fitted model from stockassessment.org |
-| [fitplot](fitplot.md)               | Plots fit to data                            |
-| [fitplot.sam](fitplot.md)           | Plots fit to data                            |
-| [forecast](forecast.md)             | forecast function to do shortterm            |
+|                                             |                                              |
+|---------------------------------------------|----------------------------------------------|
+| [faytable](faytable.md)                     | F-at-age table                               |
+| [faytable.sam](faytable.md)                 | F-at-age table                               |
+| [fbarplot](fbarplot.md)                     | SAM Fbar plot                                |
+| [fbarplot.sam](fbarplot.md)                 | SAM Fbar plot                                |
+| [fbarplot.samforecast](fbarplot.md)         | SAM Fbar plot                                |
+| [fbarplot.samset](fbarplot.md)              | SAM Fbar plot                                |
+| [fbartable](fbartable.md)                   | Fbar table                                   |
+| [fbartable.default](fbartable.md)           | Fbar table                                   |
+| [fitfromweb](fitfromweb.md)                 | Read a fitted model from stockassessment.org |
+| [fitplot](fitplot.md)                       | Plots fit to data                            |
+| [fitplot.sam](fitplot.md)                   | Plots fit to data                            |
+| [forecast](forecast.md)                     | forecast function to do shortterm            |
+| [fsbplot](fsbplot.md)                       | SAM FSB plot                                 |
+| [fsbplot.default](fsbplot.md)               | SAM FSB plot                                 |
+| [fsbtable](fsbtable.md)                     | FSB table                                    |
+| [fsbtable.default](fsbtable.md)             | FSB table                                    |
+| [fselectivityplot](fselectivityplot.md)     | SAM F-selectivity plot                       |
+| [fselectivityplot.sam](fselectivityplot.md) | SAM F-selectivity plot                       |
 
 <span id="G">-- G --</span>
 ---------------------------

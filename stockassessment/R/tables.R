@@ -53,6 +53,22 @@ tsbtable.default <- function(fit,...){
    return(ret)
 }
 
+##' FSB table 
+##' @param  fit ... 
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+fsbtable<-function(fit,...){
+    UseMethod("fsbtable")
+}
+##' @rdname fsbtable
+##' @method fsbtable default
+##' @export
+fsbtable.default <- function(fit,...){
+   ret<-tableit(fit, "logfsb", trans=exp,...)
+   return(ret)
+}
+
 ##' Fbar table 
 ##' @param  fit ... 
 ##' @param ... extra arguments not currently used

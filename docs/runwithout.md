@@ -9,7 +9,8 @@
 ## Usage
 
 ```r
-runwithout(fit, year = NULL, fleet = NULL, map = fit$obj$env$map, ...)
+runwithout(fit, year = NULL, fleet = NULL, map = fit$obj$env$map,
+  ...)
 ```
 
 

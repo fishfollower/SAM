@@ -9,8 +9,8 @@
 ## Usage
 
 ```r
-leaveout(fit, fleet = as.list(2:fit$data$noFleets), ncores = detectCores(),
-  ...)
+leaveout(fit, fleet = as.list(2:fit$data$noFleets),
+  ncores = detectCores(), ...)
 ```
 
 
