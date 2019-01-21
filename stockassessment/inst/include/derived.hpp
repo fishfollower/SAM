@@ -130,18 +130,21 @@ vector<Type> fsbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
   vector<Type> fsb(len);
   fsb.setZero();
   Type sumF;
+  int sumCount;
   for(int y=0;y<len;y++){  // calc logfsb
     sumF=Type(0);
+    sumCount=0;
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
         sumF+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+	sumCount++;
       }
     }
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
       Type z=dat.natMor(y,a-conf.minAge);
       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
         z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-        fsb(y)+=(exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/sumF)*exp(logN(a-conf.minAge,y))*exp(-Type(0.5)*z)*dat.catchMeanWeight(y,a-conf.minAge);
+        fsb(y)+=(exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/(sumF/sumCount))*exp(logN(a-conf.minAge,y))*exp(-Type(0.5)*z)*dat.catchMeanWeight(y,a-conf.minAge);
       }
     }
   }
