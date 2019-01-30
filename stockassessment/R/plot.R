@@ -856,12 +856,13 @@ qtableplot.samqtable<-function(qt,exp=FALSE){
     sds<-attr(qt,"sd")
     hi <- qt + 2*sds
     lo <- qt - 2*sds
+    ylabel <- ifelse(exp,"Q", "logQ")
     if(exp == TRUE) { qt<-exp(qt); hi<-exp(hi); lo<-exp(lo) }
     op<-par(mfrow=n2mfrow(nrow(qt)))
     on.exit(par(op))
     for(f in 1:nrow(qt)){
         yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]),na.rm=TRUE)
-        plot(colnames(qt),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab="logQ",xlab="Age")
+        plot(colnames(qt),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab=ylabel,xlab="Age")
         arrows(1:ncol(qt),lo[f,],y1=hi[f,],angle=90,code=3,length=0.1)
     }
 }
