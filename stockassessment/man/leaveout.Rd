@@ -4,8 +4,8 @@
 \alias{leaveout}
 \title{leaveout run}
 \usage{
-leaveout(fit, fleet = as.list(2:fit$data$noFleets), ncores = detectCores(),
-  ...)
+leaveout(fit, fleet = as.list(2:fit$data$noFleets),
+  ncores = detectCores(), ...)
 }
 \arguments{
 \item{fit}{a fitted model object as returned from sam.fit}

@@ -21,6 +21,16 @@ modelDescription <-function (fit,...){
                ifelse(fit$conf$maxAgePlusGroup==1,'+. ','. ') 
   ret$data <- 'The data period covers ' + fit$data$noYears + ' years (from ' + min(fit$data$years) + ' to ' +
                max(fit$data$years) + '). '+'The data contains '+fit$data$noFleets+' fleets. '
+
+  #ypf<-tapply(fit$data$aux[,1], INDEX=fit$data$aux[,2], FUN=function(x)c(range(x), max(x)-min(x)+1-length(unique(x))))
+  #apf<-tapply(fit$data$aux[,3], INDEX=fit$data$aux[,2], FUN=function(x)c(range(x), max(x)-min(x)+1-length(unique(x))))
+  #ft<-fit$data$fleetTypes
+  #
+  #for(f in 1:fit$data$noFleets){
+  #  ret$data <- ret$data+"The "+f+". fleet is "+c("catch-at-age","NA","survey index-at-age","NA","NA","NA","NA","NA")[fit$data$fleetTypes[i]+1]+" data,"
+  #  ret$data <- ret$data+" which covers years from ypf[] "+f+". fleet is "+c("catch-at-age","NA","survey index-at-age","NA","NA","NA","NA","NA")[fit$data$fleetTypes[i]+1]+" data".
+  #}
+  
   #ret$Fmod <-
   #ret$Nmod <-
   cat(ret$modelVersion+ret$modelIntro+ret$ages+ret$data, ...)

@@ -5,7 +5,7 @@
 \alias{qtableplot.samqtable}
 \title{plot survey catchabilities}
 \usage{
-\method{qtableplot}{samqtable}(qt, exp = FALSE)
+qtableplot(qt, exp = FALSE)
 
 \method{qtableplot}{samqtable}(qt, exp = FALSE)
 }

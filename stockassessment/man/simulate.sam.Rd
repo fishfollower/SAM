@@ -4,8 +4,8 @@
 \alias{simulate.sam}
 \title{Simulate from a sam object}
 \usage{
-\method{simulate}{sam}(object, nsim = 1, seed = NULL, full.data = TRUE,
-  ...)
+\method{simulate}{sam}(object, nsim = 1, seed = NULL,
+  full.data = TRUE, ...)
 }
 \arguments{
 \item{object}{sam fitted object (result from sam.fit)}

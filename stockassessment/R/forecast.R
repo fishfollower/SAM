@@ -27,7 +27,8 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' forecast function to do shortterm
 ##' @param fit an assessment object of type sam, as returned from the function sam.fit
 ##' @param fscale a vector of f-scales. See details.  
-##' @param catchval a vector of target catches. See details.   
+##' @param catchval a vector of target catches. See details.
+##' @param catchval.exact a vector of target catches which will be met without noise. See details.   
 ##' @param fval a vector of target f values. See details.
 ##' @param nextssb a vector target SSB values the following year. See details
 ##' @param landval a vector of target catches. See details.   
@@ -48,7 +49,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -58,16 +59,17 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, l
     }
     return(ret)
   }
-  ns<-max(length(fscale), length(catchval), length(fval), length(nextssb), length(cwF))    
-  if(missing(fscale)&missing(fval)&missing(catchval)&missing(nextssb)&missing(cwF))stop("No scenario is specified")    
+  ns<-max(length(fscale), length(catchval), length(catchval.exact), length(fval), length(nextssb), length(cwF))    
+  if(missing(fscale)&missing(fval)&missing(catchval)&missing(catchval.exact)&missing(nextssb)&missing(cwF))stop("No scenario is specified")    
   if(missing(fscale)) fscale <- rep(NA,ns)
   if(missing(fval)) fval <- rep(NA,ns)
   if(missing(catchval)) catchval <- rep(NA,ns)
+  if(missing(catchval.exact)) catchval.exact <- rep(NA,ns)    
   if(missing(nextssb)) nextssb <-rep(NA,ns)
   if(missing(landval)) landval <-rep(NA,ns)  
   if(missing(cwF)) cwF <-rep(NA,ns)  
         
-  if(!all(rowSums(!is.na(cbind(fscale, catchval, fval, nextssb, landval, cwF)))==1)){
+  if(!all(rowSums(!is.na(cbind(fscale, catchval, catchval.exact, fval, nextssb, landval, cwF)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
 
@@ -314,6 +316,20 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nextssb=NULL, l
       sim <- simtmp
     }
 
+    if(!is.na(catchval.exact[i+1])){
+      simtmp<-sim
+      funk<-function(k){
+        one<-function(s){
+          simtmp[k,]<<-scaleF(sim[k,],s)
+          simcat<-catch(simtmp[k,], nm=nm, cw=cw)
+          return(catchval.exact[i+1]-simcat)
+        }
+        ff <- uniroot(one, c(0,100))$root
+      }
+      dd <- sapply(1:nrow(sim),funk)
+      sim <- simtmp
+    }
+    
     if(!is.na(landval[i+1])){
       simtmp<-NA
       fun<-function(s){
