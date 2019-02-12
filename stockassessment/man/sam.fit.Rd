@@ -4,9 +4,11 @@
 \alias{sam.fit}
 \title{Fit SAM model}
 \usage{
-sam.fit(data, conf, parameters, newtonsteps = 3, rm.unidentified = FALSE,
-  run = TRUE, lower = getLowerBounds(parameters),
-  upper = getUpperBounds(parameters), sim.condRE = TRUE, ...)
+sam.fit(data, conf, parameters, newtonsteps = 3,
+  rm.unidentified = FALSE, run = TRUE,
+  lower = getLowerBounds(parameters),
+  upper = getUpperBounds(parameters), sim.condRE = TRUE,
+  ignore.parm.uncertainty = FALSE, rel.tol = 1e-10, ...)
 }
 \arguments{
 \item{data}{data for the sam model as returned from the setup.sam.data function}
@@ -26,6 +28,10 @@ sam.fit(data, conf, parameters, newtonsteps = 3, rm.unidentified = FALSE,
 \item{upper}{named list with upper bounds for optimization (only met before extra newton steps)}
 
 \item{sim.condRE}{logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.}
+
+\item{ignore.parm.uncertainty}{option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties}
+
+\item{rel.tol}{option passed to stats:::nlminb sets the convergence criteria}
 
 \item{...}{extra arguments to MakeADFun}
 }

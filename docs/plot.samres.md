@@ -9,7 +9,7 @@
 ## Usage
 
 ```r
-list(list("plot"), list("samres"))(x, ...)
+list(list("plot"), list("samres"))(x, type = "bubble", ...)
 ```
 
 
@@ -17,7 +17,8 @@ list(list("plot"), list("samres"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     ...
+```x```     |     an object of type 'samres' as returned from residuals or procres.
+```type```     |     either "bubble" (default) or "summary"
 ```...```     |     extra arguments
 
 ## Details

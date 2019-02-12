@@ -8,6 +8,8 @@
 ##' @param lower named list with lower bounds for optimization (only met before extra newton steps)
 ##' @param upper named list with upper bounds for optimization (only met before extra newton steps)
 ##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.
+##' @param ignore.parm.uncertainty option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties
+##' @param rel.tol option passed to stats:::nlminb sets the convergence criteria
 ##' @param ... extra arguments to MakeADFun
 ##' @return an object of class \code{sam}
 ##' @details The model configuration object \code{conf} is a list of different objects defining different parts of the model. The different elements of the list are: 
@@ -43,7 +45,7 @@
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, ...){
   definit <- defpar(data, conf)
   if(!identical(parameters,relist(unlist(parameters), skeleton=definit))){
     warning("Initial values are not consistent, so running with default init values from defpar()")
@@ -82,7 +84,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
 
   if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
   
-  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000),lower=lower2,upper=upper2)
+  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
   for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
     g <- as.numeric( obj$gr(opt$par) )
     h <- optimHess(opt$par, obj$fn, obj$gr)
@@ -90,7 +92,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     opt$objective <- obj$fn(opt$par)
   }
   rep <- obj$report()
-  sdrep <- sdreport(obj,opt$par)
+  sdrep <- sdreport(obj,opt$par, ignore.parm.uncertainty = ignore.parm.uncertainty)
 
   # Last two states
   idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
@@ -106,7 +108,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
 
   sdrep$cov<-NULL # save memory
 
-  ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower2, hig=upper2)
+  ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower, hig=upper)
   attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
   attr(ret, "Version") <- packageDescription("stockassessment")$Version
   class(ret)<-"sam"
@@ -162,10 +164,14 @@ clean.void.catches<-function(dat, conf){
 jit <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=detectCores()){
   parv <- unlist(par)
   pars <- lapply(1:nojit, function(i)relist(parv+rnorm(length(parv),sd=sd), par))
-  cl <- makeCluster(ncores) #set up nodes
-  clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
-  fits <- parLapply(cl, pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))
-  stopCluster(cl) #shut it down
+  if(ncores>1){
+    cl <- makeCluster(ncores) #set up nodes
+    on.exit(stopCluster(cl)) #shut it down
+    clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
+    fits <- parLapply(cl, pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))
+  } else {
+    fits <- lapply(pars, function(p)sam.fit(fit$data, fit$conf, p, silent = TRUE))   
+  }
   attr(fits,"fit") <- fit
   attr(fits,"jitflag") <- 1
   class(fits) <- c("samset")
