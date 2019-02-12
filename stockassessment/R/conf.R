@@ -121,6 +121,7 @@ defcon<-function(dat){
   ret$fracMixF <- 0
   ret$fracMixN <- 0
   ret$fracMixObs <- rep(0,nFleets)
+  ret$recruitmentYear <- rep(0,dat$noYears)
   return(ret) 
 }
 
