@@ -5,23 +5,27 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 
   vector<Type> predN(stateDimN); 
   Type thisSSB=Type(0);
-    if(conf.stockRecruitmentModelCode==0){ // straight RW 
+  if((i-conf.minAge)>=0){
+    thisSSB=ssbi(dat,conf,logN,logF,i-conf.minAge);
+  }else{
+    thisSSB=ssbi(dat,conf,logN,logF,0); // use first in beginning       
+  } 
+    
+    switch(conf.stockRecruitmentModelCode){
+    case 0: // straight RW 
       predN(0)=logN(0,i-1);
-    }else{
-      if((i-conf.minAge)>=0){
-        thisSSB=ssbi(dat,conf,logN,logF,i-conf.minAge);
-      }else{
-        thisSSB=ssbi(dat,conf,logN,logF,0); // use first in beginning       
-      } 
-      if(conf.stockRecruitmentModelCode==1){//ricker
-        predN(0)=par.rec_loga(0)+log(thisSSB)-exp(par.rec_logb(0))*thisSSB;
-      }else{
-        if(conf.stockRecruitmentModelCode==2){//BH
-          predN(0)=par.rec_loga(0)+log(thisSSB)-log(1.0+exp(par.rec_logb(0))*thisSSB); 
-        }else{
-          error("SR model code not recognized");
-        }
-      }
+    break;
+    case 1: //ricker
+      predN(0)=par.rec_loga(0)+log(thisSSB)-exp(par.rec_logb(0))*thisSSB;
+    break;
+    case 2:  //BH
+      predN(0)=par.rec_loga(0)+log(thisSSB)-log(1.0+exp(par.rec_logb(0))*thisSSB); 
+    break;
+    case 3: //Constant mean
+      predN(0)=par.rec_loga(conf.recruitmentYear(i));
+    break;
+    default:
+      error("SR model code not recognized");
     }
   
     for(int j=1; j<stateDimN; ++j){
