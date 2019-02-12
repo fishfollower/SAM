@@ -36,7 +36,7 @@ defpar <- function(dat,conf){
   ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2))
   ret$rec_loga=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)}
   ret$rec_logb=if(conf$stockRecruitmentModelCode==0 | conf$stockRecruitmentModelCode==3 ){numeric(0)}else{numeric(1)}
-  ret$rec_loga=if(conf$stockRecruitmentModelCode==3){rep(numeric(1),length(unique(conf$recruitmentYear)))}
+  if(conf$stockRecruitmentModelCode==3)ret$rec_loga= rep(numeric(1),length(unique(conf$recruitmentYear)))
   ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
   ret$logScale=if(conf$noScaledYears==0){numeric(0)}else{numeric(max(conf$keyParScaledYA)+1)}
   ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))
