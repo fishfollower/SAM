@@ -36,7 +36,7 @@ defpar <- function(dat,conf){
   ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2))
   ret$rec_loga=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)}
   if(conf$stockRecruitmentModelCode==3){
-    ret$rec_loga=numeric(length(unique(conf$constRecBreaks)))
+    ret$rec_loga=numeric(length(unique(conf$constRecBreaks))+1)
   }
   ret$rec_logb=if(conf$stockRecruitmentModelCode==0 | conf$stockRecruitmentModelCode==3 ){numeric(0)}else{numeric(1)}
 
