@@ -10,8 +10,9 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   }else{
     thisSSB=ssbi(dat,conf,logN,logF,0); // use first in beginning       
   } 
-    
-    switch(conf.stockRecruitmentModelCode){
+
+  int ii, usepar;
+  switch(conf.stockRecruitmentModelCode){
     case 0: // straight RW 
       predN(0)=logN(0,i-1);
     break;
@@ -22,22 +23,27 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
       predN(0)=par.rec_loga(0)+log(thisSSB)-log(1.0+exp(par.rec_logb(0))*thisSSB); 
     break;
     case 3: //Constant mean
-      predN(0)=par.rec_loga(conf.recruitmentYear(i));
+      usepar=0;
+      for(ii=0; ii<conf.constRecBreaks.size(); ++ii){
+        if(dat.years(i)>conf.constRecBreaks(ii)){usepar++;}
+      }
+      predN(0)=par.rec_loga(usepar);
     break;
     default:
       error("SR model code not recognized");
-    }
+    break;
+  }
   
-    for(int j=1; j<stateDimN; ++j){
-      if(conf.keyLogFsta(0,j-1)>(-1)){
-        predN(j)=logN(j-1,i-1)-exp(logF(conf.keyLogFsta(0,j-1),i-1))-dat.natMor(i-1,j-1); 
-      }else{
-        predN(j)=logN(j-1,i-1)-dat.natMor(i-1,j-1); 
-      }
-    }  
-    if(conf.maxAgePlusGroup==1){
-      predN(stateDimN-1)=log(exp(logN(stateDimN-2,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-2),i-1))-dat.natMor(i-1,stateDimN-2))+
-                             exp(logN(stateDimN-1,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-1),i-1))-dat.natMor(i-1,stateDimN-1))); 
+  for(int j=1; j<stateDimN; ++j){
+    if(conf.keyLogFsta(0,j-1)>(-1)){
+      predN(j)=logN(j-1,i-1)-exp(logF(conf.keyLogFsta(0,j-1),i-1))-dat.natMor(i-1,j-1); 
+    }else{
+      predN(j)=logN(j-1,i-1)-dat.natMor(i-1,j-1); 
     }
+  }  
+  if(conf.maxAgePlusGroup==1){
+    predN(stateDimN-1)=log(exp(logN(stateDimN-2,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-2),i-1))-dat.natMor(i-1,stateDimN-2))+
+                           exp(logN(stateDimN-1,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-1),i-1))-dat.natMor(i-1,stateDimN-1))); 
+  }
   return predN;  
 }
