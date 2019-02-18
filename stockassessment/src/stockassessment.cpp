@@ -78,7 +78,7 @@ Type objective_function<Type>::operator() ()
   DATA_FACTOR(obsCorStruct); confset.obsCorStruct=obsCorStruct;  
   DATA_IARRAY(keyCorObs); confset.keyCorObs=keyCorObs; 
   DATA_INTEGER(stockRecruitmentModelCode); confset.stockRecruitmentModelCode=stockRecruitmentModelCode; 
-  DATA_IVECTOR(recruitmentYear); confset.recruitmentYear=recruitmentYear;  //Constant recruitment in given years
+  DATA_VECTOR(constRecBreaks); vector<double> constRecBreaksDouble(constRecBreaks.size()); for(int i=0; i<constRecBreaks.size(); ++i){constRecBreaksDouble(i)=asDouble(constRecBreaks(i));} confset.constRecBreaks=constRecBreaksDouble; 
   DATA_INTEGER(noScaledYears); confset.noScaledYears=noScaledYears; 
   DATA_IVECTOR(keyScaledYears); confset.keyScaledYears=keyScaledYears; 
   DATA_IMATRIX(keyParScaledYA); 
