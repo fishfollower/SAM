@@ -4,6 +4,29 @@ Type trans(Type x){
 }
 
 template <class Type>
+Type jacobiUVtrans( array<Type> logF){
+//  int nr=logF.rows(); //Cange to .rows eller .cols
+//  int nc=logF.cols();
+  int nr=logF.cols(); //Cange to .rows eller .cols
+  int nc=logF.rows();
+  matrix<Type> A(nc,nc);
+  for(int i=0; i<nc; ++i){
+    for(int j=0; j<nc; ++j){
+      A(i,j) = -1;
+    }
+  }
+  for(int i=0; i<nc; ++i){
+    A(0,i)=1;
+  }
+  for(int i=1; i<nc; ++i){
+    A(i,i-1)=nc-1;
+  }
+  A/=nc;
+  
+  return nr*log(abs(A.determinant()));
+}
+
+template <class Type>
 Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0; 
@@ -16,6 +39,11 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
 
+  
+  if(conf.corFlag==3 || conf.corFlag==4){
+    return(nllFseparable(conf, par, logF, keep ,of));
+  }
+  
   if(conf.corFlag==0){
     fcor.setZero();
   }
@@ -81,3 +109,72 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   }
   return nll;
 }
+
+
+
+template <class Type>
+Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+  
+  int stateDimF=logF.dim[0];
+  int timeSteps=logF.dim[1];
+
+  matrix<Type> SigmaU(stateDimF-1,stateDimF-1);
+  SigmaU.setZero();
+  vector<Type> sdU(stateDimF-1);  
+  vector<Type> sdV(1);  
+  vector<Type> sdW(1);
+  for(int i=0; i<sdU.size(); ++i){
+    sdU(i) = exp(par.sepFlogSd(0));
+  }
+  sdV(0) = exp(par.sepFlogSd(1));
+  
+  Type rhoU = trans(par.sepFlogitRho(0));
+  Type rhoV = trans(par.sepFlogitRho(1));
+    
+  Type nll=0; 
+
+//  if(conf.corFlag ==3){
+//    array<Type> logW = logF*0;
+//  }
+
+  matrix<Type> logU(timeSteps,stateDimF-1);
+  logU.setZero();
+  vector<Type> logV(timeSteps);
+  logV.setZero();
+  for(int i=0; i<timeSteps; ++i){
+//    logV(i)=(logF-logW).col(i).mean();
+    logV(i)=(logF).col(i).mean();
+  }
+  for(int i=0; i<timeSteps; ++i){
+    for(int j=0; j<stateDimF-1; ++j){
+//      logU(i,j)=logF(i,j)-logW(i,j)-logV(i);
+      logU(i,j)=logF(j,i)-logV(i);
+    }
+  }
+  
+  if(conf.corFlag ==4){
+    for(int y=0; y<timeSteps; ++y){
+      for(int a=0; a<stateDimF; ++a){
+  //      nll += -dnorm(logW(y,a),Type(0),sdW(0),true);
+      }
+    }
+  }
+
+  SigmaU.diagonal() = sdU*sdU;
+  
+  density::MVNORM_t<Type> nldens(SigmaU);
+  for(int y=1; y<timeSteps; ++y){
+    vector<Type> diff=vector<Type>(logU.row(y))-rhoU*vector<Type>(logU.row(y-1))- par.sepFalpha.segment(0,par.sepFalpha.size()-1);
+    nll += nldens(diff);
+  }
+  for(int y=1; y<timeSteps; ++y){
+    nll += -dnorm(logV(y),rhoV* logV(y-1) - par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
+  }
+  nll += -jacobiUVtrans(logF);
+  
+//  ADREPORT_F(logU,of);
+//  ADREPORT_F(logV,of);  
+  return nll;
+}
+
+
