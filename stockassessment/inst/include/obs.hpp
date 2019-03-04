@@ -102,7 +102,7 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, const vector<Type> &logRecapEps,
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, const vector<Type> &logRecapEps, const vector<Type> &logRecapEps2,
 	    //vector<Type> &predObs, vector<Type> &varLogCatch,
 	    data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
@@ -297,11 +297,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
       }else{ //dat.fleetTypes(f)==5
         if(dat.fleetTypes(f)==5 || dat.fleetTypes(f)==6){
           if(!isNAINT(dat.idx1(f,y))){
-	    Type thisEps;
+	    Type thisEps, thisEps2;
             for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
 	      thisEps=1.0;
+	      thisEps2=1.0;
 	      if(!isNAINT(dat.aux(i,9))){thisEps=exp(logRecapEps(dat.aux(i,9)));}
-              nll += -keep(i)*dnbinom(dat.logobs(i),(predObs(i)*thisEps)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
+	      if(!isNAINT(dat.aux(i,10))){thisEps2=exp(logRecapEps2(dat.aux(i,10)));}	      
+              nll += -keep(i)*dnbinom(dat.logobs(i),(predObs(i)*thisEps*thisEps2)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
               SIMULATE_F(of){
 	        dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
               }

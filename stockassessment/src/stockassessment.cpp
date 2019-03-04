@@ -107,10 +107,12 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
   PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
-  PARAMETER_VECTOR(logRecaptureSd); paraset.logRecaptureSd=logRecaptureSd;    
+  PARAMETER_VECTOR(logRecaptureSd); paraset.logRecaptureSd=logRecaptureSd;
+  PARAMETER_VECTOR(logRecaptureSd2); paraset.logRecaptureSd2=logRecaptureSd2;    
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
-  PARAMETER_VECTOR(logRecapEps);  
+  PARAMETER_VECTOR(logRecapEps);
+  PARAMETER_VECTOR(logRecapEps2);    
   PARAMETER_VECTOR(missing);
 
   // patch missing 
@@ -126,6 +128,10 @@ Type objective_function<Type>::operator() ()
   for(int i=0; i<logRecapEps.size(); ++i){
     ans += -dnorm(logRecapEps(i),Type(0),exp(paraset.logRecaptureSd(0)),true);
   }
+  
+  for(int i=0; i<logRecapEps2.size(); ++i){
+    ans += -dnorm(logRecapEps2(i),Type(0),exp(paraset.logRecaptureSd2(0)),true);
+  }
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
@@ -136,6 +142,6 @@ Type objective_function<Type>::operator() ()
 
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
 
-  ans += nllObs(dataset, confset, paraset, logN, logF, vector<Type>(logRecapEps), keep,  this);
+  ans += nllObs(dataset, confset, paraset, logN, logF, vector<Type>(logRecapEps), vector<Type>(logRecapEps2), keep,  this);
   return ans;
 }
