@@ -14,6 +14,20 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     }
   }
 
+
+  vector<Type> tagloss(par.logTagloss.size());
+  vector<Type> taglossVec(dat.nobs);
+  taglossVec=1;  
+  if(par.logTagloss.size()>0){
+    tagloss=exp(par.logTagloss);
+    for(int j=0; j<dat.nobs; ++j){
+      if(!isNAINT(dat.aux(j,11))){
+        taglossVec(j)=exp(-tagloss(dat.aux(j,11))*(dat.aux(j,3)-dat.aux(j,0)));
+      }
+    }
+  }
+
+  
   // Calculate predicted observations
   int f, ft, a, y, yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=dat.aux(0,0);
@@ -92,13 +106,13 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   
       case 5:// tags  
         if((a+conf.minAge)>conf.maxAge){a=conf.maxAge-conf.minAge;} 
-	pred(i)=exp(log(dat.aux(i,6))+log(dat.aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(i);
+	pred(i)=exp(log(dat.aux(i,6))+log(dat.aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(i)*taglossVec(i);
       break;
   
       case 6:
 	if((a+conf.minAge)>conf.maxAge){a=conf.maxAge-conf.minAge;} 
 	thisLogN=logN(a,y)-exp(logF(conf.keyLogFsta(0,a),y))*dat.propF(y,a)-dat.natMor(y,a)*dat.propM(y,a);
-       	pred(i)=exp(log(dat.aux(i,6))+log(dat.aux(i,5))-thisLogN-log(1000))*releaseSurvivalVec(i);
+       	pred(i)=exp(log(dat.aux(i,6))+log(dat.aux(i,5))-thisLogN-log(1000))*releaseSurvivalVec(i)*taglossVec(i);
       break;
   
       case 7:

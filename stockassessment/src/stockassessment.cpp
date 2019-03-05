@@ -108,7 +108,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
   PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
   PARAMETER_VECTOR(logRecaptureSd); paraset.logRecaptureSd=logRecaptureSd;
-  PARAMETER_VECTOR(logRecaptureSd2); paraset.logRecaptureSd2=logRecaptureSd2;    
+  PARAMETER_VECTOR(logRecaptureSd2); paraset.logRecaptureSd2=logRecaptureSd2;
+  PARAMETER_VECTOR(logTagloss); paraset.logTagloss=logTagloss;      
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(logRecapEps);

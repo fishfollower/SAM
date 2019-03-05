@@ -223,7 +223,8 @@ struct paraSet{
   vector<Type> logitReleaseSurvival;   
   vector<Type> logitRecapturePhi;   
   vector<Type> logRecaptureSd;
-  vector<Type> logRecaptureSd2;  
+  vector<Type> logRecaptureSd2;
+  vector<Type> logTagloss;  
 };
 
 template<class Type>
