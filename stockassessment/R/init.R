@@ -49,22 +49,22 @@ defpar <- function(dat,conf){
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
   
-  #ret$logW= matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
+  ret$logW= matrix(numeric(0))
   if(conf$corFlag ==3 | conf$corFlag ==4){
     ret$sepFalpha=rep(0,dim(ret$logF)[1])
     ret$sepFlogitRho = rep(-1,2)
     ret$sepFlogSd = rep(-1,2)
-    ret$logSdLogFsta = numeric(0)
     ret$itrans_rho = numeric(0)
-    
+    if(conf$corFlag ==3 ){
+      ret$logSdLogFsta = numeric(0)
+    }
     if(conf$corFlag ==4){
-   #   ret$logW= ret$logF
+      ret$logW= ret$logF
     }
   }else{
     ret$sepFalpha=numeric(0)
     ret$sepFlogitRho = numeric(0)
     ret$sepFlogSd = numeric(0)
-    
   }
   
   return(ret)

@@ -114,7 +114,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
   
   PARAMETER_ARRAY(logF); 
-//  PARAMETER_ARRAY(logW); 
+  PARAMETER_ARRAY(logW); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
 
@@ -133,7 +133,7 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
 
-  ans += nllF(confset, paraset, logF, keep, this);
+  ans += nllF(confset, paraset, logF,logW, keep, this);
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
   return ans;
