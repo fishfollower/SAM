@@ -21,7 +21,7 @@ Type jacobiUVtrans( array<Type> logF){
   }
   A/=nc;
   
-  return nr*log(abs(A.determinant()));
+  return nr*log(CppAD::abs(A.determinant()));
 }
 
 template <class Type>
