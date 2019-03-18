@@ -81,7 +81,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
   par <- defpar(data,conf)
-  par[!names(par)%in%c("logN", "logF","logW")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logW","logF")]
+  par[!names(par)%in%c("logN", "logF", "logW")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF", "logW")]
   ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, lower=fit$low, upper=fit$hig, ...)
   return(ret)
 }
