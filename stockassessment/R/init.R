@@ -48,15 +48,12 @@ defpar <- function(dat,conf){
                         }else{numeric(0)}
   
   if(conf$corFlag%in%c(3,4)){
-    ret$sepFalpha=rep(0,dim(ret$logF)[1])
-    ret$sepFlogitRho = rep(-1,2)
+    ret$sepFalpha=rep(0,max(conf$keyLogFsta)+1)
+    ret$sepFlogitRho = rep(1,2)
     ret$sepFlogSd = rep(-1,2)
     ret$itrans_rho = numeric(0)
     if(conf$corFlag==3){
       ret$logSdLogFsta = numeric(0)
-    }
-    if(conf$corFlag==4){
-      ret$logW= ret$logF
     }
   }else{
     ret$sepFalpha=numeric(0)
@@ -65,6 +62,9 @@ defpar <- function(dat,conf){
   }
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logW= matrix(numeric(0))  
+  if(conf$corFlag==4){
+    ret$logW= ret$logF
+  }
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
   
   return(ret)
