@@ -1,5 +1,4 @@
 library(stockassessment)
-library(TMB)
 cn<-read.ices("cn.dat")
 cw<-read.ices("cw.dat")
 dw<-read.ices("dw.dat")
@@ -46,31 +45,12 @@ conf$fbarRange <- c(2,4)
 conf$corFlag <- 3
 par<-defpar(dat,conf)
 
-lower = list();upper = list();
-lower$sepFalpha = -5
-upper$sepFalpha = 5
+fit<-sam.fit(dat,conf,par)
 
-map = list()
-map$sepFalpha = as.factor(c(0,1,2,3,4,NA))
-par$sepFlogitRho = c(0,10)
-map$sepFlogitRho = as.factor(c(0,NA))
-fit<-sam.fit(dat,conf,par,lower = lower, upper = upper,map = map)
+#conf$corFlag <- 2
+#par<-defpar(dat,conf)
+#fit2<-sam.fit(dat,conf,par)
 
-
-conf$corFlag <- 0
-par<-defpar(dat,conf)
-fit2<-sam.fit(dat,conf,par)
-
-conf$corFlag <- 1
-par<-defpar(dat,conf)
-fit3<-sam.fit(dat,conf,par)
-
-conf$corFlag <- 2
-par<-defpar(dat,conf)
-fit4<-sam.fit(dat,conf,par)
-
-
-print(modeltable(c("separabel"=fit, "IID"=fit2, "cs"=fit3, "AR"=fit4)))
-
-fselectivityplot(fit)#Strange selevtivityplot...
-fselectivityplot(fit2)
+#fselectivityplot(fit)#Strange selevtivityplot...
+#fselectivityplot(fit2)
+cat(fit$opt$objective, file="res.out")

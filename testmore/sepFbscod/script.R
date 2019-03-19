@@ -23,10 +23,10 @@ dat<-setup.sam.data(surveys=surveys,
                     natural.mortality=nm, 
                     land.frac=lf)
 
-conf<-loadConf(dat,"model.cfg", patch=TRUE)
-par<-defpar(dat,conf)
-fit<-sam.fit(dat,conf,par)
-if(fit$opt$convergence!=0) stop("Model did not converge.")
+#conf<-loadConf(dat,"model.cfg", patch=TRUE)
+#par<-defpar(dat,conf)
+#fit<-sam.fit(dat,conf,par)
+#if(fit$opt$convergence!=0) stop("Model did not converge.")
 
 conf<-loadConf(dat,"model.cfg", patch=TRUE)
 conf$corFlag <- 3
@@ -40,5 +40,7 @@ par<-defpar(dat,conf)
 fit3<-sam.fit(dat,conf,par)
 if(fit3$opt$convergence!=0) stop("Model did not converge.")
 
-#print(modeltable(c("separabel"=fit2,"separabelW"=fit3, "AR"=fit)))
+#print(modeltable(c("AR"=fit, "separabel"=fit2,"separabelW"=fit3)))
+cat(c(fit2$opt$objective,fit3$opt$objective), file="res.out")
+
 
