@@ -90,6 +90,7 @@ fit3<-sam.fit(dat,conf,par,map = map)
 ## assign same with cov-weight. Here the corelation is fixed, but inverse variance is used as relative weight only.
 estcov<-fit$rep$obsCov[[3]]
 surveys<-read.ices("survey.dat")
+estcov = estcov*0.5
 attr(surveys[[2]], "cov-weight") <- lapply(1:23, function(i)estcov)
 
 dat<-setup.sam.data(surveys=surveys,
