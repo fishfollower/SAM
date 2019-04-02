@@ -168,7 +168,7 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
     nll += nldens(diff);
   }
   for(int y=1; y<timeSteps; ++y){
-    nll += -dnorm(logV(y),rhoV* logV(y-1) - par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
+    nll += -dnorm(logV(y),rhoV* logV(y-1) + par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
   }
   nll += -jacobiUVtrans(logF);
   
