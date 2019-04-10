@@ -141,7 +141,7 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, array<T
   }
   for(int i=0; i<timeSteps; ++i){
     for(int j=0; j<stateDimF-1; ++j){
-      if(conf.corFlag ==3){
+        if(conf.corFlag ==3){
         logU(i,j)=logF(j,i)-logV(i);
       }else if(conf.corFlag ==4){
         logU(i,j)=logF(j,i)-logW(j,i)-logV(i);
@@ -177,6 +177,11 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, array<T
     for(i=0; i<timeSteps; ++i){
       nll+=neg_log_densityW(logW.col(i)); 
     }
+//    SIMULATE_F(of){
+//      if(conf.simFlag==0){
+//        logW.row(i)=logW.row(i-1)+neg_log_densityW.simulate();
+//      }
+//    }
   }
 
   //Likelihood contribution from U and V
@@ -185,9 +190,22 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, array<T
   for(int y=1; y<timeSteps; ++y){
     vector<Type> diff=vector<Type>(logU.row(y))-rhoU*vector<Type>(logU.row(y-1))- par.sepFalpha.segment(0,par.sepFalpha.size()-1);
     nll += nldens(diff);
+    
+//    SIMULATE_F(of){
+//      if(conf.simFlag==0){
+//        logU.row(i)=logU.row(i-1)+nldens.simulate();
+//        logF.row(i)=logU.row(i);
+//      }
+//    }
   }
   for(int y=1; y<timeSteps; ++y){
     nll += -dnorm(logV(y),rhoV* logV(y-1) + par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
+//    SIMULATE_F(of){
+//      if(conf.simFlag==0){
+//        logV.col(i)=logV.col(i-1)+dnorm.simulate(<Type> 0 , sdV(0));
+//          for(int i =0; i>)
+//      }
+//    }
   }
   
   //Accomondate for that logU and logV is a transformation of logF
