@@ -64,16 +64,16 @@ plot.samset<-function(x, ...){
 ##' @details ...
 ##' @importFrom TMB sdreport
 ##' @export
-procres <- function(fit, ...){
+procresm <- function(fit, ...){
   pp<-fit$pl
   attr(pp,"what") <- NULL
   pp$missing <- NULL
-  fit.co<-sam.fit(fit$data, fit$conf, pp, run=FALSE)
+  fit.co<-sam.fit(fit$data, fit$conf, pp, run=FALSE, map=fit$obj$env$map)
   fit.co$obj$env$data$resFlag<-1
   fit.co$obj$retape()
   sdrep <- sdreport(fit.co$obj,fit$opt$par)  
   ages <- as.integer(colnames(fit.co$data$natMor))
-  iF<-fit.co$conf$keyLogFsta[1,]
+
   if (exists(".Random.seed")){
     oldseed <- get(".Random.seed", .GlobalEnv)
     oldRNGkind <- RNGkind()
@@ -89,12 +89,26 @@ procres <- function(fit, ...){
   idx <- which(names(sdrep$value)=="resF")
   resF <- rmvnorm(1,mu=sdrep$value[idx], Sigma=sdrep$cov[idx,idx])
   resF <- matrix(resF, nrow=nrow(fit.co$pl$logF))
-  resF <- data.frame(year=fit.co$data$years[as.vector(col(resF))],
-                     fleet=2,
-                     age=ages[iF[iF>=0]+1][as.vector(row(resF))],
-                     residual=as.vector(resF))
-  ret <- rbind(resN, resF)
-  attr(ret, "fleetNames") <- c("Joint sample residuals log(N)", "Joint sample residuals log(F)")
+
+  fleets <- which(fit.co$data$fleetTypes==0)
+  nfleets <- length(fleets)
+  f<-function(i){
+      if(i==0){
+          return(resN)
+      }else{
+        iF<-fit.co$conf$keyLogFsta[fleets[i],]
+        sub<-resF[iF[iF>=0]+1,]  
+        iF.std <- iF
+        iF.std[iF.std>=0]<-iF.std[iF.std>=0]-min(iF.std[iF.std>=0])+1
+        return(data.frame(year=fit.co$data$years[as.vector(col(sub))],
+               fleet=1+i,
+               age=ages[iF.std[iF.std>=0]][as.vector(row(sub))],
+               residual=as.vector(sub)))
+      }
+  }
+  resNF<-lapply(0:nfleets, f)
+  ret <- do.call(rbind, resNF)
+  attr(ret, "fleetNames") <- c("Joint sample residuals log(N)", attr(fit.co$data, "fleetNames")[fleets])
   class(ret) <- "samres"
   if (exists("oldseed")){
     do.call("RNGkind",as.list(oldRNGkind))
