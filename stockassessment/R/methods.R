@@ -64,7 +64,7 @@ plot.samset<-function(x, ...){
 ##' @details ...
 ##' @importFrom TMB sdreport
 ##' @export
-procresm <- function(fit, ...){
+procres <- function(fit, ...){
   pp<-fit$pl
   attr(pp,"what") <- NULL
   pp$missing <- NULL
