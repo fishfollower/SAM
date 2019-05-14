@@ -42,7 +42,7 @@ struct forecastSet {
 		   useFval,
 		   useCatchval,
 		   useNextssb,
-		   useLandval
+		   useLandval,
   };
   enum recModelType {
 		   asRecModel,
@@ -62,6 +62,7 @@ struct forecastSet {
   vector<recModelType> recModel;
   Type recruitmentMedian;
   Type recruitmentVar;
+  int simFlag;
 
   void calculateForecast(array<Type>& logF, array<Type>& logN, int fbarFirst, int fbarLast){
     forecastCalculatedMedian = matrix<Type>(logF.rows(), nYears);
@@ -131,6 +132,7 @@ struct forecastSet {
 	recModel(i) = static_cast<recModelType>(recModelTmp(i));
       recruitmentMedian = (Type)*REAL(getListElement(x,"recruitmentMedian"));
       recruitmentVar = (Type)*REAL(getListElement(x,"recruitmentVar"));
+      simFlag = (int)*REAL(getListElement(x,"simFlag"));
     }
   };
 
@@ -148,6 +150,7 @@ struct forecastSet {
       recModel = rhs.recModel;
       recruitmentMedian = rhs.recruitmentMedian;
       recruitmentVar = rhs.recruitmentVar;
+      simFlag = rhs.simFlag;
       return *this;
     }
 };

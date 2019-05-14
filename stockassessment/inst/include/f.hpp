@@ -68,7 +68,12 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       // Forecast
       int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
       Type timeScale = dat.forecast.forecastCalculatedLogSdCorrection(forecastIndex);
-      nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex))/timeScale) + log(timeScale);      
+      nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex))/timeScale) + log(timeScale);
+      SIMULATE_F(of){
+	if(dat.forecast.simFlag == 0){
+	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
+	}
+      }
     }else{
       nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
       SIMULATE_F(of){
