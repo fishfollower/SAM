@@ -5,7 +5,7 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 
   vector<Type> predN(stateDimN); 
   Type thisSSB=Type(0);
-<<<<<<< HEAD
+
   if((i-conf.minAge)>=0){
     thisSSB=ssbi(dat,conf,logN,logF,i-conf.minAge);
   }else{
