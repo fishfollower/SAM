@@ -31,7 +31,13 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
       predN(0)=par.rec_loga(usepar);
     break;
   case 61: // Hockey stick
-    predN(0) = par.rec_loga(0) - par.rec_logb(0) + log(thisSSB- (0.5 * (a+b+CppAD::abs((thisSSB - exp(log_blim))-Type(0.0)))));
+    // Type log_level = par.rec_loga(0);
+    // Type log_blim = par.rec_logb(0);
+    // Type a = thisSSB - exp(log_blim);
+    // Type b = 0.0;
+    // Type cut = 0.5 * (a+b+CppAD::abs(a-b)); // max(a,b)
+    predN(0) = par.rec_loga(0) - par.rec_logb(0) +
+      log(thisSSB - (0.5 * ((thisSSB - exp(par.rec_logb(0)))+Type(0.0)+CppAD::abs((thisSSB - exp(par.rec_logb(0)))-Type(0.0)))));
     break;
   case 62: // AR1 (on log-scale)
     predN(0) = par.rec_loga(0) + (2.0 / (1.0 + exp(-par.rec_logb(0))) - 1.0) * (logN(0,i-1) - par.rec_loga(0));
