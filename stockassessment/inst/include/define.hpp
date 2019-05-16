@@ -1,3 +1,16 @@
+template <class Type>
+struct forecastSet;
+
+template <class Type>
+struct dataSet;
+
+struct confSet;
+
+template <class Type>
+struct paraSet;
+
+
+
 #define REPORT_F(name,F)					\
 if(isDouble<Type>::value && F->current_parallel_region<0) {     \
   defineVar(install(#name),                                     \
@@ -42,7 +55,7 @@ struct forecastSet {
 		   useFval,
 		   useCatchval,
 		   useNextssb,
-		   useLandval,
+		   useLandval
   };
   enum recModelType {
 		   asRecModel,
@@ -51,11 +64,12 @@ struct forecastSet {
   
   int nYears;
   int aveYears;
-  Type initialFbar;
   vector<Type> forecastYear;
   vector<FModelType> FModel;
-  vector<Type> Fval;
-  vector<Type> Fscale;
+  // vector<Type> Fval;
+  // vector<Type> Fscale;
+  // vector<Type> catchval;
+  vector<Type> target;
   vector<Type> selectivity;
   matrix<Type> forecastCalculatedMedian;
   vector<Type> forecastCalculatedLogSdCorrection;
@@ -64,47 +78,7 @@ struct forecastSet {
   Type recruitmentVar;
   int simFlag;
 
-  void calculateForecast(array<Type>& logF, array<Type>& logN, int fbarFirst, int fbarLast){
-    forecastCalculatedMedian = matrix<Type>(logF.rows(), nYears);
-    forecastCalculatedMedian.setZero();
-    forecastCalculatedLogSdCorrection = vector<Type>(nYears);
-    forecastCalculatedLogSdCorrection.setZero();
-
-    if(nYears == 0)
-      return;
-    
-    vector<Type> sel = exp(logF.col(forecastYear.size() - nYears - 1));
-    sel /= sel.segment(fbarFirst,fbarLast-fbarFirst + 1).mean();
-    if(selectivity.size() > 0)
-      sel = selectivity;
-
-    for(int i = 0; i < nYears; ++i){
-      int indx = forecastYear.size() - nYears + i;
-      Type y = forecastYear(indx);
-      // Calculate CV correction
-       switch(FModel(i)) {
-      case asFModel:
-	forecastCalculatedLogSdCorrection(i) = 1.0;
-	forecastCalculatedMedian.col(i) = logF.col(indx - 1);
-	break;
-      case useFscale:
-	forecastCalculatedLogSdCorrection(i) = sqrt(y);
-	if(i == 0){
-	  forecastCalculatedMedian.col(i) = log(Fscale(i)) + log(initialFbar) + log(sel);
-	}else{
-	  forecastCalculatedMedian.col(i) = log(Fscale(i)) + (vector<Type>)forecastCalculatedMedian.col(i-1);
-	}
-	break;
-      case useFval:
-	forecastCalculatedLogSdCorrection(i) = sqrt(y);
-	forecastCalculatedMedian.col(i) = log(Fval(i)) + log(sel);
-	break;
-      default:
-	Rf_error("Forecast type not implemented");
-      }      
-    }
-    
-  }
+  void calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf); // Defined after dataSet and confSet
   
   forecastSet() : nYears(0) {};
   
@@ -117,14 +91,14 @@ struct forecastSet {
       using tmbutils::asArray;
       nYears = (int)*REAL(getListElement(x,"nYears"));
       aveYears = (int)*REAL(getListElement(x,"aveYears"));
-      initialFbar = (Type)*REAL(getListElement(x,"initialFbar"));
       forecastYear = asVector<Type>(getListElement(x,"forecastYear"));
       vector<int> FModelTmp = asVector<int>(getListElement(x,"FModel"));
       FModel = vector<FModelType>(FModelTmp.size());
       for(int i = 0; i < FModel.size(); ++i)
 	FModel(i) = static_cast<FModelType>(FModelTmp(i));
-      Fval = asVector<Type>(getListElement(x,"Fval"));
-      Fscale = asVector<Type>(getListElement(x,"Fscale"));
+      // Fval = asVector<Type>(getListElement(x,"Fval"));
+      // Fscale = asVector<Type>(getListElement(x,"Fscale"));
+      target = asVector<Type>(getListElement(x,"target"));
       selectivity = asVector<Type>(getListElement(x,"selectivity"));
       vector<int> recModelTmp = asVector<int>(getListElement(x,"recModel"));
       recModel = vector<recModelType>(recModelTmp.size());
@@ -139,11 +113,11 @@ struct forecastSet {
     forecastSet<Type>& operator=(const forecastSet<Type>& rhs) {
       nYears = rhs.nYears;
       aveYears = rhs.aveYears;
-      initialFbar = rhs.initialFbar;
       forecastYear = rhs.forecastYear;
       FModel = rhs.FModel;
-      Fval = rhs.Fval;
-      Fscale = rhs.Fscale;
+      // Fval = rhs.Fval;
+      // Fscale = rhs.Fscale;
+      target = rhs.target;
       selectivity = rhs.selectivity;
       forecastCalculatedMedian = rhs.forecastCalculatedMedian;
       forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
@@ -412,6 +386,89 @@ struct paraSet{
   vector<Type> logitRecapturePhi;   
 };
 
+
+template<class Type>
+void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf){
+
+  if(nYears == 0){ // no forecast
+    return;
+  }
+  
+    //array<Type>& natMor, array<Type>& catchMeanWeight, ){
+    matrix<Type> natMorT = dat.natMor.matrix().transpose();
+    matrix<Type> catchMeanWeightT = dat.catchMeanWeight.matrix().transpose();
+    forecastCalculatedMedian = matrix<Type>(logF.rows(), nYears);
+    forecastCalculatedMedian.setZero();
+    forecastCalculatedLogSdCorrection = vector<Type>(nYears);
+    forecastCalculatedLogSdCorrection.setZero();
+    int fbarFirst = conf.fbarRange(0) - conf.minAge;
+    int fbarLast = conf.fbarRange(1) - conf.minAge;
+    Type initialFbar = exp(logF.col(forecastYear.size() - nYears - 1)).segment(fbarFirst,fbarLast-fbarFirst + 1).mean();
+     
+    
+    vector<Type> sel = exp(logF.col(forecastYear.size() - nYears - 1)) / initialFbar;
+    if(selectivity.size() > 0)
+      sel = selectivity;
+
+    if(sel.size() != logF.rows())
+      Rf_error("Wrong size of selectivity. Must match logF array.");
+    
+    vector<Type> selFull(logN.rows());
+      for(int j = 0; j < logN.rows(); ++j){
+	if(conf.keyLogFsta(0,j)>(-1)){
+	  selFull(j) = sel(conf.keyLogFsta(0,j)); 
+	}else{
+	  selFull(j)= 0.0; 
+	}
+      }
+    
+    for(int i = 0; i < nYears; ++i){
+      int indx = forecastYear.size() - nYears + i;
+      Type y = forecastYear(indx);
+      Type calcF = 0.0;
+      // Type lastFbar = initialFbar;
+      // if(i > 0){
+      // 	lastFbar = exp((vector<Type>)forecastCalculatedMedian.col(i-1)).segment(fbarFirst,fbarLast-fbarFirst + 1).mean();
+      // }
+      
+      // Calculate CV correction
+      switch(FModel(i)) { // target is not used. F is a random walk
+      case asFModel:
+	forecastCalculatedLogSdCorrection(i) = 1.0;
+	forecastCalculatedMedian.col(i) = logF.col(indx - 1);
+	break;
+      case useFscale: // target is an F scale of previous F
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	if(i == 0){
+	  forecastCalculatedMedian.col(i) = log(target(i)) + log(initialFbar) + log(sel);
+	}else{
+	  forecastCalculatedMedian.col(i) = log(target(i)) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	break;
+       case useFval: // target is F value	
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
+	break;
+      case useCatchval: // target is a catch value in weight
+	 calcF = catch2F((Type)target(i), selFull, (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));	 
+	 forecastCalculatedMedian.col(i) = log(calcF) + log(sel);
+	 forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	 break;
+      default:
+	Rf_error("Forecast type not implemented");
+      }      
+    }
+    
+  }
+
+
+
+
+
+
+
+
+
 template<class Type>
 Type logspace_add_p (Type logx, Type logy, Type p) {
   return log((Type(1)-p)*exp(logy-logx)+p)+logx; // the order of x and y is taylored for this application 
@@ -496,3 +553,5 @@ template <class Type>
 MVMIX_t<Type> MVMIX(matrix<Type> Sigma, Type p1){
   return MVMIX_t<Type>(Sigma,p1);
 }
+
+
