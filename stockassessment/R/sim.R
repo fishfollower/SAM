@@ -9,7 +9,9 @@ simstudy <- function(fit, nsim, ncores = detectCores()){
   if(ncores>1){
     cl <- makeCluster(ncores) #set up nodes
     on.exit(stopCluster(cl)) #shut it down
-    clusterEvalQ(cl, {library(stockassessment)}) #load the package to each node
+    lib.ver <- dirname(path.package("stockassessment"))
+    clusterExport(cl, varlist="lib.ver", envir=environment())
+    clusterEvalQ(cl, {library(stockassessment, lib.loc=lib.ver)})
     runs <- parLapply(cl, simdata, function(x)sam.fit(x, fit$conf, fit$obj$env$par))
   } else {
     runs <- lapply(simdata, function(x)sam.fit(x, fit$conf, fit$obj$env$par))   
