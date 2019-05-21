@@ -80,6 +80,12 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
+  fakefile <- file()
+  sink(fakefile)
+  saveConf(fit$conf, file="")
+  sink()
+  conf <- loadConf(fit$data, fakefile, patch=TRUE)
+  close(fakefile)
   par <- defpar(data,conf)
   par[!names(par)%in%c("logN", "logF")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF")]
   ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, lower=fit$low, upper=fit$hig, ...)
