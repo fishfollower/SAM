@@ -259,11 +259,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       weight<<-c(weight,as.vector(attr(m,"weight")))
     }else{
       if("cov"%in%names(attributes(m))){
-        weight<<-c(weight,unlist(lapply(attr(m,"cov"),diag)))
+        weigthTmp = do.call(rbind,lapply(attr(m,"cov"),diag))
+        weight<<-c(weight,as.vector(weigthTmp))
       }else{
         if("cov-weight"%in%names(attributes(m))){
-          weight<<-c(weight,1/unlist(lapply(attr(m,"cov-weight"),diag)))
-        }else{
+          weigthTmp = do.call(rbind,lapply(attr(m,"cov-weight"),diag))
+          weight<<-c(weight,1/as.vector(weigthTmp))
+        }
+      else{
           weight<<-c(weight,rep(NA,length(year)))
         }
       }

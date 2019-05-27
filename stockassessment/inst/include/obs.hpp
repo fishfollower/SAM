@@ -249,22 +249,16 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	      }
 	    }else{
 	      int thisdim=currentVar.size();
-	      matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
-              vector<Type> thisvar(thisdim);
-              thisvar=currentVar;
-              for(int idxV=0; idxV<thisdim; ++idxV){
-                if(conf.fixVarToWeight==1){
-                  thisvar(idxV)=dat.weight(idxfrom+idxV);
-                }
-              }
-              matrix<Type> thiscov(thisdim,thisdim);
-              for(int r=0;r<thisdim;++r){
-                for(int c=0;c<thisdim;++c){
-                  thiscov(r,c)=thiscor(r,c)*sqrt(thisvar(r)*thisvar(c));
-                }
-              } 
-              MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
-	      nll+=thisnll(dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength), keep.segment(idxfrom,idxlength));              
+	      matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));  
+	      matrix<Type> thiscov(thisdim,thisdim);
+	      for(int r=0;r<thisdim;++r){
+	        for(int c=0;c<thisdim;++c){
+	          thiscov(r,c)=thiscor(r,c)*sqrt(currentVar(r)*currentVar(c));
+	        }
+	      } 
+	      MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
+	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
+	      nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 	      SIMULATE_F(of){
 	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
 	      }

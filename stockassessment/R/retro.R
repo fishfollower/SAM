@@ -80,6 +80,12 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
+  fakefile <- file()
+  sink(fakefile)
+  saveConf(conf, file="")
+  sink()
+  conf <- loadConf(data, fakefile, patch=TRUE)
+  close(fakefile)
   par <- defpar(data,conf)
   par[!names(par)%in%c("logN", "logF")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF")]
   ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, lower=fit$low, upper=fit$hig, ...)
@@ -92,7 +98,7 @@ runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
 ##' @param ncores the number of cores to attempt to use
 ##' @param ... extra arguments to \code{\link{sam.fit}}
 ##' @details ...
-##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster
+##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster clusterEvalQ
 ##' @export
 retro <- function(fit, year=NULL, ncores=detectCores(), ...){
   data <- fit$data
@@ -119,9 +125,12 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
     cl <- makeCluster(ncores) #set up nodes
     on.exit(stopCluster(cl)) #shut it down
     clusterExport(cl, varlist="fit", envir=environment())
-    runs <- parLapply(cl, setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
+    lib.ver <- dirname(path.package("stockassessment"))
+    clusterExport(cl, varlist="lib.ver", envir=environment())
+    clusterEvalQ(cl, {library(stockassessment, lib.loc=lib.ver)})
+    runs <- parLapply(cl, setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...))
   } else {
-    runs <- lapply( setup, function(s)stockassessment::runwithout(fit, year=s[,1], fleet=s[,2], ...))
+    runs <- lapply( setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...))
   }
   converg <- unlist(lapply(runs, function(x)x$opt$conv))
   if(any(converg!=0)) warning(paste0("retro run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))
@@ -136,16 +145,19 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
 ##' @param ncores the number of cores to attemp to use
 ##' @param ... extra arguments to \code{\link{sam.fit}}
 ##' @details ...
-##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster 
+##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster clusterEvalQ
 ##' @export
 leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores(), ...){
   if(ncores>1){
     cl <- makeCluster(ncores) #set up nodes
     on.exit(stopCluster(cl)) #shut it down
     clusterExport(cl, varlist="fit", envir=environment())
-    runs <- parLapply(cl, fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
+    lib.ver <- dirname(path.package("stockassessment"))
+    clusterExport(cl, varlist="lib.ver", envir=environment())
+    clusterEvalQ(cl, {library(stockassessment, lib.loc=lib.ver)})
+    runs <- parLapply(cl, fleet, function(f)runwithout(fit, fleet=f, ...))
   } else {
-    runs <- lapply(fleet, function(f)stockassessment::runwithout(fit, fleet=f, ...))
+    runs <- lapply(fleet, function(f)runwithout(fit, fleet=f, ...))
   }
   converg <- unlist(lapply(runs, function(x)x$opt$conv))
   if(any(converg!=0)) warning(paste0("leavout run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))

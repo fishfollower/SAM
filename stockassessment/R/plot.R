@@ -114,7 +114,9 @@ addforecast.samforecast <- function(fit, what, dotcol="black", dotpch=19, dotcex
     dummy <- sapply(1:length(y),
                     function(i){
                         xx<-c(x[i,paste(what,"low", sep=":")],x[i,paste(what,"high", sep=":")]);
-                        if(abs(diff(xx))>0.01){
+                        units = par(c('usr', 'pin'))
+                        xx_to_inches = with(units, pin[2L]/diff(usr[3:4]))
+                        if(abs(xx_to_inches * diff(xx))>0.01){
                             arrows(y[i],xx[1],y[i],xx[2],lwd=3, col=intervalcol, angle=90, code=3, length=.1)
                         }
                     }
@@ -841,27 +843,26 @@ fitplot.sam <- function(fit, log=TRUE,fleets=unique(fit$data$aux[,"fleet"]), ...
 ##' plot survey catchabilities
 ##' @param qt An object of class 'samqtable' as returned from qtable
 ##' @param exp if true return on natural scale rather than log
-##' @rdname qtableplot
-##' @method qtableplot samqtable
 ##' @importFrom grDevices n2mfrow
 ##' @export
 qtableplot<-function(qt, exp=FALSE){
     UseMethod("qtableplot")
 }
-
 ##' plot survey catchabilities
 ##' @rdname qtableplot
 ##' @method qtableplot samqtable
+##' @export
 qtableplot.samqtable<-function(qt,exp=FALSE){
     sds<-attr(qt,"sd")
     hi <- qt + 2*sds
     lo <- qt - 2*sds
+    ylabel <- ifelse(exp,"Q", "logQ")
     if(exp == TRUE) { qt<-exp(qt); hi<-exp(hi); lo<-exp(lo) }
     op<-par(mfrow=n2mfrow(nrow(qt)))
     on.exit(par(op))
     for(f in 1:nrow(qt)){
-        yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]))
-        plot(colnames(qt),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab="logQ",xlab="Age")
+        yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]),na.rm=TRUE)
+        plot(colnames(qt),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab=ylabel,xlab="Age")
         arrows(1:ncol(qt),lo[f,],y1=hi[f,],angle=90,code=3,length=0.1)
     }
 }

@@ -121,6 +121,7 @@ defcon<-function(dat){
   ret$fracMixF <- 0
   ret$fracMixN <- 0
   ret$fracMixObs <- rep(0,nFleets)
+  ret$constRecBreaks <- numeric(0)
   return(ret) 
 }
 
@@ -183,7 +184,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$keyCorObs <- paste0("Coupling of correlation parameters can only be specified if the AR(1) structure is chosen above.",
                             "\n# NA's indicate where correlation parameters can be specified (-1 where they cannot).",
                             paste0("\n#",paste0(colnames(x$keyCorObs), collapse=" ")))
-    txt$stockRecruitmentModelCode <- "Stock recruitment code (0 for plain random walk, 1 for Ricker, and 2 for Beverton-Holt)."
+    txt$stockRecruitmentModelCode <- "Stock recruitment code (0 for plain random walk, 1 for Ricker, 2 for Beverton-Holt, and 3 piece-wise constant)."
     txt$noScaledYears <- "Number of years where catch scaling is applied."
     txt$keyScaledYears <- "A vector of the years where catch scaling is applied."
     txt$keyParScaledYA <- "A matrix specifying the couplings of scale parameters (nrow = no scaled years, ncols = no ages)."
@@ -193,7 +194,8 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
     txt$fracMixF <- "The fraction of t(3) distribution used in logF increment distribution" 
     txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution"
-    txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet" 
+    txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet"
+    txt$constRecBreaks <- "Vector of break years between which recruitment is at constant level. The break year is included in the left interval. (This option is only used in combination with stock-recruitment code 3)"
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)

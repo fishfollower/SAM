@@ -69,7 +69,13 @@ procres <- function(fit, map = fit$obj$env$map, ...){
   pp<-fit$pl
   attr(pp,"what") <- NULL
   pp$missing <- NULL
-  fit.co<-sam.fit(fit$data, fit$conf, pp, run=FALSE, map = map)
+  fakefile <- file()
+  sink(fakefile)
+  saveConf(fit$conf, file="")
+  sink()
+  conf <- loadConf(fit$data, fakefile, patch=TRUE)
+  close(fakefile)
+  fit.co<-sam.fit(fit$data, conf, pp, run=FALSE, map = map)
   fit.co$obj$env$data$resFlag<-1
   fit.co$obj$retape()
   sdrep <- sdreport(fit.co$obj,fit$opt$par)  
@@ -245,11 +251,21 @@ nobs.sam<-function(object, ...){
 ##' @details ...
 ##' @export
 residuals.sam<-function(object, discrete=FALSE, ...){
+  pp<-object$pl
+  attr(pp,"what") <- NULL
+  pp$missing <- NULL
+  fakefile <- file()
+  sink(fakefile)
+  saveConf(object$conf, file="")
+  sink()
+  conf <- loadConf(object$data, fakefile, patch=TRUE)
+  close(fakefile)
+  object.co<-sam.fit(object$data, conf, pp, run=FALSE, map = object$obj$env$map)
   cat("One-observation-ahead residuals. Total number of observations: ", nobs(object), "\n")  
-  res <- oneStepPredict(object$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete,...)
+  res <- oneStepPredict(object.co$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete,...)
   cat("One-observation-ahead residuals. Done\n")  
-  ret <- cbind(object$data$aux, res)
-  attr(ret,"fleetNames") <- attr(object$data, "fleetNames")
+  ret <- cbind(object.co$data$aux, res)
+  attr(ret,"fleetNames") <- attr(object.co$data, "fleetNames")
   class(ret)<-"samres"
   ret
 }

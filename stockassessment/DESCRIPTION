@@ -13,7 +13,8 @@ License: GPL-2
 Imports: TMB, ellipse
 LinkingTo: TMB, RcppEigen
 Suggests: testthat
+Encoding: UTF-8
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
 BugReports: https://github.com/fishfollower/SAM/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

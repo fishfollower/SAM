@@ -133,6 +133,7 @@ struct confSet{
   vector<int> obsCorStruct; 
   array<int> keyCorObs;
   int stockRecruitmentModelCode;
+  vector<double> constRecBreaks;
   int noScaledYears;
   vector<int> keyScaledYears;
   matrix<int> keyParScaledYA;
@@ -162,6 +163,7 @@ struct confSet{
     obsCorStruct = asVector<int>(getListElement(x,"obsCorStruct"));
     keyCorObs = asArray<int>(getListElement(x,"keyCorObs"));
     stockRecruitmentModelCode = (int)*REAL(getListElement(x,"stockRecruitmentModelCode"));
+    constRecBreaks = asVector<double>(getListElement(x,"constRecBreaks"));
     noScaledYears = (int)*REAL(getListElement(x,"noScaledYears"));
     keyScaledYears = asVector<int>(getListElement(x,"keyScaledYears"));
     keyParScaledYA = asMatrix<int>(getListElement(x,"keyParScaledYA"));
@@ -190,6 +192,7 @@ struct confSet{
     obsCorStruct = rhs.obsCorStruct;
     keyCorObs = rhs.keyCorObs;
     stockRecruitmentModelCode = rhs.stockRecruitmentModelCode;
+    constRecBreaks = rhs.constRecBreaks;
     noScaledYears = rhs.noScaledYears;
     keyScaledYears = rhs.keyScaledYears;
     keyParScaledYA = rhs.keyParScaledYA;
