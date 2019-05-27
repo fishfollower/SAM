@@ -885,9 +885,9 @@ dataplot<-function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
   UseMethod("dataplot")
 }
 ##' @rdname dataplot
-##' @method dataplot default
+##' @method dataplot sam
 ##' @export
-dataplot.default <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
+dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
   years <- fit$data$years
   nf <- fit$data$noFleets
   for (k in 1:nf){ # Remove -1 for weight indices
