@@ -158,17 +158,52 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
   //      nll += -dnorm(logW(y,a),Type(0),sdW(0),true);
       }
     }
+<<<<<<< HEAD
   }
 
+=======
+    MVMIX_t<Type> neg_log_densityW(wvar,Type(conf.fracMixF));
+    
+    for(i=0; i<timeSteps; ++i){
+      nll+=neg_log_densityW(logW.col(i)); 
+    }
+  }
+  //Likelihood contribution from U and V
+>>>>>>> a0624a9... Add simulation of separable F
   SigmaU.diagonal() = sdU*sdU;
   
   density::MVNORM_t<Type> nldens(SigmaU);
   for(int y=1; y<timeSteps; ++y){
     vector<Type> diff=vector<Type>(logU.row(y))-rhoU*vector<Type>(logU.row(y-1))- par.sepFalpha.segment(0,par.sepFalpha.size()-1);
     nll += nldens(diff);
+<<<<<<< HEAD
   }
   for(int y=1; y<timeSteps; ++y){
     nll += -dnorm(logV(y),rhoV* logV(y-1) + par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
+=======
+    
+    
+    SIMULATE_F(of){
+      if(conf.simFlag==0){
+        vector<Type> uu = nldens.simulate();
+        for(int j=0; j<stateDimF-1; ++j){
+            logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
+            logF(j,y) = logU(y,j) ;
+        }
+      }
+    }
+  }
+  for(int y=1; y<timeSteps; ++y){
+    nll += -dnorm(logV(y),rhoV* logV(y-1) - par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
+    SIMULATE_F(of){
+      if(conf.simFlag==0){
+        logV(y)=rhoV*logV(y-1)+ rnorm( Type(0) , sdV(0))+ par.sepFalpha(par.sepFalpha.size()-1); 
+        for(int j=0; j<stateDimF; ++j){
+          logF(j,y) =  logF(j,y)+ logV(y) ;
+        }
+      }
+    }
+>>>>>>> a0624a9... Add simulation of separable F
   }
   nll += -jacobiUVtrans(logF);
   
