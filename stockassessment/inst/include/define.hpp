@@ -395,7 +395,6 @@ struct paraSet{
 
 template<class Type>
 void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf){
-
   if(nYears == 0){ // no forecast
     return;
   }
@@ -403,6 +402,8 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
     //array<Type>& natMor, array<Type>& catchMeanWeight, ){
     matrix<Type> natMorT = dat.natMor.matrix().transpose();
     matrix<Type> catchMeanWeightT = dat.catchMeanWeight.matrix().transpose();
+    matrix<Type> landMeanWeightT = dat.landMeanWeight.matrix().transpose();
+    matrix<Type> landFracT = dat.landFrac.matrix().transpose();
     forecastCalculatedMedian = matrix<Type>(logF.rows(), nYears);
     forecastCalculatedMedian.setZero();
     forecastCalculatedLogSdCorrection = vector<Type>(nYears);
@@ -420,23 +421,33 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
       Rf_error("Wrong size of selectivity. Must match logF array.");
     
     vector<Type> selFull(logN.rows());
-      for(int j = 0; j < logN.rows(); ++j){
-	if(conf.keyLogFsta(0,j)>(-1)){
-	  selFull(j) = sel(conf.keyLogFsta(0,j)); 
-	}else{
-	  selFull(j)= 0.0; 
-	}
+    for(int j = 0; j < logN.rows(); ++j){
+      if(conf.keyLogFsta(0,j)>(-1)){
+	selFull(j) = sel(conf.keyLogFsta(0,j)); 
+      }else{
+	selFull(j)= 0.0; 
       }
+    }
+
     
     for(int i = 0; i < nYears; ++i){
       int indx = forecastYear.size() - nYears + i;
       Type y = forecastYear(indx);
       Type calcF = 0.0;
-      // Type lastFbar = initialFbar;
-      // if(i > 0){
-      // 	lastFbar = exp((vector<Type>)forecastCalculatedMedian.col(i-1)).segment(fbarFirst,fbarLast-fbarFirst + 1).mean();
-      // }
-      
+ 
+      vector<Type> lastFullLogF(logN.rows());
+      for(int j = 0; j < logN.rows(); ++j){
+	if(conf.keyLogFsta(0,j)>(-1)){
+	  if(i == 0){
+	    lastFullLogF(j) = log(initialFbar) + log(selFull(j));
+	  }else{
+	    lastFullLogF(j) = forecastCalculatedMedian(conf.keyLogFsta(0,j),i-1);
+	  }
+	}else{
+	  lastFullLogF(j)= 0.0; 
+	}
+      }
+  
       // Calculate CV correction
       switch(FModel(i)) { // target is not used. F is a random walk
       case asFModel:
@@ -456,10 +467,25 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
 	forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
 	break;
       case useCatchval: // target is a catch value in weight
-	 calcF = catch2F((Type)target(i), selFull, (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));	 
-	 forecastCalculatedMedian.col(i) = log(calcF) + log(sel);
-	 forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	calcF = catch2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));
+	if(i == 0){
+	  forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
+	}else{
+	  forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
 	 break;
+      case useNextssb:	
+	Rf_error("Forecast type not implemented");
+      case useLandval:
+	calcF = landing2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)landMeanWeightT.col(indx), (vector<Type>)landFracT.col(indx));
+	if(i == 0){
+	  forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
+	}else{
+	  forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	break;
       default:
 	Rf_error("Forecast type not implemented");
       }      
