@@ -815,3 +815,92 @@ fitplot.sam <- function(fit, log=TRUE,fleets=unique(fit$data$aux[,"fleet"]), ...
   }
   plotby(Year, o, y.line=p, by=myby, y.common=FALSE, ylab="", ...)
 }
+
+
+##' SAM Data plot 
+##' @param fit the object returned from sam.fit
+##' @param col color to use for each fleet, default is two sequential colors \cr
+##' @param fleet_type character vector giving the type of data per fleet. The default uses fit$data$fleetTypes as follows: \cr
+##' \code{fit$data$fleetTypes==0} "Catch at age" \cr
+##' \code{fit$data$fleetTypes==1} "Catch at age with effort" \cr
+##' \code{fit$data$fleetTypes==2} "Index at age" \cr
+##' \code{fit$data$fleetTypes==3} "Biomass or catch index" \cr
+##' \code{fit$data$fleetTypes==5} "Tagging data" \cr
+##' \code{fit$data$fleetTypes==7} "Sum of fleets"
+##' @param fleet_names character vector giving fleet names. The default is given by attr(fit$data,"fleetNames")
+##' @details Plot data available for the stock 
+##' @export
+dataplot<-function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
+  UseMethod("dataplot")
+}
+##' @rdname dataplot
+##' @method dataplot sam
+##' @export
+dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
+  years <- fit$data$years
+  nf <- fit$data$noFleets
+  for (k in 1:nf){ # Remove -1 for weight indices
+    if(fit$data$minAgePerFleet[k]==-1) fit$data$minAgePerFleet[k]<- NA
+    if(fit$data$maxAgePerFleet[k]==-1) fit$data$maxAgePerFleet[k]<- NA
+  }
+  yspace <- 2 # space between fleets
+  noage <- length(min(fit$data$minAgePerFleet, na.rm = TRUE):max(fit$data$maxAgePerFleet, na.rm = TRUE))
+  
+  dat<-cbind(fit$data$aux, fit$data$logobs)
+  
+  if (missing(col)) col <- c("#67a9cf","#ef8a62")
+  col=rep(col, length.out=nf)
+  
+  ynum <- noage*nf+(nf-1)*2
+  ylab=seq((noage/2)-1, ynum, (noage+yspace))
+  
+  if (missing(fleet_names)) fleet_names <- attr(fit$data, "fleetNames")
+  for (k in 1:nf){ # resize fleet name length if too long (>19 characters)
+    fleet_names[k] <- abbreviate(fleet_names[k],minlength = 19, dot=TRUE, use.classes=FALSE)
+  }
+  
+  if (missing(fleet_type)){
+    fleet_type <- fit$data$fleetTypes
+    for (i in 1:nf){
+      if(fleet_type[i]==0) fleet_type[i]<-"Catch at age"
+      if(fleet_type[i]==1) fleet_type[i]<-"Catch at age with effort"
+      if(fleet_type[i]==2) fleet_type[i]<-"Index at age"
+      if(fleet_type[i]==3) fleet_type[i]<-"Biomass or catch index"
+      if(fleet_type[i]==5) fleet_type[i]<-"Tagging data"
+      if(fleet_type[i]==7) fleet_type[i]<-"Sum of fleets"
+    }
+  }
+  
+  layout(matrix(c(rep(1,3),2), nrow=1))
+  par(oma=c(2,10,2,0),mar=c(0,0,0,0), xpd=NA)
+  plot(x=rep(years,(ynum+1) ), y= rep(0:ynum,length(years)), type="n", xlab="", ylab="", yaxt="n")
+  axis(2, labels = fleet_names, at =ylab ,las=1, cex=0.8)
+  x=0-min(fit$data$minAgePerFleet, na.rm = TRUE)
+  for (i in 1:nf){
+    if (!is.na(fit$data$minAgePerFleet[i])){
+      for (a in min(fit$data$minAgePerFleet, na.rm = TRUE):max(fit$data$maxAgePerFleet, na.rm = TRUE)){
+        lines(x=years,y=rep(x+a,length(years)), col="grey87")
+      }  
+      for (a in fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]){
+        yval=dat[which(dat[,2]==i & dat[,3]==a),4]
+        for (k in 1:length(yval)) if(!is.na(yval[k]) & yval[k]!=0) yval[k]=x+a else  yval[k]=NA
+        lines(x=dat[which(dat[,2]==i & dat[,3]==a),1], y=yval, lwd=1, col=col[i])
+        points(x=dat[which(dat[,2]==i & dat[,3]==a),1], y=yval, lwd=1, col=col[i], pch=16)
+        text(x=years[length(years)]+0.5, y=x+a,labels=a, cex=0.7)
+      }
+    } else {
+      a=-1
+      yval=dat[which(dat[,2]==i & dat[,3]==a),4]
+      for (k in 1:length(yval)) if(!is.na(yval[k]) & yval[k]!=0) yval[k]=x+noage/2 else  yval[k]=NA
+      lines(x=dat[which(dat[,2]==i & dat[,3]==a),1], y=yval, lwd=1, col=col[i])
+      points(x=dat[which(dat[,2]==i & dat[,3]==a),1], y=yval, lwd=1, col=col[i], pch=16)
+    }
+    x=x+noage+yspace
+  }
+  plot(x=rep(1,(ynum+1) ), y= rep(0:ynum), type="n", xlab="", ylab="", yaxt="n", bty="n", xaxt="n")
+  for (i in 1:nf){
+    text(x=1, y=ylab[i], labels=fleet_type[i])
+  }
+  mtext(text = "Available data", side=3, line=0.5, at=3/8, outer = TRUE)
+  mtext(text = "Data type", side=3, line=0.5, at=7/8, outer = TRUE)
+}
