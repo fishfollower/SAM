@@ -37,6 +37,7 @@ txt <- c(
     'parplot(fit)',
     'srplot(fit)',
     'fitplot(fit)',
+    'dataplot(fit)',
     ## samset plots
     'fbarplot(retro)',
     'ssbplot(retro)',
