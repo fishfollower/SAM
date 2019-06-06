@@ -10,6 +10,7 @@
  parplot(fit)                                              930a332cfd38601732047e2a61a9398c
  srplot(fit)                                               1e364d12132b1a19a0e2bb556b6e6ca4
  fitplot(fit)                                              6b2be852bf74583966295239aa08887c
+ dataplot(fit)                                             e4b570b0e4b9c93754d057ef8b4da8cf
  fbarplot(retro)                                           806519c13c4bebd735b53d9c8eb95d9d
  ssbplot(retro)                                            b70a1dcc8c14ae3103fa3d6a680fbe2a
  tsbplot(retro)                                            1100d4d1c9957ef7b6aa40b0cd3a471f
