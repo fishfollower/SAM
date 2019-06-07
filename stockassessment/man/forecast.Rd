@@ -10,8 +10,8 @@ forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
   ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
-  customWeights = NULL, customSel = NULL, lagR = FALSE,
-  splitLD = FALSE, addTSB = FALSE)
+  processNoiseF = TRUE, customWeights = NULL, customSel = NULL,
+  lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -43,6 +43,8 @@ forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
 \item{overwriteSelYears}{if a vector of years is specified, then the average selectivity of those years is used (not recommended)}
 
 \item{deterministic}{option to turn all process noise off (not recommended, as it will likely cause bias)}
+
+\item{processNoiseF}{option to turn off process noise in F}
 
 \item{customWeights}{a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)}
 
