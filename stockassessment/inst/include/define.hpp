@@ -61,14 +61,17 @@ struct forecastSet {
 		   asRecModel,
 		   useIID
   };
+
+  enum FSdTimeScaleModel {
+		      rwScale,
+		      oneScale,
+		      zeroScale		      
+  };
   
   int nYears;
   int aveYears;
   vector<Type> forecastYear;
   vector<FModelType> FModel;
-  // vector<Type> Fval;
-  // vector<Type> Fscale;
-  // vector<Type> catchval;
   vector<Type> target;
   vector<Type> selectivity;
   matrix<Type> forecastCalculatedMedian;
@@ -76,6 +79,7 @@ struct forecastSet {
   vector<recModelType> recModel;
   Type recruitmentMedian;
   Type recruitmentVar;
+  vector<FSdTimeScaleModel> fsdTimeScaleModel;
   int simFlag;
 
   void calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf); // Defined after dataSet and confSet
@@ -106,6 +110,10 @@ struct forecastSet {
 	recModel(i) = static_cast<recModelType>(recModelTmp(i));
       recruitmentMedian = (Type)*REAL(getListElement(x,"recruitmentMedian"));
       recruitmentVar = (Type)*REAL(getListElement(x,"recruitmentVar"));
+      vector<int> fsdTimeScaleModelTmp = asVector<int>(getListElement(x,"fsdTimeScaleModel"));
+      fsdTimeScaleModel = vector<FSdTimeScaleModel>(fsdTimeScaleModelTmp.size());
+      for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
+	fsdTimeScaleModel(i) = static_cast<FSdTimeScaleModel>(fsdTimeScaleModelTmp(i));
       simFlag = (int)*REAL(getListElement(x,"simFlag"));
     }
   };
@@ -124,6 +132,7 @@ struct forecastSet {
       recModel = rhs.recModel;
       recruitmentMedian = rhs.recruitmentMedian;
       recruitmentVar = rhs.recruitmentVar;
+      fsdTimeScaleModel = rhs.fsdTimeScaleModel;
       simFlag = rhs.simFlag;
       return *this;
     }
@@ -441,15 +450,30 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
 	  lastFullLogF(j)= 0.0; 
 	}
       }
-  
+
+      switch(fsdTimeScaleModel(i)) {
+      case rwScale:
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	break;
+      case oneScale:
+	forecastCalculatedLogSdCorrection(i) = 1.0;
+	break;
+      case zeroScale:
+	forecastCalculatedLogSdCorrection(i) = 1e-6;
+	break;
+      default:
+	Rf_error("Forecast type not implemented");
+      }
+      
       // Calculate CV correction
       switch(FModel(i)) { // target is not used. F is a random walk
       case asFModel:
+	if(fsdTimeScaleModel(i) != oneScale)
+	  Rf_warning("F time scale model is ignored when the F model is used for forecasting.");
 	forecastCalculatedLogSdCorrection(i) = 1.0;
 	forecastCalculatedMedian.col(i) = logF.col(indx - 1);
 	break;
       case useFscale: // target is an F scale of previous F
-	forecastCalculatedLogSdCorrection(i) = sqrt(y);
 	if(i == 0){
 	  forecastCalculatedMedian.col(i) = log(target(i)) + log(initialFbar) + log(sel);
 	}else{
@@ -457,7 +481,6 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
 	}
 	break;
        case useFval: // target is F value	
-	forecastCalculatedLogSdCorrection(i) = sqrt(y);
 	forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
 	break;
       case useCatchval: // target is a catch value in weight
@@ -467,7 +490,6 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
 	}else{
 	  forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
 	}
-	forecastCalculatedLogSdCorrection(i) = sqrt(y);
 	 break;
       case useNextssb:	
 	Rf_error("Forecast type not implemented");
@@ -478,7 +500,6 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
 	}else{
 	  forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
 	}
-	forecastCalculatedLogSdCorrection(i) = sqrt(y);
 	break;
       default:
 	Rf_error("Forecast type not implemented");
