@@ -69,7 +69,7 @@ struct forecastSet {
   };
   
   int nYears;
-  int aveYears;
+  vector<int> aveYears;
   vector<Type> forecastYear;
   vector<FModelType> FModel;
   vector<Type> target;
@@ -94,7 +94,7 @@ struct forecastSet {
     }else{
       using tmbutils::asArray;
       nYears = (int)*REAL(getListElement(x,"nYears"));
-      aveYears = (int)*REAL(getListElement(x,"aveYears"));
+      aveYears = asVector<int>(getListElement(x,"aveYears"));
       forecastYear = asVector<Type>(getListElement(x,"forecastYear"));
       vector<int> FModelTmp = asVector<int>(getListElement(x,"FModel"));
       FModel = vector<FModelType>(FModelTmp.size());
@@ -235,20 +235,28 @@ dataSet(SEXP x) {
 
 
 template <class Type>
-void extendArray(array<Type>& x, int nYears, int aveYears){
+void extendArray(array<Type>& x, int nYears, vector<int> aveYears){
   vector<int> dim = x.dim;
   array<Type> tmp(dim(0)+nYears,dim(1));
   vector<Type> ave(dim(1));
   ave.setZero();
-  for(int i = 0; i < x.dim(0); ++i)
-    for(int j = 0; j < x.dim(1); ++j){
-      tmp(i,j) = x(i,j);
-      if(i > x.dim(0) - 1 - aveYears)
-	ave(j) += x(i,j);
+  Type nave = aveYears.size();
+
+  // Calculate average
+  for(int i = 0; i < aveYears.size(); ++i)
+    for(int j = 0; j < dim(1); ++j)
+      ave(j) += x(aveYears(i), j) / nave;
+
+  // Insert values in tmp
+  for(int i = 0; i < tmp.dim(0); ++i)
+    for(int j = 0; j < tmp.dim(1); ++j){
+      if(i < dim(0)){ // Take value from x
+	tmp(i,j) = x(i,j);
+      }else{ // Take value from ave
+	tmp(i,j) = ave(j);
+      }
     }
-  for(int i = x.dim(0); i < tmp.dim(0); ++i)
-    for(int j = 0; j < tmp.dim(1); ++j)
-      tmp(i,j) = ave(j) / Type(aveYears);
+  // Overwrite x
   // NOTE: x must be resized first, otherwise x=tmp will not work.
   x.initZeroArray(tmp.dim);
   x = tmp;
@@ -260,7 +268,7 @@ void prepareForForecast(dataSet<Type>& dat){
   int nFYears = dat.forecast.nYears;
   if(nFYears == 0)
     return;
-  int aveYears = dat.forecast.aveYears;
+  vector<int> aveYears = dat.forecast.aveYears;
   // propMat
   extendArray(dat.propMat, nFYears, aveYears);
   // stockMeanWeight
