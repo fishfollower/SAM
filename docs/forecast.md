@@ -9,12 +9,14 @@
 ## Usage
 
 ```r
-forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
-  nextssb = NULL, landval = NULL, cwF = NULL, nosim = 1000,
-  year.base = max(fit$data$years), ave.years = max(fit$data$years) + (-4:0),
+forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
+  fval = NULL, nextssb = NULL, landval = NULL, cwF = NULL,
+  nosim = 1000, year.base = max(fit$data$years),
+  ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL, deterministic = FALSE, customWeights = NULL,
-  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
+  overwriteSelYears = NULL, deterministic = FALSE,
+  processNoiseF = TRUE, customWeights = NULL, customSel = NULL,
+  lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
 ```
 
 
@@ -25,6 +27,7 @@ Argument      |Description
 ```fit```     |     an assessment object of type sam, as returned from the function sam.fit
 ```fscale```     |     a vector of f-scales. See details.
 ```catchval```     |     a vector of target catches. See details.
+```catchval.exact```     |     a vector of target catches which will be met without noise. See details.
 ```fval```     |     a vector of target f values. See details.
 ```nextssb```     |     a vector target SSB values the following year. See details
 ```landval```     |     a vector of target catches. See details.
@@ -36,6 +39,7 @@ Argument      |Description
 ```label```     |     optional label to appear in short table
 ```overwriteSelYears```     |     if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 ```deterministic```     |     option to turn all process noise off (not recommended, as it will likely cause bias)
+```processNoiseF```     |     option to turn off process noise in F
 ```customWeights```     |     a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)
 ```customSel```     |     supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
 ```lagR```     |     if the second youngest age should be reported as recruits

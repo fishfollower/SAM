@@ -11,7 +11,7 @@
 ## Usage
 
 ```r
-list(list("qtableplot"), list("samqtable"))(qt, exp = FALSE)
+qtableplot(qt, exp = FALSE)
 list(list("qtableplot"), list("samqtable"))(qt, exp = FALSE)
 ```
 

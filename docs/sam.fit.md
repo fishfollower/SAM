@@ -7,9 +7,11 @@ Fit SAM model
 
 ### Usage
 
-    sam.fit(data, conf, parameters, newtonsteps = 3, rm.unidentified = FALSE,
-      run = TRUE, lower = getLowerBounds(parameters),
-      upper = getUpperBounds(parameters), sim.condRE = TRUE, ...)
+    sam.fit(data, conf, parameters, newtonsteps = 3,
+      rm.unidentified = FALSE, run = TRUE,
+      lower = getLowerBounds(parameters),
+      upper = getUpperBounds(parameters), sim.condRE = TRUE,
+      ignore.parm.uncertainty = FALSE, rel.tol = 1e-10, ...)
 
 ### Arguments
 
@@ -54,6 +56,14 @@ Fit SAM model
 <tr class="odd">
 <td><code>sim.condRE</code></td>
 <td><p>logical with default <code>TRUE</code>. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.</p></td>
+</tr>
+<tr class="even">
+<td><code>ignore.parm.uncertainty</code></td>
+<td><p>option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties</p></td>
+</tr>
+<tr class="odd">
+<td><code>rel.tol</code></td>
+<td><p>option passed to stats:::nlminb sets the convergence criteria</p></td>
 </tr>
 <tr class="even">
 <td><code>...</code></td>

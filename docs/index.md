@@ -11,7 +11,7 @@ Documentation for package ‘stockassessment’ version 0.8.1
 Help Pages
 ----------
 
-[A](#A) [C](#C) [D](#D) [E](#E) [F](#F) [G](#G) [I](#I) [J](#J) [L](#L) [M](#M) [N](#N) [O](#O) [P](#P) [Q](#Q) [R](#R) [S](#S) [T](#T) [Y](#Y)
+[A](#A) [C](#C) [D](#D) [E](#E) [F](#F) [G](#G) [I](#I) [J](#J) [L](#L) [M](#M) [N](#N) [O](#O) [P](#P) [Q](#Q) [R](#R) [S](#S) [T](#T) [W](#W) [Y](#Y)
 
 <span id="A">-- A --</span>
 ---------------------------
@@ -43,10 +43,12 @@ Help Pages
 <span id="D">-- D --</span>
 ---------------------------
 
-|                     |                                                      |
-|---------------------|------------------------------------------------------|
-| [defcon](defcon.md) | Setup basic minimal configuration for sam assessment |
-| [defpar](defpar.md) | Setup minimal initial parameters                     |
+|                             |                                                      |
+|-----------------------------|------------------------------------------------------|
+| [dataplot](dataplot.md)     | SAM Data plot                                        |
+| [dataplot.sam](dataplot.md) | SAM Data plot                                        |
+| [defcon](defcon.md)         | Setup basic minimal configuration for sam assessment |
+| [defpar](defpar.md)         | Setup minimal initial parameters                     |
 
 <span id="E">-- E --</span>
 ---------------------------
@@ -59,28 +61,31 @@ Help Pages
 <span id="F">-- F --</span>
 ---------------------------
 
-|                                     |                                              |
-|-------------------------------------|----------------------------------------------|
-| [faytable](faytable.md)             | F-at-age table                               |
-| [faytable.sam](faytable.md)         | F-at-age table                               |
-| [fbarplot](fbarplot.md)             | SAM Fbar plot                                |
-| [fbarplot.sam](fbarplot.md)         | SAM Fbar plot                                |
-| [fbarplot.samforecast](fbarplot.md) | SAM Fbar plot                                |
-| [fbarplot.samset](fbarplot.md)      | SAM Fbar plot                                |
-| [fbartable](fbartable.md)           | Fbar table                                   |
-| [fbartable.default](fbartable.md)   | Fbar table                                   |
-| [fitfromweb](fitfromweb.md)         | Read a fitted model from stockassessment.org |
-| [fitplot](fitplot.md)               | Plots fit to data                            |
-| [fitplot.sam](fitplot.md)           | Plots fit to data                            |
-| [forecast](forecast.md)             | forecast function to do shortterm            |
+|                                             |                                              |
+|---------------------------------------------|----------------------------------------------|
+| [faytable](faytable.md)                     | F-at-age table                               |
+| [faytable.sam](faytable.md)                 | F-at-age table                               |
+| [fbarplot](fbarplot.md)                     | SAM Fbar plot                                |
+| [fbarplot.sam](fbarplot.md)                 | SAM Fbar plot                                |
+| [fbarplot.samforecast](fbarplot.md)         | SAM Fbar plot                                |
+| [fbarplot.samset](fbarplot.md)              | SAM Fbar plot                                |
+| [fbartable](fbartable.md)                   | Fbar table                                   |
+| [fbartable.default](fbartable.md)           | Fbar table                                   |
+| [fitfromweb](fitfromweb.md)                 | Read a fitted model from stockassessment.org |
+| [fitplot](fitplot.md)                       | Plots fit to data                            |
+| [fitplot.sam](fitplot.md)                   | Plots fit to data                            |
+| [forecast](forecast.md)                     | forecast function to do shortterm            |
+| [fselectivityplot](fselectivityplot.md)     | SAM F-selectivity plot                       |
+| [fselectivityplot.sam](fselectivityplot.md) | SAM F-selectivity plot                       |
 
 <span id="G">-- G --</span>
 ---------------------------
 
-|                                     |        |
-|-------------------------------------|--------|
-| [getLowerBounds](getLowerBounds.md) | Bounds |
-| [getUpperBounds](getUpperBounds.md) | Bounds |
+|                                     |                                      |
+|-------------------------------------|--------------------------------------|
+| [getFleet](getFleet.md)             | Extract a fleet from a fitted object |
+| [getLowerBounds](getLowerBounds.md) | Bounds                               |
+| [getUpperBounds](getUpperBounds.md) | Bounds                               |
 
 <span id="I">-- I --</span>
 ---------------------------
@@ -230,6 +235,15 @@ Help Pages
 | [tsbplot.default](tsbplot.md)   | SAM TSB plot |
 | [tsbtable](tsbtable.md)         | TSB table    |
 | [tsbtable.default](tsbtable.md) | TSB table    |
+
+<span id="W">-- W --</span>
+---------------------------
+
+|                                         |                                                                             |
+|-----------------------------------------|-----------------------------------------------------------------------------|
+| [write.data.files](write.data.files.md) | Write all data files from a model object in the usual ICES/CEFAS data files |
+| [write.ices](write.ices.md)             | Write ICES/CEFAS data file from matrix                                      |
+| [write.surveys](write.surveys.md)       | Write surveys in ICES/CEFAS data file from a model object                   |
 
 <span id="Y">-- Y --</span>
 ---------------------------

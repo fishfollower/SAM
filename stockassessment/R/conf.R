@@ -20,26 +20,8 @@ setS<-function(x){
 
 ##' Setup basic minimal configuration for sam assessment
 ##' @param dat sam data object 
-##' @return a list containing 
-##' \item{minAge}{}
-##' \item{maxAge}{}
-##' \item{maxAgePlusGroup}{}
-##' \item{keyLogFsta}{}
-##' \item{keyLogFpar}{}
-##' \item{keyQpow}{}
-##' \item{keyVarF}{}
-##' \item{keyVarLogN}{}
-##' \item{keyVarObs}{}
-##' \item{obsCorStruct}{}
-##' \item{keyCorObs}{}
-##' \item{corFlag}{set to zero as a placeholder here.}
-##' \item{stockRecruitmentModelCode}{set to zero as a placeholder here.}
-##' \item{noScaledYears}{set to zero as a placeholder here.}
-##' \item{keyScaledYears}{a scalar set to zero as a placeholder here.}
-##' \item{keyParScaledYA}{an array set to zero as a placeholder here.}
-##' \item{fbarRange}{}
-##' \item{obsLikelihoodFlag}{A vector with an element for each fleet. "LN" means, and "ALN" means}
-##' @details ...
+##' @return a list containing the elements needed to configure a sam model (e.g. minAge, maxAge, maxAgePlusGroup, keyLogFsta, ...). 
+##' @details The configuration returned by defcon is intended as a help to set up a syntactically correct configuration for the sam model. The dimensions are set from the data (years, age-classes, and fleet types available). The configuration is intended to be fairly simplistic in the hope that the model configured will at least converge (not guaranteed). Most importantly: No model validation has been performed, so it should not be assumed that the returned model configuration will result in a sensible assessment of the stock. The actual model configuration is the responsibility of the user.     
 ##' @export
 defcon<-function(dat){
   fleetTypes <- dat$fleetTypes

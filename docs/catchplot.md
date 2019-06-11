@@ -10,8 +10,8 @@
 
 ```r
 catchplot(fit, obs.show = TRUE, drop = NULL, ...)
-list(list("catchplot"), list("sam"))(fit, obs.show = TRUE, drop = NULL, plot = TRUE,
-  ...)
+list(list("catchplot"), list("sam"))(fit, obs.show = TRUE, drop = NULL,
+  plot = TRUE, ...)
 list(list("catchplot"), list("samset"))(fit, obs.show = TRUE, drop = NULL, ...)
 list(list("catchplot"), list("samforecast"))(fit, obs.show = TRUE, drop = NULL, ...)
 ```
