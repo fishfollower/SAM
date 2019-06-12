@@ -50,7 +50,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
+simulationforecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
