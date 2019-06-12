@@ -21,8 +21,7 @@ a list containing the following
 \item{logSdLogTotalObs}{}
 \item{transfIRARdist}{}
 \item{sigmaObsParUS}{}
-\item{rec_loga}{}
-\item{rec_logb}{}
+\item{rec_pars}{}
 \item{itrans_rho}{}
 \item{logScale}{}
 \item{logScaleSSB}{}

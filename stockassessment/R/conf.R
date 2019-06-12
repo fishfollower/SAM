@@ -104,6 +104,8 @@ defcon<-function(dat){
   ret$fracMixN <- 0
   ret$fracMixObs <- rep(0,nFleets)
   ret$constRecBreaks <- numeric(0)
+
+  ret$hockeyStickCurve <- 20
   return(ret) 
 }
 

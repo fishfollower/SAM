@@ -395,8 +395,7 @@ struct paraSet{
   vector<Type> logSdLogTotalObs;
   vector<Type> transfIRARdist;
   vector<Type> sigmaObsParUS;
-  vector<Type> rec_loga; 
-  vector<Type> rec_logb; 
+  vector<Type> rec_pars; 
   vector<Type> itrans_rho; 
   vector<Type> logScale;
   vector<Type> logitReleaseSurvival;   

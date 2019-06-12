@@ -57,7 +57,10 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
   ran <- c("logN", "logF", "missing")
-  obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
+  map <- list()
+  if(!is.na(conf$hockeyStickCurve) & conf$stockRecruitmentModelCode == 63)
+      map$rec_pars = factor(c(1,2,NA))
+  obj <- MakeADFun(tmball, parameters, map, random=ran, DLL="stockassessment", ...)
   if(rm.unidentified){
     gr <- obj$gr()
     #grNA[abs(grNA)<1.0e-15] <- NA
