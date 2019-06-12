@@ -15,12 +15,20 @@ defpar <- function(dat,conf){
   ret$transfIRARdist=if(all(is.na(conf$keyCorObs)))numeric(0) else numeric(max(conf$keyCorObs,na.rm=TRUE)+1)+0.05
   nbyfleet = (conf$obsCorStruct=="US")*(dat$maxAgePerFleet-dat$minAgePerFleet+1-(conf$obsLikelihoodFlag=="ALN"))
   ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2))
-  ret$rec_loga=if(conf$stockRecruitmentModelCode==0){numeric(0)}else{numeric(1)}
-  if(conf$stockRecruitmentModelCode==3){
-    ret$rec_loga=numeric(length(unique(conf$constRecBreaks))+1)
-  }
-  ret$rec_logb=if(conf$stockRecruitmentModelCode==0 | conf$stockRecruitmentModelCode==3 ){numeric(0)}else{numeric(1)}
 
+  if(conf$stockRecruitmentModelCode==0){ # Random walk
+      ret$rec_pars <- numeric(0)
+  }else if(conf$stockRecruitmentModelCode==3){ # Constant mean
+      ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)
+  }else if(conf$stockRecruitmentModelCode==63){ # Bent hypoerbola / Hockey-stick-like
+      ret$rec_pars <- c(numeric(2),3)
+      if(!is.na(conf$hockeyStickCurve))
+          ret$rec_pars[3] <- log(conf$hockeyStickCurve)
+  }else{ # The rest
+      ret$rec_pars <- numeric(2)
+  }
+
+  
   ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
   ret$logScale=if(conf$noScaledYears==0){numeric(0)}else{numeric(max(conf$keyParScaledYA)+1)}
   ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))

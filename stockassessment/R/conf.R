@@ -112,6 +112,7 @@ defcon<-function(dat){
     }
   }
   
+  ret$hockeyStickCurve <- 20
   return(ret) 
 }
 
