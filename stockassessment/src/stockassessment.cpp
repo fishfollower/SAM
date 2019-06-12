@@ -106,8 +106,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdLogTotalObs); paraset.logSdLogTotalObs=logSdLogTotalObs; 
   PARAMETER_VECTOR(transfIRARdist); paraset.transfIRARdist=transfIRARdist; //transformed distances for IRAR cor obs structure
   PARAMETER_VECTOR(sigmaObsParUS); paraset.sigmaObsParUS=sigmaObsParUS; //choleski elements for unstructured cor obs structure
-  PARAMETER_VECTOR(rec_loga); paraset.rec_loga=rec_loga;  
-  PARAMETER_VECTOR(rec_logb); paraset.rec_logb=rec_logb;  
+  PARAMETER_VECTOR(rec_pars); paraset.rec_pars=rec_pars;  
   PARAMETER_VECTOR(itrans_rho); paraset.itrans_rho=itrans_rho;  
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
