@@ -43,12 +43,12 @@ Help Pages
 <span id="D">-- D --</span>
 ---------------------------
 
-|                             |                                                      |
-|-----------------------------|------------------------------------------------------|
-| [dataplot](dataplot.md)     | SAM Data plot                                        |
-| [dataplot.sam](dataplot.md) | SAM Data plot                                        |
-| [defcon](defcon.md)         | Setup basic minimal configuration for sam assessment |
-| [defpar](defpar.md)         | Setup minimal initial parameters                     |
+|                             |                                                                   |
+|-----------------------------|-------------------------------------------------------------------|
+| [dataplot](dataplot.md)     | SAM Data plot                                                     |
+| [dataplot.sam](dataplot.md) | SAM Data plot                                                     |
+| [defcon](defcon.md)         | Setup basic minimal configuration for sam assessment              |
+| [defpar](defpar.md)         | Setup initial values for all model parameters and random effects. |
 
 <span id="E">-- E --</span>
 ---------------------------

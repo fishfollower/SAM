@@ -1,9 +1,9 @@
-# `defpar`: Setup minimal initial parameters
+# `defpar`: Setup initial values for all model parameters and random effects.
 
 ## Description
 
 
- Setup minimal initial parameters
+ Setup initial values for all model parameters and random effects.
 
 
 ## Usage
@@ -17,75 +17,18 @@ defpar(dat, conf)
 
 Argument      |Description
 ------------- |----------------
-```dat```     |     sam data object
-```conf```     |     configuration list
+```dat```     |     sam data object as returned from the function setup.sam.data
+```conf```     |     sam configuration list, which could be read from a configuration file via the `loadConf` command, or a default/dummy configuration can be generated via the `defcon` function
 
 ## Details
 
 
- ...
+ The model parameters and random effects are not initialized in any clever way most are simply set to zero. If convergence problems occour different initial values can be tested, but it is more likely the problem is the model configuration.
 
 
 ## Value
 
 
- a list containing the following
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
- 
-
-*  
+ a list containing initial values for all model parameters and random effects in the model.
 
 

@@ -2,40 +2,21 @@
 % Please edit documentation in R/init.R
 \name{defpar}
 \alias{defpar}
-\title{Setup minimal initial parameters}
+\title{Setup initial values for all model parameters and random effects.}
 \usage{
 defpar(dat, conf)
 }
 \arguments{
-\item{dat}{sam data object}
+\item{dat}{sam data object as returned from the function setup.sam.data}
 
-\item{conf}{configuration list}
+\item{conf}{sam configuration list, which could be read from a configuration file via the \code{loadConf} command, or a default/dummy configuration can be generated via the \code{defcon} function}
 }
 \value{
-a list containing the following
-\item{logFpar}{}
-\item{logQpow}{}
-\item{logSdLogFsta}{}
-\item{logSdLogN}{}
-\item{logSdLogObs}{}
-\item{logSdLogTotalObs}{}
-\item{transfIRARdist}{}
-\item{sigmaObsParUS}{}
-\item{rec_loga}{}
-\item{rec_logb}{}
-\item{itrans_rho}{}
-\item{logScale}{}
-\item{logScaleSSB}{}
-\item{logPowSSB}{}
-\item{logSdSSB}{}
-\item{logitReleaseSurvival}{}
-\item{logitRecapturePhi}{}
-\item{logF}{}
-\item{logN}{}
+a list containing initial values for all model parameters and random effects in the model.
 }
 \description{
-Setup minimal initial parameters
+Setup initial values for all model parameters and random effects.
 }
 \details{
-...
+The model parameters and random effects are not initialized in any clever way most are simply set to zero. If convergence problems occour different initial values can be tested, but it is more likely the problem is the model configuration.
 }
