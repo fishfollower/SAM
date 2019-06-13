@@ -1,7 +1,7 @@
 ##' Setup initial values for all model parameters and random effects.
-##' @param dat sam data object as returned from the function setup.sam.data
-##' @param conf sam configuration list, which could be read from a configuration file via the \code{loadConf} command, or a default/dummy configuration can be generated via the \code{defcon} function   
-##' @details The model parameters and random effects are not initialized in any clever way most are simply set to zero. If convergence problems occour different initial values can be tested, but it is more likely the problem is the model configuration. 
+##' @param dat sam data object as returned from the function \code{setup.sam.data}
+##' @param conf sam configuration list, which could be read from a configuration file via the \code{loadConf} function. A default/dummy configuration can be generated via the \code{defcon} function.   
+##' @details The model parameters and random effects are not initialized in any clever way - most are simply set to zero. If convergence problems occour different initial values can be tested, but it is more likely a problem with the model configuration. 
 ##' @return a list containing initial values for all model parameters and random effects in the model.
 ##' @export
 defpar <- function(dat,conf){
