@@ -10,7 +10,7 @@ Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.d
             person(c("Olav","Nikolai"), "Brevik", role="aut"))
 Description: Fitting SAM...
 License: GPL-2
-Imports: TMB, ellipse
+Imports: TMB, ellipse, methods, stats, utils
 LinkingTo: TMB, RcppEigen
 Suggests: testthat
 Encoding: UTF-8
