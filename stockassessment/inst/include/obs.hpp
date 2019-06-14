@@ -121,7 +121,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> land = landFun(dat, conf, logN, logF);
   vector<Type> logLand = log(land);
 
-
   vector<Type> varLogCatch = varLogCatchFun(dat, conf, logN, logF, par);
 
   vector<Type> varLogLand = varLogLandFun(dat, conf, logN, logF, par);
@@ -343,7 +342,21 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
 
+  // Additional forecast quantities
+  if(dat.forecast.nYears > 0){
+    vector<Type> dis = disFun(dat, conf, logN, logF);
+    vector<Type> logDis = log(dis);
+    
+    vector<Type> landFbar = landFbarFun(dat, conf, logF);
+    vector<Type> loglandfbar = log(landFbar);
+    
+    vector<Type> disFbar = disFbarFun(dat, conf, logF);
+    vector<Type> logdisfbar = log(disFbar);
 
+    ADREPORT_F(logDis,of);
+    ADREPORT_F(loglandfbar,of);
+    ADREPORT_F(logdisfbar,of);    
+  }
   
   SIMULATE_F(of) {
     if(dat.forecast.simFlag == 0){

@@ -35,6 +35,7 @@ namespace toF_atomic {
       C *= N;
       C /= Z;
       C *= w;
+      C *= frac;
       return catchval - sum(C);
     }
   };

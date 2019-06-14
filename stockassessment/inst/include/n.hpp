@@ -25,9 +25,9 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       vector<Type> Nscale(logN.rows());
       Nscale.setZero();
       Nscale += 1.0;
-      Nscale(0) = sqrt(dat.forecast.recruitmentVar) / sqrt(nvar(0,0));
+      Nscale(0) = sqrt(dat.forecast.logRecruitmentVar) / sqrt(nvar(0,0));
       vector<Type> predNTmp = predN;
-      predNTmp(0) = log(dat.forecast.recruitmentMedian);
+      predNTmp(0) = dat.forecast.logRecruitmentMedian;
       MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
       nll+=neg_log_densityN((logN.col(i)-predNTmp) / Nscale) + (log(Nscale)).sum();
       SIMULATE_F(of){
