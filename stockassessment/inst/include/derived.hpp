@@ -124,6 +124,33 @@ vector<Type> varLogLandFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN,
   return varLogLand;
 }
 
+
+template <class Type>
+vector<Type> disFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+  int len=dat.disMeanWeight.dim(0);
+  vector<Type> dis(len);
+  dis.setZero();
+  Type DW=0;
+  Type DF=0;
+  Type DWDF=0;
+  for(int y=0;y<len;y++){
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+      Type z=dat.natMor(y,a-conf.minAge);
+      if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
+        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+        DW=dat.disMeanWeight(y,a-conf.minAge);
+        if(DW<0){DW=0;}
+	DF=1.0 - (dat.landFrac(y,a-conf.minAge) - 1e-8);
+        if(DF<0){DF=0;}
+        DWDF=DW*DF;
+        dis(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*DWDF;
+      }
+    }    
+  }
+  return dis;
+}
+
+
 template <class Type>
 vector<Type> fsbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.catchMeanWeight.dim(0);
@@ -180,6 +207,35 @@ vector<Type> fbarFun(confSet &conf, array<Type> &logF){
   for(int y=0;y<timeSteps;y++){  
     for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
       fbar(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+    }
+    fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
+  }
+  return fbar;
+}
+
+
+template <class Type>
+vector<Type> landFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF){
+  int timeSteps=logF.dim[1];
+  vector<Type> fbar(timeSteps);
+  fbar.setZero();
+  for(int y=0;y<timeSteps;y++){  
+    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
+      fbar(y)+= dat.landFrac(y,a-conf.minAge) * exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+    }
+    fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
+  }
+  return fbar;
+}
+
+template <class Type>
+vector<Type> disFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF){
+  int timeSteps=logF.dim[1];
+  vector<Type> fbar(timeSteps);
+  fbar.setZero();
+  for(int y=0;y<timeSteps;y++){  
+    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
+      fbar(y)+= (1.0 - (dat.landFrac(y,a-conf.minAge) - 1e-8)) * exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
     }
     fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
   }
