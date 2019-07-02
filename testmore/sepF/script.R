@@ -11,7 +11,6 @@ pm<-read.ices("pm.dat")
 sw<-read.ices("sw.dat")
 surveys<-read.ices("survey.dat")
 
-
 dat<-setup.sam.data(surveys=surveys,
                     residual.fleet=cn, 
                     prop.mature=mo, 
@@ -24,33 +23,10 @@ dat<-setup.sam.data(surveys=surveys,
                     natural.mortality=nm, 
                     land.frac=lf)
 
-conf<-defcon(dat)
-conf$keyLogFsta[1,] <- c(0, 1, 2, 3, 4, 5)
-conf$keyLogFpar <- matrix(
-         c(-1, -1, -1, -1, -1, -1,
-            0,  1,  2,  3,  4, -1,
-            5,  6,  7,  8, -1, -1
-           ), nrow=3, byrow=TRUE)
-conf$keyVarF[1,] <- c(0, 1, 1, 1, 1, 1)
-conf$keyVarObs <- matrix(
-         c( 0,  1,  2,  2,  2,  2,
-            3,  4,  4,  4,  4, -1,
-            5,  6,  6,  6, -1, -1
-           ), nrow=3, byrow=TRUE)
-conf$noScaledYears <- 13
-conf$keyScaledYears <- 1993:2005
-conf$keyParScaledYA <- row(matrix(NA, nrow=13, ncol=6))-1
-conf$fbarRange <- c(2,4)
 
-conf$corFlag <- 3
+conf = loadConf(dat,"modelConf.cfg")
+conf$corFlag=3
 par<-defpar(dat,conf)
-
 fit<-sam.fit(dat,conf,par)
 
-#conf$corFlag <- 2
-#par<-defpar(dat,conf)
-#fit2<-sam.fit(dat,conf,par)
-
-#fselectivityplot(fit)#Strange selevtivityplot...
-#fselectivityplot(fit2)
 cat(fit$opt$objective, file="res.out")
