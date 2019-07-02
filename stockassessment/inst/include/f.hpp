@@ -189,10 +189,13 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, array<T
     SIMULATE_F(of){
       if(conf.simFlag==0){
         vector<Type> uu = nldens.simulate();
+        Type sumUZero = 0;
         for(int j=0; j<stateDimF-1; ++j){
             logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
-            logF(j,y) = logU(y,j) ;
+            logF(j,y) =  logU(y,j);
+            sumUZero += logU(y,j);
         }
+        logF(stateDimF-1,y) = -sumUZero;
       }
     }
   }
