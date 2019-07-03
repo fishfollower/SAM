@@ -114,7 +114,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
   
   PARAMETER_ARRAY(logF); 
-//  PARAMETER_ARRAY(logW); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
 

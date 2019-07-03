@@ -225,7 +225,6 @@ struct paraSet{
   vector<Type> logScale;
   vector<Type> logitReleaseSurvival;   
   vector<Type> logitRecapturePhi;   
-  
   vector<Type> sepFalpha;   
   vector<Type> sepFlogitRho;   
   vector<Type> sepFlogSd;   

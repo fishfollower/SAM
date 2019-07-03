@@ -38,6 +38,4 @@ par<-defpar(dat,conf)
 par$logSdLogN = c(-0.35, -5)
 map = list(logSdLogN = as.factor(c(0,NA)))
 fit<-sam.fit(dat,conf,par,map =map)
-
-#Transpose the ar1-parameters in logF
-2/(1 + exp(-2*fit$opt$par[which(names(fit$opt$par) == "sepFlogitRho")] )) - 1
+cat(fit$opt$objective, file="res.out")

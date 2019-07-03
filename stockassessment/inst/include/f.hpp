@@ -40,7 +40,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   vector<Type> fsd(stateDimF);  
 
   
-  if(conf.corFlag==3 || conf.corFlag==4){
+  if(conf.corFlag==3){
     return(nllFseparable(conf, par, logF, keep ,of));
   }
   
@@ -122,7 +122,6 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
   SigmaU.setZero();
   vector<Type> sdU(stateDimF-1);  
   vector<Type> sdV(1);  
-  vector<Type> sdW(1);
   for(int i=0; i<sdU.size(); ++i){
     sdU(i) = exp(par.sepFlogSd(0));
   }
@@ -133,63 +132,33 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
     
   Type nll=0; 
 
-//  if(conf.corFlag ==3){
-//    array<Type> logW = logF*0;
-//  }
-
   matrix<Type> logU(timeSteps,stateDimF-1);
   logU.setZero();
   vector<Type> logV(timeSteps);
   logV.setZero();
   for(int i=0; i<timeSteps; ++i){
-//    logV(i)=(logF-logW).col(i).mean();
     logV(i)=(logF).col(i).mean();
   }
   for(int i=0; i<timeSteps; ++i){
     for(int j=0; j<stateDimF-1; ++j){
-//      logU(i,j)=logF(i,j)-logW(i,j)-logV(i);
       logU(i,j)=logF(j,i)-logV(i);
     }
   }
-  
-  if(conf.corFlag ==4){
-    for(int y=0; y<timeSteps; ++y){
-      for(int a=0; a<stateDimF; ++a){
-  //      nll += -dnorm(logW(y,a),Type(0),sdW(0),true);
-      }
-    }
-<<<<<<< HEAD
-  }
 
-=======
-    MVMIX_t<Type> neg_log_densityW(wvar,Type(conf.fracMixF));
-    
-    for(i=0; i<timeSteps; ++i){
-      nll+=neg_log_densityW(logW.col(i)); 
-    }
-  }
-  //Likelihood contribution from U and V
->>>>>>> a0624a9... Add simulation of separable F
   SigmaU.diagonal() = sdU*sdU;
   
   density::MVNORM_t<Type> nldens(SigmaU);
   for(int y=1; y<timeSteps; ++y){
     vector<Type> diff=vector<Type>(logU.row(y))-rhoU*vector<Type>(logU.row(y-1))- par.sepFalpha.segment(0,par.sepFalpha.size()-1);
     nll += nldens(diff);
-<<<<<<< HEAD
-  }
-  for(int y=1; y<timeSteps; ++y){
-    nll += -dnorm(logV(y),rhoV* logV(y-1) + par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
-=======
-    
-    
+
     SIMULATE_F(of){
       if(conf.simFlag==0){
         vector<Type> uu = nldens.simulate();
         Type sumUZero = 0;
         for(int j=0; j<stateDimF-1; ++j){
             logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
-            logF(j,y) =  logU(y,j);
+            logF(j,y) = logU(y,j);
             sumUZero += logU(y,j);
         }
         logF(stateDimF-1,y) = -sumUZero;
@@ -206,12 +175,9 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
         }
       }
     }
->>>>>>> a0624a9... Add simulation of separable F
   }
   nll += -jacobiUVtrans(logF);
   
-//  ADREPORT_F(logU,of);
-//  ADREPORT_F(logV,of);  
   return nll;
 }
 

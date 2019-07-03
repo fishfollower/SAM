@@ -28,7 +28,5 @@ dat<-setup.sam.data(surveys=surveys,
 conf = loadConf(dat,"modelConf.cfg")
 conf$corFlag=3
 par<-defpar(dat,conf)
-
 fit<-sam.fit(dat,conf,par)
-
 cat(fit$opt$objective, file="res.out")
