@@ -156,7 +156,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$maxAge <- "The maximum age class in the assessment"
     txt$maxAgePlusGroup <- "Is last age group considered a plus group (1 yes, or 0 no)." 
     txt$keyLogFsta <- "Coupling of the fishing mortality states (nomally only first row is used)."
-    txt$corFlag <- "Correlation of fishing mortality across ages (0 independent, 1 compound symmetry, 2 AR(1), 3 separable AR(1), or 4 separable AR(1) with additional noize."
+    txt$corFlag <- "Correlation of fishing mortality across ages (0 independent, 1 compound symmetry, 2 AR(1), 3 separable AR(1)"
     txt$keyLogFpar <- "Coupling of the survey catchability parameters (nomally first row is not used, as that is covered by fishing mortality)."
     txt$keyQpow <- "Density dependent catchability power parameters (if any)."
     txt$keyVarF <- "Coupling of process variance parameters for log(F)-process (nomally only first row is used)"
