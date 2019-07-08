@@ -4,7 +4,7 @@ Type trans(Type x){
 }
 
 template <class Type>
-Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0; 
   int stateDimF=logF.dim[0];
@@ -62,11 +62,26 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   matrix<Type> LinvF = LF.inverse();
 
   for(int i=1;i<timeSteps;i++){
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));    
-    nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
-    SIMULATE_F(of){
-      if(conf.simFlag==0){
-        logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
+
+    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+      // Forecast
+      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
+      Type timeScale = dat.forecast.forecastCalculatedLogSdCorrection(forecastIndex);
+
+      nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
+
+      SIMULATE_F(of){
+	if(dat.forecast.simFlag == 0){
+	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
+	}
+      }
+    }else{
+      nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+      SIMULATE_F(of){
+	if(conf.simFlag==0){
+	  logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+	}
       }
     }
   }

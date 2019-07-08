@@ -17,12 +17,31 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   matrix<Type> LinvN = LN.inverse();
 
   for(int i = 1; i < timeSteps; ++i){ 
-    vector<Type> predN = predNFun(dat,conf,par,logN,logF,i); 
-    resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
-    nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
-    SIMULATE_F(of){
-      if(conf.simFlag==0){
-        logN.col(i) = predN + neg_log_densityN.simulate();
+    vector<Type> predN = predNFun(dat,conf,par,logN,logF,i);
+    if(dat.forecast.nYears > 0 &&
+       dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(i))-1) != dat.forecast.asRecModel &&
+       dat.forecast.forecastYear(i) > 0){
+      // Forecast
+      vector<Type> Nscale(logN.rows());
+      Nscale.setZero();
+      Nscale += 1.0;
+      Nscale(0) = sqrt(dat.forecast.logRecruitmentVar) / sqrt(nvar(0,0));
+      vector<Type> predNTmp = predN;
+      predNTmp(0) = dat.forecast.logRecruitmentMedian;
+      MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
+      nll+=neg_log_densityN((logN.col(i)-predNTmp) / Nscale) + (log(Nscale)).sum();
+      SIMULATE_F(of){
+	if(dat.forecast.simFlag == 0){
+	  logN.col(i) = predNTmp + neg_log_densityN.simulate() * Nscale;
+	}
+      }
+    }else{
+      resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
+      nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
+      SIMULATE_F(of){
+	if(conf.simFlag==0){
+	  logN.col(i) = predN + neg_log_densityN.simulate();
+	}
       }
     }
   }
