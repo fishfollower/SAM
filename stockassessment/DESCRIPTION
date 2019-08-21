@@ -12,7 +12,7 @@ Description: Fitting SAM...
 License: GPL-2
 Imports: TMB, ellipse
 LinkingTo: TMB, RcppEigen
-Suggests: testthat
+Suggests: testthat, rlang
 Encoding: UTF-8
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
