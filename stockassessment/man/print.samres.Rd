@@ -7,7 +7,7 @@
 \method{print}{samres}(x, ...)
 }
 \arguments{
-\item{x}{...}
+\item{x}{a sam residual object as returnd from either \code{\link{residuals.sam}} or \code{\link{procres}}}
 
 \item{...}{extra arguments}
 }
@@ -15,5 +15,5 @@
 Print samres object
 }
 \details{
-...
+prints the residuals as a data.frame
 }

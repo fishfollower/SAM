@@ -8,7 +8,7 @@
   full.data = TRUE, ...)
 }
 \arguments{
-\item{object}{sam fitted object (result from sam.fit)}
+\item{object}{sam fitted object as returned from the \code{\link{sam.fit}} function}
 
 \item{nsim}{number of response lists to simulate. Defaults to 1.}
 
@@ -25,5 +25,5 @@ returns a list of lists. The outer list has length \code{nsim}. Each inner list 
 Simulate from a sam object
 }
 \details{
-...
+simulates data sets from the model fitted and conditioned on the random effects estimated
 }

@@ -7,7 +7,7 @@
 \method{c}{sam}(...)
 }
 \arguments{
-\item{...}{sam fits to be combined}
+\item{...}{one or more sam fits (as returned from the \code{\link{sam.fit}} function) to be combined}
 }
 \description{
 Collect sam objects

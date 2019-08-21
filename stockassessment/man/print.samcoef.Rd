@@ -7,13 +7,10 @@
 \method{print}{samcoef}(x, ...)
 }
 \arguments{
-\item{x}{...}
+\item{x}{samcoef object as returned from the \code{\link{coef.sam}} function}
 
 \item{...}{extra arguments}
 }
 \description{
 Print samcoef object
-}
-\details{
-...
 }

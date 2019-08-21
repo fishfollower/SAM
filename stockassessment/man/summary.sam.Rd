@@ -7,7 +7,7 @@
 \method{summary}{sam}(object, ...)
 }
 \arguments{
-\item{object}{sam fitted object (result from sam.fit)}
+\item{object}{sam fitted object as returned from the \code{\link{sam.fit}} function}
 
 \item{...}{extra arguments}
 }
@@ -15,5 +15,5 @@
 Summary of sam object
 }
 \details{
-...
+summary table containing recruits, SSB, and Fbar
 }

@@ -24,7 +24,7 @@ Argument      |Description
 ## Details
 
 
- ...
+ Single joint sample residuals of log(F) and log(N)
 
 
 ## Value

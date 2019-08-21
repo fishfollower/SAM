@@ -7,7 +7,7 @@
 \method{coef}{sam}(object, ...)
 }
 \arguments{
-\item{object}{sam fitted object (result from sam.fit)}
+\item{object}{sam fitted object as returned from the \code{\link{sam.fit}} function}
 
 \item{...}{extra arguments}
 }
@@ -15,5 +15,5 @@
 Extract fixed coefficients of sam object
 }
 \details{
-...
+fixed coefficients of sam object
 }

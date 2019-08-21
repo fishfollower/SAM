@@ -17,7 +17,7 @@ list(list("plot"), list("samres"))(x, type = "bubble", ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     an object of type 'samres' as returned from residuals or procres.
+```x```     |     an object of type 'samres' as returned from functions [`residuals.sam`](residuals.sam.html) or [`procres`](procres.html) .
 ```type```     |     either "bubble" (default) or "summary"
 ```...```     |     extra arguments
 

@@ -7,7 +7,7 @@
 \method{plot}{samres}(x, type = "bubble", ...)
 }
 \arguments{
-\item{x}{an object of type 'samres' as returned from residuals or procres.}
+\item{x}{an object of type 'samres' as returned from functions \code{\link{residuals.sam}} or \code{\link{procres}}.}
 
 \item{type}{either "bubble" (default) or "summary"}
 
@@ -17,7 +17,7 @@
 Plot sam residuals
 }
 \details{
-...
+In the "bubble" type red indicate negative residuals and blue positive. The area of the circles scales with the absolute size of the residuals.
 }
 \examples{
 \dontrun{

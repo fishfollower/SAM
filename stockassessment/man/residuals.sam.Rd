@@ -7,7 +7,7 @@
 \method{residuals}{sam}(object, discrete = FALSE, ...)
 }
 \arguments{
-\item{object}{sam fitted object (result from sam.fit)}
+\item{object}{sam fitted object as returned from the \code{\link{sam.fit}} function}
 
 \item{discrete}{logical if model contain discrete observations}
 
@@ -17,5 +17,7 @@
 Extract residuals from sam object
 }
 \details{
+one-observation-ahead quantile residuals are calculated
+
 ...
 }

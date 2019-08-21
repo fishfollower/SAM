@@ -7,7 +7,7 @@
 procres(fit, map = fit$obj$env$map, ...)
 }
 \arguments{
-\item{fit}{the fitted object as returned from the sam.fit function}
+\item{fit}{the fitted object as returned from the \code{\link{sam.fit}} function}
 
 \item{map}{map from original fit}
 
@@ -20,5 +20,5 @@ an object of class \code{samres}
 Compute process residuals (single joint sample)
 }
 \details{
-...
+Single joint sample residuals of log(F) and log(N)
 }

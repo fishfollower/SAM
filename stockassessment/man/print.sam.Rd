@@ -7,7 +7,7 @@
 \method{print}{sam}(x, ...)
 }
 \arguments{
-\item{x}{...}
+\item{x}{the fitted object as returned from the \code{\link{sam.fit}} function}
 
 \item{...}{extra arguments}
 }
@@ -15,5 +15,5 @@
 Print sam object
 }
 \details{
-...
+prints the log-likelihood and the main convergence criteria
 }

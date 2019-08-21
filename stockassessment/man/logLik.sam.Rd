@@ -7,7 +7,7 @@
 \method{logLik}{sam}(object, ...)
 }
 \arguments{
-\item{object}{sam fitted object (result from sam.fit)}
+\item{object}{sam fitted object as returned from the \code{\link{sam.fit}} function}
 
 \item{...}{extra arguments}
 }
@@ -15,5 +15,5 @@
 Log likelihood of sam object
 }
 \details{
-...
+log likelihood of a sam model run
 }

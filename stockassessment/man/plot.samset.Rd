@@ -7,7 +7,7 @@
 \method{plot}{samset}(x, ...)
 }
 \arguments{
-\item{x}{...}
+\item{x}{fitted object as returned from the \code{\link{sam.fit}} function.}
 
 \item{...}{extra arguments}
 }

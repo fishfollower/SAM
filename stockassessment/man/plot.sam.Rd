@@ -7,13 +7,13 @@
 \method{plot}{sam}(x, ...)
 }
 \arguments{
-\item{x}{...}
+\item{x}{fitted object as returned from the \code{\link{sam.fit}} function.}
 
-\item{...}{extra arguments (not possible to use add=TRUE --- please collect to a list of fits using e.g the c(...), and then plot that collected object)}
+\item{...}{extra arguments (not possible to use add=TRUE --- instead collect to a list of fits using e.g the c(...), and then plot that collected object).}
 }
 \description{
 Plot sam object
 }
 \details{
-...
+gives a 3 plot overview plot og ssb, fbar, and recruits. These plots are available individually via the functions \code{\link{ssbplot}}, \code{fbarplot}, and \code{\link{recplot}}.
 }

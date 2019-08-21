@@ -17,7 +17,7 @@ list(list("c"), list("sam"))(...)
 
 Argument      |Description
 ------------- |----------------
-```...```     |     sam fits to be combined
+```...```     |     one or more sam fits (as returned from the [`sam.fit`](sam.fit.html) function) to be combined
 
 ## Details
 

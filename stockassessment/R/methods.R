@@ -1,9 +1,9 @@
 ##' Plot sam object 
 ##' @method plot sam
-##' @param  x ...
-##' @param  ... extra arguments (not possible to use add=TRUE --- please collect to a list of fits using e.g the c(...), and then plot that collected object)
+##' @param  x fitted object as returned from the \code{\link{sam.fit}} function.
+##' @param  ... extra arguments (not possible to use add=TRUE --- instead collect to a list of fits using e.g the c(...), and then plot that collected object).
 ##' @importFrom graphics par
-##' @details ...
+##' @details gives a 3 plot overview plot og ssb, fbar, and recruits. These plots are available individually via the functions \code{\link{ssbplot}}, \code{fbarplot}, and \code{\link{recplot}}.  
 ##' @export
 plot.sam<-function(x, ...){
   dots <- list(...) 
@@ -17,7 +17,7 @@ plot.sam<-function(x, ...){
 
 ##' Plot samforecast object 
 ##' @method plot samforecast
-##' @param  x ...
+##' @param  x fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param  ... extra arguments
 ##' @importFrom graphics par
 ##' @details ...
@@ -32,7 +32,7 @@ plot.samforecast<-function(x, ...){
 
 ##' Collect sam objects 
 ##' @method c sam
-##' @param  ... sam fits to be combined 
+##' @param  ... one or more sam fits (as returned from the \code{\link{sam.fit}} function) to be combined 
 ##' @importFrom graphics par
 ##' @details ...
 ##' @export
@@ -44,7 +44,7 @@ c.sam<-function(...){
 
 ##' Plot sam object 
 ##' @method plot samset
-##' @param  x ...
+##' @param  x fitted object as returned from the \code{\link{sam.fit}} function.
 ##' @param  ... extra arguments
 ##' @importFrom graphics par
 ##' @details ...
@@ -58,11 +58,11 @@ plot.samset<-function(x, ...){
 }
 
 ##' Compute process residuals (single joint sample) 
-##' @param fit the fitted object as returned from the sam.fit function
+##' @param fit the fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param map map from original fit 
 ##' @param ... extra arguments (not currently used)
 ##' @return an object of class \code{samres}
-##' @details ...
+##' @details Single joint sample residuals of log(F) and log(N)
 ##' @importFrom TMB sdreport
 ##' @export
 procres <- function(fit, map = fit$obj$env$map, ...){
@@ -112,10 +112,10 @@ procres <- function(fit, map = fit$obj$env$map, ...){
 
 ##' Plot sam residuals 
 ##' @method plot samres 
-##' @param x an object of type 'samres' as returned from residuals or procres.
+##' @param x an object of type 'samres' as returned from functions \code{\link{residuals.sam}} or \code{\link{procres}}.
 ##' @param type either "bubble" (default) or "summary"
 ##' @param ... extra arguments
-##' @details ...
+##' @details In the "bubble" type red indicate negative residuals and blue positive. The area of the circles scales with the absolute size of the residuals.  
 ##' @importFrom graphics abline
 ##' @importFrom stats acf na.pass qqnorm
 ##' @export
@@ -170,9 +170,9 @@ plot.samres<-function(x, type="bubble",...){
 
 ##' Print sam object 
 ##' @method print sam 
-##' @param  x ...
+##' @param  x the fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param  ... extra arguments
-##' @details ...
+##' @details prints the log-likelihood and the main convergence criteria
 ##' @export
 print.sam<-function(x, ...){
   cat("SAM model: log likelihood is", logLik.sam(x,...),"Convergence", ifelse(0==x$opt$convergence, "OK\n", "failed\n"))
@@ -180,9 +180,9 @@ print.sam<-function(x, ...){
 
 ##' Print samres object 
 ##' @method print samres 
-##' @param  x ...
+##' @param  x a sam residual object as returnd from either \code{\link{residuals.sam}} or \code{\link{procres}}
 ##' @param  ... extra arguments
-##' @details ...
+##' @details prints the residuals as a data.frame 
 ##' @export
 print.samres<-function(x, ...){
   class(x)<-NULL
@@ -191,9 +191,9 @@ print.samres<-function(x, ...){
 
 ##' Log likelihood of sam object 
 ##' @method logLik sam 
-##' @param  object sam fitted object (result from sam.fit)
+##' @param  object sam fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param  ... extra arguments
-##' @details ...
+##' @details log likelihood of a sam model run 
 ##' @export
 logLik.sam<-function(object, ...){
   ret<- -object$opt$objective
@@ -204,9 +204,9 @@ logLik.sam<-function(object, ...){
 
 ##' Extract fixed coefficients of sam object 
 ##' @method coef sam 
-##' @param  object sam fitted object (result from sam.fit)
+##' @param  object sam fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param  ... extra arguments
-##' @details ...
+##' @details fixed coefficients of sam object
 ##' @importFrom stats coef
 ##' @export
 coef.sam <- function(object, ...){
@@ -219,9 +219,8 @@ coef.sam <- function(object, ...){
 
 ##' Print samcoef object 
 ##' @method print samcoef 
-##' @param  x ...
+##' @param  x samcoef object as returned from the \code{\link{coef.sam}} function
 ##' @param  ... extra arguments
-##' @details ...
 ##' @export
 print.samcoef<-function(x, ...){
   y<-as.vector(x)
@@ -232,7 +231,7 @@ print.samcoef<-function(x, ...){
 
 ##' Extract number of observations from sam object 
 ##' @method nobs sam 
-##' @param object sam fitted object (result from sam.fit)
+##' @param object sam fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param ... extra arguments
 ##' @importFrom stats nobs
 ##' @details ...
@@ -243,9 +242,10 @@ nobs.sam<-function(object, ...){
 
 ##' Extract residuals from sam object 
 ##' @method residuals sam 
-##' @param object sam fitted object (result from sam.fit)
+##' @param object sam fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param discrete logical if model contain discrete observations  
 ##' @param ... extra arguments for TMB's oneStepPredict
+##' @details one-observation-ahead quantile residuals are calculated
 ##' @importFrom stats residuals
 ##' @importFrom TMB oneStepPredict
 ##' @details ...
@@ -272,9 +272,9 @@ residuals.sam<-function(object, discrete=FALSE, ...){
 
 ##' Summary of sam object 
 ##' @method summary sam 
-##' @param object sam fitted object (result from sam.fit)
+##' @param object sam fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param ... extra arguments 
-##' @details ...
+##' @details summary table containing recruits, SSB, and Fbar
 ##' @export
 summary.sam<-function(object, ...){
   dots<-list(...)  
@@ -293,13 +293,13 @@ summary.sam<-function(object, ...){
 
 ##' Simulate from a sam object 
 ##' @method simulate sam 
-##' @param object sam fitted object (result from sam.fit)
+##' @param object sam fitted object as returned from the \code{\link{sam.fit}} function
 ##' @param nsim number of response lists to simulate. Defaults to 1.
 ##' @param seed random number seed
 ##' @param full.data logical, should each inner list contain a full list of data. Defaults to TRUE  
 ##' @param ... extra arguments
 ##' @importFrom stats simulate
-##' @details ...
+##' @details simulates data sets from the model fitted and conditioned on the random effects estimated 
 ##' @return returns a list of lists. The outer list has length \code{nsim}. Each inner list contains simulated values of \code{logF}, \code{logN}, and \code{obs} with dimensions equal to those parameters.
 ##' @export
 simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, ...){
