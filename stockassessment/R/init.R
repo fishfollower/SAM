@@ -27,7 +27,26 @@ defpar <- function(dat,conf){
                            }else{numeric(0)}
   ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(ret$logitReleaseSurvival))
                         }else{numeric(0)}
+  
+  #ret$logW= matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
+  if(conf$corFlag ==3 ){
+    ret$sepFalpha=rep(0,max(conf$keyLogFsta)+1)
+    ret$sepFlogitRho = rep(1,2)
+    ret$sepFlogSd = rep(-1,2)
+    ret$logSdLogFsta = numeric(0)
+    ret$itrans_rho = numeric(0)
+
+    if(conf$corFlag==3){
+      ret$logSdLogFsta = numeric(0)
+    }
+  }else{
+    ret$sepFalpha=numeric(0)
+    ret$sepFlogitRho = numeric(0)
+    ret$sepFlogSd = numeric(0)
+    
+  }
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
+  
   return(ret)
 }

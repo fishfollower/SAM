@@ -69,7 +69,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   if(missing(nextssb)) nextssb <-rep(NA,ns)
   if(missing(landval)) landval <-rep(NA,ns)  
   if(missing(cwF)) cwF <-rep(NA,ns)  
-        
+
   if(!all(rowSums(!is.na(cbind(fscale, catchval, catchval.exact, fval, nextssb, landval, cwF)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
@@ -86,7 +86,6 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     customSel <- customSel/mean(customSel[fromto[1]:fromto[2]])
   }
    
-    
   getF <- function(x, allowSelOverwrite=FALSE){
     idx <- fit$conf$keyLogFsta[1,]+1
     nsize <- length(idx)
@@ -167,7 +166,18 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     }
     cov <- matrix(0,nrow=nN+nF,ncol=nN+nF)
     cov[1:nN,1:nN] <- diag(sdN^2)
-    cov[nN+1:nF,nN+1:nF] <- (sdF%*%t(sdF))*corr
+    
+    if(fit$conf$corFlag <3){
+      cov[nN+1:nF,nN+1:nF] <- (sdF%*%t(sdF))*corr
+    }else{
+      if(fit$conf$corFlag ==3){
+        sdU <- exp(cof[names(cof)=="sepFlogSd"][1])
+        sdV <- exp(cof[names(cof)=="sepFlogSd"][2])
+        
+        diag(cov[nN+1:(nF-1),nN+1:(nF-1)]) <- sdU^2
+        cov[nN+nF,nN+nF] <- sdV^2
+      }
+    }
     cov
   }
     
@@ -286,12 +296,46 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
 
     sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
     if(i!=0){
+      cof <- coef(fit)
       if(deterministic){procVar<-procVar*0}
       if(!is.null(overwriteSelYears)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
       if(!is.null(customSel)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
-      sim <- sim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
+      
+      if(fit$conf$corFlag <3){
+        sim <- sim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
+      }else if(fit$conf$corFlag ==3){
+        k<-fit$conf$keyLogFsta[1,]
+        k <- unique(k[k >= 0] + 1)
+        nF <- length(k)
+        simTmp <- rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
+        rhoF = 2/(1 + exp(-2*cof[names(cof)=="sepFlogitRho"])) -1
+        sepFalpha = cof[names(cof)=="sepFalpha"]
+        for(jj in 1:nosim){
+          #Calculates previous U and V.
+          V = mean(sim[jj,(dim(sim)[2]-nF+1):(dim(sim)[2])]) 
+          U = sim[jj,(dim(sim)[2]-nF+1):(dim(sim)[2]-1)] -V   
+          
+          #Extract new contributions to U and V
+          Uepsilon = simTmp[jj,(dim(simTmp)[2]-nF+1):(dim(simTmp)[2]-1)]
+          Vepsilon = simTmp[jj,dim(simTmp)[2]]
+          
+          #Calculates updated U and V
+          Unew = rhoF[1]*U + Uepsilon+ sepFalpha[1:(length(sepFalpha)-1)] 
+          Vnew = rhoF[2]*V + Vepsilon+ sepFalpha[length(sepFalpha)]
+          
+          #Calculate F based on U and V
+          sim[jj,(dim(simTmp)[2]-nF+1):(dim(simTmp)[2]-1)] = Unew + Vnew
+          sim[jj,dim(simTmp)[2]] =  -sum(Unew) + Vnew #subtract sum(Unew) since U sum to 0 over all ages
+        
+          #Update process for N
+          sim[jj,1:(dim(simTmp)[2]-nF)] = sim[jj,1:(dim(simTmp)[2]-nF)]   + simTmp[jj,1:(dim(simTmp)[2]-nF)] #Simulated N is not affected by the separable structure of F
+        }
+      }else{
+        stop("forcast not implemented for the given corflag")
+      }
     }
     
+ 
     if(!is.na(fscale[i+1])){
       sim<-t(apply(sim, 1, scaleF, scale=fscale[i+1]))    
     }

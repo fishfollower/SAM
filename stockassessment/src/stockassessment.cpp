@@ -109,6 +109,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
   PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
 
+  PARAMETER_VECTOR(sepFalpha); paraset.sepFalpha=sepFalpha;    
+  PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
+  PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
+  
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
@@ -129,9 +133,7 @@ Type objective_function<Type>::operator() ()
   } 
 
   ans += nllF(confset, paraset, logF, keep, this);
-
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
-
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
   return ans;
 }
