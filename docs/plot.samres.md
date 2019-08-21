@@ -24,7 +24,7 @@ Argument      |Description
 ## Details
 
 
- ...
+ In the "bubble" type red indicate negative residuals and blue positive. The area of the circles scales with the absolute size of the residuals.
 
 
 ## Examples

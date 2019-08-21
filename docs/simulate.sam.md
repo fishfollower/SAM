@@ -18,7 +18,7 @@ list(list("simulate"), list("sam"))(object, nsim = 1, seed = NULL,
 
 Argument      |Description
 ------------- |----------------
-```object```     |     sam fitted object (result from sam.fit)
+```object```     |     sam fitted object as returned from the [`sam.fit`](sam.fit.html) function
 ```nsim```     |     number of response lists to simulate. Defaults to 1.
 ```seed```     |     random number seed
 ```full.data```     |     logical, should each inner list contain a full list of data. Defaults to TRUE
@@ -27,7 +27,7 @@ Argument      |Description
 ## Details
 
 
- ...
+ simulates data sets from the model fitted and conditioned on the random effects estimated
 
 
 ## Value

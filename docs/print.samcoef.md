@@ -17,12 +17,6 @@ list(list("print"), list("samcoef"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     ...
+```x```     |     samcoef object as returned from the [`coef.sam`](coef.sam.html) function
 ```...```     |     extra arguments
-
-## Details
-
-
- ...
-
 

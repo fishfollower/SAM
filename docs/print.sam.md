@@ -17,12 +17,12 @@ list(list("print"), list("sam"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     ...
+```x```     |     the fitted object as returned from the [`sam.fit`](sam.fit.html) function
 ```...```     |     extra arguments
 
 ## Details
 
 
- ...
+ prints the log-likelihood and the main convergence criteria
 
 

@@ -17,13 +17,15 @@ list(list("residuals"), list("sam"))(object, discrete = FALSE, ...)
 
 Argument      |Description
 ------------- |----------------
-```object```     |     sam fitted object (result from sam.fit)
+```object```     |     sam fitted object as returned from the [`sam.fit`](sam.fit.html) function
 ```discrete```     |     logical if model contain discrete observations
 ```...```     |     extra arguments for TMB's oneStepPredict
 
 ## Details
 
 
+ one-observation-ahead quantile residuals are calculated
+ 
  ...
 
 

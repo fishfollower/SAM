@@ -17,7 +17,7 @@ procres(fit, map = fit$obj$env$map, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     the fitted object as returned from the sam.fit function
+```fit```     |     the fitted object as returned from the [`sam.fit`](sam.fit.html) function
 ```map```     |     map from original fit
 ```...```     |     extra arguments (not currently used)
 
