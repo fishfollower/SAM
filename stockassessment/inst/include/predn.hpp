@@ -1,6 +1,6 @@
 
 template <class Type>
-vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, int i){
+vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, int i, bool overwritePlusGroup=false){
   int stateDimN=logN.dim[0];
 
   vector<Type> predN(stateDimN); 
@@ -40,10 +40,13 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     }else{
       predN(j)=logN(j-1,i-1)-dat.natMor(i-1,j-1); 
     }
-  }  
-  if(conf.maxAgePlusGroup==1){
-    predN(stateDimN-1)=log(exp(logN(stateDimN-2,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-2),i-1))-dat.natMor(i-1,stateDimN-2))+
-                           exp(logN(stateDimN-1,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-1),i-1))-dat.natMor(i-1,stateDimN-1))); 
+  }
+  if(overwritePlusGroup==false){
+    if(conf.maxAgePlusGroup==1){
+      predN(stateDimN-1)=log(exp(logN(stateDimN-2,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-2),i-1))-dat.natMor(i-1,stateDimN-2))+
+                             exp(logN(stateDimN-1,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-1),i-1))-dat.natMor(i-1,stateDimN-1))); 
+    }
   }
   return predN;  
 }
+
