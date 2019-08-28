@@ -35,7 +35,7 @@ defcon<-function(dat){
   ret <- list()
   ret$minAge <- minAge
   ret$maxAge <- maxAge  
-  ret$maxAgePlusGroup <- 1
+  ret$maxAgePlusGroup <- as.integer(ages[,2]==max(ages[,2], na.rm=TRUE))
   x <- matrix(0, nrow=nFleets, ncol=nAges)
   lastMax <- 0
   for(i in 1:nrow(x)){
@@ -154,7 +154,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt<-list()
     txt$minAge <- "The minimium age class in the assessment"
     txt$maxAge <- "The maximum age class in the assessment"
-    txt$maxAgePlusGroup <- "Is last age group considered a plus group (1 yes, or 0 no)." 
+    txt$maxAgePlusGroup <- "Is last age group considered a plus group for each fleet (1 yes, or 0 no)." 
     txt$keyLogFsta <- "Coupling of the fishing mortality states (nomally only first row is used)."
     txt$corFlag <- "Correlation of fishing mortality across ages (0 independent, 1 compound symmetry, 2 AR(1), 3 separable AR(1)."
     txt$keyLogFpar <- "Coupling of the survey catchability parameters (nomally first row is not used, as that is covered by fishing mortality)."

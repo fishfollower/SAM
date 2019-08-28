@@ -122,7 +122,7 @@ dataSet(SEXP x) {
 struct confSet{
   int minAge;
   int maxAge;
-  int maxAgePlusGroup;
+  vector<int> maxAgePlusGroup;
   array<int> keyLogFsta;
   int corFlag;
   array<int> keyLogFpar;
@@ -152,7 +152,7 @@ struct confSet{
     using tmbutils::asArray;
     minAge = (int)*REAL(getListElement(x,"minAge"));
     maxAge = (int)*REAL(getListElement(x,"maxAge"));
-    maxAgePlusGroup = (int)*REAL(getListElement(x,"maxAgePlusGroup"));
+    maxAgePlusGroup = asVector<int>(getListElement(x,"maxAgePlusGroup"));
     keyLogFsta = asArray<int>(getListElement(x,"keyLogFsta"));
     corFlag = (int)*REAL(getListElement(x,"corFlag"));
     keyLogFpar = asArray<int>(getListElement(x,"keyLogFpar"));

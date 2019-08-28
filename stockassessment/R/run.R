@@ -46,6 +46,11 @@
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
 sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, ...){
+  if(length(conf$maxAgePlusGroup)==1){
+    tmp <- conf$maxAgePlusGroup    
+    conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
+    conf$maxAgePlusGroup[1] <- tmp
+  }
   definit <- defpar(data, conf)
   if(!identical(parameters,relist(unlist(parameters), skeleton=definit))){
     warning("Initial values are not consistent, so running with default init values from defpar()")

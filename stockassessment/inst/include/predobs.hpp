@@ -15,7 +15,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   }
 
   // Calculate predicted observations
-  int f, ft, a, y, yy, scaleIdx;  // a is no longer just ages, but an attribute (e.g. age or length) 
+  int f, ft, a, y, yy, scaleIdx, ma, pg;  // a is no longer just ages, but an attribute (e.g. age or length) 
   int minYear=dat.aux(0,0);
   Type zz=Type(0);
   for(int i=0;i<dat.nobs;i++){
@@ -23,6 +23,8 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     f=dat.aux(i,1);
     ft=dat.fleetTypes(f-1);
     a=dat.aux(i,2)-conf.minAge;
+    if(dat.aux(i,2)==dat.maxAgePerFleet(f-1)){ma=1;}else{ma=0;}
+    pg=conf.maxAgePlusGroup(f-1);
     if(ft==3){a=0;}
     if(ft<3){ 
       zz = dat.natMor(y,a);
@@ -34,6 +36,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     switch(ft){
       case 0:
         pred(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
+	if((pg==0)&&(ma==1)){
+          error("Last age class in catches need to be treated as plusgroup");
+	}
         if(conf.keyLogFsta(f-1,a)>(-1)){
           pred(i)+=logF(conf.keyLogFsta(0,a),y);
         }
@@ -54,9 +59,21 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   	error("Unknown fleet code");
         return(0);
       break;
-  
+      
       case 2:
-        pred(i)=logN(a,y)-zz*dat.sampleTimes(f-1);
+	if((ma==1) && (pg==1)){
+	  pred(i)=0;
+	  for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
+	    zz = dat.natMor(y,aa);
+            if(conf.keyLogFsta(0,aa)>(-1)){
+              zz+=exp(logF(conf.keyLogFsta(0,aa),y));
+	    }
+	    pred(i)+=exp(logN(aa,y)-zz*dat.sampleTimes(f-1));
+	  }
+	  pred(i)=log(pred(i));
+	}else{
+          pred(i)=logN(a,y)-zz*dat.sampleTimes(f-1);
+	}
         if(conf.keyQpow(f-1,a)>(-1)){
           pred(i)*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
         }
