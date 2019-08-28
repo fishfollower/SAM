@@ -61,6 +61,10 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
       
       case 2:
+ 	if((pg==0)&&(a==(conf.maxAge-conf.minAge))){
+          error("When maximum age for the fleet is the same as maximum age if the assessment it must be treated as a plusgroup");
+  	}
+
 	if((ma==1) && (pg==1)){
 	  pred(i)=0;
 	  for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
