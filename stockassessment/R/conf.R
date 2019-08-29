@@ -171,7 +171,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$keyScaledYears <- "A vector of the years where catch scaling is applied."
     txt$keyParScaledYA <- "A matrix specifying the couplings of scale parameters (nrow = no scaled years, ncols = no ages)."
     txt$fbarRange <- "lowest and higest age included in Fbar"
-    txt$keyBiomassTreat <- "To be defined only if a biomass survey is used (0 SSB index, 1 catch index, and 2 FSB index)."
+    txt$keyBiomassTreat <- "To be defined only if a biomass survey is used (0 SSB index, 1 catch index, 2 FSB index, 3 total catch, 4 total landings and 5 TSB index)."
     txt$obsLikelihoodFlag <- "Option for observational likelihood"
     txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
     txt$fracMixF <- "The fraction of t(3) distribution used in logF increment distribution" 
