@@ -53,8 +53,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
 
   catchFleets <- which(fit$data$fleetType==0)
   noCatchFleets <- length(catchFleets)  
-  idxFbyFleet <- apply(fit$conf$keyLogFsta[catchFleets,,drop=FALSE], 1, function(x)unique(x[x>-.5])+nrow(fit$rep$nvar)+1) 
-    
+  idxFbyFleet <- lapply(catchFleets, function(i){x<-fit$conf$keyLogFsta[i, , drop = FALSE]; unique(x[x > -0.5]) + nrow(fit$rep$nvar) + 1})
   resample <- function(x, ...){
     if(deterministic){
       ret <- mean(x)
