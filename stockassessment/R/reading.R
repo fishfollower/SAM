@@ -260,23 +260,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     }else{
       if("cov"%in%names(attributes(m))){
         weigthTmp = do.call(rbind,lapply(attr(m,"cov"),diag))
-        weight<<-c(weight,as.vector(weigthTmp))
+        weight<<-c(weight,1/as.vector(weigthTmp))
       }else{
-        if("cov-weight"%in%names(attributes(m))){
-          weigthTmp = do.call(rbind,lapply(attr(m,"cov-weight"),diag))
-          weight<<-c(weight,1/as.vector(weigthTmp))
-        }
-      else{
-          weight<<-c(weight,rep(NA,length(year)))
-        }
+        weight<<-c(weight,rep(NA,length(year)))
       }
     }
     if("cov"%in%names(attributes(m))){
       attr(m,"cor") <- lapply(attr(m,"cov"),cov2cor)
     }
-    if("cov-weight"%in%names(attributes(m))){
-      attr(m,"cor")<-lapply(attr(m,"cov-weight"),cov2cor)
-    }    
     if("cor"%in%names(attributes(m))){
       thisCorList <- attr(m,"cor")
       whichCorOK <- which(unlist(lapply(thisCorList, function(x)!any(is.na(x)))))

@@ -59,8 +59,8 @@ par<-defpar(dat,conf)
 fit2<-sam.fit(dat,conf,par)
 
 
-## assign same covariance
-estcov<-fit$rep$obsCov[[3]]
+## assign scaled cov. Here the corelation is fixed and inverse variance is used as relative weight.
+estcov<- 2*fit$rep$obsCov[[3]] 
 surveys<-read.ices("survey.dat")
 attr(surveys[[2]], "cov") <- lapply(1:23, function(i)estcov)
 
@@ -78,19 +78,15 @@ dat<-setup.sam.data(surveys=surveys,
 
 conf<-defcon(dat)
 conf$fbarRange <- c(2,4)
-conf$fixVarToWeight <- 1
 conf$keyVarObs[3,] = c(2,2,2,2,-1,-1)
 conf$obsCorStruct[] <- c("ID","ID","ID")
 par<-defpar(dat,conf)
+fit3<-sam.fit(dat,conf,par)
 
-par$logSdLogObs = c(-0.35,-0.35,0)
-map = list(logSdLogObs = as.factor(c(0,1,NA)))
-fit3<-sam.fit(dat,conf,par,map = map)
-
-## assign same with cov-weight. Here the corelation is fixed, but inverse variance is used as relative weight only.
+## assign same covariance
 estcov<-fit$rep$obsCov[[3]]
 surveys<-read.ices("survey.dat")
-attr(surveys[[2]], "cov-weight") <- lapply(1:23, function(i)estcov)
+attr(surveys[[2]], "cov") <- lapply(1:23, function(i)estcov)
 
 dat<-setup.sam.data(surveys=surveys,
                     residual.fleet=cn, 
@@ -103,13 +99,17 @@ dat<-setup.sam.data(surveys=surveys,
                     prop.m=pm, 
                     natural.mortality=nm, 
                     land.frac=lf)
+dat$weight = 1/dat$weight
 
 conf<-defcon(dat)
+conf$fixVarToWeight <- 1
 conf$fbarRange <- c(2,4)
 conf$keyVarObs[3,] = c(2,2,2,2,-1,-1)
 conf$obsCorStruct[] <-  c("ID","ID","ID") 
 par<-defpar(dat,conf)
-fit4<-sam.fit(dat,conf,par)
+par$logSdLogObs = c(-0.35,-0.35,0)
+map = list(logSdLogObs = as.factor(c(0,1,NA)))
+fit4<-sam.fit(dat,conf,par,map = map)
 
 sink("res.out")
 print(modeltable(c("ESTMATED"=fit, "ASSIGNEDcor"=fit2,  "ASSIGNEDcov"=fit3,  "ASSIGNEDcov-weight"=fit4)))
