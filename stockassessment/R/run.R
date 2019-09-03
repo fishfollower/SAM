@@ -57,6 +57,15 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     parameters<-definit
   }
   data<-clean.void.catches(data,conf)
+  
+  confTmp = defcon(data)
+  for(i in 1:length(confTmp)){
+    if(!names(confTmp)[i] %in% names(conf)){
+      conf[[length(conf)+1]] = confTmp[[i]]
+      names(conf)[length(conf)] = names(confTmp)[i]
+    }
+  }
+  
   tmball <- c(data, conf, simFlag=as.numeric(sim.condRE))
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))

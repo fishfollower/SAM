@@ -227,66 +227,70 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
           vector<Type> currentVar=nllVec(f).cov().diagonal();
           vector<Type> sqrtW(currentVar.size());
 
-  	  switch(conf.obsLikelihoodFlag(f)){
-	  case 0: // (LN) log-Normal distribution
-            
-            for(int idxV=0; idxV<currentVar.size(); ++idxV){
-              if(isNA(dat.weight(idxfrom+idxV))){
-                sqrtW(idxV)=Type(1.0);
-              }else{
-                if(conf.fixVarToWeight==1){ 
-                  sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
+  	      switch(conf.obsLikelihoodFlag(f)){
+    	      case 0: // (LN) log-Normal distribution
+              
+              for(int idxV=0; idxV<currentVar.size(); ++idxV){
+                if(isNA(dat.weight(idxfrom+idxV))){
+                  sqrtW(idxV)=Type(1.0);
+                  int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
+                  if(conf.meanVarObsLink(f,a)>(-1)){
+                    sqrtW(idxV) = sqrt(log(exp(par.logSdLogObs(conf.keyVarObs(f,a))) *exp(predObs(idxfrom+idxV)*(par.meanVarObs(conf.meanVarObsLink(f,a))-2)) +1)/currentVar(idxV));
+                  }
                 }else{
-                  sqrtW(idxV)=sqrt(Type(1)/dat.weight(idxfrom+idxV));
+                  if(conf.fixVarToWeight==1){
+                    sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
+                  }else{
+                    sqrtW(idxV)=sqrt(Type(1)/dat.weight(idxfrom+idxV));
+                  }
                 }
               }
-            }
-            if(isNAINT(dat.idxCor(f,y))){
-  	      nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
-              nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
-  	      SIMULATE_F(of){
-	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
-	      }
-	    }else{
-	      int thisdim=currentVar.size();
-	      matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));  
-	      matrix<Type> thiscov(thisdim,thisdim);
-	      for(int r=0;r<thisdim;++r){
-	        for(int c=0;c<thisdim;++c){
-	          thiscov(r,c)=thiscor(r,c)*sqrt(currentVar(r)*currentVar(c));
+              if(isNAINT(dat.idxCor(f,y))){
+      	        nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
+                nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+      	        SIMULATE_F(of){
+    	            dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+  	            }
+  	          }else{
+  	            int thisdim=currentVar.size();
+  	            matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
+  	            matrix<Type> thiscov(thisdim,thisdim);
+  	            for(int r=0;r<thisdim;++r){
+  	              for(int c=0;c<thisdim;++c){
+  	                thiscov(r,c)=thiscor(r,c)*sqrt(currentVar(r)*currentVar(c));
+  	              }
+  	            }
+  	            MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
+  	            nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));
+  	            nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+  	            SIMULATE_F(of){
+  	              dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
+  	            }
+              }
+  	          break;
+  	       case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
+              nll +=  nllVec(f)(addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
+              nll += log(log2proportion((vector<Type>)dat.logobs.segment(idxfrom,idxlength))).sum();
+              nll -= dnorm(log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength))),
+               	         log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+                        exp(par.logSdLogTotalObs(totalParKey++)),true);
+              nll += log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength)));
+              nll -= log(abs(jacobianDet((vector<Type>)dat.logobs.segment(idxfrom,idxlength).exp())));
+                    nll -= dat.logobs.segment(idxfrom,idxlength).sum();
+              SIMULATE_F(of){
+                vector<Type> logProb(idxlength);
+                logProb.setZero();
+                logProb.segment(0,idxlength-1) = addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
+                Type logDenom = logExpSum(logProb);
+                logProb -= logDenom;
+                Type logTotal = rnorm(log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+              	    exp(par.logSdLogTotalObs(totalParKey++)));
+                dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal;
+              }
+              break;
+  	        default:
+  	          error("Unknown obsLikelihoodFlag");
 	        }
-	      } 
-	      MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
-	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
-	      nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
-	      SIMULATE_F(of){
-	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
-	      }
-            }
-	    break;
-	  case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
-	    nll +=  nllVec(f)(addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
-	    nll += log(log2proportion((vector<Type>)dat.logobs.segment(idxfrom,idxlength))).sum();
-	    nll -= dnorm(log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength))),
-	     	         log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-	   	         exp(par.logSdLogTotalObs(totalParKey++)),true);
-	    nll += log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength)));
-	    nll -= log(abs(jacobianDet((vector<Type>)dat.logobs.segment(idxfrom,idxlength).exp())));
-            nll -= dat.logobs.segment(idxfrom,idxlength).sum();
-	    SIMULATE_F(of){
-	      vector<Type> logProb(idxlength);
-	      logProb.setZero();
-	      logProb.segment(0,idxlength-1) = addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
-	      Type logDenom = logExpSum(logProb);
-	      logProb -= logDenom;
-	      Type logTotal = rnorm(log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-				    exp(par.logSdLogTotalObs(totalParKey++)));
-	      dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
-	    }
-	    break;
-	  default:
-	    error("Unknown obsLikelihoodFlag");
-	  }
         }
       }else{ //dat.fleetTypes(f)==5
         if(dat.fleetTypes(f)==5){
@@ -294,7 +298,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
             for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
               nll += -keep(i)*dnbinom(dat.logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
               SIMULATE_F(of){
-	        dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
+	              dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
               }
             }
           }
@@ -314,7 +318,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }  
                 nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
                 SIMULATE_F(of){
-  	          dat.logobs(i) = rnorm(predObs(i),sd);
+  	              dat.logobs(i) = rnorm(predObs(i),sd);
                 }
               }
             }    
