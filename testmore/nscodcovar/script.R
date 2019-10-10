@@ -112,5 +112,5 @@ map = list(logSdLogObs = as.factor(c(0,1,NA)))
 fit4<-sam.fit(dat,conf,par,map = map)
 
 sink("res.out")
-print(modeltable(c("ESTMATED"=fit, "ASSIGNEDcor"=fit2,  "ASSIGNEDcov"=fit3,  "ASSIGNEDcov-weight"=fit4)))
+print(modeltable(c("ESTMATED"=fit, "ASSIGNEDcor"=fit2,  "ASSIGNEDcov-weight"=fit3,  "ASSIGNEDcov"=fit4)))
 sink()
