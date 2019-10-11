@@ -5,7 +5,7 @@
 \title{Simulate from a sam object}
 \usage{
 \method{simulate}{sam}(object, nsim = 1, seed = NULL,
-  full.data = TRUE, ...)
+  full.data = TRUE, keep.process = FALSE, ...)
 }
 \arguments{
 \item{object}{sam fitted object as returned from the \code{\link{sam.fit}} function}

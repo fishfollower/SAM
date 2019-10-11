@@ -27,7 +27,7 @@ Type jacobiUVtrans( array<Type> logF){
 }
 
 template <class Type>
-Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0; 
   int stateDimF=logF.dim[0];
@@ -41,7 +41,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
 
   
   if(conf.corFlag==3){
-    return(nllFseparable(conf, par, logF, keep ,of));
+    return(nllFseparable(dat, conf, par, logF, keep ,of));
   }
   
   if(conf.corFlag==0){
@@ -90,11 +90,26 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   matrix<Type> LinvF = LF.inverse();
 
   for(int i=1;i<timeSteps;i++){
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));    
-    nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
-    SIMULATE_F(of){
-      if(conf.simFlag==0){
-        logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
+
+    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+      // Forecast
+      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
+      Type timeScale = dat.forecast.forecastCalculatedLogSdCorrection(forecastIndex);
+
+      nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
+
+      SIMULATE_F(of){
+	if(dat.forecast.simFlag(0) == 0){
+	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
+	}
+      }
+    }else{
+      nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+      SIMULATE_F(of){
+	if(conf.simFlag(0)==0){
+	  logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+	}
       }
     }
   }
@@ -113,7 +128,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
 
 
 template <class Type>
-Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
@@ -137,11 +152,21 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
   vector<Type> logV(timeSteps);
   logV.setZero();
   for(int i=0; i<timeSteps; ++i){
-    logV(i)=(logF).col(i).mean();
-  }
-  for(int i=0; i<timeSteps; ++i){
-    for(int j=0; j<stateDimF-1; ++j){
-      logU(i,j)=logF(j,i)-logV(i);
+    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+      Rf_warning("Forecast with separable F is experimental");
+      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
+      vector<Type> logFtmp = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex);
+      logV(i)=(logFtmp).mean();
+      for(int j=0; j<stateDimF-1; ++j){
+	logU(i,j)=logFtmp(j)-logV(i);
+      }
+    }else{
+      logV(i)=(logF).col(i).mean();
+      // }
+      // for(int i=0; i<timeSteps; ++i){
+      for(int j=0; j<stateDimF-1; ++j){
+	logU(i,j)=logF(j,i)-logV(i);
+      }
     }
   }
 
@@ -153,22 +178,22 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
     nll += nldens(diff);
 
     SIMULATE_F(of){
-      if(conf.simFlag==0){
-        vector<Type> uu = nldens.simulate();
-        Type sumUZero = 0;
-        for(int j=0; j<stateDimF-1; ++j){
-            logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
-            logF(j,y) = logU(y,j);
-            sumUZero += logU(y,j);
-        }
-        logF(stateDimF-1,y) = -sumUZero;
+      if(conf.simFlag(0)==0){
+	vector<Type> uu = nldens.simulate();
+	Type sumUZero = 0;
+	for(int j=0; j<stateDimF-1; ++j){
+	  logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
+	  logF(j,y) = logU(y,j);
+	  sumUZero += logU(y,j);
+	}
+	logF(stateDimF-1,y) = -sumUZero;
       }
     }
   }
   for(int y=1; y<timeSteps; ++y){
     nll += -dnorm(logV(y),rhoV* logV(y-1) - par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
     SIMULATE_F(of){
-      if(conf.simFlag==0){
+      if(conf.simFlag(0)==0){
         logV(y)=rhoV*logV(y-1)+ rnorm( Type(0) , sdV(0))+ par.sepFalpha(par.sepFalpha.size()-1); 
         for(int j=0; j<stateDimF; ++j){
           logF(j,y) =  logF(j,y)+ logV(y) ;

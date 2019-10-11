@@ -1,3 +1,16 @@
+template <class Type>
+struct forecastSet;
+
+template <class Type>
+struct dataSet;
+
+struct confSet;
+
+template <class Type>
+struct paraSet;
+
+
+
 #define REPORT_F(name,F)					\
 if(isDouble<Type>::value && F->current_parallel_region<0) {     \
   defineVar(install(#name),                                     \
@@ -9,6 +22,9 @@ if(isDouble<Type>::value && F->current_parallel_region<0) {     \
 //This function returns a vector with matrices based on a list of matrices from R
 template<class Type>
 struct listMatrixFromR : vector<matrix<Type> > {
+
+  listMatrixFromR() : vector<matrix<Type> >() {};
+  listMatrixFromR(int n) : vector<matrix<Type> >(n) {};
   listMatrixFromR(SEXP x){ 
     (*this).resize(LENGTH(x));
     for(int i=0; i<LENGTH(x); i++){
@@ -16,7 +32,30 @@ struct listMatrixFromR : vector<matrix<Type> > {
       (*this)(i) = asMatrix<Type>(sm);
     }
   }
+
+  template<class T>
+  listMatrixFromR<T> cast() const {
+    int n = (*this).size();
+    listMatrixFromR<T> d(n);
+    for(int i = 0; i < n; ++i){
+      matrix<T> tmp = (*this)(i).template cast<T>();
+      d(i) = tmp;
+    }
+    return d;
+  }
+
+  listMatrixFromR<Type>& operator=(const listMatrixFromR<Type>& rhs) {
+    (*this).resize(rhs.size());
+    for(int i = 0; i < rhs.size(); ++i){
+      matrix<Type> tmp = rhs(i);
+      (*this)(i) = tmp;
+    }
+    return *this;
+  }
+
+  
 };
+
 
 #define ADREPORT_F(name,F) F->reportvector.push(name,#name);
 
@@ -31,6 +70,183 @@ bool isNA(Type x){
 bool isNAINT(int x){
   return NA_INTEGER==x;
 }
+
+
+template <class Type>
+struct forecastSet {
+
+  enum FModelType {
+		   asFModel,
+		   useFscale,
+		   useFval,
+		   useCatchval,
+		   useNextssb,
+		   useLandval,
+		   findMSY
+  };
+  enum recModelType {
+		   asRecModel,
+		   useIID
+  };
+
+  enum FSdTimeScaleModel {
+		      rwScale,
+		      oneScale,
+		      zeroScale		      
+  };
+  
+  int nYears;
+  vector<int> aveYears;
+  vector<Type> forecastYear;
+  vector<FModelType> FModel;
+  vector<Type> target;
+  vector<Type> selectivity;
+  matrix<Type> forecastCalculatedMedian;
+  vector<Type> forecastCalculatedLogSdCorrection;
+  vector<recModelType> recModel;
+  Type logRecruitmentMedian;
+  Type logRecruitmentVar;
+  vector<FSdTimeScaleModel> fsdTimeScaleModel;
+  vector<int> simFlag;
+
+  void calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par); // Defined after dataSet and confSet
+  
+  forecastSet() : nYears(0) {};
+  
+  forecastSet(SEXP x){
+    // If nYears is NULL or 0; only set nYears to 0 -> no forecast
+    if(Rf_isNull(getListElement(x,"nYears")) ||
+       (int)*REAL(getListElement(x,"nYears")) == 0){
+      nYears = 0;
+    }else{
+      using tmbutils::asArray;
+      nYears = (int)*REAL(getListElement(x,"nYears"));
+      aveYears = asVector<int>(getListElement(x,"aveYears"));
+      forecastYear = asVector<Type>(getListElement(x,"forecastYear"));
+      vector<int> FModelTmp = asVector<int>(getListElement(x,"FModel"));
+      FModel = vector<FModelType>(FModelTmp.size());
+      for(int i = 0; i < FModel.size(); ++i)
+	FModel(i) = static_cast<FModelType>(FModelTmp(i));
+      // Fval = asVector<Type>(getListElement(x,"Fval"));
+      // Fscale = asVector<Type>(getListElement(x,"Fscale"));
+      target = asVector<Type>(getListElement(x,"target"));
+      selectivity = asVector<Type>(getListElement(x,"selectivity"));
+      vector<int> recModelTmp = asVector<int>(getListElement(x,"recModel"));
+      recModel = vector<recModelType>(recModelTmp.size());
+      for(int i = 0; i < recModel.size(); ++i)
+	recModel(i) = static_cast<recModelType>(recModelTmp(i));
+      logRecruitmentMedian = (Type)*REAL(getListElement(x,"logRecruitmentMedian"));
+      logRecruitmentVar = (Type)*REAL(getListElement(x,"logRecruitmentVar"));
+      vector<int> fsdTimeScaleModelTmp = asVector<int>(getListElement(x,"fsdTimeScaleModel"));
+      fsdTimeScaleModel = vector<FSdTimeScaleModel>(fsdTimeScaleModelTmp.size());
+      for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
+	fsdTimeScaleModel(i) = static_cast<FSdTimeScaleModel>(fsdTimeScaleModelTmp(i));
+      simFlag = asVector<int>(getListElement(x,"simFlag"));
+  
+    }
+  };
+
+    forecastSet<Type>& operator=(const forecastSet<Type>& rhs) {
+      nYears = rhs.nYears;
+      if(nYears == 0)
+	return *this;
+      aveYears = rhs.aveYears;
+      forecastYear = rhs.forecastYear;
+      FModel = rhs.FModel;
+      target = rhs.target;
+      selectivity = rhs.selectivity;
+      forecastCalculatedMedian = rhs.forecastCalculatedMedian;
+      forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
+      recModel = rhs.recModel;
+      logRecruitmentMedian = rhs.logRecruitmentMedian;
+      logRecruitmentVar = rhs.logRecruitmentVar;
+      fsdTimeScaleModel = rhs.fsdTimeScaleModel;
+      simFlag = rhs.simFlag;
+      return *this;
+    }
+
+  template<class T>
+  forecastSet<T> cast() const {
+    forecastSet<T> d;
+      d.nYears = nYears;	// int
+      if(nYears == 0)
+	return d;
+	d.aveYears = aveYears;	// <int>
+	d.forecastYear = forecastYear.template cast<T>();
+	// d.FModel = FModel; // <int>
+	d.FModel = vector<typename forecastSet<T>::FModelType>(FModel.size());
+	for(int i = 0; i < FModel.size(); ++i)
+	  d.FModel(i) = static_cast<typename forecastSet<T>::FModelType>((int)FModel(i));
+	d.target = target.template cast<T>();
+	d.selectivity = selectivity.template cast<T>();
+	d.forecastCalculatedMedian = forecastCalculatedMedian.template cast<T>();
+	d.forecastCalculatedLogSdCorrection = forecastCalculatedLogSdCorrection.template cast<T>();
+	// d.recModel = recModel; // <int>
+	d.recModel = vector<typename forecastSet<T>::recModelType>(recModel.size());
+	for(int i = 0; i < recModel.size(); ++i)
+	  d.recModel(i) = static_cast<typename forecastSet<T>::recModelType>((int)recModel(i));
+	d.logRecruitmentMedian = T(logRecruitmentMedian);
+	d.logRecruitmentVar = T(logRecruitmentVar);
+	// d.fsdTimeScaleModel = fsdTimeScaleModel; // <int>
+	d.fsdTimeScaleModel = vector<typename forecastSet<T>::FSdTimeScaleModel>(fsdTimeScaleModel.size());
+	for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
+	  d.fsdTimeScaleModel(i) = static_cast<typename forecastSet<T>::FSdTimeScaleModel>((int)fsdTimeScaleModel(i));
+
+      d.simFlag = simFlag; // <int>
+    return d;    
+  }
+
+};
+
+template<class Type>
+struct referencepointSet {
+
+  int nYears;
+  vector<int> aveYears;
+  vector<int> selYears;
+  vector<Type> Fsequence;
+
+  referencepointSet() : nYears(0) {};
+  
+  referencepointSet(SEXP x){
+    // If nYears is NULL or 0; only set nYears to 0 -> no forecast
+    if(Rf_isNull(getListElement(x,"nYears")) ||
+       (int)*REAL(getListElement(x,"nYears")) == 0){
+      nYears = 0;
+    }else{
+      using tmbutils::asArray;
+      nYears = (int)*REAL(getListElement(x,"nYears"));
+      aveYears = asVector<int>(getListElement(x,"aveYears"));
+      selYears = asVector<int>(getListElement(x,"selYears"));
+      Fsequence = asVector<Type>(getListElement(x,"Fsequence"));
+    }
+  }
+  
+  referencepointSet<Type>& operator=(const referencepointSet<Type>& rhs) {
+    nYears = rhs.nYears;
+    if(nYears == 0)
+      return *this;
+    aveYears = rhs.aveYears;
+    selYears = rhs.selYears;
+    Fsequence = rhs.Fsequence;
+    return *this;
+  }
+
+  template<class T>
+  referencepointSet<T> cast() const {
+    referencepointSet<T> d;
+    d.nYears = nYears;
+    if(nYears == 0)
+      return d;
+    d.aveYears = aveYears;
+    d.selYears = selYears;
+    d.Fsequence = Fsequence.template cast<T>();
+    return d;    
+  }
+  
+
+};
+
 
 template <class Type>
 struct dataSet{
@@ -58,7 +274,10 @@ struct dataSet{
   array<Type> landMeanWeight;
   array<Type> propF;
   array<Type> propM;
-  vector<matrix<Type> > corList;
+  listMatrixFromR<Type> corList;
+  forecastSet<Type> forecast;
+  referencepointSet<Type> referencepoint;
+
 dataSet() {};
 
 dataSet(SEXP x) {
@@ -87,11 +306,13 @@ dataSet(SEXP x) {
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
     corList = listMatrixFromR<Type>(getListElement(x,"corList"));
+    forecast = forecastSet<Type>(getListElement(x,"forecast"));
+    referencepoint = referencepointSet<Type>(getListElement(x,"referencepoint"));
   };
 
   dataSet<Type>& operator=(const dataSet<Type>& rhs) {
     noFleets = rhs.noFleets;
-    fleetTypes = rhs.fleetTypes; 
+    fleetTypes = rhs.fleetTypes;
     sampleTimes = rhs.sampleTimes;
     noYears = rhs.noYears;
     years = rhs.years;
@@ -115,9 +336,132 @@ dataSet(SEXP x) {
     propF = rhs.propF;
     propM = rhs.propM;
     corList = rhs.corList;
+    forecast = rhs.forecast;
+    referencepoint = rhs.referencepoint;
     return *this;
   };
+
+  template<class T>
+  dataSet<T> cast() const {
+    dataSet<T> d;
+    d.noFleets = noFleets; // int
+    d.fleetTypes = fleetTypes; //<int> 
+    d.sampleTimes = sampleTimes.template cast<T>();
+    d.noYears = noYears;	// int
+    d.years = years.template cast<T>();
+    d.minAgePerFleet = minAgePerFleet;//<int> 
+    d.maxAgePerFleet = maxAgePerFleet;//<int> 
+    d.nobs = nobs;// int
+    d.idx1 = idx1;//<int> 
+    d.idx2 = idx2;//<int> 
+    d.idxCor = idxCor;//<int> 
+    d.aux = aux;//<int> 
+    d.logobs = logobs.template cast<T>();
+    d.weight = weight.template cast<T>();
+    // keep = keep;
+    // The array must be resized before copying
+    d.propMat.initZeroArray(propMat.dim);
+    d.propMat = propMat.template cast<T>();
+    d.stockMeanWeight.initZeroArray(stockMeanWeight.dim);
+    d.stockMeanWeight = stockMeanWeight.template cast<T>(); 
+    d.catchMeanWeight.initZeroArray(catchMeanWeight.dim);
+    d.catchMeanWeight = catchMeanWeight.template cast<T>();
+    d.natMor.initZeroArray(natMor.dim);
+    d.natMor = natMor.template cast<T>();
+    d.landFrac.initZeroArray(landFrac.dim);
+    d.landFrac = landFrac.template cast<T>();
+    d.disMeanWeight.initZeroArray(disMeanWeight.dim);
+    d.disMeanWeight = disMeanWeight.template cast<T>();
+    d.landMeanWeight.initZeroArray(landMeanWeight.dim);
+    d.landMeanWeight = landMeanWeight.template cast<T>();
+    d.propF.initZeroArray(propF.dim);
+    d.propF = propF.template cast<T>();
+    d.propM.initZeroArray(propM.dim);
+    d.propM = propM.template cast<T>();
+    d.corList = corList.template cast<T>();
+    d.forecast = forecast.template cast<T>();
+    d.referencepoint = referencepoint.template cast<T>();
+    return d;    
+  }
+  
 };
+
+
+
+
+template <class Type>
+void extendArray(array<Type>& x, int nModelYears, int nForecastYears, vector<int> aveYears, bool keepModelYears = true){
+  vector<int> dim = x.dim;
+  array<Type> tmp((int)keepModelYears*nModelYears+nForecastYears,dim(1));
+  tmp.setZero();
+  vector<Type> ave(dim(1));
+  ave.setZero();
+  Type nave = aveYears.size();
+
+  // Calculate average
+  for(int i = 0; i < aveYears.size(); ++i){
+    if(aveYears(i) < dim(0)){    
+      for(int j = 0; j < dim(1); ++j){
+	ave(j) += x(aveYears(i), j);
+      }
+    }else{
+      nave -= 1.0;
+    }
+  }
+
+  if(nave == 0)
+    Rf_error("ave.years does not cover the data period.");
+  
+  ave /= nave;
+
+  // Insert values in tmp
+  for(int i = 0; i < tmp.dim(0); ++i){
+    for(int j = 0; j < tmp.dim(1); ++j){
+      if(keepModelYears && i < dim(0)){ // Take value from x
+	tmp(i,j) = x(i,j);
+      }else{ // Take value from ave
+	tmp(i,j) = ave(j);
+      }
+    }
+  }
+  // Overwrite x
+  // NOTE: x must be resized first, otherwise x=tmp will not work.
+  x.initZeroArray(tmp.dim);
+  x = tmp;
+  return;
+}
+
+template <class Type>
+void prepareForForecast(dataSet<Type>& dat){
+  int nFYears = dat.forecast.nYears;
+  int nMYears = dat.noYears;
+  if(nFYears == 0)
+    return;
+  vector<int> aveYears = dat.forecast.aveYears;
+  // propMat
+  extendArray(dat.propMat, nMYears, nFYears, aveYears);
+  // stockMeanWeight
+  extendArray(dat.stockMeanWeight, nMYears, nFYears, aveYears);
+  // catchMeanWeight
+  extendArray(dat.catchMeanWeight, nMYears, nFYears, aveYears);
+  // natMor
+  extendArray(dat.natMor, nMYears, nFYears, aveYears);
+  // landFrac
+  extendArray(dat.landFrac, nMYears, nFYears, aveYears);
+  // disMeanWeight
+  extendArray(dat.disMeanWeight, nMYears, nFYears, aveYears);
+  // landMeanWeight
+  extendArray(dat.landMeanWeight, nMYears, nFYears, aveYears);
+  // propF
+  extendArray(dat.propF, nMYears, nFYears, aveYears);
+  // propM
+  extendArray(dat.propM, nMYears, nFYears, aveYears);
+  return;  
+}
+
+
+
+
 
 struct confSet{
   int minAge;
@@ -139,13 +483,14 @@ struct confSet{
   matrix<int> keyParScaledYA;
   vector<int> fbarRange;
   vector<int> keyBiomassTreat;
-  int simFlag; 
+  vector<int> simFlag; 
   int resFlag; 
   vector<int> obsLikelihoodFlag;
   int fixVarToWeight;
   double fracMixF;
   double fracMixN;
   vector<double> fracMixObs;
+  
   confSet() {};
 
   confSet(SEXP x){
@@ -169,7 +514,7 @@ struct confSet{
     keyParScaledYA = asMatrix<int>(getListElement(x,"keyParScaledYA"));
     fbarRange = asVector<int>(getListElement(x,"fbarRange"));
     keyBiomassTreat = asVector<int>(getListElement(x,"keyBiomassTreat"));
-    simFlag = (int)*REAL(getListElement(x,"simFlag"));
+    simFlag = asVector<int>(getListElement(x,"simFlag"));
     resFlag = (int)*REAL(getListElement(x,"resFlag"));
     obsLikelihoodFlag = asVector<int>(getListElement(x,"obsLikelihoodFlag"));
     fixVarToWeight = (int)*REAL(getListElement(x,"fixVarToWeight"));
@@ -219,16 +564,267 @@ struct paraSet{
   vector<Type> logSdLogTotalObs;
   vector<Type> transfIRARdist;
   vector<Type> sigmaObsParUS;
-  vector<Type> rec_loga; 
-  vector<Type> rec_logb; 
+  vector<Type> rec_pars; 
   vector<Type> itrans_rho; 
   vector<Type> logScale;
-  vector<Type> logitReleaseSurvival;   
-  vector<Type> logitRecapturePhi;   
+  vector<Type> logitReleaseSurvival;
+  vector<Type> logitRecapturePhi; 
   vector<Type> sepFalpha;   
   vector<Type> sepFlogitRho;   
   vector<Type> sepFlogSd;   
+
+  Type logFScaleMSY;
+  Type logScaleFmsy;
+  Type logScaleFmax;
+  Type logScaleF01;
+  Type logScaleFcrash;
+  Type logScaleF35;
+  Type logScaleFlim;
+
+  paraSet() {};
+  
+  paraSet(SEXP x){
+    logFpar = asVector<Type>(getListElement(x,"logFpar"));
+    logQpow = asVector<Type>(getListElement(x,"logQpow"));
+    logSdLogFsta = asVector<Type>(getListElement(x,"logSdLogFsta"));
+    logSdLogN = asVector<Type>(getListElement(x,"logSdLogN"));
+    logSdLogObs = asVector<Type>(getListElement(x,"logSdLogObs"));
+    logSdLogTotalObs = asVector<Type>(getListElement(x,"logSdLogTotalObs"));
+    transfIRARdist = asVector<Type>(getListElement(x,"transfIRARdist"));
+    sigmaObsParUS = asVector<Type>(getListElement(x,"sigmaObsParUS"));
+    rec_pars = asVector<Type>(getListElement(x,"rec_pars"));
+    itrans_rho = asVector<Type>(getListElement(x,"itrans_rho"));
+    logScale = asVector<Type>(getListElement(x,"logScale"));
+    logitReleaseSurvival = asVector<Type>(getListElement(x,"logitReleaseSurvival"));
+    logitRecapturePhi = asVector<Type>(getListElement(x,"logitRecapturePhi"));
+    sepFalpha = asVector<Type>(getListElement(x,"sepFalpha"));
+    sepFlogitRho = asVector<Type>(getListElement(x,"sepFlogitRho"));
+    sepFlogSd = asVector<Type>(getListElement(x,"sepFlogSd"));
+    logFScaleMSY = (Type)Rf_asReal(getListElement(x,"logFScaleMSY"));
+    logScaleFmsy = (Type)Rf_asReal(getListElement(x,"logScaleFmsy"));
+    logScaleFmax = (Type)Rf_asReal(getListElement(x,"logScaleFmax"));
+    logScaleF01 = (Type)Rf_asReal(getListElement(x,"logScaleF01"));
+    logScaleFcrash = (Type)Rf_asReal(getListElement(x,"logScaleFcrash"));
+    logScaleF35 = (Type)Rf_asReal(getListElement(x,"logScaleF35"));
+    logScaleFlim = (Type)Rf_asReal(getListElement(x,"logScaleFlim"));
+  }
+
+  paraSet<Type>& operator=(const paraSet<Type>& rhs) {
+    logFpar = rhs.logFpar; 
+    logQpow = rhs.logQpow; 
+    logSdLogFsta = rhs.logSdLogFsta; 
+    logSdLogN = rhs.logSdLogN; 
+    logSdLogObs = rhs.logSdLogObs;
+    logSdLogTotalObs = rhs.logSdLogTotalObs;
+    transfIRARdist = rhs.transfIRARdist;
+    sigmaObsParUS = rhs.sigmaObsParUS;
+    rec_pars = rhs.rec_pars; 
+    itrans_rho = rhs.itrans_rho; 
+    logScale = rhs.logScale;
+    logitReleaseSurvival = rhs.logitReleaseSurvival;   
+    logitRecapturePhi = rhs.logitRecapturePhi;
+    sepFalpha = rhs.sepFalpha;
+    sepFlogitRho = rhs.sepFlogitRho;
+    sepFlogSd = rhs.sepFlogSd;
+    logFScaleMSY = rhs.logFScaleMSY;
+    logScaleFmsy = rhs.logScaleFmsy;
+    logScaleFmax = rhs.logScaleFmax;
+    logScaleF01 = rhs.logScaleF01;
+    logScaleFcrash = rhs.logScaleFcrash;
+    logScaleF35 = rhs.logScaleF35;
+    logScaleFlim = rhs.logScaleFlim;
+    return *this;
+
+  }
+
+  template<class T>
+  paraSet<T> cast() const {
+    paraSet<T> d;
+    d.logFpar = logFpar.template cast<T>(); 
+    d.logQpow = logQpow.template cast<T>(); 
+    d.logSdLogFsta = logSdLogFsta.template cast<T>(); 
+    d.logSdLogN = logSdLogN.template cast<T>(); 
+    d.logSdLogObs = logSdLogObs.template cast<T>();
+    d.logSdLogTotalObs = logSdLogTotalObs.template cast<T>();
+    d.transfIRARdist = transfIRARdist.template cast<T>();
+    d.sigmaObsParUS = sigmaObsParUS.template cast<T>();
+    d.rec_pars = rec_pars.template cast<T>(); 
+    d.itrans_rho = itrans_rho.template cast<T>(); 
+    d.logScale = logScale.template cast<T>();
+    d.logitReleaseSurvival = logitReleaseSurvival.template cast<T>();   
+    d.logitRecapturePhi = logitRecapturePhi.template cast<T>();
+    d.sepFalpha = sepFalpha.template cast<T>();
+    d.sepFlogitRho = sepFlogitRho.template cast<T>();
+    d.sepFlogSd = sepFlogSd.template cast<T>();
+    d.logFScaleMSY = T(logFScaleMSY);
+    d.logScaleFmsy = T(logScaleFmsy);
+    d.logScaleFmax = T(logScaleFmax);
+    d.logScaleF01 = T(logScaleF01);
+    d.logScaleFcrash = T(logScaleFcrash);
+    d.logScaleF35 = T(logScaleF35);
+    d.logScaleFlim = T(logScaleFlim);
+
+    return d;    
+  }
+
 };
+
+
+template<class Type>
+void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par){
+  if(nYears == 0){ // no forecast
+    return;
+  }
+  
+    //array<Type>& natMor, array<Type>& catchMeanWeight, ){
+    matrix<Type> natMorT = dat.natMor.matrix().transpose();
+    matrix<Type> catchMeanWeightT = dat.catchMeanWeight.matrix().transpose();
+    matrix<Type> landMeanWeightT = dat.landMeanWeight.matrix().transpose();
+    matrix<Type> landFracT = dat.landFrac.matrix().transpose();
+    forecastCalculatedMedian = matrix<Type>(logF.rows(), nYears);
+    forecastCalculatedMedian.setZero();
+    forecastCalculatedLogSdCorrection = vector<Type>(nYears);
+    forecastCalculatedLogSdCorrection.setZero();
+    int fbarFirst = conf.fbarRange(0) - conf.minAge;
+    int fbarLast = conf.fbarRange(1) - conf.minAge;
+    Type initialFbar = 0.0;
+    for(int a = fbarFirst; a <= fbarLast; ++a){  
+      initialFbar += exp(logF(conf.keyLogFsta(0,a),forecastYear.size() - nYears - 1));
+    }
+    initialFbar /= Type(fbarLast - fbarFirst + 1);
+
+    vector<Type> sel(logF.rows());
+    sel.setZero();
+    vector<Type> selFull(logN.rows());
+    selFull.setZero();
+
+    // Correct input selectivity to have Fbar == 1
+    Type inputFbar = 0.0;
+    if(selectivity.size() > 0){
+      for(int a = fbarFirst; a <= fbarLast; ++a){  
+	if(selectivity.size() == logF.rows()){
+	  inputFbar += selectivity(conf.keyLogFsta(0,a));
+	}else if(selectivity.size() == logN.rows()){
+	  inputFbar += selectivity(a);
+	}else{
+	  Rf_error("Wrong size of selectivity. Must match logF or logN array.");
+	}
+      }
+      inputFbar /= Type(fbarLast - fbarFirst + 1);
+      if(inputFbar != 1.0){
+	Rf_warning("The input selectivity was re-scaled to have Fbar equal to one.");
+	selectivity /= inputFbar;
+      }
+    }
+    
+
+    
+    for(int j = 0; j < logN.rows(); ++j){
+      if(conf.keyLogFsta(0,j)>(-1)){
+	if(selectivity.size() == 0){
+	  selFull(j) = exp(logF(conf.keyLogFsta(0,j),forecastYear.size() - nYears - 1)) / initialFbar;
+	  sel(conf.keyLogFsta(0,j)) = selFull(j);
+	}else if(selectivity.size() == logF.rows()){
+	  selFull(j) = selectivity(conf.keyLogFsta(0,j));
+	}else if(selectivity.size() == logN.rows()){
+	  selFull(j) = selectivity(j);
+	}else{
+	  Rf_error("Wrong size of selectivity. Must match logF or logN array.");
+	}
+	sel(conf.keyLogFsta(0,j)) = selFull(j);
+      }
+    }
+        
+    for(int i = 0; i < nYears; ++i){
+      int indx = forecastYear.size() - nYears + i;
+      Type y = forecastYear(indx);
+      Type calcF = 0.0;
+ 
+      vector<Type> lastFullLogF(logN.rows());
+      for(int j = 0; j < logN.rows(); ++j){
+	if(conf.keyLogFsta(0,j)>(-1)){
+	  if(i == 0){
+	    lastFullLogF(j) = log(initialFbar) + log(selFull(j));
+	  }else{
+	    lastFullLogF(j) = forecastCalculatedMedian(conf.keyLogFsta(0,j),i-1);
+	  }
+	}else{
+	  lastFullLogF(j)= 0.0; 
+	}
+      }
+
+      switch(fsdTimeScaleModel(i)) {
+      case rwScale:
+	forecastCalculatedLogSdCorrection(i) = sqrt(y);
+	break;
+      case oneScale:
+	forecastCalculatedLogSdCorrection(i) = 1.0;
+	break;
+      case zeroScale:
+	forecastCalculatedLogSdCorrection(i) = 1e-6;
+	break;
+      default:
+	Rf_error("F time scale model not implemented");
+      }
+
+      // Calculate CV correction
+      switch(FModel(i)) { // target is not used. F is a random walk
+      case asFModel:
+	if(fsdTimeScaleModel(i) != oneScale)
+	  Rf_warning("F time scale model is ignored when the F model is used for forecasting.");
+	forecastCalculatedLogSdCorrection(i) = 1.0;
+	forecastCalculatedMedian.col(i) = logF.col(indx - 1);
+	break;
+      case useFscale: // target is an F scale of previous F
+	if(i == 0){
+	  forecastCalculatedMedian.col(i) = log(target(i)) + log(initialFbar) + log(sel);
+	}else{
+	  forecastCalculatedMedian.col(i) = log(target(i)) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	break;
+       case useFval: // target is F value	
+	forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
+	break;
+      case useCatchval: // target is a catch value in weight
+	calcF = catch2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));
+	if(i == 0){
+	  forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
+	}else{
+	  forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	 break;
+      case useNextssb:	
+	Rf_error("Forecast type not implemented");
+      case useLandval:
+	calcF = landing2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)landMeanWeightT.col(indx), (vector<Type>)landFracT.col(indx));
+	if(i == 0){
+	  forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
+	}else{
+	  forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	break;
+      case findMSY:
+	// forecastCalculatedLogSdCorrection(i) = 1e-2;
+	if(i == 0){ // Scale initial fbar by parameter
+	  forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel);
+	}else{ // Keep this F value
+	  forecastCalculatedMedian.col(i) = (vector<Type>)forecastCalculatedMedian.col(i-1);
+	}
+	break;
+      default:
+	Rf_error("Forecast type not implemented");
+      }
+    }
+    
+  }
+
+
+
+
+
+
+
+
 
 template<class Type>
 Type logspace_add_p (Type logx, Type logy, Type p) {
@@ -314,3 +910,5 @@ template <class Type>
 MVMIX_t<Type> MVMIX(matrix<Type> Sigma, Type p1){
   return MVMIX_t<Type>(Sigma,p1);
 }
+
+

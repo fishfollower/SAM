@@ -57,12 +57,39 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     parameters<-definit
   }
   data<-clean.void.catches(data,conf)
-  tmball <- c(data, conf, simFlag=as.numeric(sim.condRE))
+  tmball <- c(data, conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
   ran <- c("logN", "logF", "missing")
-  obj <- MakeADFun(tmball, parameters, random=ran, DLL="stockassessment", ...)
+
+  
+  args <- c(list(data = tmball,
+                 parameters = parameters,
+                 random = ran,
+                 DLL = "stockassessment"),
+            list(...))
+  if(is.null(args$map)){
+      args$map <- list(logFScaleMSY = factor(NA),
+                       logScaleFmsy = factor(NA),
+                       logScaleFmax = factor(NA),
+                       logScaleF01 = factor(NA),
+                       logScaleFcrash = factor(NA),
+                       logScaleF35 = factor(NA),
+                       logScaleFlim = factor(NA)
+                       )
+
+  }
+  
+  if(!is.null(conf$hockeyStickCurve))
+      if(is.null(args$map$rec_pars) &
+         !is.na(conf$hockeyStickCurve) &
+         conf$stockRecruitmentModelCode == 63)
+          args$map$rec_pars = factor(c(1,2,NA))
+
+  obj <- do.call(MakeADFun,args)
+
+  
   if(rm.unidentified){
     gr <- obj$gr()
     #grNA[abs(grNA)<1.0e-15] <- NA
@@ -96,8 +123,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     opt$par <- opt$par - solve(h, g)
     opt$objective <- obj$fn(opt$par)
   }
+  opt$he <- optimHess(opt$par, obj$fn, obj$gr)
   rep <- obj$report()
-  sdrep <- sdreport(obj,opt$par, ignore.parm.uncertainty = ignore.parm.uncertainty)
+  sdrep <- sdreport(obj,opt$par, opt$he, ignore.parm.uncertainty = ignore.parm.uncertainty)
 
   # Last two states
   idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
