@@ -78,8 +78,8 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                  random = ran,
                  DLL = "stockassessment"),
             list(...))
-  if(is.null(args$map)){
-      args$map <- list(logFScaleMSY = factor(NA),
+
+  mapRP <- list(logFScaleMSY = factor(NA),
                        logScaleFmsy = factor(NA),
                        logScaleFmax = factor(NA),
                        logScaleF01 = factor(NA),
@@ -87,7 +87,10 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                        logScaleF35 = factor(NA),
                        logScaleFlim = factor(NA)
                        )
-
+  if(is.null(args$map)){
+      args$map <- mapRP
+  }else{
+      args$map <- c(args$map, mapRP)
   }
   
   if(!is.null(conf$hockeyStickCurve))
