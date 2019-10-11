@@ -78,7 +78,7 @@ stockRecruitmentModel <- function(code, rec_pars, covar = NULL){
         }
         attr(fn, "SRModel") <- "Shepherd"
     }else{
-        error("Stock recruitment model is not a deterministic function of SSB")
+        stop("Stock recruitment model is not a deterministic function of SSB")
     }
     return(fn)
 }
