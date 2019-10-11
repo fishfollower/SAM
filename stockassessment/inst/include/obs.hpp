@@ -1,3 +1,5 @@
+#include <algorithm>
+
 template <class Type>
 matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec){
 
@@ -133,7 +135,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
   vector<Type> fbar = fbarFun(conf, logF);
   vector<Type> logfbar = log(fbar);
-
+  
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logfsb, logCatch, logLand);
 
   
@@ -355,7 +357,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   }
   
   SIMULATE_F(of) {
-    if(dat.forecast.simFlag == 0){
+    if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
       REPORT_F(logssb,of);
       REPORT_F(logfbar,of);
       REPORT_F(logCatch,of);
@@ -383,6 +385,25 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(beforeLastLogN,of);
   vector<Type> beforeLastLogF = logF.col(timeSteps-2);
   ADREPORT_F(beforeLastLogF,of);  
+
+  if(dat.forecast.nYears > 0 && dat.forecast.FModel(dat.forecast.FModel.size()-1) == dat.forecast.findMSY){
+    Type catchSum = 0.0;
+    int catchYears = std::max((int)asDouble(dat.forecast.nYears),10);
+    for(int qq = 0; qq < catchYears; ++qq)
+      catchSum +=  cat(cat.size()-1 - qq);
+      nll -= (log(catchSum) - log(catchYears));
+
+      // Calculate Fmsy
+      Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - dat.forecast.nYears - 1);
+      ADREPORT_F(logFMSY, of);
+
+      // Output stock status - Positive is good for the stock
+      Type logFstatus = logFMSY - logfbar(timeSteps - dat.forecast.nYears - 1);
+      Type logSSBstatus = logssb(timeSteps - dat.forecast.nYears - 1) - logssb(timeSteps - 1);
+      ADREPORT_F(logFstatus, of);
+      ADREPORT_F(logSSBstatus, of);
+  }
+
   
   return nll;
 }

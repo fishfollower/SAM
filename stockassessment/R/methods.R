@@ -302,19 +302,33 @@ summary.sam<-function(object, ...){
 ##' @details ...
 ##' @return returns a list of lists. The outer list has length \code{nsim}. Each inner list contains simulated values of \code{logF}, \code{logN}, and \code{obs} with dimensions equal to those parameters.
 ##' @export
-simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, ...){
-  if(!is.null(seed)) set.seed(seed)
-  est <- unlist(object$pl)
-  if(full.data){
-    ret <- replicate(nsim, 
-    	c(object$data[names(object$data)!="logobs"],#all the old data
-    	object$obj$simulate(est)["logobs"])#simulated observations
-    	, simplify=FALSE)
-    ret<-lapply(ret, function(x){attr(x,"fleetNames") <- attr(object$data,"fleetNames");x})
-  }else{
+simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, keep.process = FALSE, ...){
+    if(!is.null(seed)) set.seed(seed)
+    pl <- object$pl
+    map <- object$obj$env$map
+    with.map <- intersect(names(pl),names(map))
+    applyMap <- function(par.name){
+        tapply(pl[[par.name]],map[[par.name]],mean)
+    }
+    pl[with.map] <- sapply(with.map, applyMap, simplify = FALSE)
+    est <- unlist(pl)
+    if(full.data){
+        ret <- replicate(nsim, {
+            sval <- object$obj$simulate(est)
+            ret <- c(object$data[names(object$data)!="logobs"],#all the old data
+                     sval["logobs"])#simulated observations
+            if(keep.process){
+                ret$logN <- sval$logN
+                ret$logF <- sval$logF
+            }
+            ret
+        },
+        simplify=FALSE)
+        ret<-lapply(ret, function(x){attr(x,"fleetNames") <- attr(object$data,"fleetNames");x})
+    }else{
   	ret <- replicate(nsim, object$obj$simulate(est), simplify=FALSE)
-  }
-  ret
+    }
+    ret
 }
 
 
