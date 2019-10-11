@@ -1,3 +1,6 @@
+#ifndef SAM_HPP
+#define SAM_HPP
+
 #include "tiny_adflex.hpp"
 #include "zeroin.hpp"
 #include "toF.hpp"
@@ -8,3 +11,6 @@
 #include "n.hpp"
 #include "predobs.hpp"
 #include "obs.hpp"
+#include "perRecruit.hpp"
+
+#endif

@@ -100,14 +100,14 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
 
       SIMULATE_F(of){
-	if(dat.forecast.simFlag == 0){
+	if(dat.forecast.simFlag(0) == 0){
 	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
 	}
       }
     }else{
       nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
       SIMULATE_F(of){
-	if(conf.simFlag==0){
+	if(conf.simFlag(0)==0){
 	  logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
 	}
       }
