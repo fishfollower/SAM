@@ -20,10 +20,14 @@ defpar <- function(dat,conf){
       ret$rec_pars <- numeric(0)
   }else if(conf$stockRecruitmentModelCode==3){ # Constant mean
       ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)
+  }else if(conf$stockRecruitmentModelCode==61){ # Hockey stick
+      ret$rec_pars <- c(log(5) + median(dat$logobs, na.rm = TRUE),0)
   }else if(conf$stockRecruitmentModelCode==63){ # Bent hypoerbola / Hockey-stick-like
-      ret$rec_pars <- c(numeric(2),3)
+      ret$rec_pars <- c(log(5) + median(dat$logobs, na.rm = TRUE),0,3)
       if(!is.na(conf$hockeyStickCurve))
           ret$rec_pars[3] <- log(conf$hockeyStickCurve)
+  }else if(conf$stockRecruitmentModelCode==65){ # Shepherd
+      ret$rec_pars <- numeric(3)
   }else{ # The rest
       ret$rec_pars <- numeric(2)
   }
@@ -62,5 +66,19 @@ defpar <- function(dat,conf){
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
   
+
+  ## Reference points
+  ret$logFScaleMSY <- 0
+  ret$logScaleFmsy <- 0
+  ret$logScaleFmax <- 0
+  ret$logScaleF01 <- 0
+  ret$logScaleFcrash <- 0
+  ret$logScaleF35 <- 0
+  ret$logScaleFlim <- 0
+  
+  ## Latent variables
+  ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
+  ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
+
   return(ret)
 }

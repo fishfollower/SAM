@@ -42,6 +42,7 @@ forecast.sam <- function(fit,
                      fval = NULL,
                      nextssb = NULL,
                      landval = NULL,
+                     findMSY = NULL,
                      nosim = NULL,
                      year.base = max(fit$data$years),
                      ave.years = max(fit$data$years)+(-4:0),
@@ -79,7 +80,7 @@ forecast.sam <- function(fit,
                    length(fval),length(nextssb),length(landval))
     if(any(lengthVec > 0 & lengthVec < max(lengthVec)))
         stop("...")    
-    nYears <- max(length(fscale),length(catchval),length(fval),length(nextssb),length(landval))
+    nYears <- max(length(fscale),length(catchval),length(fval),length(nextssb),length(landval),length(findMSY))
 
     ## Convert input to an F model code and a target value
     if(is.null(fscale))
@@ -92,7 +93,9 @@ forecast.sam <- function(fit,
         nextssb <- rep(NA_real_, nYears)
     if(is.null(landval))
         landval <- rep(NA_real_, nYears)
-    tab <- rbind(fscale,fval,catchval,nextssb,landval)
+    if(is.null(findMSY))
+        findMSY <- rep(NA_real_, nYears)
+    tab <- rbind(fscale,fval,catchval,nextssb,landval, findMSY)
     FModel <- apply(tab,2, function(x){
         y <- which(!is.na(x))
         switch(as.character(length(y)),
@@ -157,6 +160,9 @@ forecast.sam <- function(fit,
     
     ## Prepare forecast
     obj0 <- fit$obj
+    obj0$fn(fit$opt$par)
+    obj0$gr(fit$opt$par)
+    
     args <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
     pl <- fit$pl
     pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),nYears))
@@ -173,12 +179,19 @@ forecast.sam <- function(fit,
                                logRecruitmentMedian = as.numeric(logRecruitmentMedian),
                                logRecruitmentVar = as.numeric(logRecruitmentVar),
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
-                               simFlag = 0)
+                               simFlag = c(0,0))
+
+    if(any(!is.na(findMSY))){
+        args$map$logFScaleMSY <- NULL
+        return(args)
+    }
 
     ## Create forecast object
     obj <- do.call(TMB::MakeADFun, args)
     obj$fn(fit$opt$par)
 
+ 
+    
     ## Get results
     sdr <- TMB::sdreport(obj, fit$opt$par, fit$opt$he,
                          bias.correct= biasCorrect,

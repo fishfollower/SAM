@@ -1,0 +1,47 @@
+##' .. content for \description{} (no empty lines) ..
+##'
+##' .. content for \details{} ..
+##' @title 
+##' @param stockname 
+##' @param character.only 
+##' @param confChange 
+##' @param ... 
+##' @return 
+##' @author Christoffer Moesgaard Albertsen
+refitfromweb <- function(stockname, character.only=FALSE, confChange = list(), ...){
+    if (!character.only) stockname <- as.character(substitute(stockname))
+    fit<-fitfromweb(stockname, character.only = TRUE)
+    base.url <- sprintf("https://stockassessment.org/datadisk/stockassessment/userdirs/user3/%s",
+                        stockname)
+    cn<-read.ices(sprintf("%s/data/cn.dat",base.url))
+    cw<-read.ices(sprintf("%s/data/cw.dat",base.url))
+    dw<-read.ices(sprintf("%s/data/dw.dat",base.url))
+    lf<-read.ices(sprintf("%s/data/lf.dat",base.url))
+    lw<-read.ices(sprintf("%s/data/lw.dat",base.url))
+    mo<-read.ices(sprintf("%s/data/mo.dat",base.url))
+    nm<-read.ices(sprintf("%s/data/nm.dat",base.url))
+    pf<-read.ices(sprintf("%s/data/pf.dat",base.url))
+    pm<-read.ices(sprintf("%s/data/pm.dat",base.url))
+    sw<-read.ices(sprintf("%s/data/sw.dat",base.url))
+    surveys<-read.ices(sprintf("%s/data/survey.dat",base.url))
+    
+    dat<-setup.sam.data(surveys=surveys,
+                        residual.fleet=cn, 
+                        prop.mature=mo, 
+                        stock.mean.weight=sw, 
+                        catch.mean.weight=cw, 
+                        dis.mean.weight=dw, 
+                        land.mean.weight=lw,
+                        prop.f=pf, 
+                        prop.m=pm, 
+                        natural.mortality=nm, 
+                        land.frac=lf)
+
+    conf<-fit$conf
+    newConf <- defcon(dat)
+    newConf[intersect(names(newConf),names(conf))] <- conf
+    if(length(confChange) > 0)
+        newConf[intersect(names(newConf),names(confChange))] <- confChange
+    newfit <- sam.fit(dat, newConf, defpar(dat,newConf), ...)
+    newfit
+}

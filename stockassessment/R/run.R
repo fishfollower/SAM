@@ -66,7 +66,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     }
   }
   
-  tmball <- c(data, conf, simFlag=as.numeric(sim.condRE))
+  tmball <- c(data, conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
@@ -78,9 +78,18 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                  random = ran,
                  DLL = "stockassessment"),
             list(...))
-  if(is.null(args$map))
-      args$map <- list()
+  if(is.null(args$map)){
+      args$map <- list(logFScaleMSY = factor(NA),
+                       logScaleFmsy = factor(NA),
+                       logScaleFmax = factor(NA),
+                       logScaleF01 = factor(NA),
+                       logScaleFcrash = factor(NA),
+                       logScaleF35 = factor(NA),
+                       logScaleFlim = factor(NA)
+                       )
 
+  }
+  
   if(!is.null(conf$hockeyStickCurve))
       if(is.null(args$map$rec_pars) &
          !is.na(conf$hockeyStickCurve) &

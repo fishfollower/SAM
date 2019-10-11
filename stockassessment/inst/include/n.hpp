@@ -31,7 +31,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
       nll+=neg_log_densityN((logN.col(i)-predNTmp) / Nscale) + (log(Nscale)).sum();
       SIMULATE_F(of){
-	if(dat.forecast.simFlag == 0){
+	if(dat.forecast.simFlag(1) == 0){
 	  logN.col(i) = predNTmp + neg_log_densityN.simulate() * Nscale;
 	}
       }
@@ -39,7 +39,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
       nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
       SIMULATE_F(of){
-	if(conf.simFlag==0){
+	if(conf.simFlag(1)==0){
 	  logN.col(i) = predN + neg_log_densityN.simulate();
 	}
       }

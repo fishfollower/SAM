@@ -8,9 +8,10 @@
 forecast(fit, ...)
 
 \method{forecast}{sam}(fit, fscale = NULL, catchval = NULL,
-  fval = NULL, nextssb = NULL, landval = NULL, nosim = NULL,
-  year.base = max(fit$data$years), ave.years = max(fit$data$years) +
-  (-4:0), rec.years = max(fit$data$years) + (-9:0), label = NULL,
+  fval = NULL, nextssb = NULL, landval = NULL, findMSY = NULL,
+  nosim = NULL, year.base = max(fit$data$years),
+  ave.years = max(fit$data$years) + (-4:0),
+  rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
   processNoiseF = TRUE, customSel = NULL, lagR = FALSE,
   splitLD = FALSE, addTSB = FALSE, biasCorrect = TRUE,

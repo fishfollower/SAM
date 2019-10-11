@@ -29,7 +29,8 @@
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //  --------------------------------------------------------------------------
 
-#define TMB_LIB_INIT R_init_stockassessment
+// R_init_stockassessment is now defined in main.cpp
+//#define TMB_LIB_INIT R_init_stockassessment
 #include <TMB.hpp>
 #include "../inst/include/SAM.hpp"
 
@@ -64,6 +65,7 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propM); dataset.propM=propM; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
   DATA_STRUCT(forecast, forecastSet); dataset.forecast = forecast;
+  DATA_STRUCT(referencepoint, referencepointSet); dataset.referencepoint = referencepoint;
 
   prepareForForecast(dataset);
     
@@ -88,7 +90,7 @@ Type objective_function<Type>::operator() ()
   confset.keyParScaledYA=keyParScaledYA; 
   DATA_IVECTOR(fbarRange); confset.fbarRange=fbarRange; 
   DATA_IVECTOR(keyBiomassTreat); confset.keyBiomassTreat=keyBiomassTreat;   
-  DATA_INTEGER(simFlag); confset.simFlag=simFlag;  //1 means simulations should not redo F and N
+  DATA_IVECTOR(simFlag); confset.simFlag=simFlag;  //1 means simulations should not redo F and N
   DATA_INTEGER(resFlag); confset.resFlag=resFlag;  
   DATA_FACTOR(obsLikelihoodFlag); confset.obsLikelihoodFlag=obsLikelihoodFlag; 
   DATA_INTEGER(fixVarToWeight); confset.fixVarToWeight=fixVarToWeight; 
@@ -110,12 +112,23 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(itrans_rho); paraset.itrans_rho=itrans_rho;  
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
-  PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
+  PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;
 
   PARAMETER_VECTOR(sepFalpha); paraset.sepFalpha=sepFalpha;    
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
   PARAMETER_VECTOR(predVarObs); paraset.predVarObs=predVarObs;
+
+  // Forecast FMSY
+  PARAMETER(logFScaleMSY); paraset.logFScaleMSY = logFScaleMSY;
+
+  // YPR reference points
+  PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
+  PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
+  PARAMETER(logScaleF01); paraset.logScaleF01 = logScaleF01;
+  PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
+  PARAMETER(logScaleF35); paraset.logScaleF35 = logScaleF35;
+  PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
@@ -136,11 +149,13 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
 
-  dataset.forecast.calculateForecast(logF,logN, dataset, confset);
-  
+  dataset.forecast.calculateForecast(logF,logN, dataset, confset, paraset);
+
   ans += nllF(dataset, confset, paraset, logF, keep, this);
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
 
+  ans += nllReferencepoints(dataset, confset, paraset, logN, logF, this);
+  
   return ans;
 }
