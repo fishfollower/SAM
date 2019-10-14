@@ -201,10 +201,17 @@ struct forecastSet {
 template<class Type>
 struct referencepointSet {
 
+  enum class CatchType {
+		  totalCatch,
+		  landings,
+		  discard
+  };
+  
   int nYears;
   vector<int> aveYears;
   vector<int> selYears;
   vector<Type> Fsequence;
+  CatchType catchType;
 
   referencepointSet() : nYears(0) {};
   
@@ -219,6 +226,7 @@ struct referencepointSet {
       aveYears = asVector<int>(getListElement(x,"aveYears"));
       selYears = asVector<int>(getListElement(x,"selYears"));
       Fsequence = asVector<Type>(getListElement(x,"Fsequence"));
+      catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"Fsequence")));
     }
   }
   
@@ -229,6 +237,7 @@ struct referencepointSet {
     aveYears = rhs.aveYears;
     selYears = rhs.selYears;
     Fsequence = rhs.Fsequence;
+    catchType = rhs.catchType;
     return *this;
   }
 
@@ -241,6 +250,7 @@ struct referencepointSet {
     d.aveYears = aveYears;
     d.selYears = selYears;
     d.Fsequence = Fsequence.template cast<T>();
+    d.catchType = static_cast<typename referencepointSet<T>::CatchType>((int)catchType);
     return d;    
   }
   

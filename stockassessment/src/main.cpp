@@ -11,6 +11,7 @@ extern "C" {
 #include <R_ext/Rdynload.h>
 
   SEXP perRecruitR(SEXP Fbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears);
+  SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code);
   
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
@@ -34,6 +35,7 @@ extern "C" {
     #endif
     
     CALLDEF(perRecruitR,7),
+    CALLDEF(stockRecruitmentModelR,3),
 
     {NULL,NULL,0}
   };
