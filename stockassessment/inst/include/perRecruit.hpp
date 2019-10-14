@@ -1,7 +1,7 @@
 
-#define SAM_NegInf -20.0
-#define SAM_Zero exp(SAM_NegInf)
-// 1e-5 
+#define SAM_NegInf -100.0
+#define SAM_Zero exp(-20.0)
+// exp(SAM_NegInf)
 
 template<class Type>
 Type dFunctionalSR(Type ssb, vector<Type> rp, int srmc){
@@ -88,17 +88,48 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   }
 
   // Calculate yield
-  vector<T> cat = catchFun(newDat, newConf, logN, logF);
+  vector<T> cat(nYears);
+  switch(newDat.referencepoint.catchType){
+  case referencepointSet<T>::CatchType::totalCatch:
+    cat = catchFun(newDat, newConf, logN, logF);
+    break;
+  case referencepointSet<T>::CatchType::landings:
+    cat = landFun(newDat, newConf, logN, logF);
+    break;
+  case referencepointSet<T>::CatchType::discard:
+    cat = disFun(newDat, newConf, logN, logF);
+    break;
+  default:
+    Rf_error("Unknown reference point catch type.");
+      break;
+  }
   T logYPR = log(sum(cat));
   // Calculate spawners
   vector<T> ssb = ssbFun(newDat, newConf, logN, logF);
   T logSPR = log(sum(ssb));
   T lambda = exp(logSPR);
+
+
+  if(conf.stockRecruitmentModelCode == 0 ||
+     conf.stockRecruitmentModelCode == 3){
+    PERREC_t<T> res = {log(Fbar), // logFbar
+		       logYPR,	   // logYPR
+		       logSPR,	   // logSPR
+		       R_NaReal,	   // logSe
+		       R_NaReal,		 // logRe
+		       R_NaReal}; // logYe
+    return res;
+  }
+  
+
+
+
   // Calculate Se
   T Se = 0.0; //R_NegInf;
-
-
-  T dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
+  
+  T dsr0 = 10000.0;
+  if(conf.stockRecruitmentModelCode != 62)
+    dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
   
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
@@ -381,7 +412,7 @@ struct REFERENCE_POINTS {
     CppAD::Independent(x1);
     y1[0] = YPR(x1);
     FYPR = CppAD::ADFun<Type>(x1, y1);
-
+    
     CppAD::vector<AD<Type> > x2( Fsqvec );
     CppAD::vector<AD<Type> > y2( 1 );
     CppAD::Independent(x2);
@@ -395,7 +426,7 @@ struct REFERENCE_POINTS {
     CppAD::Independent(x3);
     y3[0] = SR(x3);
     FSR = CppAD::ADFun<Type>(x3, y3);
- 
+
   }
 
   Type YPR(Type Fbar){
@@ -450,6 +481,8 @@ struct REFERENCE_POINTS {
     AD<Type> s0 = ssb[0];
     vector<AD<Type> > rp(par.rec_pars.size());
     rp = par.rec_pars.template cast<AD<Type> >();
+    if(conf.stockRecruitmentModelCode == 0)
+      return 0.0;
     return exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
   }
 
@@ -502,7 +535,7 @@ struct REFERENCE_POINTS {
     }
 
     if(!isNA(logBlim) && CppAD::Variable(par.logScaleFlim)){
-      Type tmp = exp(logBlim - log(Se(exp(logFlim)))) - 1.0;
+      Type tmp = logBlim - log(Se(exp(logFlim)));
       nll += tmp * tmp;
     }
     
@@ -546,6 +579,7 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       logSe(i) = v.logSe;
       logYe(i) = v.logYe;
       logRe(i) = v.logRe;
+	
     }
     ADREPORT_F(logYPR, of);
     ADREPORT_F(logSPR, of);
@@ -636,6 +670,39 @@ extern "C" {
     UNPROTECT(1);    
     return res;
 
+  }
+
+
+  SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code){
+    double b = Rf_asReal(ssb);
+    vector<double> rp = asVector<double>(rec_pars);
+    int srmc = Rf_asInteger(code);
+	
+    double v = exp(functionalStockRecruitment(b, rp, srmc));
+
+    vector<AD<double> > rp2( rp.size() );
+    for(int i = 0; i < rp2.size(); ++i)
+      rp2(i) = AD<double>(rp(i));
+    CppAD::Independent(rp2);
+
+    vector<AD<double> > x( 1 );
+    x[0] = b;
+
+    vector<AD<double> > y( 1 );
+    y[0] = exp(functionalStockRecruitment(x[0], rp2, srmc));
+    CppAD::ADFun<double> F(x, y);
+    vector<double> x_eval( rp );
+    vector<double> r = F.Jacobian(x_eval);
+
+    const char *resNms[] = {"Recruits", "Gradient", ""}; // Must end with ""
+    SEXP res;
+    PROTECT(res = Rf_mkNamed(VECSXP, resNms));
+    SET_VECTOR_ELT(res, 0, asSEXP(v));
+    SET_VECTOR_ELT(res, 1, asSEXP(r));
+ 
+    UNPROTECT(1);    
+    return res;
+      
   }
   
 }

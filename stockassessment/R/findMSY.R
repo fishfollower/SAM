@@ -1,96 +1,13 @@
 
 
-
-stockRecruitmentModel <- function(code, rec_pars, covar = NULL){
-    final <- function(ssb, f, gr, covar){
-        v <- f(ssb)
-        if(!is.null(covar)){
-            g <- matrix(gr(ssb), 1)
-            attr(v,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
-        }
-        return(v)
-    }
-    if(code == 1){ ## Ricker
-        fn <- function(ssb){
-            f <- function(thisSSB) exp(rec_pars[1]+log(thisSSB)-exp(rec_pars[2])*thisSSB)
-            gr <- function(thisSSB){
-                c(exp(rec_pars[1] + log(thisSSB) - exp(rec_pars[2]) * thisSSB),
-                  -(exp(rec_pars[1] + log(thisSSB) - exp(rec_pars[2]) * thisSSB) * (exp(rec_pars[2]) * thisSSB))
-                  )}
-            return(final(ssb, f, gr, covar))
-        }
-        attr(fn, "SRModel") <- "Ricker"
-    }else if(code == 2){ ## Beverton-Holt
-        fn <- function(ssb){
-            f <- function(thisSSB) exp(rec_pars[1]+log(thisSSB)-log(1.0+exp(rec_pars[2])*thisSSB))
-            gr <- function(thisSSB){
-                c(exp(rec_pars[1] + log(thisSSB) - log(1 + exp(rec_pars[2]) * thisSSB)),
-                  -(exp(rec_pars[1] + log(thisSSB) - log(1 + exp(rec_pars[2]) * thisSSB)) * (exp(rec_pars[2]) * thisSSB/(1 + exp(rec_pars[2]) * thisSSB))))
-            }
-            return(final(ssb, f, gr, covar))
-        }
-        attr(fn, "SRModel") <- "BevertonHolt"
-    }else if(code == 61){ ## Hockey stick
-        fn <- function(ssb){
-            f <- function(thisSSB) exp(rec_pars[1] - rec_pars[2] +
-                                       log(thisSSB - (0.5 * ((thisSSB - exp(rec_pars[2]))+(0.0)+abs((thisSSB - exp(rec_pars[2]))-(0.0))))))
-            gr <- function(thisSSB){
-                c(exp(rec_pars[1] - rec_pars[2]) * (thisSSB - 0.5 * (abs(exp(rec_pars[2]) - thisSSB) - exp(rec_pars[2]) + thisSSB)),
-                (exp(rec_pars[1] - rec_pars[2]) * (-0.5 * thisSSB * abs(exp(rec_pars[2]) - thisSSB) + 0.5 * (exp(rec_pars[2]) - thisSSB)^2 + 0.5 * exp(rec_pars[2]) * thisSSB - 0.5 * exp(2 * rec_pars[2])))/abs(exp(rec_pars[2]) - thisSSB))
-            }
-            return(final(ssb, f, gr, covar))
-        }
-        attr(fn, "SRModel") <- "Hockey"
-    }else if(code == 63){ ## Smooth hockey stick
-        fn <- function(ssb){
-            f <- function(thisSSB) exp(rec_pars[2] +
-                                       log(thisSSB + sqrt(exp(2.0 * rec_pars[1]) + (exp(2.0 * rec_pars[3]) / 4.0)) -
-                                           sqrt((thisSSB-exp(rec_pars[1]))^2 + (exp(2.0 * rec_pars[3]) / 4.0))))
-            gr <- function(thisSSB){ 
-                c(exp(rec_pars[2]) * ((exp(rec_pars[1]) * (thisSSB - exp(rec_pars[1])))/sqrt((thisSSB - exp(rec_pars[1]))^2 + 0.25 * exp(2 * rec_pars[3])) + exp(2 * rec_pars[1])/sqrt(exp(2 * rec_pars[1]) + 0.25 * exp(2 * rec_pars[3]))),
-                  exp(rec_pars[2]) * (-sqrt((thisSSB - exp(rec_pars[1]))^2 + 0.25 * exp(2 * rec_pars[3])) + sqrt(exp(2 * rec_pars[1]) + 0.25 * exp(2 * rec_pars[3])) + thisSSB),
-                  exp(rec_pars[2]) * ((0.25 * exp(2 * rec_pars[3]))/sqrt(exp(2 * rec_pars[1]) + 0.25 * exp(2 * rec_pars[3])) - (0.25 * exp(2 * rec_pars[3]))/sqrt((thisSSB - exp(rec_pars[1]))^2 + 0.25 * exp(2 * rec_pars[3]))))
-            }
-            return(final(ssb, f, gr, covar))
-        }
-        attr(fn, "SRModel") <- "SmoothHockey"
-    }else if(code == 64){
-        fn <- function(ssb){
-            f <- function(thisSSB) exp(rec_pars[1] + exp(rec_pars[2]) * log(thisSSB))
-            gr <- function(thisSSB){
-                c( exp(rec_pars[1]) * thisSSB ^ ( exp(rec_pars[2]) ),
-                  exp( rec_pars[1] + rec_pars[2] ) * thisSSB ^ ( exp(rec_pars[2]) ) * log(thisSSB) 
-                  )               
-            }
-            return(final(ssb, f, gr, covar))
-        }
-        attr(fn, "SRModel") <- "Cushing"
-    }else if(code == 65){
-        fn <- function(ssb){
-            f <- function(thisSSB) exp(rec_pars[1] + log(thisSSB) - log(1.0 + exp(exp(rec_pars[3]) * (log(thisSSB) - rec_pars[2]))))
-            gr <- function(thisSSB){
-                c( exp(rec_pars[1]) * thisSSB / (1.0 + exp( exp(rec_pars[3]) * ( - rec_pars[2] + log(thisSSB)))),
-                (thisSSB * exp(rec_pars[1]+ exp(rec_pars[3]) * (log(thisSSB) - rec_pars[2]) + rec_pars[3]))/(exp(exp(rec_pars[3]) * (log(thisSSB) - rec_pars[2])) + 1)^2,
-                -(thisSSB * (log(thisSSB) - rec_pars[2]) * exp(rec_pars[1] + exp(rec_pars[2]) * (log(thisSSB) - rec_pars[2]) + rec_pars[2]))/(exp(exp(rec_pars[3]) * (log(thisSSB) - rec_pars[2])) + 1)^2
-                  )
-            }
-            return(final(ssb, f, gr, covar))
-        }
-        attr(fn, "SRModel") <- "Shepherd"
-    }else{
-        stop("Stock recruitment model is not a deterministic function of SSB")
-    }
-    return(fn)
-}
-
-##' .. content for \description{} (no empty lines) ..
+##' Add stock-recruitment curve to srplot
 ##'
-##' .. content for \details{} ..
-##' @title 
-##' @param fit 
-##' @param CI 
-##' @param ... 
-##' @return 
+##' @param fit Object to show SR-curve for
+##' @param CI Add confidence intervals?
+##' @param col Color of fitted line
+##' @param cicol Color of confidence intervals
+##' @param ... not used
+##' @seealso srplot
 ##' @author Christoffer Moesgaard Albertsen
 ##' @export
 addRecruitmentCurve <- function(fit,
@@ -121,11 +38,18 @@ addRecruitmentCurve.sam <- function(fit,
            covar <- covEst[m,m]
            covar[is.na(covar)] <- 0
        }
+  
+       srfit <- function(ssb){
+           v <- .Call("stockRecruitmentModelR",
+                      ssb,
+                      fit$pl$rec_pars,
+                      fit$conf$stockRecruitmentModelCode)
+           res <- v$Recruits
+           g <- matrix(v$Gradient, 1)
+           attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
+           return(res)
+       }
 
-       srfit <- stockRecruitmentModel(fit$conf$stockRecruitmentModelCode,
-                                      fit$pl$rec_pars,
-                                      covar
-                                      )
        ssb <- seq(0, max(S), len = 2000)
        tab <- sapply(ssb, function(x) {
            tmp <- srfit(x)
@@ -209,7 +133,7 @@ forecastMSY.sam <- function(fit,
 
     dCdTheta <- solve(JacAll[,length(obj2$par),drop=FALSE]) %*% JacAll[,-length(obj2$par),drop=FALSE]
 
-    varLogFScale <- dCdTheta %*% solve(fit$opt$he) %*% t(dCdTheta)
+    ##varLogFScale <- dCdTheta %*% solve(fit$opt$he) %*% t(dCdTheta)
 
     ## Reuse old fit 
     dG <- rbind(diag(1,length(fit$opt$par)),dCdTheta)
@@ -223,13 +147,21 @@ forecastMSY.sam <- function(fit,
 
 }
 
-
-#' @export
+##' Estimate reference points
+##'
+##' Work in progress - do not use
+##' @param fit an object to calculate reference points for
+##' @param ... not used
+##' @return a sam_referencepoints fit
+##' @author Christoffer Moesgaard Albertsen
+##' @export
 referencepoints <- function(fit,
                             ...){
     UseMethod("referencepoints")
 }
 
+##' @rdname referencepoints
+##' @method referencepoints sam
 #' @export
 referencepoints.sam <- function(fit,
                             ...){
@@ -239,10 +171,15 @@ referencepoints.sam <- function(fit,
     argsIn$parameters <- fit$pl
     argsIn$random <- unique(names(obj0$env$par[obj0$env$random]))
     ## Add referencepointSet
-    argsIn$data$referencepoint <- list(nYears = 100,
-                                 aveYears = as.numeric(c(length(argsIn$data$years)-2:1)),
-                                 selYears = as.numeric(c(length(argsIn$data$years)-1)),
-                                     Fsequence = seq(1e-5,4, len = 200))
+    catchType <- match("catch",c("catch","landing","discard"))
+    if(is.na(catchType))
+        stop("Invalid catch type")
+    argsIn$data$referencepoint <- list(nYears = 200,
+                                       aveYears = as.numeric(c(length(argsIn$data$years)-2:1)),
+                                       selYears = as.numeric(c(length(argsIn$data$years)-1)),
+                                       Fsequence = seq(1e-5,4, len = 200),
+                                       catchType = catchType-1
+                                       )
 
     args <- argsIn
     ## Remove referencepoint parameters from map
@@ -250,15 +187,32 @@ referencepoints.sam <- function(fit,
     fix <- setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
 
+    if(fit$conf$stockRecruitmentModelCode %in% c(0,3)){
+        rp <- c("logScaleFmax",
+                "logScaleF01",
+                "logScaleF35")
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                "logScaleFcrash",
+                "logScaleF35",
+                "logScaleFlim")
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                "logScaleF35")
+    }else{
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                "logScaleFcrash",
+                "logScaleF35"
+                )
+    }
     ## Referencepoints to estimate
-    args$map$logScaleFmsy <- NULL
-    args$map$logScaleF01 <- NULL
-    args$map$logScaleFmax <- NULL
-    args$map$logScaleFcrash <- NULL
-    args$map$logScaleF35 <- NULL
-    if(fit$conf$stockRecruitmentModelCode %in% c(61,63))
-        args$map$logScaleFlim <- NULL
-
+    args$map <- args$map[-which(names(args$map) %in% rp)]
     
     obj <- do.call(TMB::MakeADFun, args)
     
@@ -269,13 +223,7 @@ referencepoints.sam <- function(fit,
 
     ## Get standard errors
     args <- argsIn
-    args$map$logScaleFmsy <- NULL
-    args$map$logScaleF01 <- NULL
-    args$map$logScaleFmax <- NULL
-    args$map$logScaleFcrash <- NULL
-    args$map$logScaleF35 <- NULL
-    if(fit$conf$stockRecruitmentModelCode %in% c(61,63))
-        args$map$logScaleFlim <- NULL
+    args$map <- args$map[-which(names(args$map) %in% rp)]
 
     opl <- obj$env$parList(par = opt$par)
     
@@ -292,12 +240,7 @@ referencepoints.sam <- function(fit,
     Sigma <- solve(fit$opt$he)
 
     ## can we use TMB/AD??
-    gridx <- which(names(obj2$par) %in% c("logScaleFmsy",
-                                          "logScaleFmax",
-                                          "logScaleF01",
-                                          "logScaleFcrash",
-                                          "logScaleF35",
-                                          "logScaleFlim"))
+    gridx <- which(names(obj2$par) %in% rp)
     JacAll <- numDeriv::jacobian(function(x)obj2$gr(x)[gridx],obj2$par)
 
     dCdTheta <- solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
