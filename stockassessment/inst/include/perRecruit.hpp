@@ -31,7 +31,7 @@ struct PERREC_t {
 };
 
 
-template<class Type, class T=Type>
+template<class Type, class T>
 PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& sel, vector<int> aveYears, int nYears = 300){
   
   // Prepare data
@@ -105,10 +105,10 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     Rf_error("Equilibrium SSB not implemented");
     break;
   case 1: //ricker
-    Se = exp(newPar.rec_pars(1)) * log(1.0 / (exp(newPar.rec_pars(0)) * lambda));
+    Se = exp(-newPar.rec_pars(1)) * log((exp(newPar.rec_pars(0)) * lambda));
     break;
   case 2:  //BH
-    Se = exp(newPar.rec_pars(0)) * lambda - exp(newPar.rec_pars(1));
+    Se = (exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1));
     break;
   case 3: //Constant mean
     Rf_error("Equilibrium SSB not implemented");
@@ -399,12 +399,12 @@ struct REFERENCE_POINTS {
   }
 
   Type YPR(Type Fbar){
-    PERREC_t<Type> r = perRecruit(Fbar, dat, conf, par, sel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
     return exp(r.logYPR);
   }
 
   AD<Type> YPR(CppAD::vector<AD<Type> > Fbar){
-    PERREC_t<AD<Type>> r = perRecruit<Type, AD<Type> >(Fbar[0], dat, conf, par, sel, aveYears, nYears);
+    PERREC_t<AD<Type> > r = perRecruit<Type, AD<Type> >(Fbar[0], dat, conf, par, sel, aveYears, nYears);
     return exp(r.logYPR);
   }
   
@@ -416,12 +416,12 @@ struct REFERENCE_POINTS {
   }
 
   Type SPR(Type Fbar){
-    PERREC_t<Type> r = perRecruit(Fbar, dat, conf, par, sel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
     return exp(r.logSPR);
   }
 
   AD<Type> SPR(CppAD::vector<AD<Type> > Fbar){
-    PERREC_t<AD<Type>> r = perRecruit<Type, AD<Type> >(Fbar[0], dat, conf, par, sel, aveYears, nYears);
+    PERREC_t<AD<Type> > r = perRecruit<Type, AD<Type> >(Fbar[0], dat, conf, par, sel, aveYears, nYears);
     return exp(r.logSPR);
   }
 
@@ -433,12 +433,12 @@ struct REFERENCE_POINTS {
   }
 
   Type Se(Type Fbar){
-    PERREC_t<Type> r = perRecruit(Fbar, dat, conf, par, sel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
     return exp(r.logSe);
   }
 
   Type yield(Type Fbar){
-    PERREC_t<Type> r = perRecruit(Fbar, dat, conf, par, sel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
     return exp(r.logYe);
   }
 
@@ -534,13 +534,13 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     logRe.setZero();
 
     for(int i = 0; i < Fseq.size(); ++i){
-      PERREC_t<Type> v = perRecruit(Fseq(i),
-				    referencepoint.dat,
-				    referencepoint.conf,
-				    referencepoint.par,
-				    referencepoint.sel,
-				    referencepoint.aveYears,
-				    referencepoint.nYears);
+      PERREC_t<Type> v = perRecruit<Type, Type>(Fseq(i),
+						referencepoint.dat,
+						referencepoint.conf,
+						referencepoint.par,
+						referencepoint.sel,
+						referencepoint.aveYears,
+						referencepoint.nYears);
       logYPR(i) = v.logYPR;
       logSPR(i) = v.logSPR;
       logSe(i) = v.logSe;
@@ -622,7 +622,7 @@ extern "C" {
     double Fbar0 = Rf_asReal(Fbar);
     int nY0 = Rf_asInteger(nYears);
  
-    PERREC_t<double> y = perRecruit(Fbar0, d0, c0, p0, s0, a0, nY0);
+    PERREC_t<double> y = perRecruit<double, double>(Fbar0, d0, c0, p0, s0, a0, nY0);
     const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));

@@ -285,8 +285,7 @@ referencepoints.sam <- function(fit,
     args$parameters$logScaleFcrash <- opl$logScaleFcrash
     args$parameters$logScaleF35 <- opl$logScaleF35
     if(fit$conf$stockRecruitmentModelCode %in% c(61,63))
-        args$map$logScaleFlim <- NULL
-
+        args$parameters$logScaleFlim <- opl$logScaleFlim
 
     obj2 <- do.call(TMB::MakeADFun, args)
 
