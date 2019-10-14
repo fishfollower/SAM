@@ -390,17 +390,17 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
     int catchYears = std::max((int)asDouble(dat.forecast.nYears),10);
     for(int qq = 0; qq < catchYears; ++qq)
       catchSum +=  cat(cat.size()-1 - qq);
-      nll -= (log(catchSum) - log(catchYears));
+    nll -= (log(catchSum) - log(catchYears));
 
-      // Calculate Fmsy
-      Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - dat.forecast.nYears - 1);
-      ADREPORT_F(logFMSY, of);
+    // Calculate Fmsy
+    Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - dat.forecast.nYears - 1);
+    ADREPORT_F(logFMSY, of);
 
-      // Output stock status - Positive is good for the stock
-      Type logFstatus = logFMSY - logfbar(timeSteps - dat.forecast.nYears - 1);
-      Type logSSBstatus = logssb(timeSteps - dat.forecast.nYears - 1) - logssb(timeSteps - 1);
-      ADREPORT_F(logFstatus, of);
-      ADREPORT_F(logSSBstatus, of);
+    // Output stock status - Positive is good for the stock
+    Type logFstatus = logFMSY - logfbar(timeSteps - dat.forecast.nYears - 1);
+    Type logSSBstatus = logssb(timeSteps - dat.forecast.nYears - 1) - logssb(timeSteps - 1);
+    ADREPORT_F(logFstatus, of);
+    ADREPORT_F(logSSBstatus, of);
   }
 
   
