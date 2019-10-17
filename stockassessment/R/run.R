@@ -80,14 +80,14 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
             list(...))
 
   mapRP <- list(logFScaleMSY = factor(NA),
-                       logScaleFmsy = factor(NA),
-                       logScaleFmax = factor(NA),
-                       logScaleF01 = factor(NA),
-                       logScaleFcrash = factor(NA),
-                       logScaleF35 = factor(NA),
-                       logScaleFlim = factor(NA)
-                       )
-  if(is.null(args$map)){
+                logScaleFmsy = factor(NA),
+                logScaleFmax = factor(NA),
+                logScaleF01 = factor(NA),
+                logScaleFcrash = factor(NA),
+                logScaleF35 = factor(NA),
+                logScaleFlim = factor(NA)
+                )
+  if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
       args$map <- mapRP
   }else{
       args$map <- c(args$map, mapRP)

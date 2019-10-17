@@ -19,7 +19,7 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 100,
 
 \item{nlminb.control}{list of control variables for nlminb}
 
-\item{...}{}
+\item{...}{other arguments}
 }
 \description{
 Work in progress - do not use

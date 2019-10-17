@@ -12,6 +12,7 @@ extern "C" {
 
   SEXP perRecruitR(SEXP Fbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears);
   SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code);
+  SEXP jacobian(SEXP fn, SEXP par, SEXP rho, SEXP maxit, SEXP h, SEXP tolerance);
   
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
@@ -36,6 +37,7 @@ extern "C" {
     
     CALLDEF(perRecruitR,7),
     CALLDEF(stockRecruitmentModelR,3),
+    CALLDEF(jacobian,6),
 
     {NULL,NULL,0}
   };
