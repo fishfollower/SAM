@@ -38,10 +38,13 @@ Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRe
       log(thisSSB + sqrt(exp(2.0 * rec_pars(0)) + (exp(2.0 * rec_pars(2)) / 4.0)) -
     	  sqrt(pow(thisSSB-exp(rec_pars(0)),2) + (exp(2.0 * rec_pars(2)) / 4.0)));
     break;
-  case 64: // Cushing
-    predN = rec_pars(0) + exp(rec_pars(1)) * log(thisSSB);
+  case 64: // Power CMP
+    predN = rec_pars(0) + invlogit(rec_pars(1)) * log(thisSSB);
     break;
-  case 65: // Shepherd
+  case 65: // Power Non-CMP
+    predN = rec_pars(0) + (exp(rec_pars(1))+1.0001) * log(thisSSB);
+    break;
+  case 66: // Shepherd
     predN = rec_pars(0) + log(thisSSB) - log(1.0 + exp(exp(rec_pars(2)) * (log(thisSSB) - rec_pars(1))));
     break;
     default:
