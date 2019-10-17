@@ -201,7 +201,7 @@ struct forecastSet {
 template<class Type>
 struct referencepointSet {
 
-  enum class CatchType {
+  enum CatchType {
 		  totalCatch,
 		  landings,
 		  discard
