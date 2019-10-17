@@ -74,18 +74,16 @@ addRecruitmentCurve.sam <- function(fit,
 ##' @param fit a SAM fit
 ##' @param nYears Number of years to forecast
 ##' @param nlminb.control list of control variables for nlminb
-##' @param ... 
-##' @return 
+##' @param ... other arguments
 ##' @author Christoffer Moesgaard Albertsen
 ##' @export
-
 forecastMSY <- function(fit,
                     nYears = 100,
                     nlminb.control = list(eval.max = 100, iter.max = 100),
                     rec.years = c(),
                     processNoiseF = FALSE,
                     ...){
-    UseMethod("findForecastMSY")
+    UseMethod("forecastMSY")
 }
 
 
@@ -128,12 +126,22 @@ forecastMSY.sam <- function(fit,
 
     Sigma <- solve(fit$opt$he)
 
-    ## can we use TMB/AD??
-    JacAll <- numDeriv::jacobian(function(x)tail(obj2$gr(x),1),obj2$par)
+    env <- environment()
+    Jacobian <- function(x){
+        r <- .Call("jacobian",
+                   function(x)tail(obj2$gr(x),1),
+                   x,
+                   env,
+                   30,
+                   0.1 * 10^floor(log10(abs(x))) + 1e-4, #abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-5),
+                   1e-12)
+        do.call("cbind",r[-1])
+    }
+
+    JacAll <- Jacobian(obj2$par)
 
     dCdTheta <- solve(JacAll[,length(obj2$par),drop=FALSE]) %*% JacAll[,-length(obj2$par),drop=FALSE]
 
-    ##varLogFScale <- dCdTheta %*% solve(fit$opt$he) %*% t(dCdTheta)
 
     ## Reuse old fit 
     dG <- rbind(diag(1,length(fit$opt$par)),dCdTheta)
@@ -156,6 +164,11 @@ forecastMSY.sam <- function(fit,
 ##' @author Christoffer Moesgaard Albertsen
 ##' @export
 referencepoints <- function(fit,
+                            nYears,
+                            Fsequence,
+                            aveYears,
+                            selYears,
+                            catchType,
                             ...){
     UseMethod("referencepoints")
 }
@@ -164,6 +177,11 @@ referencepoints <- function(fit,
 ##' @method referencepoints sam
 #' @export
 referencepoints.sam <- function(fit,
+                                nYears = 100,
+                            Fsequence = seq(1e-5,4, len = 200),
+                            aveYears = as.numeric(c(length(fit$data$years)-2:1)),
+                            selYears = as.numeric(c(length(fit$data$years)-1)),
+                            catchType = "catch",
                             ...){
 
     obj0 <- fit$obj
@@ -171,13 +189,13 @@ referencepoints.sam <- function(fit,
     argsIn$parameters <- fit$pl
     argsIn$random <- unique(names(obj0$env$par[obj0$env$random]))
     ## Add referencepointSet
-    catchType <- match("catch",c("catch","landing","discard"))
+    catchType <- pmatch(catchType,c("catch","landing","discard"))
     if(is.na(catchType))
         stop("Invalid catch type")
-    argsIn$data$referencepoint <- list(nYears = 200,
-                                       aveYears = as.numeric(c(length(argsIn$data$years)-2:1)),
-                                       selYears = as.numeric(c(length(argsIn$data$years)-1)),
-                                       Fsequence = seq(1e-5,4, len = 200),
+    argsIn$data$referencepoint <- list(nYears = nYears,
+                                       aveYears = aveYears,
+                                       selYears = selYears,
+                                       Fsequence = Fsequence,
                                        catchType = catchType-1
                                        )
 
@@ -187,22 +205,34 @@ referencepoints.sam <- function(fit,
     fix <- setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
 
-    if(fit$conf$stockRecruitmentModelCode %in% c(0,3)){
+    if(fit$conf$stockRecruitmentModelCode %in% c(0,3)){ # RW, constant mean
         rp <- c("logScaleFmax",
                 "logScaleF01",
                 "logScaleF35")
-    }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){ # Hockey-sticks
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
                 "logScaleF35",
                 "logScaleFlim")
-    }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){ # AR
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleF35")
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(64)){ # Pow CMP
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                "logScaleF35"
+                )
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(65)){ # Pow Non-CMP
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                "logScaleF35"
+                )
     }else{
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
@@ -213,12 +243,46 @@ referencepoints.sam <- function(fit,
     }
     ## Referencepoints to estimate
     args$map <- args$map[-which(names(args$map) %in% rp)]
+
+    args$parameters$logScaleFmsy <- -2
+    args$parameters$logScaleF01 <- -2
+    args$parameters$logScaleFmax <- -2
+    args$parameters$logScaleFcrash <- -2
+    args$parameters$logScaleF35 <- -2
+    args$parameters$logScaleFlim <- -2
+
     
     obj <- do.call(TMB::MakeADFun, args)
-    
-    obj$fn(obj$par)
-    obj$gr(obj$par)
 
+    ## Take inital look at YPR / SPR to determine if Fmax makes sense
+    rep <- obj$report()
+    tryAgain <- FALSE
+    if(which.max(rep$logYPR) == length(rep$logYPR) && any(rp %in% "logScaleFmax")){
+        warning("The stock does not appear to have a well-defined Fmax. Fmax will not be estimated. Increase the upper bound of Fsequence to try again.")
+        rp <- rp[-which(rp %in% "logScaleFmax")]
+        args$map$logScaleFmax <- factor(NA)
+        tryAgain <- TRUE
+    }
+
+      if(min(rep$logSe) > -10 && any(rp %in% "logScaleFcrash")){
+        warning("The stock does not appear to have a well-defined Fcrash. Fmax will not be estimated. Increase the upper bound of Fsequence to try again.")
+        rp <- rp[-which(rp %in% "logScaleFcrash")]
+        args$map$logScaleFcrash <- factor(NA)
+        tryAgain <- TRUE
+    }
+
+    if(which.max(rep$logYe) == length(rep$logYe) && any(rp %in% "logScaleFmsy")){
+        warning("The stock does not appear to have a well-defined Fmsy. Fmsy will not be estimated. Increase the upper bound of Fsequence to try again.")
+        rp <- rp[-which(rp %in% "logScaleFmsy")]
+        args$map$logScaleFmsy <- factor(NA)
+        tryAgain <- TRUE
+    }
+
+
+    if(tryAgain)
+        obj <- do.call(TMB::MakeADFun, args)
+
+    
     opt <- nlminb(obj$par, obj$fn, obj$gr)
 
     ## Get standard errors
@@ -239,9 +303,21 @@ referencepoints.sam <- function(fit,
 
     Sigma <- solve(fit$opt$he)
 
-    ## can we use TMB/AD??
+      
     gridx <- which(names(obj2$par) %in% rp)
-    JacAll <- numDeriv::jacobian(function(x)obj2$gr(x)[gridx],obj2$par)
+    env <- environment()
+    Jacobian <- function(x){
+        r <- .Call("jacobian",
+                   function(x) obj2$gr(x)[gridx],
+                   x,
+                   env,
+                   30,
+                   0.1 * 10^floor(log10(abs(x))) + 1e-4, #abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-5),
+                   1e-12)
+        do.call("cbind",r[-1])
+    }
+
+    JacAll <- Jacobian(obj2$par)
 
     dCdTheta <- solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
 
@@ -271,6 +347,20 @@ referencepoints.sam <- function(fit,
                       toCI))
     colnames(Ftab) <- colnames(Btab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- c("Estimate","Low","High")
 
+    toRowNames <- Vectorize(function(x){
+        switch(gsub("^referencepoint.logF","",x),
+               "sq"="Status quo",
+               "0"="Zero catch",
+               "msy"="MSY",
+               "max"="Max",
+               "01"="0.1",
+               "crash"="Crash",
+               "35"="35%",
+               "lim"="lim"
+        )               
+    })
+    rownames(Ftab) <- rownames(Btab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- toRowNames(rownames(Ftab))
+
     YPRseq <- toCI("logYPR")
     SPRseq <- toCI("logSPR")
     Yieldseq <- toCI("logYe")
@@ -290,7 +380,7 @@ referencepoints.sam <- function(fit,
                               Biomass = Bseq,
                               Recruitment = Rseq),
                 opt = opt,
-                ssdr = ssdr
+                sdr = sdr2
                 )
                               
 

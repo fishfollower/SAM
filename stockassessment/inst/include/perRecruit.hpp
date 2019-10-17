@@ -1,5 +1,4 @@
-
-#define SAM_NegInf -100.0
+#define SAM_NegInf -20.0
 #define SAM_Zero exp(-20.0)
 // exp(SAM_NegInf)
 
@@ -27,7 +26,8 @@ struct PERREC_t {
   Type logSPR;
   Type logSe;
   Type logRe;
-  Type logYe;  
+  Type logYe;
+  Type dSR0;
 };
 
 
@@ -87,6 +87,7 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     logN(0,i) = SAM_NegInf;
   }
 
+ 
   // Calculate yield
   vector<T> cat(nYears);
   switch(newDat.referencepoint.catchType){
@@ -109,7 +110,6 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   T logSPR = log(sum(ssb));
   T lambda = exp(logSPR);
 
-
   if(conf.stockRecruitmentModelCode == 0 ||
      conf.stockRecruitmentModelCode == 3){
     PERREC_t<T> res = {log(Fbar), // logFbar
@@ -117,7 +117,8 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
 		       logSPR,	   // logSPR
 		       R_NaReal,	   // logSe
 		       R_NaReal,		 // logRe
-		       R_NaReal}; // logYe
+		       R_NaReal,// logYe
+		       R_NaReal}; // dSR0
     return res;
   }
   
@@ -130,16 +131,19 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   T dsr0 = 10000.0;
   if(conf.stockRecruitmentModelCode != 62)
     dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
+
   
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
     Rf_error("Equilibrium SSB not implemented");
     break;
   case 1: //ricker
-    Se = exp(-newPar.rec_pars(1)) * log((exp(newPar.rec_pars(0)) * lambda));
+    Se = exp(-newPar.rec_pars(1)) * (newPar.rec_pars(0) + log(lambda)); //log((exp(newPar.rec_pars(0)) * lambda));
     break;
   case 2:  //BH
-    Se = (exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1));
+    Se =  CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+			   CppAD::fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
+			   T(SAM_Zero));
     break;
   case 3: //Constant mean
     Rf_error("Equilibrium SSB not implemented");
@@ -153,28 +157,40 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   case 63: //Bent hyperbola / Hockey-stick-like
     Se = (2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0) / (lambda * exp(newPar.rec_pars(1))) - 2.0 * exp(newPar.rec_pars(0)) - 2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0)) / ( 1.0 / ((lambda * lambda * exp(2.0 * newPar.rec_pars(1)))) - 2.0 / (lambda * exp(newPar.rec_pars(1)))  );  
     break;
-  case 64: // Cushing
-    Se = exp(1.0 / (1 - exp(newPar.rec_pars(1))) * (newPar.rec_pars(0) + log(lambda)));
+  case 64: // Power CMP
+    Se = exp(1.0 / (1.0 - invlogit(newPar.rec_pars(1))) * (newPar.rec_pars(0) + log(lambda)));
     break;
-  case 65: // Shepherd
-    Se = exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(exp(newPar.rec_pars(0)) * lambda - 1.0));
+  case 65: // Power Non-CMP
+    Se = exp(1.0 / (1.0 - (exp(newPar.rec_pars(1)) + 1.0001)) * (newPar.rec_pars(0) + log(lambda)));
+    break;
+  case 66: // Shepherd
+    Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+    			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(CppAD::fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
+    			  T(SAM_Zero));
     break;
     default:
       error("SR model code not recognized");
     break;   
   }
 
-  // Type logSe = log(Se);
-  // Type logSe = CppAD::CondExpGt(exp(-logSPR), dsr0, Type(SAM_NegInf), log(Se));
-  T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0, log(Se) - 10.0 * (exp(-logSPR) - dsr0), log(Se));
+  //T logSe = log(Se);
+  //Type logSe = CppAD::CondExpGt(exp(-logSPR), dsr0, Type(SAM_NegInf), log(Se));
+  T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0,
+  			     log(CppAD::fabs(Se)) - 10.0 * (exp(-logSPR) - dsr0),
+  			     log(CppAD::fabs(Se)));
+
+  T logYe = CppAD::CondExpGt(exp(-logSPR), dsr0,
+  			     logSe - logSPR + logYPR - 10.0 * (exp(-logSPR) - dsr0),
+  			     logSe - logSPR + logYPR);
 
   // Return
   PERREC_t<T> res = {log(Fbar), // logFbar
-			logYPR,	   // logYPR
-			logSPR,	   // logSPR
-			logSe,	   // logSe
-			logSe - logSPR,		 // logRe
-			logSe - logSPR + logYPR}; // logYe
+		     logYPR,	   // logYPR
+		     logSPR,	   // logSPR
+		     logSe,	   // logSe
+		     logSe - logSPR,		 // logRe
+		     logYe,   // logYe
+		     dsr0};			// DSR0
 
   return res;
 }
@@ -304,7 +320,7 @@ struct REFERENCE_POINTS {
 
     // Calculate actual F values
     if(CppAD::Variable(par.logScaleFmsy)){
-      logFmsy = logFsq + par.logScaleFmsy;
+      logFmsy = par.logScaleFmsy; // logFsq + par.logScaleFmsy;
       logBmsy = log(Se(exp(logFmsy)));
       logYmsy = log(yield(exp(logFmsy)));
       logYPRmsy = log(YPR(exp(logFmsy)));
@@ -319,7 +335,7 @@ struct REFERENCE_POINTS {
 
     
     if(CppAD::Variable(par.logScaleFmax)){
-      logFmax = logFsq + par.logScaleFmax;
+      logFmax = par.logScaleFmax; //logFsq + par.logScaleFmax;
       logBmax = log(Se(exp(logFmax)));
       logYmax = log(yield(exp(logFmax)));
       logYPRmax = log(YPR(exp(logFmax)));
@@ -334,7 +350,7 @@ struct REFERENCE_POINTS {
 
 
     if(CppAD::Variable(par.logScaleF01)){
-      logF01 = logFsq + par.logScaleF01;
+      logF01 = par.logScaleF01; //logFsq + par.logScaleF01;
       logB01 = log(Se(exp(logF01)));
       logY01 = log(yield(exp(logF01)));
       logYPR01 = log(YPR(exp(logF01)));
@@ -349,7 +365,7 @@ struct REFERENCE_POINTS {
 
 
     if(CppAD::Variable(par.logScaleFcrash)){
-      logFcrash = logFsq + par.logScaleFcrash;
+      logFcrash = par.logScaleFcrash; //logFsq + par.logScaleFcrash;
       logBcrash = log(Se(exp(logFcrash)));
       logYcrash = log(yield(exp(logFcrash)));
       logYPRcrash = log(YPR(exp(logFcrash)));
@@ -364,7 +380,7 @@ struct REFERENCE_POINTS {
 
 
     if(CppAD::Variable(par.logScaleF35)){
-      logF35 = logFsq + par.logScaleF35;
+      logF35 = par.logScaleF35; //logFsq + par.logScaleF35;
       logB35 = log(Se(exp(logF35)));
       logY35 = log(yield(exp(logF35)));
       logYPR35 = log(YPR(exp(logF35)));
@@ -379,7 +395,7 @@ struct REFERENCE_POINTS {
     if(CppAD::Variable(par.logScaleFlim) &&
        (conf.stockRecruitmentModelCode == 61 ||
 	conf.stockRecruitmentModelCode == 63)){    
-      logFlim = logFsq + par.logScaleFlim;
+      logFlim = par.logScaleFlim; //logFsq + par.logScaleFlim;
       logYlim = log(yield(exp(logFlim)));
       if(conf.stockRecruitmentModelCode == 61){
 	logBlim = par.rec_pars(1);
@@ -406,7 +422,7 @@ struct REFERENCE_POINTS {
     
     // Prepare AD
     vector<Type> Fsqvec(1);
-    Fsqvec(0) = exp(logFsq);
+    Fsqvec(0) = exp(-10.0);
     CppAD::vector<AD<Type> > x1( Fsqvec );
     CppAD::vector<AD<Type> > y1( 1 );
     CppAD::Independent(x1);
@@ -420,7 +436,7 @@ struct REFERENCE_POINTS {
     FSPR = CppAD::ADFun<Type>(x2, y2);
 
     vector<Type> Bsqvec(1);
-    Bsqvec(0) = exp(logBsq);
+    Bsqvec(0) = exp(12.0);
     CppAD::vector<AD<Type> > x3( Bsqvec );
     CppAD::vector<AD<Type> > y3( 1 );
     CppAD::Independent(x3);
@@ -565,6 +581,7 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     logYe.setZero();
     vector<Type> logRe(Fseq.size());
     logRe.setZero();
+    Type dSR0 = 0.0;
 
     for(int i = 0; i < Fseq.size(); ++i){
       PERREC_t<Type> v = perRecruit<Type, Type>(Fseq(i),
@@ -579,13 +596,24 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       logSe(i) = v.logSe;
       logYe(i) = v.logYe;
       logRe(i) = v.logRe;
+      if(i == 0)
+	dSR0 = v.dSR0;
 	
     }
+
+    REPORT_F(logYPR, of);
+    REPORT_F(logSPR, of);
+    REPORT_F(logSe, of);
+    REPORT_F(logYe, of);
+    REPORT_F(logRe, of);
+    REPORT_F(dSR0, of);
+
     ADREPORT_F(logYPR, of);
     ADREPORT_F(logSPR, of);
     ADREPORT_F(logSe, of);
     ADREPORT_F(logYe, of);
     ADREPORT_F(logRe, of);
+    ADREPORT_F(dSR0, of);
   }
   
   ADREPORT_F(referencepoint.logFsq,of);
@@ -635,6 +663,33 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logYlim,of);
   ADREPORT_F(referencepoint.logYPRlim,of);
   ADREPORT_F(referencepoint.logSPRlim,of);
+
+  // Fbar relative to (last year) reference points
+  vector<Type> fbar = fbarFun(conf, logF);
+  vector<Type> logfbar = log(fbar);
+
+  vector<Type> relref_logfbar_fmsy = logfbar - referencepoint.logFmsy;
+  ADREPORT_F(relref_logfbar_fmsy,of);
+  vector<Type> relref_logfbar_fmax = logfbar - referencepoint.logFmax;
+  ADREPORT_F(relref_logfbar_fmax,of);
+  vector<Type> relref_logfbar_f01 = logfbar - referencepoint.logF01;
+  ADREPORT_F(relref_logfbar_f01,of);
+  vector<Type> relref_logfbar_f35 = logfbar - referencepoint.logF35;
+  ADREPORT_F(relref_logfbar_f35,of);
+
+  // SSB relative to (last year) reference points
+    vector<Type> ssb = ssbFun(dat, conf, logN, logF);
+  vector<Type> logssb = log(ssb);
+
+  vector<Type> relref_logssb_bmsy = logssb - referencepoint.logBmsy;
+  ADREPORT_F(relref_logssb_bmsy,of);
+  vector<Type> relref_logssb_bmax = logssb - referencepoint.logBmax;
+  ADREPORT_F(relref_logssb_bmsy,of);
+  vector<Type> relref_logssb_b01 = logssb - referencepoint.logB01;
+  ADREPORT_F(relref_logssb_b01,of);
+  vector<Type> relref_logssb_b35 = logssb - referencepoint.logB35;
+  ADREPORT_F(relref_logssb_b35,of);
+
 
   Type ans = referencepoint();
   return ans;
