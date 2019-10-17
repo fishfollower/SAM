@@ -91,13 +91,13 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   // Calculate yield
   vector<T> cat(nYears);
   switch(newDat.referencepoint.catchType){
-  case referencepointSet<T>::CatchType::totalCatch:
+  case referencepointSet<T>::totalCatch:
     cat = catchFun(newDat, newConf, logN, logF);
     break;
-  case referencepointSet<T>::CatchType::landings:
+  case referencepointSet<T>::landings:
     cat = landFun(newDat, newConf, logN, logF);
     break;
-  case referencepointSet<T>::CatchType::discard:
+  case referencepointSet<T>::discard:
     cat = disFun(newDat, newConf, logN, logF);
     break;
   default:
