@@ -61,10 +61,6 @@ forecast(fit, ...)
 \item{biasCorrect}{Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).}
 
 \item{returnAllYears}{If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.}
-
-\item{fit}{}
-
-\item{...}{}
 }
 \value{
 an object of type samforecast
