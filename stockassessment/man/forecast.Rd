@@ -32,6 +32,8 @@ forecast(fit, ...)
 
 \item{landval}{a vector of target catches. See details.}
 
+\item{findMSY}{Should not be used. See \link{forecastMSY}.}
+
 \item{nosim}{number of simulations. Not used.}
 
 \item{year.base}{starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before}
@@ -59,6 +61,10 @@ forecast(fit, ...)
 \item{biasCorrect}{Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).}
 
 \item{returnAllYears}{If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.}
+
+\item{fit}{}
+
+\item{...}{}
 }
 \value{
 an object of type samforecast

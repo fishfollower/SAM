@@ -19,10 +19,17 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 100,
 
 \item{nlminb.control}{list of control variables for nlminb}
 
+\item{rec.years}{Numeric vector of years to use (to calculate mean and standard deviation) for recruitment. An empty vector will use the recruitment model.}
+
+\item{processNoiseF}{Should random walk process noise be used for F?}
+
 \item{...}{other arguments}
 }
 \description{
 Work in progress - do not use
+}
+\seealso{
+forecast
 }
 \author{
 Christoffer Moesgaard Albertsen

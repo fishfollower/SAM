@@ -6,6 +6,7 @@
 ##' @param CI Add confidence intervals?
 ##' @param col Color of fitted line
 ##' @param cicol Color of confidence intervals
+##' @param plot Add the curve to a plot?
 ##' @param ... not used
 ##' @seealso srplot
 ##' @author Christoffer Moesgaard Albertsen
@@ -14,6 +15,7 @@ addRecruitmentCurve <- function(fit,
                                 CI = TRUE,
                                 col = rgb(0.6,0,0),
                                 cicol = rgb(0.6,0,0,0.3),
+                                plot = TRUE,
                                 ...){
     UseMethod("addRecruitmentCurve")
 } 
@@ -25,6 +27,7 @@ addRecruitmentCurve.sam <- function(fit,
                     CI = TRUE,
                     col = rgb(0.6,0,0),
                     cicol = rgb(0.6,0,0,0.3),
+                    plot = TRUE,
                     ...){
        X <- summary(fit)
        R <- X[, 1]
@@ -58,12 +61,14 @@ addRecruitmentCurve.sam <- function(fit,
              CIlow = as.vector(tmp - 2 * sd),
              CIhigh = as.vector(tmp + 2 * sd))
        })
-       polygon(c(ssb, rev(ssb)),
-               c(tab["CIlow",],
-                 rev(tab["CIhigh",])),
-               col = cicol,
-               border = NA)
-       lines(ssb,tab["Estimate",], col = col, lwd = 3)
+       if(plot){
+           polygon(c(ssb, rev(ssb)),
+                   c(tab["CIlow",],
+                     rev(tab["CIhigh",])),
+                   col = cicol,
+                   border = NA)
+           lines(ssb,tab["Estimate",], col = col, lwd = 3)
+       }
        invisible(srfit)
 } 
 
@@ -74,8 +79,11 @@ addRecruitmentCurve.sam <- function(fit,
 ##' @param fit a SAM fit
 ##' @param nYears Number of years to forecast
 ##' @param nlminb.control list of control variables for nlminb
+##' @param rec.years Numeric vector of years to use (to calculate mean and standard deviation) for recruitment. An empty vector will use the recruitment model.
+##' @param processNoiseF Should random walk process noise be used for F?
 ##' @param ... other arguments
 ##' @author Christoffer Moesgaard Albertsen
+##' @seealso forecast
 ##' @export
 forecastMSY <- function(fit,
                     nYears = 100,
@@ -159,6 +167,11 @@ forecastMSY.sam <- function(fit,
 ##'
 ##' Work in progress - do not use
 ##' @param fit an object to calculate reference points for
+##' @param nYears Number of years to use in per-recruit calculations
+##' @param Fsequence Sequence of F values used to report per-recruit and equilibrium values
+##' @param aveYears Vector of year indices used to calculate average natural mortality, weights, etc. (starting at 0)
+##' @param selYears Vector of year indices used to calculate selectivity (starting at 0)
+##' @param catchType Catch type used: (total) catch, landings, discard.
 ##' @param ... not used
 ##' @return a sam_referencepoints fit
 ##' @author Christoffer Moesgaard Albertsen
@@ -326,8 +339,17 @@ referencepoints.sam <- function(fit,
     ## Reuse old fit 
     dG <- rbind(diag(1,length(fit$opt$par)),dCdTheta)
     covAll <- dG %*% solve(fit$opt$he) %*% t(dG)
-    diag(covAll)[gridx] <- diag(covAll)[gridx] + 1e-8
+    covAllOld <- covAll
+    i <- 21
+    tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
+        i <- i-1
+        covAll <- covAllOld
+        tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+        diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
+    }
 
+    
     sdr2 <- TMB::sdreport(obj2, obj2$par, solve(covAll))
     ssdr <- summary(sdr2)
 
@@ -380,7 +402,8 @@ referencepoints.sam <- function(fit,
                               Biomass = Bseq,
                               Recruitment = Rseq),
                 opt = opt,
-                sdr = sdr2
+                sdr = sdr2,
+                diagonalCorrection = tv
                 )
                               
 
