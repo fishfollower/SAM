@@ -297,6 +297,7 @@ summary.sam<-function(object, ...){
 ##' @param nsim number of response lists to simulate. Defaults to 1.
 ##' @param seed random number seed
 ##' @param full.data logical, should each inner list contain a full list of data. Defaults to TRUE  
+##' @param keep.process Keep logN and logF processes when full.data = TRUE?
 ##' @param ... extra arguments
 ##' @importFrom stats simulate
 ##' @details simulates data sets from the model fitted and conditioned on the random effects estimated 

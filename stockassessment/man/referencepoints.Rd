@@ -15,6 +15,16 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, catchType, ...)
 \arguments{
 \item{fit}{an object to calculate reference points for}
 
+\item{nYears}{Number of years to use in per-recruit calculations}
+
+\item{Fsequence}{Sequence of F values used to report per-recruit and equilibrium values}
+
+\item{aveYears}{Vector of year indices used to calculate average natural mortality, weights, etc. (starting at 0)}
+
+\item{selYears}{Vector of year indices used to calculate selectivity (starting at 0)}
+
+\item{catchType}{Catch type used: (total) catch, landings, discard.}
+
 \item{...}{not used}
 }
 \value{

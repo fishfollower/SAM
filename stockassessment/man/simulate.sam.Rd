@@ -16,6 +16,8 @@
 
 \item{full.data}{logical, should each inner list contain a full list of data. Defaults to TRUE}
 
+\item{keep.process}{Keep logN and logF processes when full.data = TRUE?}
+
 \item{...}{extra arguments}
 }
 \value{

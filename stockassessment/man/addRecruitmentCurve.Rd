@@ -6,10 +6,10 @@
 \title{Add stock-recruitment curve to srplot}
 \usage{
 addRecruitmentCurve(fit, CI = TRUE, col = rgb(0.6, 0, 0),
-  cicol = rgb(0.6, 0, 0, 0.3), ...)
+  cicol = rgb(0.6, 0, 0, 0.3), plot = TRUE, ...)
 
 \method{addRecruitmentCurve}{sam}(fit, CI = TRUE, col = rgb(0.6, 0, 0),
-  cicol = rgb(0.6, 0, 0, 0.3), ...)
+  cicol = rgb(0.6, 0, 0, 0.3), plot = TRUE, ...)
 }
 \arguments{
 \item{fit}{Object to show SR-curve for}
@@ -19,6 +19,8 @@ addRecruitmentCurve(fit, CI = TRUE, col = rgb(0.6, 0, 0),
 \item{col}{Color of fitted line}
 
 \item{cicol}{Color of confidence intervals}
+
+\item{plot}{Add the curve to a plot?}
 
 \item{...}{not used}
 }
