@@ -586,6 +586,7 @@ struct paraSet{
   vector<Type> sepFlogSd;
   vector<Type> predVarObs;
   Type logFScaleMSY;
+  Type keepMSY;
   Type logScaleFmsy;
   Type logScaleFmax;
   Type logScaleF01;
@@ -610,6 +611,7 @@ struct paraSet{
     logitReleaseSurvival = asVector<Type>(getListElement(x,"logitReleaseSurvival"));
     logitRecapturePhi = asVector<Type>(getListElement(x,"logitRecapturePhi"));
     logFScaleMSY = (Type)Rf_asReal(getListElement(x,"logFScaleMSY"));
+    keepMSY = (Type)Rf_asReal(getListElement(x,"keepMSY"));
     logScaleFmsy = (Type)Rf_asReal(getListElement(x,"logScaleFmsy"));
     logScaleFmax = (Type)Rf_asReal(getListElement(x,"logScaleFmax"));
     logScaleF01 = (Type)Rf_asReal(getListElement(x,"logScaleF01"));
@@ -633,6 +635,7 @@ struct paraSet{
     logitReleaseSurvival = rhs.logitReleaseSurvival;   
     logitRecapturePhi = rhs.logitRecapturePhi;
     logFScaleMSY = rhs.logFScaleMSY;
+    keepMSY = rhs.keepMSY;
     logScaleFmsy = rhs.logScaleFmsy;
     logScaleFmax = rhs.logScaleFmax;
     logScaleF01 = rhs.logScaleF01;
@@ -660,6 +663,7 @@ struct paraSet{
     d.logitReleaseSurvival = logitReleaseSurvival.template cast<T>();   
     d.logitRecapturePhi = logitRecapturePhi.template cast<T>();
     d.logFScaleMSY = T(logFScaleMSY);
+    d.keepMSY = T(keepMSY);
     d.logScaleFmsy = T(logScaleFmsy);
     d.logScaleFmax = T(logScaleFmax);
     d.logScaleF01 = T(logScaleF01);
@@ -706,6 +710,7 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
   // Correct input selectivity to have Fbar == 1
   Type inputFbar = 0.0;
   if(selectivity.size() > 0){
+    Rcout << "Using custom selectivity!\n";
     for(int a = fbarFirst; a <= fbarLast; ++a){  
       if(selectivity.size() == logF.rows()){
 	inputFbar += selectivity(conf.keyLogFsta(0,a));
@@ -809,12 +814,7 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
       }
       break;
     case findMSY:
-      // forecastCalculatedLogSdCorrection(i) = 1e-2;
-      if(i == 0){ // Scale initial fbar by parameter
-	forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel);
-      }else{ // Keep this F value
-	forecastCalculatedMedian.col(i) = (vector<Type>)forecastCalculatedMedian.col(i-1);
-      }
+      forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel); // 
       break;
     default:
       Rf_error("Forecast type not implemented");
