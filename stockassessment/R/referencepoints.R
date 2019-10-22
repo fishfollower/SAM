@@ -114,7 +114,7 @@ forecastMSY.sam <- function(fit,
     
     ## Find MSY value
     args <- argsIn
-    args$parameters$logFScaleMSY <- log(0.1)
+    args$parameters$logFScaleMSY <- 0
     map0 <- args$map
     fix <- setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
