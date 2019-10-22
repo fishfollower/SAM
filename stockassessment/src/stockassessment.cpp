@@ -119,6 +119,7 @@ Type objective_function<Type>::operator() ()
 
   // Forecast FMSY
   PARAMETER(logFScaleMSY); paraset.logFScaleMSY = logFScaleMSY;
+  PARAMETER(keepMSY); paraset.keepMSY = keepMSY;
 
   // YPR reference points
   PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;

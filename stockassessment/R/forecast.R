@@ -166,7 +166,7 @@ forecast.sam <- function(fit,
     obj0 <- fit$obj
     obj0$fn(fit$opt$par)
     obj0$gr(fit$opt$par)
-    
+   
     args <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
     pl <- fit$pl
     pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),nYears))

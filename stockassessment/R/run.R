@@ -71,6 +71,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
             list(...))
 
   mapRP <- list(logFScaleMSY = factor(NA),
+                keepMSY = factor(NA),
                 logScaleFmsy = factor(NA),
                 logScaleFmax = factor(NA),
                 logScaleF01 = factor(NA),
