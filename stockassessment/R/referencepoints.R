@@ -87,7 +87,7 @@ addRecruitmentCurve.sam <- function(fit,
 ##' @export
 forecastMSY <- function(fit,
                     nYears = 100,
-                    nlminb.control = list(eval.max = 100, iter.max = 100),
+                    nlminb.control = list(eval.max = 2000, iter.max = 2000),
                     rec.years = c(),
                     processNoiseF = FALSE,
                     ...){
@@ -99,8 +99,8 @@ forecastMSY <- function(fit,
 ##' @method forecastMSY sam
 ##' @export
 forecastMSY.sam <- function(fit,
-                    nYears = 100,
-                    nlminb.control = list(eval.max = 100, iter.max = 100),
+                    nYears = 500,
+                    nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
                     rec.years = c(),
                     processNoiseF = FALSE,
                     ...){
@@ -111,33 +111,70 @@ forecastMSY.sam <- function(fit,
                        processNoiseF = processNoiseF,
                      ...)
 
+    
     ## Find MSY value
     args <- argsIn
+    args$parameters$logFScaleMSY <- log(0.1)
     map0 <- args$map
     fix <- setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
     args$map$logFScaleMSY <- NULL
-   
-    obj <- do.call(TMB::MakeADFun, args)
-    
-    obj$fn(obj$par)
-    obj$gr(obj$par)
+    args$map$keepMSY <- NULL
 
-    opt <- nlminb(obj$par, obj$fn, obj$gr, control = nlminb.control)
+
+    obj <- do.call(TMB::MakeADFun, args)
+
+    obj$fn(obj$par)
+    ## obj$gr(obj$par)
+
+    fn <- Vectorize(function(x){
+        obj$fn(c(x,0))
+        theta <- obj$env$last.par
+        obj$env$f(theta, order = 1)[1,which(names(theta) == "keepMSY")]
+    })
+
+
+    opt <- nlminb(obj$par[1], fn, control = nlminb.control)
     ## sdr1 <- TMB::sdreport(obj, opt$par)
 
     ## Get standard errors
     args <- argsIn
     args$map$logFScaleMSY <- NULL
+    args$map$keepMSY <- NULL
     args$parameters$logFScaleMSY <- opt$par
     obj2 <- do.call(TMB::MakeADFun, args)
 
     Sigma <- solve(fit$opt$he)
 
+    fn2 <- function(x){
+        p0 <- obj2$par
+        p0[names(p0) != "keepMSY"] <- x
+        obj2$fn(p0)
+        theta <- obj2$env$last.par
+        obj2$env$f(theta, order = 1)[,which(names(theta) == "keepMSY")]
+    }
+
+    gr2 <- function(x){
+        ii <- which(names(obj2$par) == "logFScaleMSY")   
+        r <- .Call("jacobian",
+                   function(y){
+                       x0 <- x
+                       x0[ii] <- y
+                       fn2(x0)
+                   },
+                   x[ii],
+                   env,
+                   30,
+                   0.1 * 10^floor(log10(abs(x))) + 1e-4, #abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-5),
+                   1e-12)
+        r[[2]]
+    }
+
+
     env <- environment()
     Jacobian <- function(x){
         r <- .Call("jacobian",
-                   function(x)tail(obj2$gr(x),1),
+                   gr2,
                    x,
                    env,
                    30,
@@ -154,11 +191,21 @@ forecastMSY.sam <- function(fit,
     ## Reuse old fit 
     dG <- rbind(diag(1,length(fit$opt$par)),dCdTheta)
     covAll <- dG %*% solve(fit$opt$he) %*% t(dG)
-    covAll[nrow(covAll), ncol(covAll)] <- covAll[nrow(covAll), ncol(covAll)] +  1e-8
+
+
+    gridx <- which(names(obj2$par) %in% "logFScaleMSY")
+    covAllOld <- covAll
+    i <- 21
+    tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
+        i <- i-1
+        covAll <- covAllOld
+        tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+        diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
+    }
 
     sdr2 <- TMB::sdreport(obj2, obj2$par, solve(covAll))
-    
- 
+
     return(list(opt = opt, sdr = sdr2))
 
 }

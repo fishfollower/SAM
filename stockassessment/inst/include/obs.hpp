@@ -390,12 +390,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(beforeLastLogF,of);  
 
   if(dat.forecast.nYears > 0 && dat.forecast.FModel(dat.forecast.FModel.size()-1) == dat.forecast.findMSY){
-    Type catchSum = 0.0;
-    int catchYears = std::max((int)asDouble(dat.forecast.nYears),10);
-    for(int qq = 0; qq < catchYears; ++qq)
-      catchSum +=  cat(cat.size()-1 - qq);
-    nll -= (log(catchSum) - log(catchYears));
-
+    
+    int catchYears = std::min((int)asDouble(dat.forecast.nYears),10);
+    Type catchSum = sum((vector<Type>)cat.tail(catchYears)) / catchYears;
+    nll -= par.keepMSY * log(catchSum);    
     // Calculate Fmsy
     Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - dat.forecast.nYears - 1);
     ADREPORT_F(logFMSY, of);
