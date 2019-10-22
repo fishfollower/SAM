@@ -109,7 +109,7 @@ forecastMSY.sam <- function(fit,
                        findMSY = rep(1,nYears),
                        rec.years = rec.years,
                        processNoiseF = processNoiseF,
-                     ...)
+                       ...)
 
     
     ## Find MSY value
@@ -205,9 +205,32 @@ forecastMSY.sam <- function(fit,
         diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
     }
 
-    sdr2 <- TMB::sdreport(obj2, obj2$par, solve(covAll))
+    args <- argsIn
+    args$map$logFScaleMSY <- NULL
+    args$parameters$logFScaleMSY <- opt$par
+    obj3 <- do.call(TMB::MakeADFun, args)
 
-    return(list(opt = opt, sdr = sdr2))
+
+    sdr2 <- TMB::sdreport(obj3, obj3$par, solve(covAll))
+    
+    ssdr <- summary(sdr2)
+
+    toCI <- function(what){
+        exp(ssdr[rownames(ssdr) %in% what,] %*% cbind(Estimate=c(1,0),Low=c(1,-2),High=c(1,2)))
+    }
+    
+    Fmsy <- toCI("logFMSY")
+    ssb <- toCI("logssb")
+    yield <- toCI("logCatch")
+    rec <- toCI("logR")
+    fbar <- toCI("logfbar")
+
+    tab <- rbind(Fmsy, ssb[nrow(ssb),], yield[nrow(yield),], rec[nrow(rec),])
+    rownames(tab) <- c("Fmsy", "Bmsy", "Yield", "Rmsy")
+
+    rownames(ssb) <- rownames(yield) <- rownames(rec) <- rownames(fbar) <- min(fit$data$years) + 0:(nrow(ssb)-1)
+
+    return(list(table = tab, timeseries = list(SSB = ssb, Catch = yield, Recruitment = rec, Fbar = fbar), opt = opt, sdr = sdr2))
 
 }
 
@@ -447,6 +470,8 @@ referencepoints.sam <- function(fit,
     Bseq <- toCI("logSe")
     Rseq <- toCI("logRe")
 
+rownames(YPRseq) <- rownames(SPRseq) <- rownames(Yieldseq) <- rownames(Bseq) <- rownames(Rseq) <- argsIn$data$referencepoint$Fsequence
+    
     res <- list(tables = list(F = Ftab,
                               B = Btab,
                               Yield = Ytab,
