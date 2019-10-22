@@ -8,9 +8,8 @@
 referencepoints(fit, nYears, Fsequence, aveYears, selYears, catchType, ...)
 
 \method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(1e-05,
-  4, len = 200), aveYears = as.numeric(c(length(fit$data$years) - 2:1)),
-  selYears = as.numeric(c(length(fit$data$years) - 1)),
-  catchType = "catch", ...)
+  4, len = 200), aveYears = max(fit$data$years) + (-4:0),
+  selYears = max(fit$data$years), catchType = "catch", ...)
 }
 \arguments{
 \item{fit}{an object to calculate reference points for}

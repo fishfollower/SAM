@@ -183,9 +183,11 @@ forecastMSY.sam <- function(fit,
         do.call("cbind",r[-1])
     }
 
-    JacAll <- Jacobian(obj2$par)
+    par <- obj2$par[names(obj2$par) != "keepMSY"]
+    gridx <- which(names(par) %in% "logFScaleMSY")
 
-    dCdTheta <- solve(JacAll[,length(obj2$par),drop=FALSE]) %*% JacAll[,-length(obj2$par),drop=FALSE]
+    JacAll <- Jacobian(par)
+    dCdTheta <- solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
 
 
     ## Reuse old fit 
@@ -193,7 +195,6 @@ forecastMSY.sam <- function(fit,
     covAll <- dG %*% solve(fit$opt$he) %*% t(dG)
 
 
-    gridx <- which(names(obj2$par) %in% "logFScaleMSY")
     covAllOld <- covAll
     i <- 21
     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
@@ -239,8 +240,8 @@ referencepoints <- function(fit,
 referencepoints.sam <- function(fit,
                                 nYears = 100,
                             Fsequence = seq(1e-5,4, len = 200),
-                            aveYears = as.numeric(c(length(fit$data$years)-2:1)),
-                            selYears = as.numeric(c(length(fit$data$years)-1)),
+                            aveYears = max(fit$data$years)+(-4:0),
+                            selYears = max(fit$data$years),
                             catchType = "catch",
                             ...){
 
@@ -252,6 +253,16 @@ referencepoints.sam <- function(fit,
     catchType <- pmatch(catchType,c("catch","landing","discard"))
     if(is.na(catchType))
         stop("Invalid catch type")
+
+    aveYears <- match(aveYears, fit$data$years) - 1
+    if(any(is.na(aveYears)))
+        stop("aveYears has years without data.")
+
+    selYears <- match(selYears, fit$data$years) - 1
+    if(any(is.na(selYears)))
+        stop("selYears has years without data.")
+
+    
     argsIn$data$referencepoint <- list(nYears = nYears,
                                        aveYears = aveYears,
                                        selYears = selYears,
