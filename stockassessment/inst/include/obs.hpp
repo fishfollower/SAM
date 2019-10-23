@@ -356,19 +356,17 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
     ADREPORT_F(logDis,of);
     ADREPORT_F(loglandfbar,of);
-    ADREPORT_F(logdisfbar,of);    
-  }
-  
-  SIMULATE_F(of) {
-    if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
-      REPORT_F(logssb,of);
-      REPORT_F(logfbar,of);
-      REPORT_F(logCatch,of);
-      REPORT_F(logLand,of);
-      REPORT_F(logtsb,of);      
+    ADREPORT_F(logdisfbar,of);      
+    SIMULATE_F(of) {
+      if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
+	REPORT_F(logssb,of);
+	REPORT_F(logfbar,of);
+	REPORT_F(logCatch,of);
+	REPORT_F(logLand,of);
+	REPORT_F(logtsb,of);      
+      }
     }
   }
-
 
   vector<Type> logLagR(logR.size());
   for(int i=0; i<logR.size(); ++i){

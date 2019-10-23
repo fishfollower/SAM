@@ -1,5 +1,5 @@
 #define SAM_NegInf -20.0
-#define SAM_Zero exp(-20.0)
+#define SAM_Zero exp(-10.0)
 // exp(SAM_NegInf)
 
 template<class Type>
