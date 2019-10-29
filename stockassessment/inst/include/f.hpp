@@ -38,7 +38,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
-
+  
   
   if(conf.corFlag==3){
     return(nllFseparable(conf, par, logF, keep ,of));
@@ -88,10 +88,21 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovF(fvar);
   matrix<Type> LF = lltCovF.matrixL();
   matrix<Type> LinvF = LF.inverse();
-
+  vector<Type> currentVar=neg_log_densityF.cov().diagonal();
+  vector<Type> sqrtW(currentVar.size());
+  
   for(int i=1;i<timeSteps;i++){
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));    
-    nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
+
+    for(int idxV=0; idxV<currentVar.size(); ++idxV){
+      sqrtW(idxV)=Type(1.0);
+      if(conf.meanVarFprocLink(0,idxV)>(-1)){
+        sqrtW(idxV) = sqrt( log( sdLogFsta(conf.keyVarF(0,idxV))*exp(logF(idxV,i)*(par.meanVarFproc(conf.meanVarFprocLink(0,idxV))-2)) +1)/currentVar(idxV));
+      }
+    }
+    
+    nll+=neg_log_densityF((logF.col(i)-logF.col(i-1))/sqrtW); // F-Process likelihood
+    nll+=(log(sqrtW)).sum();
     SIMULATE_F(of){
       if(conf.simFlag==0){
         logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
