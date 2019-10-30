@@ -92,7 +92,6 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
   vector<Type> sqrtW(currentVar.size());
   
   for(int i=1;i<timeSteps;i++){
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
 
     for(int idxV=0; idxV<currentVar.size(); ++idxV){
       sqrtW(idxV)=Type(1.0);
@@ -100,12 +99,14 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
         sqrtW(idxV) = sqrt( log( sdLogFsta(conf.keyVarF(0,idxV))*exp(logF(idxV,i-1)*(par.meanVarFproc(conf.meanVarFprocLink(0,idxV))-2)) +1)/currentVar(idxV));
       }
     }
+
+    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1))/sqrtW );
     
     nll+=neg_log_densityF((logF.col(i)-logF.col(i-1))/sqrtW); // F-Process likelihood
     nll+=(log(sqrtW)).sum();
     SIMULATE_F(of){
       if(conf.simFlag==0){
-        logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+        logF.col(i)=logF.col(i-1)+(neg_log_densityF.simulate()*sqrtW);
       }
     }
   }
