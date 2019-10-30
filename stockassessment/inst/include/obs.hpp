@@ -260,7 +260,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
 	      nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 	      SIMULATE_F(of){
-	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
+	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
 	      }
             }
 	    break;
