@@ -97,7 +97,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
     for(int idxV=0; idxV<currentVar.size(); ++idxV){
       sqrtW(idxV)=Type(1.0);
       if(conf.meanVarFprocLink(0,idxV)>(-1)){
-        sqrtW(idxV) = sqrt( log( sdLogFsta(conf.keyVarF(0,idxV))*exp(logF(idxV,i)*(par.meanVarFproc(conf.meanVarFprocLink(0,idxV))-2)) +1)/currentVar(idxV));
+        sqrtW(idxV) = sqrt( log( sdLogFsta(conf.keyVarF(0,idxV))*exp(logF(idxV,i-1)*(par.meanVarFproc(conf.meanVarFprocLink(0,idxV))-2)) +1)/currentVar(idxV));
       }
     }
     
