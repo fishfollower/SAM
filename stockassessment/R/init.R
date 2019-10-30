@@ -23,7 +23,10 @@ defpar <- function(dat,conf){
   }else if(conf$stockRecruitmentModelCode==61){ # Hockey stick
       ret$rec_pars <- c(log(5) + median(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)], na.rm = TRUE),0)
   }else if(conf$stockRecruitmentModelCode==63){ # Bent hypoerbola / Hockey-stick-like
-      ret$rec_pars <- c(log(5) + median(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)], na.rm = TRUE),0,3)
+      M <- max(dat$natMor)
+      F <- M
+      C <- unname(quantile(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)],0.95, na.rm = TRUE))
+      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M)) ,log(0.5),3)
       if(!is.na(conf$hockeyStickCurve))
           ret$rec_pars[3] <- log(conf$hockeyStickCurve)
   }else if(conf$stockRecruitmentModelCode==66){ # Shepherd
