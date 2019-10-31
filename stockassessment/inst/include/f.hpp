@@ -100,7 +100,7 @@ Type nllF(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<v
       }
     }
 
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)/sqrtW) );
+    resF.col(i-1) = LinvF*(vector<Type>((logF.col(i)-logF.col(i-1))/sqrtW) );
     
     nll+=neg_log_densityF((logF.col(i)-logF.col(i-1))/sqrtW); // F-Process likelihood
     nll+=(log(sqrtW)).sum();
