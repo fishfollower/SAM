@@ -1,3 +1,41 @@
+##' Calculate jacobian of a function
+##'
+##' @param func function
+##' @param x parameter values
+##' @param ... passed to func
+##' @return jacobian matrix
+##' @author Christoffer Moesgaard Albertsen
+jacobian <- function(func, x, ...){
+         r <- .Call("jacobian",
+                   function(x)func(x,...),
+                   x,
+                   globalenv(),
+                   30L,
+                   0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
+                   1e-12)
+        do.call("cbind",r[-1])
+}
+##' Calculate gradient of a function
+##'
+##' @param func function
+##' @param x parameter values
+##' @param ... passed to func
+##' @return gradient vector
+##' @author Christoffer Moesgaard Albertsen
+grad <- function(func, x, ...){
+         r <- .Call("jacobian",
+                   function(x)func(x,...),
+                   x,
+                   globalenv(),
+                   30L,
+                   0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
+                   1e-12)
+         v <- do.call("cbind",r[-1])
+         if(nrow(v) == 1)
+             return(as.vector(v))
+         return(diag(v))         
+}
+
 
 
 ##' Add stock-recruitment curve to srplot
@@ -111,90 +149,70 @@ forecastMSY.sam <- function(fit,
                        processNoiseF = processNoiseF,
                        ...)
 
+    args <- argsIn
+    args$map$logFScaleMSY <- factor(NA)
+    objForecast <- do.call(TMB::MakeADFun, args)
+    objForecast$fn()
+
+    ## Get joint precision
+    jointPrecision <- TMB::sdreport(objForecast,
+                                    fit$opt$par,
+                                    solve(fit$sdrep$cov.fixed),
+                                    getJointPrecision = TRUE)$jointPrecision
+
+
+    rp <- c("logFScaleMSY")
     
     ## Find MSY value
     args <- argsIn
     args$parameters$logFScaleMSY <- 0
+    args$parameters$implicitFunctionDelta <- 0
     map0 <- args$map
     fix <- setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
-    args$map$logFScaleMSY <- NULL
-    args$map$keepMSY <- NULL
+    args$map <- args$map[names(args$map) != rp]
+    args$map$implicitFunctionDelta <- NULL
 
 
-    obj <- do.call(TMB::MakeADFun, args)
+    objOptim <- do.call(TMB::MakeADFun, args)
 
-    obj$fn(obj$par)
+    objOptim$fn(objOptim$par)
     ## obj$gr(obj$par)
 
     fn <- Vectorize(function(x){
-        obj$fn(c(x,0))
-        theta <- obj$env$last.par
-        obj$env$f(theta, order = 1)[1,which(names(theta) == "keepMSY")]
+        objOptim$fn(c(x,0))
+        theta <- objOptim$env$last.par
+        objOptim$env$f(theta, order = 1)[1,which(names(objOptim$env$last.par) == "implicitFunctionDelta")]
     })
 
 
-    opt <- nlminb(obj$par[1], fn, control = nlminb.control)
-    ## sdr1 <- TMB::sdreport(obj, opt$par)
+    opt <- nlminb(objOptim$par[names(objOptim$par) != "implicitFunctionDelta"], fn, control = nlminb.control)
 
-    ## Get standard errors
+    ## Object to do Delta method (no map, no random, delta = 1)
     args <- argsIn
+    args$parameters <- objOptim$env$parList(x = opt$par)
+    args$parameters$implicitFunctionDelta <- 1
     args$map$logFScaleMSY <- NULL
-    args$map$keepMSY <- NULL
-    args$parameters$logFScaleMSY <- opt$par
-    obj2 <- do.call(TMB::MakeADFun, args)
+    args$map$implicitFunctionDelta <- factor(NA)
+    args$random <- NULL
+    
+    objDelta <- do.call(TMB::MakeADFun, args)
 
-    Sigma <- solve(fit$opt$he)
+    ## Get Jacobian
+    gridx <- which(names(objDelta$par) %in% rp)
+    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par)
 
-    fn2 <- function(x){
-        p0 <- obj2$par
-        p0[names(p0) != "keepMSY"] <- x
-        obj2$fn(p0)
-        theta <- obj2$env$last.par
-        obj2$env$f(theta, order = 1)[,which(names(theta) == "keepMSY")]
-    }
-
-    gr2 <- function(x){
-        ii <- which(names(obj2$par) == "logFScaleMSY")   
-        r <- .Call("jacobian",
-                   function(y){
-                       x0 <- x
-                       x0[ii] <- y
-                       fn2(x0)
-                   },
-                   x[ii],
-                   env,
-                   30,
-                   0.1 * 10^floor(log10(abs(x))) + 1e-4, #abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-5),
-                   1e-12)
-        r[[2]]
-    }
+    ## Implicit function gradient
+    dCdTheta <- -solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
+    rownames(dCdTheta) <- rp
+    colnames(dCdTheta) <- names(objForecast$env$last.par)
 
 
-    env <- environment()
-    Jacobian <- function(x){
-        r <- .Call("jacobian",
-                   gr2,
-                   x,
-                   env,
-                   30,
-                   0.1 * 10^floor(log10(abs(x))) + 1e-4, #abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-5),
-                   1e-12)
-        do.call("cbind",r[-1])
-    }
-
-    par <- obj2$par[names(obj2$par) != "keepMSY"]
-    gridx <- which(names(par) %in% "logFScaleMSY")
-
-    JacAll <- Jacobian(par)
-    dCdTheta <- solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
-
-
-    ## Reuse old fit 
-    dG <- rbind(diag(1,length(fit$opt$par)),dCdTheta)
-    covAll <- dG %*% solve(fit$opt$he) %*% t(dG)
-
-
+    ## Do delta method
+    xtra <- diag(1,length(objForecast$env$last.par.best))
+    diag(xtra)[objForecast$env$random] <- 0
+    dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
+    covAll <- dG %*% solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
     i <- 21
     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
@@ -205,15 +223,19 @@ forecastMSY.sam <- function(fit,
         diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
     }
 
+    ## Object to do sdreport (delta = 0)
     args <- argsIn
-    args$map$logFScaleMSY <- NULL
-    args$parameters$logFScaleMSY <- opt$par
-    obj3 <- do.call(TMB::MakeADFun, args)
+    ## Remvoe rp from map
+    args$map <- args$map[!(names(args$map) %in% rp)]
+    ## Use optimized parameters
+    args$parameters <- objOptim$env$parList(x = opt$par)
+    args$parameters$implicitFunctionDelta <- 0
 
+    objSDR <- do.call(TMB::MakeADFun, args)
 
-    sdr2 <- TMB::sdreport(obj3, obj3$par, solve(covAll))
     
-    ssdr <- summary(sdr2)
+    sdr <- TMB::sdreport(objSDR, objSDR$par, solve(covAll))
+    ssdr <- summary(sdr)
 
     toCI <- function(what){
         exp(ssdr[rownames(ssdr) %in% what,] %*% cbind(Estimate=c(1,0),Low=c(1,-2),High=c(1,2)))
@@ -230,9 +252,10 @@ forecastMSY.sam <- function(fit,
 
     rownames(ssb) <- rownames(yield) <- rownames(rec) <- rownames(fbar) <- min(fit$data$years) + 0:(nrow(ssb)-1)
 
-    return(list(table = tab, timeseries = list(SSB = ssb, Catch = yield, Recruitment = rec, Fbar = fbar), opt = opt, sdr = sdr2))
+    return(list(table = tab, timeseries = list(SSB = ssb, Catch = yield, Recruitment = rec, Fbar = fbar), opt = opt, sdr = sdr))
 
 }
+
 
 ##' Estimate reference points
 ##'
@@ -268,6 +291,13 @@ referencepoints.sam <- function(fit,
                             catchType = "catch",
                             ...){
 
+    ## Get joint precision
+    jointPrecision <- TMB::sdreport(fit$obj,
+                               fit$opt$par,
+                               solve(fit$sdrep$cov.fixed),
+                               getJointPrecision = TRUE)$jointPrecision
+
+    ## Prepare arguments to calculate reference points (fix parameters and latent variables, delta = 1)
     obj0 <- fit$obj
     argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
     argsIn$parameters <- fit$pl
@@ -294,9 +324,11 @@ referencepoints.sam <- function(fit,
                                        )
 
     args <- argsIn
+    ## Remove random
+    args$random <- NULL
     ## Remove referencepoint parameters from map
     map0 <- args$map
-    fix <- setdiff(names(args$parameters), args$random)
+    fix <- names(args$parameters) ## setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
 
     if(fit$conf$stockRecruitmentModelCode %in% c(0,3)){ # RW, constant mean
@@ -344,12 +376,12 @@ referencepoints.sam <- function(fit,
     args$parameters$logScaleFcrash <- -2
     args$parameters$logScaleF35 <- -2
     args$parameters$logScaleFlim <- -2
+    args$parameters$implicitFunctionDelta <- 1
 
-    
-    obj <- do.call(TMB::MakeADFun, args)
+    objOptim <- do.call(TMB::MakeADFun, args)
 
     ## Take inital look at YPR / SPR to determine if Fmax makes sense
-    rep <- obj$report()
+    rep <- objOptim$report()
     tryAgain <- FALSE
     if(which.max(rep$logYPR) == length(rep$logYPR) && any(rp %in% "logScaleFmax")){
         warning("The stock does not appear to have a well-defined Fmax. Fmax will not be estimated. Increase the upper bound of Fsequence to try again.")
@@ -374,52 +406,35 @@ referencepoints.sam <- function(fit,
 
 
     if(tryAgain)
-        obj <- do.call(TMB::MakeADFun, args)
+        objOptim <- do.call(TMB::MakeADFun, args)
 
-    
-    opt <- nlminb(obj$par, obj$fn, obj$gr)
+    opt <- nlminb(objOptim$par, objOptim$fn, objOptim$gr, objOptim$he)
 
-    ## Get standard errors
+    ## Object to do Delta method (nothing mapped (that's not mapped in fit$obj, nothing random, delta = 1)
     args <- argsIn
-    args$map <- args$map[-which(names(args$map) %in% rp)]
+    ## Remove random
+    args$random <- NULL
+    ## Remvoe rp from map
+    args$map <- args$map[!(names(args$map) %in% rp)]
+    ## Use optimized parameters
+    args$parameters <- objOptim$env$parList(x = opt$par)
 
-    opl <- obj$env$parList(par = opt$par)
-    
-    args$parameters$logScaleFmsy <- opl$logScaleFmsy
-    args$parameters$logScaleF01 <- opl$logScaleF01
-    args$parameters$logScaleFmax <- opl$logScaleFmax
-    args$parameters$logScaleFcrash <- opl$logScaleFcrash
-    args$parameters$logScaleF35 <- opl$logScaleF35
-    if(fit$conf$stockRecruitmentModelCode %in% c(61,63))
-        args$parameters$logScaleFlim <- opl$logScaleFlim
+    objDelta <- do.call(TMB::MakeADFun, args)
 
-    obj2 <- do.call(TMB::MakeADFun, args)
+    ## Get Jacobian
+    gridx <- which(names(objDelta$par) %in% rp)
+    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par)
 
-    Sigma <- solve(fit$opt$he)
+    ## Implicit function gradient
+    dCdTheta <- -solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
+    rownames(dCdTheta) <- gsub("^logScale","",rp)
+    colnames(dCdTheta) <- names(fit$obj$env$last.par)
 
-      
-    gridx <- which(names(obj2$par) %in% rp)
-    env <- environment()
-    Jacobian <- function(x){
-        r <- .Call("jacobian",
-                   function(x) obj2$gr(x)[gridx],
-                   x,
-                   env,
-                   30,
-                   0.1 * 10^floor(log10(abs(x))) + 1e-4, #abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-5),
-                   1e-12)
-        do.call("cbind",r[-1])
-    }
-
-    JacAll <- Jacobian(obj2$par)
-
-    dCdTheta <- solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
-
-    varLogRefIn <- dCdTheta %*% solve(fit$opt$he) %*% t(dCdTheta)
-
-    ## Reuse old fit 
-    dG <- rbind(diag(1,length(fit$opt$par)),dCdTheta)
-    covAll <- dG %*% solve(fit$opt$he) %*% t(dG)
+    ## Do delta method
+    xtra <- diag(1,length(fit$obj$env$last.par.best))
+    diag(xtra)[fit$obj$env$random] <- 0
+    dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
+    covAll <- dG %*% solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
     i <- 21
     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
@@ -430,9 +445,19 @@ referencepoints.sam <- function(fit,
         diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
     }
 
+    ## Object to do sdreport (delta = 0)
+    args <- argsIn
+    ## Remvoe rp from map
+    args$map <- args$map[!(names(args$map) %in% rp)]
+    ## Use optimized parameters
+    args$parameters <- objOptim$env$parList(x = opt$par)
+    args$parameters$implicitFunctionDelta <- 0
+
+    objSDR <- do.call(TMB::MakeADFun, args)
+
     
-    sdr2 <- TMB::sdreport(obj2, obj2$par, solve(covAll))
-    ssdr <- summary(sdr2)
+    sdr <- TMB::sdreport(objSDR, objSDR$par, solve(covAll))
+    ssdr <- summary(sdr)
 
     toCI <- function(what){
         exp(ssdr[rownames(ssdr) == what,,drop=FALSE] %*% cbind(Estimate=c(1,0),CIL=c(1,-2),CIH=c(1,2)))
@@ -485,7 +510,7 @@ rownames(YPRseq) <- rownames(SPRseq) <- rownames(Yieldseq) <- rownames(Bseq) <- 
                               Biomass = Bseq,
                               Recruitment = Rseq),
                 opt = opt,
-                sdr = sdr2,
+                sdr = sdr,
                 diagonalCorrection = tv
                 )
                               
