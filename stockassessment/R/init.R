@@ -63,7 +63,7 @@ defpar <- function(dat,conf){
 
   ## Reference points
   ret$logFScaleMSY <- 0
-  ret$keepMSY <- 0
+  ret$implicitFunctionDelta <- 0
   ret$logScaleFmsy <- 0
   ret$logScaleFmax <- 0
   ret$logScaleF01 <- 0

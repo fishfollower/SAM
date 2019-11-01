@@ -555,7 +555,7 @@ struct REFERENCE_POINTS {
       nll += tmp * tmp;
     }
     
-    return nll;
+    return par.implicitFunctionDelta * nll;
   }
 
 };
