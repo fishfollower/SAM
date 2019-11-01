@@ -586,7 +586,7 @@ struct paraSet{
   vector<Type> sepFlogSd;
   vector<Type> predVarObs;
   Type logFScaleMSY;
-  Type keepMSY;
+  Type implicitFunctionDelta;
   Type logScaleFmsy;
   Type logScaleFmax;
   Type logScaleF01;
@@ -611,7 +611,7 @@ struct paraSet{
     logitReleaseSurvival = asVector<Type>(getListElement(x,"logitReleaseSurvival"));
     logitRecapturePhi = asVector<Type>(getListElement(x,"logitRecapturePhi"));
     logFScaleMSY = (Type)Rf_asReal(getListElement(x,"logFScaleMSY"));
-    keepMSY = (Type)Rf_asReal(getListElement(x,"keepMSY"));
+    implicitFunctionDelta = (Type)Rf_asReal(getListElement(x,"implicitFunctionDelta"));
     logScaleFmsy = (Type)Rf_asReal(getListElement(x,"logScaleFmsy"));
     logScaleFmax = (Type)Rf_asReal(getListElement(x,"logScaleFmax"));
     logScaleF01 = (Type)Rf_asReal(getListElement(x,"logScaleF01"));
@@ -635,7 +635,7 @@ struct paraSet{
     logitReleaseSurvival = rhs.logitReleaseSurvival;   
     logitRecapturePhi = rhs.logitRecapturePhi;
     logFScaleMSY = rhs.logFScaleMSY;
-    keepMSY = rhs.keepMSY;
+    implicitFunctionDelta = rhs.implicitFunctionDelta;
     logScaleFmsy = rhs.logScaleFmsy;
     logScaleFmax = rhs.logScaleFmax;
     logScaleF01 = rhs.logScaleF01;
@@ -663,7 +663,7 @@ struct paraSet{
     d.logitReleaseSurvival = logitReleaseSurvival.template cast<T>();   
     d.logitRecapturePhi = logitRecapturePhi.template cast<T>();
     d.logFScaleMSY = T(logFScaleMSY);
-    d.keepMSY = T(keepMSY);
+    d.implicitFunctionDelta = T(implicitFunctionDelta);
     d.logScaleFmsy = T(logScaleFmsy);
     d.logScaleFmax = T(logScaleFmax);
     d.logScaleF01 = T(logScaleF01);
