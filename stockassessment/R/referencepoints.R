@@ -71,12 +71,12 @@ addRecruitmentCurve.sam <- function(fit,
        R <- X[, 1]
        S <- X[, 4]
        cf <- fit$sdrep$cov.fixed
-       covEst <- cf[rownames(cf) == "rec_pars", colnames(cf) == "rec_pars"]
+       covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
        m <- fit$obj$env$map$rec_pars
        if(is.null(m)){
            covar <- covEst
        }else{
-           covar <- covEst[m,m]
+           covar <- covEst[m,m, drop = FALSE]
            covar[is.na(covar)] <- 0
        }
   
@@ -288,6 +288,7 @@ referencepoints.sam <- function(fit,
                             Fsequence = seq(1e-5,4, len = 200),
                             aveYears = max(fit$data$years)+(-4:0),
                             selYears = max(fit$data$years),
+                            SPRpercent = c(0.35),
                             catchType = "catch",
                             ...){
 
@@ -320,6 +321,7 @@ referencepoints.sam <- function(fit,
                                        aveYears = aveYears,
                                        selYears = selYears,
                                        Fsequence = Fsequence,
+                                       xPercent = SPRpercent,
                                        catchType = catchType-1
                                        )
 
@@ -334,37 +336,37 @@ referencepoints.sam <- function(fit,
     if(fit$conf$stockRecruitmentModelCode %in% c(0,3)){ # RW, constant mean
         rp <- c("logScaleFmax",
                 "logScaleF01",
-                "logScaleF35")
+                "logScaleFxPercent")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){ # Hockey-sticks
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
-                "logScaleF35",
+                "logScaleFxPercent",
                 "logScaleFlim")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){ # AR
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                "logScaleF35")
+                "logScaleFxPercent")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(64)){ # Pow CMP
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                "logScaleF35"
+                "logScaleFxPercent"
                 )
     }else if(fit$conf$stockRecruitmentModelCode %in% c(65)){ # Pow Non-CMP
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                "logScaleF35"
+                "logScaleFxPercent"
                 )
     }else{
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
-                "logScaleF35"
+                "logScaleFxPercent"
                 )
     }
     ## Referencepoints to estimate
@@ -374,7 +376,7 @@ referencepoints.sam <- function(fit,
     args$parameters$logScaleF01 <- -2
     args$parameters$logScaleFmax <- -2
     args$parameters$logScaleFcrash <- -2
-    args$parameters$logScaleF35 <- -2
+    args$parameters$logScaleFxPercent <- rep(-2, length(SPRpercent))
     args$parameters$logScaleFlim <- -2
     args$parameters$implicitFunctionDelta <- 1
 
@@ -427,7 +429,7 @@ referencepoints.sam <- function(fit,
 
     ## Implicit function gradient
     dCdTheta <- -solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
-    rownames(dCdTheta) <- gsub("^logScale","",rp)
+    rownames(dCdTheta) <- gsub("^logScale","",names(objDelta$par)[gridx])
     colnames(dCdTheta) <- names(fit$obj$env$last.par)
 
     ## Do delta method
@@ -463,16 +465,16 @@ referencepoints.sam <- function(fit,
         exp(ssdr[rownames(ssdr) == what,,drop=FALSE] %*% cbind(Estimate=c(1,0),CIL=c(1,-2),CIH=c(1,2)))
     }
 
-    Ftab <- t(sapply(rownames(ssdr)[grepl("referencepoint.logF",rownames(ssdr))],
-                     toCI))
-    Btab <- t(sapply(rownames(ssdr)[grepl("referencepoint.logB",rownames(ssdr))],
-                     toCI))
-    Ytab <-  t(sapply(rownames(ssdr)[grepl("referencepoint.logY",rownames(ssdr)) & !grepl("referencepoint.logYPR",rownames(ssdr))],
-                      toCI))
-    SPRtab <-  t(sapply(rownames(ssdr)[grepl("referencepoint.logSPR",rownames(ssdr))],
-                      toCI))
-    YPRtab <-  t(sapply(rownames(ssdr)[grepl("referencepoint.logYPR",rownames(ssdr))],
-                      toCI))
+    Ftab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logF",rownames(ssdr))]),
+                     toCI, simplify = FALSE))
+    Btab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logB",rownames(ssdr))]),
+                                   toCI, simplify = FALSE))
+    Ytab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logY",rownames(ssdr)) & !grepl("referencepoint.logYPR",rownames(ssdr))]),
+                     toCI, simplify = FALSE))
+    SPRtab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logSPR",rownames(ssdr))]),
+                                   toCI, simplify = FALSE))
+    YPRtab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logYPR",rownames(ssdr))]),
+                                   toCI, simplify = FALSE))
     colnames(Ftab) <- colnames(Btab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- c("Estimate","Low","High")
 
     toRowNames <- Vectorize(function(x){
@@ -483,11 +485,14 @@ referencepoints.sam <- function(fit,
                "max"="Max",
                "01"="0.1",
                "crash"="Crash",
-               "35"="35%",
-               "lim"="lim"
+               "xPercent"=NA,
+               "lim"="lim",
+               x
         )               
     })
-    rownames(Ftab) <- rownames(Btab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- toRowNames(rownames(Ftab))
+    rn <- toRowNames(rownames(Ftab))
+    rn[is.na(rn)] <- sapply(SPRpercent,function(x)sprintf("%s%%",x * 100))    
+    rownames(Ftab) <- rownames(Btab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rn
 
     YPRseq <- toCI("logYPR")
     SPRseq <- toCI("logSPR")

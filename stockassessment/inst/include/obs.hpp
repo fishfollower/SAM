@@ -385,7 +385,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
   if(dat.forecast.nYears > 0 && dat.forecast.FModel(dat.forecast.FModel.size()-1) == dat.forecast.findMSY){
     
-    int catchYears = std::min((int)asDouble(dat.forecast.nYears),10);
+    int catchYears = 1; //std::min((int)asDouble(dat.forecast.nYears),10);
     Type catchSum = sum((vector<Type>)cat.tail(catchYears)) / catchYears;
     nll -= par.implicitFunctionDelta * log(catchSum);    
     // Calculate Fmsy
