@@ -146,6 +146,7 @@ struct confSet{
   double fracMixF;
   double fracMixN;
   vector<double> fracMixObs;
+  int survivalAYcor;
   confSet() {};
 
   confSet(SEXP x){
@@ -176,6 +177,7 @@ struct confSet{
     fracMixF = (double)*REAL(getListElement(x,"fracMixF"));
     fracMixN = (double)*REAL(getListElement(x,"fracMixN"));
     fracMixObs = asVector<double>(getListElement(x,"fracMixObs"));
+    survivalAYcor = (int)*REAL(getListElement(x,"survivalAYcor"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -205,6 +207,7 @@ struct confSet{
     fracMixF = rhs.fracMixF;
     fracMixN = rhs.fracMixN;
     fracMixObs = rhs.fracMixObs;
+    survivalAYcor = rhs.survivalAYcor;
     return *this;
   };
 };
@@ -227,7 +230,8 @@ struct paraSet{
   vector<Type> logitRecapturePhi;   
   vector<Type> sepFalpha;   
   vector<Type> sepFlogitRho;   
-  vector<Type> sepFlogSd;   
+  vector<Type> sepFlogSd;
+  vector<Type> survivalAYtransphi;
 };
 
 template<class Type>

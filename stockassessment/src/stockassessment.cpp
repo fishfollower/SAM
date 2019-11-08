@@ -92,7 +92,8 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(fracMixF); confset.fracMixF=asDouble(fracMixF); 
   DATA_SCALAR(fracMixN); confset.fracMixN=asDouble(fracMixN); 
   DATA_VECTOR(fracMixObs); vector<double> fracMixObsDouble(fracMixObs.size()); for(int i=0; i<fracMixObs.size(); ++i){fracMixObsDouble(i)=asDouble(fracMixObs(i));} confset.fracMixObs=fracMixObsDouble; 
-
+  DATA_INTEGER(survivalAYcor); confset.survivalAYcor=survivalAYcor;
+  
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
@@ -108,7 +109,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
   PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
-
+  PARAMETER_VECTOR(survivalAYtransphi); paraset.survivalAYtransphi=survivalAYtransphi;
   PARAMETER_VECTOR(sepFalpha); paraset.sepFalpha=sepFalpha;    
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    

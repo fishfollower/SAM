@@ -27,8 +27,8 @@ defpar <- function(dat,conf){
                            }else{numeric(0)}
   ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(ret$logitReleaseSurvival))
                         }else{numeric(0)}
-  
-  #ret$logW= matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
+
+  ret$survivalAYtransphi=if(conf$survivalAYcor==0){numeric(0)}else{numeric(2)} 
   if(conf$corFlag ==3 ){
     ret$sepFalpha=rep(0,max(conf$keyLogFsta)+1)
     ret$sepFlogitRho = rep(1,2)

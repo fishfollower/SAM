@@ -104,6 +104,7 @@ defcon<-function(dat){
   ret$fracMixN <- 0
   ret$fracMixObs <- rep(0,nFleets)
   ret$constRecBreaks <- numeric(0)
+  ret$survivalAYcor <- 0
   return(ret) 
 }
 
@@ -178,6 +179,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution"
     txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet"
     txt$constRecBreaks <- "Vector of break years between which recruitment is at constant level. The break year is included in the left interval. (This option is only used in combination with stock-recruitment code 3)"
+    txt$survivalAYcor <- "Age and year correlation in survival errors"  
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)
