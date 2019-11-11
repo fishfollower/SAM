@@ -13,7 +13,7 @@ plotit(fit, what, ...)
   xlab = "Years", ex = numeric(0), trans = function(x) x,
   add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
   addCI = NA, drop = 0, unnamed.basename = "current", xlim = NULL,
-  ...)
+  ylim = NULL, ...)
 
 \method{plotit}{samset}(fit, what, x = fit$data$years, ylab = what,
   xlab = "Years", ex = numeric(0), trans = function(x) x,
@@ -57,6 +57,8 @@ plotit(fit, what, ...)
 \item{unnamed.basename}{the name to assign an unnamed basefit}
 
 \item{xlim}{...}
+
+\item{ylim}{...}
 }
 \description{
 Plot helper

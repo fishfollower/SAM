@@ -13,6 +13,7 @@
 ##' @param drop number of years to be left unplotted at the end.
 ##' @param unnamed.basename the name to assign an unnamed basefit 
 ##' @param xlim ...
+##' @param ylim ...
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
@@ -24,7 +25,7 @@ plotit <-function (fit, what,...){
 ##' @method plotit sam
 ##' @export
 plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
-                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL, ylim=NULL,...){
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
     lowhig <- y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -34,13 +35,18 @@ plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=
     }else{
       xr <- xlim
     }
+    if(missing(ylim)){
+      yr <- range(c(trans(lowhig),0,ex))
+    }else{
+      yr <- ylim
+    }
     x<-x[didx]
     y<-y[didx]
     lowhig<-lowhig[didx,]
     if(add){
       lines(x, trans(y), lwd=3,...)
     }else{
-      plot(x, trans(y), xlab=xlab, ylab=ylab, type="n", lwd=3, xlim=xr, ylim=range(c(trans(lowhig),0,ex)), las=1,...)
+      plot(x, trans(y), xlab=xlab, ylab=ylab, type="n", lwd=3, xlim=xr, ylim=yr, las=1,...)
       grid(col="black")
       lines(x, trans(y), lwd=3, ...)
     }
