@@ -228,7 +228,7 @@ struct referencepointSet {
       selYears = asVector<int>(getListElement(x,"selYears"));
       Fsequence = asVector<Type>(getListElement(x,"Fsequence"));
       xPercent = asVector<Type>(getListElement(x,"xPercent"));
-      catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"Fsequence")));
+      catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
     }
   }
   
