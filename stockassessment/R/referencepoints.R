@@ -265,6 +265,7 @@ forecastMSY.sam <- function(fit,
 ##' @param Fsequence Sequence of F values used to report per-recruit and equilibrium values
 ##' @param aveYears Vector of year indices used to calculate average natural mortality, weights, etc. (starting at 0)
 ##' @param selYears Vector of year indices used to calculate selectivity (starting at 0)
+##' @param SPRpercent Vector of x values for F[x * 100\%] reference points. Default is 0.35.
 ##' @param catchType Catch type used: (total) catch, landings, discard.
 ##' @param ... not used
 ##' @return a sam_referencepoints fit
@@ -275,6 +276,7 @@ referencepoints <- function(fit,
                             Fsequence,
                             aveYears,
                             selYears,
+                            SPRpercent,
                             catchType,
                             ...){
     UseMethod("referencepoints")
