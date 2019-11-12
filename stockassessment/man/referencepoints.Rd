@@ -5,7 +5,8 @@
 \alias{referencepoints.sam}
 \title{Estimate reference points}
 \usage{
-referencepoints(fit, nYears, Fsequence, aveYears, selYears, catchType, ...)
+referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
+  catchType, ...)
 
 \method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(1e-05,
   4, len = 200), aveYears = max(fit$data$years) + (-4:0),
@@ -22,6 +23,8 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, catchType, ...)
 \item{aveYears}{Vector of year indices used to calculate average natural mortality, weights, etc. (starting at 0)}
 
 \item{selYears}{Vector of year indices used to calculate selectivity (starting at 0)}
+
+\item{SPRpercent}{Vector of x values for F[x * 100\%] reference points. Default is 0.35.}
 
 \item{catchType}{Catch type used: (total) catch, landings, discard.}
 
