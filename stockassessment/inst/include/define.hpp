@@ -318,3 +318,14 @@ template <class Type>
 MVMIX_t<Type> MVMIX(matrix<Type> Sigma, Type p1){
   return MVMIX_t<Type>(Sigma,p1);
 }
+
+template <class Type>
+Type findLinkV(Type k, int n=10){
+  // small helper function to solve exp(v)-exp(k-v/2)-1=0 for v
+  Type v = log(exp(k)+Type(1));
+  for(int i=0; i<n; ++i){
+    v -= (exp(v)-exp(k-0.5*v)-1.0)/(exp(v)+.5*exp(k-0.5*v));
+  }
+  return v;
+}
+
