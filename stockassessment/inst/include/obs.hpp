@@ -235,7 +235,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                   sqrtW(idxV)=Type(1.0);
                   int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
                   if(conf.meanVarObsLink(f,a)>(-1)){
-                    sqrtW(idxV) = sqrt(log(exp(par.logSdLogObs(conf.keyVarObs(f,a))) *exp(predObs(idxfrom+idxV)*(par.meanVarObs(conf.meanVarObsLink(f,a))-2)) +1)/currentVar(idxV));
+                    sqrtW(idxV) = sqrt(findLinkV(par.logSdLogObs(conf.keyVarObs(f,a))+(par.meanVarObs(conf.meanVarObsLink(f,a))-Type(2))*predObs(idxfrom+idxV))/currentVar(idxV));
                   }
                 }else{
                   if(conf.fixVarToWeight==1){
