@@ -28,7 +28,4 @@ conf<-loadConf(dat,"conf.cfg", patch=TRUE)
 par<-defpar(dat,conf)
 fit<-sam.fit(dat,conf,par)
 
-sink("res.out")
-print(fit)
-sink()
-
+cat(fit$opt$objective,"\n", file="res.out")
