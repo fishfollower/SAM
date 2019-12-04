@@ -74,10 +74,11 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 ##' @param year a vector of years to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
 ##' @param fleet a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
 ##' @param map map from original fit 
+##' @param initReset a boolean. If true: default starting values are used in sam.fit. If false: optimal values in fit are used as staring values. 
 ##' @param ... extra arguments to sam.fit
 ##' @details ...
 ##' @export
-runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
+runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, initReset = FALSE, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
   fakefile <- file()
@@ -87,7 +88,9 @@ runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   conf <- loadConf(data, fakefile, patch=TRUE)
   close(fakefile)
   par <- defpar(data,conf)
-  par[!names(par)%in%c("logN", "logF")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF")]
+  if(!initReset){
+    par[!names(par)%in%c("logN", "logF")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF")]
+  }
   ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, lower=fit$low, upper=fit$hig, ...)
   return(ret)
 }
@@ -96,11 +99,12 @@ runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
 ##' @param fit a fitted model object as returned from sam.fit
 ##' @param year either 1) a single integer n in which case runs where all fleets are reduced by 1, 2, ..., n are returned, 2) a vector of years in which case runs where years from and later are excluded for all fleets, and 3 a matrix of years were each column is a fleet and each column corresponds to a run where the years and later are excluded.    
 ##' @param ncores the number of cores to attempt to use
+##' @param initReset a boolean sent to \code{\link{runwithout}}
 ##' @param ... extra arguments to \code{\link{sam.fit}}
 ##' @details ...
 ##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster clusterEvalQ
 ##' @export
-retro <- function(fit, year=NULL, ncores=detectCores(), ...){
+retro <- function(fit, year=NULL, ncores=detectCores(), initReset = FALSE, ...){
   data <- fit$data
   y <- fit$data$aux[,"year"]
   f <- fit$data$aux[,"fleet"]
@@ -128,9 +132,9 @@ retro <- function(fit, year=NULL, ncores=detectCores(), ...){
     lib.ver <- dirname(path.package("stockassessment"))
     clusterExport(cl, varlist="lib.ver", envir=environment())
     clusterEvalQ(cl, {library(stockassessment, lib.loc=lib.ver)})
-    runs <- parLapply(cl, setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...))
+    runs <- parLapply(cl, setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2],initReset = initReset, ...))
   } else {
-    runs <- lapply( setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2], ...))
+    runs <- lapply( setup, function(s)runwithout(fit, year=s[,1], fleet=s[,2],initReset = initReset, ...))
   }
   converg <- unlist(lapply(runs, function(x)x$opt$conv))
   if(any(converg!=0)) warning(paste0("retro run(s) ", paste0(which(converg!=0),collapse=",")," did not converge."))
