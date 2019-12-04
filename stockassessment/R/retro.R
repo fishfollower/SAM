@@ -81,6 +81,9 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, initReset = FALSE, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
+  if(!is.null(fleet) & is.null(year) &length(conf$maxAgePlusGroup) >1){
+    conf$maxAgePlusGroup = conf$maxAgePlusGroup[-fleet]
+  }
   fakefile <- file()
   sink(fakefile)
   saveConf(conf, file="")
