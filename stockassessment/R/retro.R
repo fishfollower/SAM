@@ -42,9 +42,9 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
   attr(data,"fleetNames") <- attr(data,"fleetNames")[suf]
   if(!missing(conf)){
     .reidx <- function(x){
-      if(any(x >= (-0.5))){
-        xx <- x[x >= (-.5)]
-        x[x >= (-.5)] <- match(xx,sort(unique(xx)))-1
+      if(any(x >= (-0.5) & !is.na(x))){
+        xx <- x[x >= (-.5) & !is.na(x)]
+        x[x >= (-.5) &!is.na(x)] <- match(xx,sort(unique(xx)))-1
       };
       x
     }
@@ -54,7 +54,8 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
     conf$keyVarF <- .reidx(conf$keyVarF[suf,,drop=FALSE])
     conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
     conf$obsCorStruct <- conf$obsCorStruct[suf]
-    conf$keyCorObs <- conf$keyCorObs[suf,,drop=FALSE]
+    conf$maxAgePlusGroup <- conf$maxAgePlusGroup[suf]
+    conf$keyCorObs <- .reidx(conf$keyCorObs[suf,,drop=FALSE])
     yidx <- conf$keyScaledYears%in%data$aux[data$aux[,'fleet']==1,'year']
     if(length(conf$keyScaledYears)>0){
       conf$noScaledYears <- sum(yidx)
@@ -81,9 +82,6 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, initReset = FALSE, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
-  if(!is.null(fleet) & is.null(year) &length(conf$maxAgePlusGroup) >1){
-    conf$maxAgePlusGroup = conf$maxAgePlusGroup[-fleet]
-  }
   fakefile <- file()
   sink(fakefile)
   saveConf(conf, file="")
