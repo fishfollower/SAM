@@ -100,11 +100,12 @@ addRecruitmentCurve.sam <- function(fit,
              CIhigh = as.vector(tmp + 2 * sd))
        })
        if(plot){
-           polygon(c(ssb, rev(ssb)),
-                   c(tab["CIlow",],
-                     rev(tab["CIhigh",])),
-                   col = cicol,
-                   border = NA)
+           if(CI)
+               polygon(c(ssb, rev(ssb)),
+                       c(tab["CIlow",],
+                         rev(tab["CIhigh",])),
+                       col = cicol,
+                       border = NA)
            lines(ssb,tab["Estimate",], col = col, lwd = 3)
        }
        invisible(srfit)
@@ -387,21 +388,21 @@ referencepoints.sam <- function(fit,
     ## Take inital look at YPR / SPR to determine if Fmax makes sense
     rep <- objOptim$report()
     tryAgain <- FALSE
-    if(which.max(rep$logYPR) == length(rep$logYPR) && any(rp %in% "logScaleFmax")){
+    if(which.max(rep$logYPR[is.finite(rep$logYPR)]) == length(rep$logYPR[is.finite(rep$logYPR)]) && any(rp %in% "logScaleFmax")){
         warning("The stock does not appear to have a well-defined Fmax. Fmax will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFmax")]
         args$map$logScaleFmax <- factor(NA)
         tryAgain <- TRUE
     }
 
-      if(min(rep$logSe) > -10 && any(rp %in% "logScaleFcrash")){
+      if(min(rep$logSe[is.finite(rep$logSe)]) > -10 && any(rp %in% "logScaleFcrash")){
         warning("The stock does not appear to have a well-defined Fcrash. Fmax will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFcrash")]
         args$map$logScaleFcrash <- factor(NA)
         tryAgain <- TRUE
     }
 
-    if(which.max(rep$logYe) == length(rep$logYe) && any(rp %in% "logScaleFmsy")){
+    if(which.max(rep$logYe[is.finite(rep$logYe)]) == length(rep$logYe[is.finite(rep$logYe)]) && any(rp %in% "logScaleFmsy")){
         warning("The stock does not appear to have a well-defined Fmsy. Fmsy will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFmsy")]
         args$map$logScaleFmsy <- factor(NA)
