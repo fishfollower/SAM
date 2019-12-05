@@ -21,7 +21,10 @@ defpar <- function(dat,conf){
   }else if(conf$stockRecruitmentModelCode==3){ # Constant mean
       ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)
   }else if(conf$stockRecruitmentModelCode==61){ # Hockey stick
-      ret$rec_pars <- c(log(5) + median(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)], na.rm = TRUE),0)
+      M <- max(dat$natMor)
+      F <- M
+      C <- unname(quantile(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)],0.95, na.rm = TRUE))
+      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M))  + log(2),C + log(F+M) - log(F) -log(1 - exp(-F -M)))
   }else if(conf$stockRecruitmentModelCode==63){ # Bent hypoerbola / Hockey-stick-like
       M <- max(dat$natMor)
       F <- M
@@ -29,7 +32,7 @@ defpar <- function(dat,conf){
       ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M)) ,log(0.5),3)
       if(!is.na(conf$hockeyStickCurve))
           ret$rec_pars[3] <- log(conf$hockeyStickCurve)
-  }else if(conf$stockRecruitmentModelCode==66){ # Shepherd
+  }else if(conf$stockRecruitmentModelCode %in% c(66,67,68,69)){ # Shepherd, Deriso
       ret$rec_pars <- numeric(3)
   }else{ # The rest
       ret$rec_pars <- numeric(2)

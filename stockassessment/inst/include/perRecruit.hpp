@@ -1,6 +1,317 @@
+  
+  // template<class Float>
+  // Float GrNum_sbh_raw(Float s, Float l, Float a, Float b, Float g, Float h){
+  //   Float err = 1e5;
+  //   Float ans = 0.0;
+  //   Float tol = 1e-12;
+  //   Float tab[SAM_RECNTAB][SAM_RECNTAB];    
+  //   tab[0][0] = (Fn_sbh_raw((Float)(s+h),(Float)l,(Float)a,(Float)b,(Float)g) - Fn_sbh_raw((Float)(s-h),(Float)l,(Float)a,(Float)b,(Float)g)) / (2.0 * h);
+  //   for(int i = 1; i < SAM_RECNTAB; ++i){
+  //       tab[i][0] = (Fn_sbh_raw((Float)(s+h),(Float)l,(Float)a,(Float)b,(Float)g) - Fn_sbh_raw((Float)(s-h),(Float)l,(Float)a,(Float)b,(Float)g)) / (2.0 * h);
+  // 	Float f = 1.0;
+  // 	for(int m = 1; m <= i; ++m){
+  // 	  f *= 4.0;
+  // 	  tab[i][m] = (tab[i][m-1] * f - tab[i-1][m-1]) / (f - 1.0);
+  // 	  Float tmp1 = fabs(tab[i][m] - tab[i][m-1]);
+  // 	  Float tmp2 = fabs(tab[i][m] - tab[i-1][i-1]);
+  // 	  Float errtmp = 0.5 * (tmp1 + tmp2 + fabs(tmp1-tmp2));
+  // 	  if(errtmp < err){
+  // 	   ans = tab[i][m];
+  // 	    err = errtmp;
+  // 	    if(err < tol)
+  // 	      goto endloop;
+  // 	  }
+  // 	}
+  // 	if(fabs(tab[i][i] - tab[i-1][i-1]) > 2.0 * err)
+  // 	  break;
+  //     }
+  //   endloop:
+  //   return ans;  
+  // }
+
+
+
 #define SAM_NegInf -20.0
 #define SAM_Zero exp(-10.0)
+#define SAM_RECNTAB 20
 // exp(SAM_NegInf)
+
+
+namespace rec_atomic {
+
+  // DOI: 10.1145/361952.361970
+  template<class Float>
+  Float lambertW_raw(Float x){
+    Float wn;
+    if(x > 0){
+      Float zn, en;
+      if(x < 6.46){
+	wn = (x + 4.0 / 3.0 * x * x) / (1.0 + 7.0/3.0 * x + 5.0 / 6.0 * x*x);
+      }else{
+	wn = log(x);
+      }
+
+      do{
+	zn = log(x) - log(wn) - wn;
+	Float tmp1 = 1.0 + wn;
+	en = (zn * (2.0 * (tmp1) * (tmp1 + 2.0/3.0 * zn) - zn)) / ((tmp1) * ( 2.0 * (tmp1) * (tmp1 + 2.0/3.0 * zn) - 2.0 * zn));
+	wn = wn * (1.0 + en);
+      }while(en > 1e-8);   
+    }else{
+      Rf_error("lambertW is only implemented for x>0");
+      wn = SAM_Zero;
+    }
+    return wn;
+  }
+
+  TMB_BIND_ATOMIC(lambertW0, 1, lambertW_raw(x[0]))
+
+  /*
+   * General functions for finding equilibrium numerically
+   */
+  
+  template<class Float, class Functor>
+  struct FUN_FOR_NEWT {
+    Functor f;
+    
+    Float logSR(Float logs){
+      return f(logs);
+    }
+    
+    Float gr_sr(Float s){
+      typedef atomic::tiny_ad::variable<1, 1, Float> F2;
+      F2 tmp(s,0);
+      F2 ls = log(tmp);
+      F2 r0 = f(ls);
+      F2 res = exp(r0);
+      return res.getDeriv()[0];
+    }
+
+    template<class F>
+    F Fn(F logs, F l){
+      F tmp = log(l) + f(logs) - logs;
+      return tmp * tmp;
+    }
+    Float Gr(Float logs, Float l){
+      typedef atomic::tiny_ad::variable<1, 1, Float> F2;
+      F2 tmp(logs,0);
+      F2 res = Fn(tmp, (F2)l);
+      return res.getDeriv()[0];
+    }
+    Float He(Float logs, Float l){
+      typedef atomic::tiny_ad::variable<2, 1, Float> F2;
+      F2 tmp(logs,0);
+      F2 res = Fn(tmp, (F2)l);
+      return res.getDeriv()[0];
+    }
+  };
+
+
+  template<class Float>
+  struct NEWTON_RESULT {
+    Float objective;
+    int niter;
+    Float par;
+    Float gr;
+    Float he;
+    Float determinant;
+    int posdef;
+    Float mgc;
+    Float logSR;
+    Float grSR;
+  };
+  
+  template<class Float, class Functor>
+  NEWTON_RESULT<Float> newton(Functor f0, Float l, Float logs0){
+    FUN_FOR_NEWT<Float, Functor> f;
+    f.f = f0;
+    int maxit = 1000;
+    Float grad_tol = 1.0e-5;
+    Float c1 = 1.0e-4;
+    Float c2 = 0.1;
+    Float logs = logs0;
+    // Float logsOld = logs;
+    int it = 0;
+    Float mgc = R_PosInf;
+    Float gk = f.Gr(logs, l);
+    Float Gk = f.He(logs, l);
+    Float fCurrent = f.Fn(logs, l);
+    bool posdef = Gk > 1e-7;
+    Float m = 1.0 / Gk;
+    vector<Float> hybridGuess(4);
+    hybridGuess << 1.0, 0.5, 0.25, 0.0625;
+
+    while( it < maxit && mgc > grad_tol ){
+      // logsOld = logs;
+      int useHybridGuessNum = -1;
+      Float tk = 0.9;
+
+      Float dk = -gk;
+
+      if(posdef)
+      	dk = -m * gk;
+
+      Float gkdk = gk * dk;
+     
+      if(hybridGuess.size() > 0){	
+	for(int i = 0; i < hybridGuess.size(); ++i){
+	  Float logs2 = logs + dk * hybridGuess(i);
+	  Float f1 = f.Fn(logs2, l);
+	  Float g1dk = f.Gr(logs2, l);
+	  Float t1 = c1 * hybridGuess(i) * gkdk;
+	  Float t2 = c2 * gkdk;	  
+	  if((f1 < fCurrent + t1) &&
+	     (g1dk > t2)){
+	    useHybridGuessNum = i;
+	    break;
+	  }
+	}
+      }
+
+      if(useHybridGuessNum == -1){
+	// Use step size from Alg.1 in https://arxiv.org/pdf/1612.06965.pdf
+	Float rhok = -gkdk;
+        Float dkGkdk = dk * Gk * dk;
+	Float deltak = sqrt( dkGkdk );
+	Float den = rhok + deltak;
+	den *= deltak;
+        tk = rhok;	
+	tk /= (den + 1e-10);
+      }else{
+	tk = hybridGuess(useHybridGuessNum);
+      }
+      logs += tk * dk;
+      gk = f.Gr(logs, l);
+      Gk = f.He(logs, l);
+      fCurrent = f.Fn(logs, l);
+      m = 1.0 / Gk;
+      posdef = Gk > 1e-7;
+      mgc = fabs(gk);
+      ++it;
+    }
+    NEWTON_RESULT<Float> res = {fCurrent, it, logs, gk, Gk, Gk, posdef, mgc, f.logSR(logs), f.gr_sr(exp(logs))};
+
+    return res;
+  }
+
+  /*
+   * Specialization for the Sigmoidal Beverton-Holt recruitment model
+   */
+  
+  template<class Float>
+  struct SBH {
+    Float a;
+    Float b;
+    Float g;
+    // Float ls0;
+    
+    template<class F>
+    F operator()(F logs){
+      // F fls0 = ls0;
+      // F ls2 = atomic::robust_utils::logspace_add(logs,fls0);
+      return log((F)a) + (F)g * logs - log(1.0+(F)b*exp((F)g * logs));
+    }
+
+  };
+  
+  template<class Float>
+  Float Se_sbh_raw(Float l, Float a, Float b, Float g){
+    SBH<Float> f;
+    f.a = a; f.b = b; f.g = g;// f.ls0 = -10.0;
+    NEWTON_RESULT<Float> r = newton<Float, SBH<Float> >(f, l, log(a) - log(b) + log(2.0));
+    if(r.par > log(SAM_Zero) &&
+	    r.objective < 1.0e-6 &&
+	    fabs(r.grSR) < 1){ // Found stable equilibrium
+      return exp(r.par);
+    }else if(r.par > log(SAM_Zero) &&
+	     r.objective < 1.0e-6 &&
+	     fabs(r.grSR) >= 1){ // Found unstable equilibrium
+      Rf_warning("Found unstable equilibrium");
+      return exp(r.par);
+    }else{
+      return SAM_Zero;
+    }
+    return SAM_Zero;
+  }
+
+  TMB_BIND_ATOMIC(Se_sbh0, 1111, Se_sbh_raw(x[0],x[1],x[2],x[3]))
+
+
+   /*
+   * Specialization for the Saila-Lorda recruitment model
+   */
+  
+ 
+  template<class Float>
+  struct SL {
+    Float a;
+    Float b;
+    Float g;
+    
+    template<class F>
+    F operator()(F logs){
+      return log((F)a) + (F)g * logs - (F)b * exp(logs);
+    }
+  };
+  
+  template<class Float>
+  Float Se_sl_raw(Float l, Float a, Float b, Float g){
+    if(g < 1.0){
+      return (1.0 - g) / b * lambertW_raw( b / (1.0 - g) * pow(a * l, 1 / (1.0 - g) ));
+    }
+    SL<Float> f;
+    f.a = a; f.b = b; f.g = g;
+    NEWTON_RESULT<Float> r = newton<Float, SL<Float> >(f, l, log(g) - log(b) + log(2.0));
+    if(r.par > log(SAM_Zero) &&
+	    r.objective < 1.0e-6 &&
+	    fabs(r.grSR) < 1){ // Found stable equilibrium
+      return exp(r.par);
+    }else if(r.par > log(SAM_Zero) &&
+	     r.objective < 1.0e-6 &&
+	     fabs(r.grSR) >= 1){ // Found unstable equilibrium
+      Rf_warning("Found unstable equilibrium");
+      return exp(r.par);
+    }else{
+      return SAM_Zero;
+    }
+    return SAM_Zero;
+  }
+
+  TMB_BIND_ATOMIC(Se_sl0, 1111, Se_sl_raw(x[0],x[1],x[2],x[3]))
+
+
+  
+}
+
+template<class Type>
+Type lambertW(Type x){
+  vector<Type> args(2); // Last index reserved for derivative order
+  args[0] = x;
+  args[1] = 0;
+  return rec_atomic::lambertW0(CppAD::vector<Type>(args))[0];
+}
+
+template<class Type>
+Type Se_sbh(Type l, Type a, Type b, Type g){
+  vector<Type> args(5); // Last index reserved for derivative order
+  args[0] = l;
+  args[1] = a;
+  args[2] = b;
+  args[3] = g;
+  args[4] = 0;
+  return rec_atomic::Se_sbh0(CppAD::vector<Type>(args))[0];
+}
+
+template<class Type>
+Type Se_sl(Type l, Type a, Type b, Type g){
+  vector<Type> args(5); // Last index reserved for derivative order
+  args[0] = l;
+  args[1] = a;
+  args[2] = b;
+  args[3] = g;
+  args[4] = 0;
+  return rec_atomic::Se_sl0(CppAD::vector<Type>(args))[0];
+}
 
 template<class Type>
 Type dFunctionalSR(Type ssb, vector<Type> rp, int srmc){
@@ -108,7 +419,7 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   // Calculate spawners
   vector<T> ssb = ssbFun(newDat, newConf, logN, logF);
   T logSPR = log(sum(ssb));
-  T lambda = exp(logSPR);
+  T lambda = sum(ssb); //exp(logSPR);
 
   if(conf.stockRecruitmentModelCode == 0 ||
      conf.stockRecruitmentModelCode == 3){
@@ -129,10 +440,12 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   T Se = 0.0; //R_NegInf;
   
   T dsr0 = 10000.0;
-  if(conf.stockRecruitmentModelCode != 62)
+  if(conf.stockRecruitmentModelCode != 62 &&
+     conf.stockRecruitmentModelCode != 65 &&
+     (conf.stockRecruitmentModelCode != 68 || newPar.rec_pars[2] < 0) &&
+     (conf.stockRecruitmentModelCode != 69 || newPar.rec_pars[2] < 0 ))
     dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
 
-  
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
     Rf_error("Equilibrium SSB not implemented");
@@ -167,6 +480,17 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
     			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(CppAD::fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
     			  T(SAM_Zero));
+    break;
+  case 67: // Deriso
+    Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+			  CppAD::fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
+			   T(SAM_Zero));
+    break;
+  case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1
+    Se = Se_sl(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+    break;
+  case 69: // Sigmoidal Beverton-Holt
+    Se = Se_sbh(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
     default:
       error("SR model code not recognized");
@@ -498,6 +822,10 @@ struct REFERENCE_POINTS {
   }
 
   Type SR(Type ssb){
+    if(conf.stockRecruitmentModelCode == 0)
+      return 0.0;
+    if(conf.stockRecruitmentModelCode == 62)
+      return exp(par.rec_pars(0));
     return exp(functionalStockRecruitment(ssb, par.rec_pars, conf.stockRecruitmentModelCode));
   }
 
@@ -507,6 +835,8 @@ struct REFERENCE_POINTS {
     rp = par.rec_pars.template cast<AD<Type> >();
     if(conf.stockRecruitmentModelCode == 0)
       return 0.0;
+    if(conf.stockRecruitmentModelCode == 62)
+      return exp(rp(0));
     return exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
   }
 
@@ -768,6 +1098,16 @@ extern "C" {
     UNPROTECT(1);    
     return res;
       
+  }
+
+  SEXP Se_sbhR(SEXP lambda, SEXP a, SEXP b, SEXP g){
+    double r = Se_sbh(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
+    return asSEXP(r);
+  }
+
+  SEXP Se_slR(SEXP lambda, SEXP a, SEXP b, SEXP g){
+    double r = Se_sl(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
+    return asSEXP(r);
   }
   
 }
