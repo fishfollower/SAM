@@ -30,6 +30,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param catchval a vector of target catches. See details.
 ##' @param catchval.exact a vector of target catches which will be met without noise. See details.   
 ##' @param fval a vector of target f values. See details.
+##' @param fBarW a vector of target weighted F-bar. Weighted F-bar is defined as F-bar, but where each age contribution is weighted with its assosiated simulated population.
 ##' @param nextssb a vector target SSB values the following year. See details
 ##' @param landval a vector of target catches. See details.   
 ##' @param cwF a vector target custom weighted F values. customWeights must also be specified
@@ -50,7 +51,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
+forecast <- function(fit,fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL,fBarW = NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -69,8 +70,9 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   if(missing(nextssb)) nextssb <-rep(NA,ns)
   if(missing(landval)) landval <-rep(NA,ns)  
   if(missing(cwF)) cwF <-rep(NA,ns)  
-
-  if(!all(rowSums(!is.na(cbind(fscale, catchval, catchval.exact, fval, nextssb, landval, cwF)))==1)){
+  if(missing(fBarW)) fBarW <-rep(NA,ns)  
+  
+  if(!all(rowSums(!is.na(cbind(fscale, catchval, catchval.exact, fval, nextssb, landval, cwF,fBarW)))==1)){
     stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
   }
 
@@ -138,6 +140,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   getProcessVar <- function(fit){
     cof <- coef(fit)
     sdN <- exp(cof[names(cof)=="logSdLogN"][fit$conf$keyVarLogN+1])
+    sdN[is.na(sdN)] = 0
     sdN[1]<-0
     nN <- length(sdN)
     sdF <- exp(cof[names(cof)=="logSdLogFsta"][fit$conf$keyVarF+1])
@@ -200,7 +203,26 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     xx <- getState(N,F)
     return(xx)
   }
-    
+
+  scaleFBarWithN = function(x){
+    simtmp<-NA
+    fun<-function(s){
+      N <- getN(x)
+      span = fit$conf$fbarRange-fit$conf$minAge+1
+      index = span[1]:span[2]
+      sumN = sum(N[index])
+      w = N[index]/sumN
+      simtmp<<-scaleF(x,s)
+
+      idx <- fit$conf$keyLogFsta[1,]+1
+      Fnew <- exp(simtmp[length(idx)+idx[index]])
+      return(fBarW[i+1]-sum(Fnew*w))
+    }
+    ff <- uniroot(fun, c(0,100))$root
+    return(simtmp)
+  }
+  
+  
   sel<-function(x){
     getF(x)/fbar(x)
   }
@@ -346,6 +368,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
       sim<-t(apply(sim, 1, scaleF, scale=adj))    
     }
 
+    if(!is.na(fBarW[i+1])){
+      
+      sim = t(apply(sim,1,scaleFBarWithN))
+
+    }
+    
     if(!is.na(cwF[i+1])){
       if(missing(customWeights))stop("customWeights must be supplied when using the cwF option")  
       curcwF<-median(apply(sim, 1, getCWF, w=customWeights))
