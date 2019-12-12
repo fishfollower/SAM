@@ -85,6 +85,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                 logScaleFmax = factor(NA),
                 logScaleF01 = factor(NA),
                 logScaleFcrash = factor(NA),
+                logScaleFext = factor(NA),
                 logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
                 logScaleFlim = factor(NA)
                 )

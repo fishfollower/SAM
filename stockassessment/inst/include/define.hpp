@@ -595,6 +595,7 @@ struct paraSet{
   Type logScaleFmax;
   Type logScaleF01;
   Type logScaleFcrash;
+  Type logScaleFext;
   vector<Type> logScaleFxPercent;
   Type logScaleFlim;
 
@@ -620,6 +621,7 @@ struct paraSet{
     logScaleFmax = (Type)Rf_asReal(getListElement(x,"logScaleFmax"));
     logScaleF01 = (Type)Rf_asReal(getListElement(x,"logScaleF01"));
     logScaleFcrash = (Type)Rf_asReal(getListElement(x,"logScaleFcrash"));
+    logScaleFext = (Type)Rf_asReal(getListElement(x,"logScaleFext"));
     logScaleFxPercent = asVector<Type>(getListElement(x,"logScaleFxPercent"));
     logScaleFlim = (Type)Rf_asReal(getListElement(x,"logScaleFlim"));
   }
@@ -644,6 +646,7 @@ struct paraSet{
     logScaleFmax = rhs.logScaleFmax;
     logScaleF01 = rhs.logScaleF01;
     logScaleFcrash = rhs.logScaleFcrash;
+    logScaleFext = rhs.logScaleFext;
     logScaleFxPercent = rhs.logScaleFxPercent;
     logScaleFlim = rhs.logScaleFlim;
     return *this;
@@ -672,6 +675,7 @@ struct paraSet{
     d.logScaleFmax = T(logScaleFmax);
     d.logScaleF01 = T(logScaleF01);
     d.logScaleFcrash = T(logScaleFcrash);
+    d.logScaleFext = T(logScaleFext);
     d.logScaleFxPercent = logScaleFxPercent.template cast<T>();
     d.logScaleFlim = T(logScaleFlim);
 
