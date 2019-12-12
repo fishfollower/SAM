@@ -32,7 +32,8 @@
 
 
 #define SAM_NegInf -20.0
-#define SAM_Zero exp(-10.0)
+#define SAM_NIZero -10.0
+#define SAM_Zero exp(SAM_NIZero)
 #define SAM_RECNTAB 20
 // exp(SAM_NegInf)
 
@@ -546,7 +547,8 @@ struct REFERENCE_POINTS {
   Type logFmsy; 		// Maximizes yield
   Type logFmax;			// Maximizes yield per recruit
   Type logF01;			// F such that YPR'(0) = 0.1 * YPR'(F)
-  Type logFcrash;		// F such that 1/SPR(f) = SR'(0) (i.e. stock crashes if slope of spawner-per-recruit in origin is less than slope of stock-recruitment model in origin)
+  Type logFcrash;		// F such that 1/SPR(f) = SR'(0) (i.e. stock crashes [with compensatory recruitment] if slope of spawner-per-recruit in origin is less than slope of stock-recruitment model in origin)
+  Type logFext;			// F such that stock dies out - SSB(F) < epsilon and F smallest possible
   vector<Type> logFxPercent;			// F such that SSB is reduced to x% of unfished stock (Se(F) = x/100 * Se(0) )
   //Type logFmed;			// Fishing  mortality  rate  F  corresponding  to  a  SSB/R  equal  to  the  inverse  of  the  50th  percentile of the observed R/SSB
   Type logFlim;			// F such that Se(F) = Blim (for hockey-stick-like stock recruitment only)
@@ -560,6 +562,7 @@ struct REFERENCE_POINTS {
   Type logBmax;
   Type logB01;
   Type logBcrash;
+  Type logBext;
   vector<Type> logBxPercent;
   Type logBlim;			// Known from model parameters (for hockey-stick-like stock recruitment only)
   //Type logBpa;			// Ba = Blim * exp(1.645 * sigma) where sigma is the standard deviation of log(SSB) at the start of the year following the terminal year of the assessment if sigma is unknown, 0.2 can be used as default.
@@ -571,6 +574,7 @@ struct REFERENCE_POINTS {
   Type logYmax;
   Type logY01;
   Type logYcrash;
+  Type logYext;
   vector<Type> logYxPercent;
   Type logYlim;			// Known from model parameters (for hockey-stick-like stock recruit
 
@@ -580,6 +584,7 @@ struct REFERENCE_POINTS {
   Type logYPRmax;
   Type logYPR01;
   Type logYPRcrash;
+  Type logYPRext;
   vector<Type> logYPRxPercent;
   Type logYPRlim;
 
@@ -589,6 +594,7 @@ struct REFERENCE_POINTS {
   Type logSPRmax;
   Type logSPR01;
   Type logSPRcrash;
+  Type logSPRext;
   vector<Type> logSPRxPercent;
   Type logSPRlim;
 
@@ -700,6 +706,21 @@ struct REFERENCE_POINTS {
       logYcrash = R_NaReal;
       logYPRcrash = R_NaReal;
       logSPRcrash = R_NaReal;
+    }
+
+    
+    if(CppAD::Variable(par.logScaleFext)){
+      logFext = par.logScaleFext; //logFsq + par.logScaleFcrash;
+      logBext = log(Se(exp(logFext)));
+      logYext = log(yield(exp(logFext)));
+      logYPRext = log(YPR(exp(logFext)));
+      logSPRext = log(SPR(exp(logFext)));
+    }else{
+      logFext = R_NaReal;//R_NaReal;
+      logBext = R_NaReal;
+      logYext = R_NaReal;
+      logYPRext = R_NaReal;
+      logSPRext = R_NaReal;
     }
 
     logFxPercent = vector<Type>(par.logScaleFxPercent.size());
@@ -883,6 +904,12 @@ struct REFERENCE_POINTS {
       nll += tmp * tmp;
     }
     
+    if(CppAD::Variable(par.logScaleFext)){
+      Type tmp1 = Se(exp(logFext));
+      Type tmp2 = exp(logFext);
+      nll += tmp1 * tmp1 + tmp2 * tmp2;
+    }
+    
     for(int i = 0; i < par.logScaleFxPercent.size(); ++i){
       if(CppAD::Variable(par.logScaleFxPercent(i))){
 	Type tmp = dat.referencepoint.xPercent(i) * SPR(Type(SAM_Zero)) - SPR(exp(logFxPercent(i)));
@@ -992,6 +1019,13 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logYPRcrash,of);
   ADREPORT_F(referencepoint.logSPRcrash,of);
 
+  ADREPORT_F(referencepoint.logFext,of);
+  ADREPORT_F(referencepoint.logBext,of);
+  ADREPORT_F(referencepoint.logYext,of);
+  ADREPORT_F(referencepoint.logYPRext,of);
+  ADREPORT_F(referencepoint.logSPRext,of);
+
+  
   ADREPORT_F(referencepoint.logFxPercent,of);
   ADREPORT_F(referencepoint.logBxPercent,of);
   ADREPORT_F(referencepoint.logYxPercent,of);
