@@ -345,6 +345,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
+                "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFlim")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){ # AR
@@ -364,11 +365,19 @@ referencepoints.sam <- function(fit,
                 "logScaleF01",
                 "logScaleFxPercent"
                 )
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(68,69) && fit$pl$rec_par[3] > 0){ ## depensatory recruitment; Fcrash does not work.
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                "logScaleFext",
+                "logScaleFxPercent"
+                )
     }else{
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
+                "logScaleFext",
                 "logScaleFxPercent"
                 )
     }
@@ -379,6 +388,7 @@ referencepoints.sam <- function(fit,
     args$parameters$logScaleF01 <- -2
     args$parameters$logScaleFmax <- -2
     args$parameters$logScaleFcrash <- -2
+    args$parameters$logScaleFext <- -2
     args$parameters$logScaleFxPercent <- rep(-2, length(SPRpercent))
     args$parameters$logScaleFlim <- -2
     args$parameters$implicitFunctionDelta <- 1
@@ -488,6 +498,7 @@ referencepoints.sam <- function(fit,
                "max"="Max",
                "01"="0.1",
                "crash"="Crash",
+               "ext"="Ext",
                "xPercent"=NA,
                "lim"="lim",
                x
@@ -497,13 +508,19 @@ referencepoints.sam <- function(fit,
     rn[is.na(rn)] <- sapply(SPRpercent,function(x)sprintf("%s%%",x * 100))    
     rownames(Ftab) <- rownames(Btab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rn
 
+    Ftab["Ext",c("Low","High")] <- NA
+    Btab["Ext",c("Low","High")] <- NA
+    Ytab["Ext",c("Low","High")] <- NA
+    SPRtab["Ext",c("Low","High")] <- NA
+    YPRtab["Ext",c("Low","High")] <- NA
+    
     YPRseq <- toCI("logYPR")
     SPRseq <- toCI("logSPR")
     Yieldseq <- toCI("logYe")
     Bseq <- toCI("logSe")
     Rseq <- toCI("logRe")
 
-rownames(YPRseq) <- rownames(SPRseq) <- rownames(Yieldseq) <- rownames(Bseq) <- rownames(Rseq) <- argsIn$data$referencepoint$Fsequence
+    rownames(YPRseq) <- rownames(SPRseq) <- rownames(Yieldseq) <- rownames(Bseq) <- rownames(Rseq) <- argsIn$data$referencepoint$Fsequence
     
     res <- list(tables = list(F = Ftab,
                               B = Btab,

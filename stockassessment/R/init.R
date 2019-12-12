@@ -71,6 +71,7 @@ defpar <- function(dat,conf){
   ret$logScaleFmax <- 0
   ret$logScaleF01 <- 0
   ret$logScaleFcrash <- 0
+  ret$logScaleFext <- 0
   ret$logScaleFxPercent <- numeric()
   ret$logScaleFlim <- 0
   

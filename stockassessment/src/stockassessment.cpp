@@ -126,6 +126,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
   PARAMETER(logScaleF01); paraset.logScaleF01 = logScaleF01;
   PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
+  PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
   PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
   PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
   
