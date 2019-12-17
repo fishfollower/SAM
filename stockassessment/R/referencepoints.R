@@ -345,7 +345,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
-                "logScaleFext",
+                ## "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFlim")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){ # AR
@@ -369,7 +369,7 @@ referencepoints.sam <- function(fit,
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                "logScaleFext",
+                ## "logScaleFext",
                 "logScaleFxPercent"
                 )
     }else{
@@ -377,7 +377,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
-                "logScaleFext",
+                ## "logScaleFext",
                 "logScaleFxPercent"
                 )
     }
@@ -423,8 +423,15 @@ referencepoints.sam <- function(fit,
     if(tryAgain)
         objOptim <- do.call(TMB::MakeADFun, args)
 
-    opt <- nlminb(objOptim$par, objOptim$fn, objOptim$gr, objOptim$he)
-
+    opt <- nlminb(objOptim$par, objOptim$fn, objOptim$gr)#, objOptim$he)
+    ii <- 0
+    while(max(abs(objOptim$gr(opt$par))) > 1e-4 && ii < 20){
+        g <- as.numeric( objOptim$gr(opt$par) )
+        h <- objOptim$he(opt$par)
+        opt$par <- opt$par - solve(h, g)
+        opt$objective <- objOptim$fn(opt$par)
+        ii <- ii + 1
+    }
     ## Object to do Delta method (nothing mapped (that's not mapped in fit$obj, nothing random, delta = 1)
     args <- argsIn
     ## Remove random
