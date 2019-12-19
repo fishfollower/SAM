@@ -149,6 +149,7 @@ forecastMSY.sam <- function(fit,
                        rec.years = rec.years,
                        processNoiseF = processNoiseF,
                        ...)
+    argsIn$DLL <- "stockassessment"
 
     args <- argsIn
     args$map$logFScaleMSY <- factor(NA)
@@ -489,6 +490,8 @@ referencepoints.sam <- function(fit,
                      toCI, simplify = FALSE))
     Btab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logB",rownames(ssdr))]),
                                    toCI, simplify = FALSE))
+    Rtab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logR",rownames(ssdr))]),
+                                   toCI, simplify = FALSE))
     Ytab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logY",rownames(ssdr)) & !grepl("referencepoint.logYPR",rownames(ssdr))]),
                      toCI, simplify = FALSE))
     SPRtab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logSPR",rownames(ssdr))]),
@@ -513,13 +516,14 @@ referencepoints.sam <- function(fit,
     })
     rn <- toRowNames(rownames(Ftab))
     rn[is.na(rn)] <- sapply(SPRpercent,function(x)sprintf("%s%%",x * 100))    
-    rownames(Ftab) <- rownames(Btab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rn
+    rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rn
 
-    Ftab["Ext",c("Low","High")] <- NA
-    Btab["Ext",c("Low","High")] <- NA
-    Ytab["Ext",c("Low","High")] <- NA
-    SPRtab["Ext",c("Low","High")] <- NA
-    YPRtab["Ext",c("Low","High")] <- NA
+    ## Ftab["Ext",c("Low","High")] <- NA
+    ## Btab["Ext",c("Low","High")] <- NA
+    ## Rtab["Ext",c("Low","High")] <- NA
+    ## Ytab["Ext",c("Low","High")] <- NA
+    ## SPRtab["Ext",c("Low","High")] <- NA
+    ## YPRtab["Ext",c("Low","High")] <- NA
     
     YPRseq <- toCI("logYPR")
     SPRseq <- toCI("logSPR")
@@ -532,7 +536,7 @@ referencepoints.sam <- function(fit,
     res <- list(tables = list(F = Ftab,
                               B = Btab,
                               Yield = Ytab,
-                              ## Recruitment = Rtab,
+                              Recruitment = Rtab,
                               SpawnersPerRecruit = SPRtab,
                               YieldPerRecruit = YPRtab),
                 graphs = list(F = argsIn$data$referencepoint$Fsequence,
