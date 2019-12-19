@@ -108,6 +108,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
       ddd$data <- tmball
       ddd$parameters <- parameters
       ddd$random <- ran
+      ddd$DLL <- "stockassessment"
       obj <- do.call(MakeADFun,ddd)
     }else{
       obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
