@@ -567,6 +567,19 @@ struct REFERENCE_POINTS {
   Type logBlim;			// Known from model parameters (for hockey-stick-like stock recruitment only)
   //Type logBpa;			// Ba = Blim * exp(1.645 * sigma) where sigma is the standard deviation of log(SSB) at the start of the year following the terminal year of the assessment if sigma is unknown, 0.2 can be used as default.
 
+  // Corresponding Recruitment
+  Type logRsq;
+  Type logR0;
+  Type logRmsy;
+  Type logRmax;
+  Type logR01;
+  Type logRcrash;
+  Type logRext;
+  vector<Type> logRxPercent;
+  Type logRlim;			// Known from model parameters (for hockey-stick-like stock recruitment only)
+  //Type logBpa;			// Ba = Blim * exp(1.645 * sigma) where sigma is the standard deviation of log(SSB) at the start of the year following the terminal year of the assessment if sigma is unknown, 0.2 can be used as default.
+
+  
   // Corresponding Yield??
   Type logYsq;
   Type logY0;
@@ -638,12 +651,14 @@ struct REFERENCE_POINTS {
     sel *= 1.0 / sum(fbartmp);
     
     logBsq = log(Se(exp(logFsq)));
+    logRsq = log(Re(exp(logFsq)));
     logYsq = log(yield(exp(logFsq)));
     logYPRsq = log(YPR(exp(logFsq)));
     logSPRsq = log(SPR(exp(logFsq)));
 
     logF0 = SAM_NegInf;
     logB0 = log(Se(exp(logF0)));
+    logR0 = log(Re(exp(logF0)));
     logY0 = log(yield(exp(logF0)));
     logYPR0 = log(YPR(exp(logF0)));
     logSPR0 = log(SPR(exp(logF0)));
@@ -652,12 +667,14 @@ struct REFERENCE_POINTS {
     if(CppAD::Variable(par.logScaleFmsy)){
       logFmsy = par.logScaleFmsy; // logFsq + par.logScaleFmsy;
       logBmsy = log(Se(exp(logFmsy)));
+      logRmsy = log(Re(exp(logFmsy)));
       logYmsy = log(yield(exp(logFmsy)));
       logYPRmsy = log(YPR(exp(logFmsy)));
       logSPRmsy = log(SPR(exp(logFmsy)));
     }else{
       logFmsy = R_NaReal;// R_NaReal;
       logBmsy = R_NaReal;
+      logRmsy = R_NaReal;
       logYmsy = R_NaReal;
       logYPRmsy = R_NaReal;
       logSPRmsy = R_NaReal;
@@ -667,12 +684,14 @@ struct REFERENCE_POINTS {
     if(CppAD::Variable(par.logScaleFmax)){
       logFmax = par.logScaleFmax; //logFsq + par.logScaleFmax;
       logBmax = log(Se(exp(logFmax)));
+      logRmax = log(Re(exp(logFmax)));
       logYmax = log(yield(exp(logFmax)));
       logYPRmax = log(YPR(exp(logFmax)));
       logSPRmax = log(SPR(exp(logFmax)));
     }else{
       logFmax = R_NaReal;//R_NaReal;
       logBmax = R_NaReal;
+      logRmax = R_NaReal;
       logYmax = R_NaReal;
       logYPRmax = R_NaReal;
       logSPRmax = R_NaReal;
@@ -682,12 +701,14 @@ struct REFERENCE_POINTS {
     if(CppAD::Variable(par.logScaleF01)){
       logF01 = par.logScaleF01; //logFsq + par.logScaleF01;
       logB01 = log(Se(exp(logF01)));
+      logR01 = log(Re(exp(logF01)));
       logY01 = log(yield(exp(logF01)));
       logYPR01 = log(YPR(exp(logF01)));
       logSPR01 = log(SPR(exp(logF01)));
     }else{
       logF01 = R_NaReal;//R_NaReal;
       logB01 = R_NaReal;
+      logR01 = R_NaReal;
       logY01 = R_NaReal;
       logYPR01 = R_NaReal;
       logSPR01 = R_NaReal;
@@ -697,12 +718,14 @@ struct REFERENCE_POINTS {
     if(CppAD::Variable(par.logScaleFcrash)){
       logFcrash = par.logScaleFcrash; //logFsq + par.logScaleFcrash;
       logBcrash = log(Se(exp(logFcrash)));
+      logRcrash = log(Re(exp(logFcrash)));
       logYcrash = log(yield(exp(logFcrash)));
       logYPRcrash = log(YPR(exp(logFcrash)));
       logSPRcrash = log(SPR(exp(logFcrash)));
     }else{
       logFcrash = R_NaReal;//R_NaReal;
       logBcrash = R_NaReal;
+      logRcrash = R_NaReal;
       logYcrash = R_NaReal;
       logYPRcrash = R_NaReal;
       logSPRcrash = R_NaReal;
@@ -712,12 +735,14 @@ struct REFERENCE_POINTS {
     if(CppAD::Variable(par.logScaleFext)){
       logFext = par.logScaleFext; //logFsq + par.logScaleFcrash;
       logBext = log(Se(exp(logFext)));
+      logRext = log(Re(exp(logFext)));
       logYext = log(yield(exp(logFext)));
       logYPRext = log(YPR(exp(logFext)));
       logSPRext = log(SPR(exp(logFext)));
     }else{
       logFext = R_NaReal;//R_NaReal;
       logBext = R_NaReal;
+      logRext = R_NaReal;
       logYext = R_NaReal;
       logYPRext = R_NaReal;
       logSPRext = R_NaReal;
@@ -725,6 +750,7 @@ struct REFERENCE_POINTS {
 
     logFxPercent = vector<Type>(par.logScaleFxPercent.size());
     logBxPercent = vector<Type>(par.logScaleFxPercent.size());
+    logRxPercent = vector<Type>(par.logScaleFxPercent.size());
     logYxPercent = vector<Type>(par.logScaleFxPercent.size());
     logYPRxPercent = vector<Type>(par.logScaleFxPercent.size());
     logSPRxPercent = vector<Type>(par.logScaleFxPercent.size());
@@ -733,12 +759,14 @@ struct REFERENCE_POINTS {
       if(CppAD::Variable(par.logScaleFxPercent(i))){
 	logFxPercent(i) = par.logScaleFxPercent(i); //logFsq + par.logScaleF35;
 	logBxPercent(i) = log(Se(exp(logFxPercent(i))));
+	logRxPercent(i) = log(Re(exp(logFxPercent(i))));
 	logYxPercent(i) = log(yield(exp(logFxPercent(i))));
 	logYPRxPercent(i) = log(YPR(exp(logFxPercent(i))));
 	logSPRxPercent(i) = log(SPR(exp(logFxPercent(i))));
       }else{
 	logFxPercent(i) = R_NaReal;//R_NaReal;
 	logBxPercent(i) = R_NaReal;
+	logRxPercent(i) = R_NaReal;
 	logYxPercent(i) = R_NaReal;
 	logYPRxPercent(i) = R_NaReal;
 	logSPRxPercent(i) = R_NaReal;
@@ -755,6 +783,7 @@ struct REFERENCE_POINTS {
       }else if(conf.stockRecruitmentModelCode == 63){
 	logBlim = par.rec_pars(0);      
       }
+      logRlim = log(Re(exp(logFlim)));
       logYPRlim = log(YPR(exp(logFlim)));
       logSPRlim = log(SPR(exp(logFlim)));
     }else{
@@ -766,6 +795,7 @@ struct REFERENCE_POINTS {
       }else{
 	logBlim = R_NaReal;
       }
+      logRlim = R_NaReal;
       logYlim = R_NaReal;
       logYPRlim = R_NaReal;
       logSPRlim = R_NaReal;
@@ -835,6 +865,11 @@ struct REFERENCE_POINTS {
   Type Se(Type Fbar){
     PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
     return exp(r.logSe);
+  }
+
+  Type Re(Type Fbar){
+    PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
+    return exp(r.logRe);
   }
 
   Type yield(Type Fbar){
@@ -985,42 +1020,49 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   
   ADREPORT_F(referencepoint.logFsq,of);
   ADREPORT_F(referencepoint.logBsq,of);
+  ADREPORT_F(referencepoint.logRsq,of);
   ADREPORT_F(referencepoint.logYsq,of);
   ADREPORT_F(referencepoint.logYPRsq,of);
   ADREPORT_F(referencepoint.logSPRsq,of);
 
   ADREPORT_F(referencepoint.logF0,of);
   ADREPORT_F(referencepoint.logB0,of);
+  ADREPORT_F(referencepoint.logR0,of);
   ADREPORT_F(referencepoint.logY0,of);
   ADREPORT_F(referencepoint.logYPR0,of);
   ADREPORT_F(referencepoint.logSPR0,of);
   
   ADREPORT_F(referencepoint.logFmsy,of);
   ADREPORT_F(referencepoint.logBmsy,of);
+  ADREPORT_F(referencepoint.logRmsy,of);
   ADREPORT_F(referencepoint.logYmsy,of);
   ADREPORT_F(referencepoint.logYPRmsy,of);
   ADREPORT_F(referencepoint.logSPRmsy,of);
 
   ADREPORT_F(referencepoint.logFmax,of);
   ADREPORT_F(referencepoint.logBmax,of);
+  ADREPORT_F(referencepoint.logRmax,of);
   ADREPORT_F(referencepoint.logYmax,of);
   ADREPORT_F(referencepoint.logYPRmax,of);
   ADREPORT_F(referencepoint.logSPRmax,of);
  
   ADREPORT_F(referencepoint.logF01,of);
   ADREPORT_F(referencepoint.logB01,of);
+  ADREPORT_F(referencepoint.logR01,of);
   ADREPORT_F(referencepoint.logY01,of);
   ADREPORT_F(referencepoint.logYPR01,of);
   ADREPORT_F(referencepoint.logSPR01,of);
 
   ADREPORT_F(referencepoint.logFcrash,of);
   ADREPORT_F(referencepoint.logBcrash,of);
+  ADREPORT_F(referencepoint.logRcrash,of);
   ADREPORT_F(referencepoint.logYcrash,of);
   ADREPORT_F(referencepoint.logYPRcrash,of);
   ADREPORT_F(referencepoint.logSPRcrash,of);
 
   ADREPORT_F(referencepoint.logFext,of);
   ADREPORT_F(referencepoint.logBext,of);
+  ADREPORT_F(referencepoint.logRext,of);
   ADREPORT_F(referencepoint.logYext,of);
   ADREPORT_F(referencepoint.logYPRext,of);
   ADREPORT_F(referencepoint.logSPRext,of);
@@ -1028,12 +1070,14 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   
   ADREPORT_F(referencepoint.logFxPercent,of);
   ADREPORT_F(referencepoint.logBxPercent,of);
+  ADREPORT_F(referencepoint.logRxPercent,of);
   ADREPORT_F(referencepoint.logYxPercent,of);
   ADREPORT_F(referencepoint.logYPRxPercent,of);
   ADREPORT_F(referencepoint.logSPRxPercent,of);
 
   ADREPORT_F(referencepoint.logFlim,of);
   ADREPORT_F(referencepoint.logBlim,of);
+  ADREPORT_F(referencepoint.logRlim,of);
   ADREPORT_F(referencepoint.logYlim,of);
   ADREPORT_F(referencepoint.logYPRlim,of);
   ADREPORT_F(referencepoint.logSPRlim,of);
