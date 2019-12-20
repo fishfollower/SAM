@@ -498,7 +498,7 @@ referencepoints.sam <- function(fit,
                                    toCI, simplify = FALSE))
     YPRtab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logYPR",rownames(ssdr))]),
                                    toCI, simplify = FALSE))
-    colnames(Ftab) <- colnames(Btab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- c("Estimate","Low","High")
+    colnames(Ftab) <- colnames(Btab) <- colnames(Rtab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- c("Estimate","Low","High")
 
     toRowNames <- Vectorize(function(x){
         switch(gsub("^referencepoint.logF","",x),
