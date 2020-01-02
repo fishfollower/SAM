@@ -5,8 +5,8 @@
 \title{forecast function to do shortterm}
 \usage{
 forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
-  fval = NULL, nextssb = NULL, landval = NULL, cwF = NULL,
-  nosim = 1000, year.base = max(fit$data$years),
+  fval = NULL, fBarW = NULL, nextssb = NULL, landval = NULL,
+  cwF = NULL, nosim = 1000, year.base = max(fit$data$years),
   ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
@@ -23,6 +23,8 @@ forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
 \item{catchval.exact}{a vector of target catches which will be met without noise. See details.}
 
 \item{fval}{a vector of target f values. See details.}
+
+\item{fBarW}{a vector of target weighted F-bar. Weighted F-bar is defined as F-bar, but where each age contribution is weighted with its assosiated simulated population.}
 
 \item{nextssb}{a vector target SSB values the following year. See details}
 
