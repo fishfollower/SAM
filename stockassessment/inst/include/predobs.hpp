@@ -27,21 +27,23 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     for(int y=0; y<(logNdev.dim[1]-1); ++y){
       for(int a=0; a<(logNdev.dim[0]-1); ++a){
         if(a==(logNdev.dim[0]-2)){ // plus group
+	  Type FAm1y=0;	  
+          if(conf.keyLogFsta(0,a)>(-1)){
+            FAm1y=exp(logF(conf.keyLogFsta(0,a),y));
+          }
           Type FAy=0;
           if(conf.keyLogFsta(0,a+1)>(-1)){
             FAy=exp(logF(conf.keyLogFsta(0,a+1),y));
-          }
+          }	  
           Type pen1=0;
-          Type tmpDev=logN(a,y)-log(posfun(exp(logN(a+1,y+1))-exp(logN(a+1,y))*exp(-dat.natMor(y,a+1)-FAy),Type(1.0e-6),pen1))-dat.natMor(y,a);
-          if(conf.keyLogFsta(0,a)>(-1)){
-            tmpDev-=exp(logF(conf.keyLogFsta(0,a),y));
-          }
-          logNdev(a,y)=0;
-          logNdev(a+1,y)=0;
+          //Type tmpDev=logN(a,y)-log(posfun(exp(logN(a+1,y+1))-exp(logN(a+1,y))*exp(-dat.natMor(y,a+1)-FAy),Type(1.0e-6),pen1))-dat.natMor(y,a);
+	  Type tmpDev=logN(a+1,y+1)-log(exp(logN(a,y)-FAm1y-dat.natMor(y,a))+exp(logN(a+1,y)-FAy-dat.natMor(y,a+1)));
+          logNdev(a,y)=tmpDev;
+          logNdev(a+1,y)=tmpDev;
         }else{
-          logNdev(a,y)=logN(a,y)-dat.natMor(y,a)-logN(a+1,y+1);
+          logNdev(a,y)=logN(a+1,y+1)-logN(a,y)+dat.natMor(y,a);
           if(conf.keyLogFsta(0,a)>(-1)){
-            logNdev(a,y)-=exp(logF(conf.keyLogFsta(0,a),y));
+            logNdev(a,y)+=exp(logF(conf.keyLogFsta(0,a),y));
           }
         }
       }
@@ -62,7 +64,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     a=dat.aux(i,2)-conf.minAge;
     if(ft==3){a=0;}
     if(ft<3){ 
-      zz = posfun(dat.natMor(y,a)+logNdev(a,y),Type(1.0e-6),pen);
+      zz = posfun(dat.natMor(y,a)-logNdev(a,y),Type(1.0e-6),pen);
       if(conf.keyLogFsta(0,a)>(-1)){
         zz+=exp(logF(conf.keyLogFsta(0,a),y));
       }
