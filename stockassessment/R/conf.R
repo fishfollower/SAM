@@ -194,7 +194,8 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
     txt$fracMixF <- "The fraction of t(3) distribution used in logF increment distribution" 
     txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution"
-    txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet" 
+    txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet"
+    txt$assignProcessNoiseToM <- "Assign process noise to M (0=No, 1=Yes except for plus group, 2=Yes (same for both M's entering plusgroup)" 
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)

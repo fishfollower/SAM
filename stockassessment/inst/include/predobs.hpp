@@ -23,7 +23,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 
   array<Type> logNdev(logN.dim[0],logN.dim[1]); 
   logNdev.setZero();
-  if(conf.assignProcessNoiseToM==1){
+  if(conf.assignProcessNoiseToM>0.5){
     for(int y=0; y<(logNdev.dim[1]-1); ++y){
       for(int a=0; a<(logNdev.dim[0]-1); ++a){
         if(a==(logNdev.dim[0]-2)){ // plus group
@@ -36,10 +36,11 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
             FAy=exp(logF(conf.keyLogFsta(0,a+1),y));
           }	  
           Type pen1=0;
-          //Type tmpDev=logN(a,y)-log(posfun(exp(logN(a+1,y+1))-exp(logN(a+1,y))*exp(-dat.natMor(y,a+1)-FAy),Type(1.0e-6),pen1))-dat.natMor(y,a);
 	  Type tmpDev=logN(a+1,y+1)-log(exp(logN(a,y)-FAm1y-dat.natMor(y,a))+exp(logN(a+1,y)-FAy-dat.natMor(y,a+1)));
-          logNdev(a,y)=tmpDev;
-          logNdev(a+1,y)=tmpDev;
+	  if(conf.assignProcessNoiseToM>1.5){
+            logNdev(a,y)=tmpDev;
+            logNdev(a+1,y)=tmpDev;
+	  }
         }else{
           logNdev(a,y)=logN(a+1,y+1)-logN(a,y)+dat.natMor(y,a);
           if(conf.keyLogFsta(0,a)>(-1)){
