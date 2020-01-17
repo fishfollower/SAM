@@ -1,4 +1,8 @@
-  
+#ifndef TMBAD_FRAMEWORK
+#ifndef CPPAD_FRAMEWORK
+#define CPPAD_FRAMEWORK
+#endif
+#endif
   // template<class Float>
   // Float GrNum_sbh_raw(Float s, Float l, Float a, Float b, Float g, Float h){
   //   Float err = 1e5;
@@ -314,8 +318,23 @@ Type Se_sl(Type l, Type a, Type b, Type g){
   return rec_atomic::Se_sl0(CppAD::vector<Type>(args))[0];
 }
 
+#ifdef TMBAD_FRAMEWORK
+template<class Type>
+struct F_dFunctionalSR {
+  vector<Type> rp;
+  int srmc;
+  template<class T>
+  T operator()(vector<T> x){  // Evaluate function
+    vector<T> rp2 = rp.template cast<T>();
+    return exp(functionalStockRecruitment(x[0], rp2, srmc));
+  }    
+};
+#endif
+
 template<class Type>
 Type dFunctionalSR(Type ssb, vector<Type> rp, int srmc){
+  
+#ifdef CPPAD_FRAMEWORK
   vector<AD<Type> > rp2(rp.size());
   rp2 = rp.template cast<AD<Type> >();
   CppAD::vector<AD<Type> > x( 1 );
@@ -328,6 +347,15 @@ Type dFunctionalSR(Type ssb, vector<Type> rp, int srmc){
   x_eval[0] = ssb;
   vector<Type> r = F.Jacobian(x_eval);
   return r[0];
+#endif
+#ifdef TMBAD_FRAMEWORK
+  F_dFunctionalSR<Type> Fd = {rp,srmc};
+  vector<Type> x(1);
+  x(0) = ssb;
+  TMBad::ADFun<> G(TMBad::StdWrap<F_dFunctionalSR<Type> ,vector<TMBad::ad_aug> >(Fd), x);
+  G = G.JacFun();
+  return G(x)[0];
+#endif
 }
 
 
@@ -443,9 +471,11 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   T dsr0 = 10000.0;
   if(conf.stockRecruitmentModelCode != 62 &&
      conf.stockRecruitmentModelCode != 65 &&
-     (conf.stockRecruitmentModelCode != 68 || newPar.rec_pars[2] < 0) &&
-     (conf.stockRecruitmentModelCode != 69 || newPar.rec_pars[2] < 0 ))
+     conf.stockRecruitmentModelCode != 68 &&
+     conf.stockRecruitmentModelCode != 69)
     dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
+  if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69)
+    dsr0 = CppAD::CondExpLt((T)newPar.rec_pars[2], (T)0, (T)dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode), (T)dsr0);
 
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
@@ -456,7 +486,7 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     break;
   case 2:  //BH
     Se =  CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-			   CppAD::fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
+			   fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
 			   T(SAM_Zero));
     break;
   case 3: //Constant mean
@@ -479,12 +509,12 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     break;
   case 66: // Shepherd
     Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-    			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(CppAD::fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
+    			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
     			  T(SAM_Zero));
     break;
   case 67: // Deriso
     Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-			  CppAD::fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
+			  fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
 			   T(SAM_Zero));
     break;
   case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1
@@ -501,8 +531,8 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   //T logSe = log(Se);
   //Type logSe = CppAD::CondExpGt(exp(-logSPR), dsr0, Type(SAM_NegInf), log(Se));
   T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0,
-  			     log(CppAD::fabs(Se)) - 10.0 * (exp(-logSPR) - dsr0),
-  			     log(CppAD::fabs(Se)));
+  			     log(fabs(Se)) - 10.0 * (exp(-logSPR) - dsr0),
+  			     log(fabs(Se)));
 
   T logYe = CppAD::CondExpGt(exp(-logSPR), dsr0,
   			     logSe - logSPR + logYPR - 10.0 * (exp(-logSPR) - dsr0),
@@ -519,6 +549,44 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
 
   return res;
 }
+
+
+#ifdef TMBAD_FRAMEWORK
+template<class Type>
+struct REFERENCE_POINTS;
+// Structs for REFERENCE_POINTS AD
+// YPR
+template<class Type>
+struct F_FYPR {
+  REFERENCE_POINTS<Type>& parent;
+  template<class T>
+  T operator()(vector<T> x){  // Evaluate function
+    return parent.YPR(x[0]);
+  }
+};
+
+// SPR
+template<class Type>
+struct F_FSPR {
+  REFERENCE_POINTS<Type>& parent;
+  template<class T>
+  T operator()(vector<T> x){  // Evaluate function
+    return parent.SPR(x[0]);
+  }
+};
+
+// FSR
+template<class Type>
+struct F_FSR {
+  REFERENCE_POINTS<Type>& parent;
+  template<class T>
+  T operator()(vector<T> x){  // Evaluate function
+    return parent.SR(x[0]);
+  }
+};
+
+#endif
+
 
 
 
@@ -615,9 +683,17 @@ struct REFERENCE_POINTS {
   // Derived values
   vector<Type> sel;
 
+#ifdef CPPAD_FRAMEWORK
   CppAD::ADFun<Type> FSR;
   CppAD::ADFun<Type> FYPR;
   CppAD::ADFun<Type> FSPR;
+#endif
+#ifdef TMBAD_FRAMEWORK
+  // ADFuns
+  TMBad::ADFun<> FSR;
+  TMBad::ADFun<> FYPR;
+  TMBad::ADFun<> FSPR;
+#endif
   
   REFERENCE_POINTS(){}
   REFERENCE_POINTS(dataSet<Type>& dat_,
@@ -802,7 +878,7 @@ struct REFERENCE_POINTS {
     }
  
  
-    
+#ifdef CPPAD_FRAMEWORK
     // Prepare AD
     vector<Type> Fsqvec(1);
     Fsqvec(0) = exp(-10.0);
@@ -826,10 +902,34 @@ struct REFERENCE_POINTS {
     y3[0] = SR(x3);
     FSR = CppAD::ADFun<Type>(x3, y3);
 
+#endif
+#ifdef TMBAD_FRAMEWORK
+    // Prepare AD
+    vector<Type> x0(1);
+    x0(0) = exp(-10.0);
+    // YPR
+    F_FYPR<Type> FyprInst = {*this};
+    FYPR = TMBad::ADFun<>(TMBad::StdWrap<F_FYPR<Type>,vector<TMBad::ad_aug> >(FyprInst), x0);
+    FYPR = FYPR.JacFun();
+
+    // SPR
+    F_FSPR<Type> FsprInst = {*this};
+    FSPR = TMBad::ADFun<>(TMBad::StdWrap<F_FSPR<Type>,vector<TMBad::ad_aug> >(FsprInst), x0);
+    FSPR = FSPR.JacFun();
+
+    // FSR
+    F_FSR<Type> FsrInst = {*this};
+    FSR = TMBad::ADFun<>(TMBad::StdWrap<F_FSR<Type>,vector<TMBad::ad_aug> >(FsrInst), x0);
+    FSR = FSR.JacFun();
+
+#endif
+
+    
   }
 
-  Type YPR(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
+  template<class T>
+  T YPR(T Fbar){
+    PERREC_t<T> r = perRecruit<Type, T>(Fbar, dat, conf, par, sel, aveYears, nYears);
     return exp(r.logYPR);
   }
 
@@ -839,14 +939,23 @@ struct REFERENCE_POINTS {
   }
   
   Type dYPR(Type Fbar){
-      vector<Type> Fv(1);
-      Fv(0) = Fbar;
-      CppAD::vector<Type> x_eval( Fv );
-      return FYPR.Jacobian(x_eval)[0];
-  }
+#ifdef CPPAD_FRAMEWORK
+    vector<Type> Fv(1);
+    Fv(0) = Fbar;
+    CppAD::vector<Type> x_eval( Fv );
+    return FYPR.Jacobian(x_eval)[0];
+#endif
+#ifdef TMBAD_FRAMEWORK
+    vector<Type> xx(1);
+    xx(0) = Fbar;
+    vector<Type> tmp = FYPR(xx);
+    return tmp(0);
+#endif
+     }
 
-  Type SPR(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(Fbar, dat, conf, par, sel, aveYears, nYears);
+  template<class T>
+  T SPR(T Fbar){
+    PERREC_t<T> r = perRecruit<Type, T>(Fbar, dat, conf, par, sel, aveYears, nYears);
     return exp(r.logSPR);
   }
 
@@ -856,10 +965,18 @@ struct REFERENCE_POINTS {
   }
 
   Type dSPR(Type Fbar){
+#ifdef CPPAD_FRAMEWORK
     vector<Type> Fv(1);
     Fv(0) = Fbar;
     CppAD::vector<Type> x_eval( Fv );
     return FSPR.Jacobian(x_eval)[0];
+#endif
+#ifdef TMBAD_FRAMEWORK
+    vector<Type> xx(1);
+    xx(0) = Fbar;
+    vector<Type> tmp = FSPR(xx);
+    return tmp(0);
+#endif
   }
 
   Type Se(Type Fbar){
@@ -877,12 +994,14 @@ struct REFERENCE_POINTS {
     return exp(r.logYe);
   }
 
-  Type SR(Type ssb){
+    template<class T>
+    T SR(T ssb){
     if(conf.stockRecruitmentModelCode == 0)
       return 0.0;
     if(conf.stockRecruitmentModelCode == 62)
       return exp(par.rec_pars(0));
-    return exp(functionalStockRecruitment(ssb, par.rec_pars, conf.stockRecruitmentModelCode));
+    vector<T> rp2 = par.rec_pars.template cast<T>();
+    return exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
   }
 
   AD<Type> SR(CppAD::vector<AD<Type> > ssb){
@@ -898,22 +1017,19 @@ struct REFERENCE_POINTS {
 
 
   Type dSR(Type ssb){
+#ifdef CPPAD_FRAMEWORK
     vector<Type> Fv(1);
     Fv(0) = ssb;
     CppAD::vector<Type> x_eval( Fv );
     return FSR.Jacobian(x_eval)[0];
+#endif
+#ifdef TMBAD_FRAMEWORK
+    vector<Type> xx(1);
+    xx(0) = ssb;
+    vector<Type> tmp = FSR(xx);
+    return tmp(0);
+#endif
   }
-
-  // vector<Type> dSR(Type ssb, vector<Type> rp){
-  // CppAD::vector<AD<Type> > x( rp );
-  //     CppAD::vector<AD<Type> > y( 1 );
-  //     CppAD::Independent(x);
-  //     y[0] = functionalStockRecruitment(ssb, rp, conf.stockRecruitmentModelCode);
-  //     CppAD::ADFun<Type> F(x, y);
-  //     CppAD::vector<Type> x_eval( rp );
-  //     return F.Jacobian(x_eval);
-  // }
-
 
   
   // Calculate "likelihood" contribution to estimate reference points
@@ -1117,7 +1233,21 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 
 
 // R functions
-
+#ifdef TMBAD_FRAMEWORK
+struct F_dFunctionalSR2 {
+  long int nrp;
+  int srmc;
+  template<class T>
+  T operator()(vector<T> x){  // Evaluate function
+    vector<T> rp2(nrp);
+    for(int i = 0; i < nrp; ++i)
+      rp2(i) = x(i);
+    T ssb = x(nrp);
+    return exp(functionalStockRecruitment(ssb, rp2, srmc));
+  }
+};
+#endif
+  
 extern "C" {
 
   SEXP perRecruitR(SEXP Fbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears){
@@ -1153,19 +1283,31 @@ extern "C" {
 	
     double v = exp(functionalStockRecruitment(b, rp, srmc));
 
-    vector<AD<double> > rp2( rp.size() );
-    for(int i = 0; i < rp2.size(); ++i)
-      rp2(i) = AD<double>(rp(i));
-    CppAD::Independent(rp2);
-
-    vector<AD<double> > x( 1 );
+#ifdef CPPAD_FRAMEWORK
+    vector<AD<double> > rp2(rp.size()+1);
+    rp2 = rp.template cast<AD<double> >();
+    CppAD::vector<AD<double> > x( 1 );
     x[0] = b;
-
-    vector<AD<double> > y( 1 );
+    CppAD::Independent(x);
+    CppAD::vector<AD<double> > y( 1 );
     y[0] = exp(functionalStockRecruitment(x[0], rp2, srmc));
     CppAD::ADFun<double> F(x, y);
-    vector<double> x_eval( rp );
+    CppAD::vector<double> x_eval( 1 );
+    x_eval[0] = b;
     vector<double> r = F.Jacobian(x_eval);
+#endif
+#ifdef TMBAD_FRAMEWORK
+   
+    F_dFunctionalSR2 Fd = {rp.size(),srmc};
+    vector<double> x(rp.size() + 1);
+    for(int i = 0; i < rp.size(); ++i)
+      x(i) = rp(i);
+    x(rp.size()) = b;
+    TMBad::ADFun<> G(TMBad::StdWrap<F_dFunctionalSR2,vector<TMBad::ad_aug> >(Fd), x);
+    // TMBad::ADFun<> G(Fd,x);
+    G = G.JacFun();
+    vector<double> r = G(x);
+#endif
 
     const char *resNms[] = {"Recruits", "Gradient", ""}; // Must end with ""
     SEXP res;
