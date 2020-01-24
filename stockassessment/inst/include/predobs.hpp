@@ -64,10 +64,13 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     ft=dat.fleetTypes(f-1);
     a=dat.aux(i,2)-conf.minAge;
     if(ft==3){a=0;}
-    if(ft<3){ 
-      zz = posfun(dat.natMor(y,a)-logNdev(a,y),Type(1.0e-6),pen);
+    if(ft<3){
+      zz = dat.natMor(y,a)-logNdev(a,y);
       if(conf.keyLogFsta(0,a)>(-1)){
         zz+=exp(logF(conf.keyLogFsta(0,a),y));
+      }
+      if((conf.assignProcessNoiseToM>0.5) && (conf.assignProcessNoiseToM<2.5)){
+        zz = (CppAD::abs(zz)+zz)/2. + 0.001;
       }
     }    
 
