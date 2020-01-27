@@ -14,13 +14,13 @@ modelDescription <-function (fit,...){
   } 
   ret<-list()
   ret$modelVersion <- 'The model is a state-space stock assessment (SAM from the package "stockassessment" version ' +
-                      packageVersion("stockassessment") + ").\n\n"
+                      attr(fit,"Version") + ").\n\n"
   ret$modelIntro <- 'The model works by assuming that stock-sizes at age (N) and fishing mortalities at age (F) ' +
                       'are unobserved processes. '
   ret$ages <- 'The first age group is age ' + fit$conf$minAge + ' and the last age group is age ' + fit$conf$maxAge +
                ifelse(fit$conf$maxAgePlusGroup==1,'+. ','. ') 
   ret$data <- 'The data period covers ' + fit$data$noYears + ' years (from ' + min(fit$data$years) + ' to ' +
-               max(fit$data$years) + '). '+'The data contains '+fit$data$noFleets+' fleets. '
+               max(fit$data$years) + '). '+'The data contains '+fit$data$noFleets+' fleets.\n'
 
   #ypf<-tapply(fit$data$aux[,1], INDEX=fit$data$aux[,2], FUN=function(x)c(range(x), max(x)-min(x)+1-length(unique(x))))
   #apf<-tapply(fit$data$aux[,3], INDEX=fit$data$aux[,2], FUN=function(x)c(range(x), max(x)-min(x)+1-length(unique(x))))
