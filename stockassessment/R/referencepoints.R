@@ -86,7 +86,7 @@ addRecruitmentCurve.sam <- function(fit,
                       fit$pl$rec_pars,
                       fit$conf$stockRecruitmentModelCode)
            res <- v$Recruits
-           g <- matrix(v$Gradient, 1)
+           g <- matrix(head(v$Gradient,-1), 1)
            attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
            return(res)
        }
@@ -254,7 +254,8 @@ forecastMSY.sam <- function(fit,
 
     rownames(ssb) <- rownames(yield) <- rownames(rec) <- rownames(fbar) <- min(fit$data$years) + 0:(nrow(ssb)-1)
 
-    return(list(table = tab, timeseries = list(SSB = ssb, Catch = yield, Recruitment = rec, Fbar = fbar), opt = opt, sdr = sdr))
+    res <- list(table = tab, timeseries = list(SSB = ssb, Catch = yield, Recruitment = rec, Fbar = fbar), opt = opt, sdr = sdr)
+    class(res) <- "sam_forecast_msy"
 
 }
 
@@ -534,11 +535,12 @@ referencepoints.sam <- function(fit,
     rownames(YPRseq) <- rownames(SPRseq) <- rownames(Yieldseq) <- rownames(Bseq) <- rownames(Rseq) <- argsIn$data$referencepoint$Fsequence
     
     res <- list(tables = list(F = Ftab,
-                              B = Btab,
                               Yield = Ytab,
-                              Recruitment = Rtab,
+                              YieldPerRecruit = YPRtab,
                               SpawnersPerRecruit = SPRtab,
-                              YieldPerRecruit = YPRtab),
+                              Biomass = Btab,
+                              Recruitment = Rtab
+                             ),
                 graphs = list(F = argsIn$data$referencepoint$Fsequence,
                               Yield = Yieldseq,
                               YieldPerRecruit = YPRseq,
@@ -556,4 +558,114 @@ referencepoints.sam <- function(fit,
     return(res)
 }
 
-   
+##' @export   
+plot.sam_referencepoints <- function(x,
+                                     show = c(1L:3L,5L),
+                                     estimates = c("Status quo", "MSY"),
+                                     ask = TRUE,
+                                     legend.args = list(x = "top", ncol = length(estimates)),
+                                     ...){
+
+    estimates <- match.arg(estimates,
+                           choices = rownames(x$tables$F),
+                           several.ok = TRUE)
+
+    if(ask){
+        oask <- grDevices::devAskNewPage(TRUE)
+        on.exit(grDevices::devAskNewPage(oask))
+    }
+
+
+      toReportNames <- Vectorize(function(x,type = "F"){
+        paste0("referencepoint.log",type,switch(x,
+                                                "Status quo"="sq",
+                                                "Zero catch"="0",
+                                                "MSY" = "msy",
+                                                "Max" = "max",
+                                                "0.1"="01",
+                                                "Crash"="crash",
+                                                "Ext"="ext",
+                                                "lim"="lim",
+                                                "xPercent"
+                                                )
+               )
+        })
+ 
+    
+
+    doPlot <- function(y){
+        getACol <- function(col, a){
+            do.call("rgb",c(as.list(col2rgb(col,TRUE))[-4],
+                            list(alpha = a * 255),
+                            list(maxColorValue = 255)))
+        }
+        yp <- pmatch(y,names(x$graphs))
+        yt <- pmatch(y,names(x$tables))
+        if(is.na(yp) || is.na(yt))
+            stop("Error message")
+        plot(x$graphs$F, x$graphs[[yp]][,1], type = "n", ylim = range(x$graphs[[yp]]),
+             xlab = expression(bar(F)), ylab = gsub("([a-z])([A-Z])", "\\1-\\2",names(x$graphs)[yp]),
+             main = paste("Equilibrium",tolower(gsub("([a-z])([A-Z])", "\\1 \\2",names(x$graphs)[yp]))))
+        polygon(c(x$graphs$F, rev(x$graphs$F)),
+                c(x$graphs[[yp]][,2], rev(x$graphs[[yp]][,3])),
+                col = getACol(1,0.3),
+                border = NA)
+        lines(x$graphs$F, x$graphs[[yp]][,1], col = 1, lwd = 3)
+        for(j in seq_along(estimates)){
+            r <- estimates[j]
+            r <- pmatch(r, rownames(x$tables$F))
+            if(is.na(r))
+                stop("Error message 2")
+            if(!is.na(x$tables$F[r,"Estimate"])){
+                acol <- getACol(j+1, 0.2)
+                usr <- par("usr")
+                xvals <- x$tables$F[r,]
+                yvals <- x$tables[[yt]][r,]
+                polygon(c(usr[1], xvals[2], xvals[2], xvals[3], xvals[3], usr[1]),
+                        c(yvals[2], yvals[2], usr[3], usr[3], yvals[3], yvals[3]),
+                        border = NA,
+                        col = acol)
+                segments(xvals[1], usr[3], xvals[1], yvals[1],
+                         col = j+1, lwd = 3, lty = 1)
+                segments(usr[1], yvals[1], xvals[1], yvals[1],
+                         col = j+1, lwd = 3, lty = 1)
+                
+            }
+        }
+
+        if(!is.na(legend.args)){
+            defArgs <- list(legend = estimates,
+                            lwd = 3,
+                            fill = sapply(seq_along(estimates)+1, getACol, a = 0.2),
+                            border = NA,
+                            merge = TRUE,
+                            col = seq_along(estimates)+1)
+            do.call(graphics::legend,
+                    c(legend.args,defArgs[which(!names(defArgs) %in% names(legend.args))])
+                    )
+        }
+    }
+    
+    bshow <- rep(FALSE, 5)
+    bshow[show[show %in% (1:length(bshow))]] <- TRUE
+    ## YPR
+    if(bshow[1L]){
+        doPlot("YieldPerRecruit")
+    }
+    ## SPR
+    if(bshow[2L]){ 
+        doPlot("SpawnersPerRecruit")
+    }
+    ## Yield
+    if(bshow[3L]){                       
+        doPlot("Yield")
+    }
+    ## Biomass
+    if(bshow[4L]){                       
+        doPlot("Biomass")
+    }
+    ## Recruitment
+    if(bshow[5L]){                       
+        doPlot("Recruitment")
+    }
+}
