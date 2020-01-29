@@ -1284,16 +1284,21 @@ extern "C" {
     double v = exp(functionalStockRecruitment(b, rp, srmc));
 
 #ifdef CPPAD_FRAMEWORK
-    vector<AD<double> > rp2(rp.size()+1);
-    rp2 = rp.template cast<AD<double> >();
-    CppAD::vector<AD<double> > x( 1 );
-    x[0] = b;
-    CppAD::Independent(x);
-    CppAD::vector<AD<double> > y( 1 );
-    y[0] = exp(functionalStockRecruitment(x[0], rp2, srmc));
-    CppAD::ADFun<double> F(x, y);
-    CppAD::vector<double> x_eval( 1 );
-    x_eval[0] = b;
+    vector<AD<double> > rp2(rp.size() + 1);
+    for(int i = 0; i < rp.size(); ++i)
+      rp2(i) = rp(i);
+    rp2(rp.size()) = b;
+    CppAD::Independent(rp2);
+    // vector<AD<double> > x( 1 );
+    // x[0] = b;
+    // CppAD::Independent(x);
+    vector<AD<double> > y( 1 );
+    y[0] = exp(functionalStockRecruitment(rp2(rp.size()), (vector<AD<double> >)rp2.head(rp.size()), srmc));
+    CppAD::ADFun<double> F(rp2, y);
+    vector<double> x_eval( rp.size() + 1 );
+    for(int i = 0; i < rp.size(); ++i)
+      x_eval(i) = rp(i);
+    x_eval[rp.size()] = b;
     vector<double> r = F.Jacobian(x_eval);
 #endif
 #ifdef TMBAD_FRAMEWORK
