@@ -4,30 +4,32 @@ tol <- sqrt(.Machine$double.eps)
 
 set.seed(298374)
 
-jacobian <- function(func, x, ...){
-         r <- .Call("jacobian",
-                   function(x)func(x,...),
-                   x,
-                   globalenv(),
-                   30L,
-                   0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
-                   1e-12)
-        do.call("cbind",r[-1])
-}
-grad <- function(func, x, ...){
-         r <- .Call("jacobian",
-                   function(x)func(x,...),
-                   x,
-                   globalenv(),
-                   30L,
-                   0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
-                   1e-12)
-         v <- do.call("cbind",r[-1])
-         if(nrow(v) == 1)
-             return(as.vector(v))
-         return(diag(v))         
-}
+## jacobian <- function(func, x, ...){
+##          r <- .Call("jacobian",
+##                    function(x)func(x,...),
+##                    x,
+##                    globalenv(),
+##                    30L,
+##                    0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
+##                    1e-12)
+##         do.call("cbind",r[-1])
+## }
+## grad <- function(func, x, ...){
+##          r <- .Call("jacobian",
+##                    function(x)func(x,...),
+##                    x,
+##                    globalenv(),
+##                    30L,
+##                    0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
+##                    1e-12)
+##          v <- do.call("cbind",r[-1])
+##          if(nrow(v) == 1)
+##              return(as.vector(v))
+##          return(diag(v))         
+## }
 
+jacobian <- stockassessment:::jacobian
+grad <- stockassessment:::grad
 
 gr.sym <- function(x, fn){
     eval(D(parse(text=as.character(functionBody(fn))[2]),"x"))
