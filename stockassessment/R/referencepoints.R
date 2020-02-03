@@ -5,13 +5,15 @@
 ##' @param ... passed to func
 ##' @return jacobian matrix
 ##' @author Christoffer Moesgaard Albertsen
-jacobian <- function(func, x, ...){
+jacobian <- function(func, x,
+                     h = 0.1 * 10^floor(log10(abs(x))) + 1e-4,
+                     ...){
          r <- .Call("jacobian",
                    function(x)func(x,...),
                    x,
                    globalenv(),
                    30L,
-                   0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
+                   h,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
                    1e-12)
         do.call("cbind",r[-1])
 }
@@ -22,13 +24,15 @@ jacobian <- function(func, x, ...){
 ##' @param ... passed to func
 ##' @return gradient vector
 ##' @author Christoffer Moesgaard Albertsen
-grad <- function(func, x, ...){
+grad <- function(func, x,
+                 h = 0.1 * 10^floor(log10(abs(x))) + 1e-4,
+                 ...){
          r <- .Call("jacobian",
                    function(x)func(x,...),
                    x,
                    globalenv(),
                    30L,
-                   0.1 * 10^floor(log10(abs(x))) + 1e-4,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
+                   h,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
                    1e-12)
          v <- do.call("cbind",r[-1])
          if(nrow(v) == 1)
@@ -202,7 +206,7 @@ forecastMSY.sam <- function(fit,
 
     ## Get Jacobian
     gridx <- which(names(objDelta$par) %in% rp)
-    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par)
+    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par, h = abs(1e-04 * objDelta$par) + 1e-04 * (abs(objDelta$par) < sqrt(.Machine$double.eps/7e-07)))
 
     ## Implicit function gradient
     dCdTheta <- -solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
@@ -256,7 +260,7 @@ forecastMSY.sam <- function(fit,
 
     res <- list(table = tab, timeseries = list(SSB = ssb, Catch = yield, Recruitment = rec, Fbar = fbar), opt = opt, sdr = sdr)
     class(res) <- "sam_forecast_msy"
-
+    res
 }
 
 
@@ -290,7 +294,7 @@ referencepoints <- function(fit,
 #' @export
 referencepoints.sam <- function(fit,
                                 nYears = 100,
-                            Fsequence = seq(1e-5,4, len = 200),
+                            Fsequence = seq(0,4, len = 200),
                             aveYears = max(fit$data$years)+(-4:0),
                             selYears = max(fit$data$years),
                             SPRpercent = c(0.35),
@@ -407,8 +411,8 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }
 
-      if(min(rep$logSe[is.finite(rep$logSe)]) > -10 && any(rp %in% "logScaleFcrash")){
-        warning("The stock does not appear to have a well-defined Fcrash. Fmax will not be estimated. Increase the upper bound of Fsequence to try again.")
+      if(min(rep$logSe[is.finite(rep$logSe)]) > -4 && any(rp %in% "logScaleFcrash")){
+        warning("The stock does not appear to have a well-defined Fcrash. Fcrash will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFcrash")]
         args$map$logScaleFcrash <- factor(NA)
         tryAgain <- TRUE
@@ -447,7 +451,7 @@ referencepoints.sam <- function(fit,
 
     ## Get Jacobian
     gridx <- which(names(objDelta$par) %in% rp)
-    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par)
+    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par, h = abs(1e-04 * objDelta$par) + 1e-04 * (abs(objDelta$par) < sqrt(.Machine$double.eps/7e-07)))
 
     ## Implicit function gradient
     dCdTheta <- -solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
@@ -603,7 +607,11 @@ plot.sam_referencepoints <- function(x,
         yt <- pmatch(y,names(x$tables))
         if(is.na(yp) || is.na(yt))
             stop("Error message")
-        plot(x$graphs$F, x$graphs[[yp]][,1], type = "n", ylim = range(x$graphs[[yp]]),
+        tmpf <- x$tables$F["Crash",1]
+        tmpval <- x$graphs[[yp]]
+        if(!is.na(tmpf))
+            tmpval <- x$graphs[[yp]][abs(x$graphs$F -tmpf) > 0.1,]
+        plot(x$graphs$F, x$graphs[[yp]][,1], type = "n", ylim = range(tmpval, finite = TRUE, na.rm = TRUE),
              xlab = expression(bar(F)), ylab = gsub("([a-z])([A-Z])", "\\1-\\2",names(x$graphs)[yp]),
              main = paste("Equilibrium",tolower(gsub("([a-z])([A-Z])", "\\1 \\2",names(x$graphs)[yp]))))
         polygon(c(x$graphs$F, rev(x$graphs$F)),
@@ -633,7 +641,7 @@ plot.sam_referencepoints <- function(x,
             }
         }
 
-        if(!is.na(legend.args)){
+        if(!is.null(legend.args)){
             defArgs <- list(legend = estimates,
                             lwd = 3,
                             fill = sapply(seq_along(estimates)+1, getACol, a = 0.2),
@@ -647,7 +655,11 @@ plot.sam_referencepoints <- function(x,
     }
     
     bshow <- rep(FALSE, 5)
-    bshow[show[show %in% (1:length(bshow))]] <- TRUE
+    if(is.character(show)){
+        show <- na.omit(pmatch(show, c("YieldPerRecruit", "SpawnersPerRecruit", "Yield", "Biomass", "Recruitment")))
+    }
+        
+    bshow[show[show %in% (1:length(bshow))]] <- TRUE    
     ## YPR
     if(bshow[1L]){
         doPlot("YieldPerRecruit")

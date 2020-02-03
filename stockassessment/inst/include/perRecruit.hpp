@@ -359,6 +359,13 @@ Type dFunctionalSR(Type ssb, vector<Type> rp, int srmc){
 }
 
 
+
+template<class Type>
+Type softmax(Type x, Type y, Type k = 1.0){
+  return logspace_add(k * x, k * y) / k;
+}
+
+
 template<class Type>
 struct PERREC_t {
   Type logFbar;
@@ -373,6 +380,11 @@ struct PERREC_t {
 
 template<class Type, class T>
 PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& sel, vector<int> aveYears, int nYears = 300){
+
+
+#ifdef CPPAD_FRAMEWORK
+  using CppAD::fabs;
+#endif
   
   // Prepare data
   dataSet<T> newDat = dat.template cast<T>();
@@ -444,11 +456,11 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     Rf_error("Unknown reference point catch type.");
       break;
   }
-  T logYPR = log(sum(cat));
+  T logYPR = log(sum(cat) + (T)exp(-12.0));//log(softmax(sum(cat),(T)SAM_Zero,(T)1000.0));
   // Calculate spawners
   vector<T> ssb = ssbFun(newDat, newConf, logN, logF);
-  T logSPR = log(sum(ssb));
-  T lambda = sum(ssb); //exp(logSPR);
+  T logSPR = log(sum(ssb) + (T)exp(-12.0));//log(softmax(sum(ssb),(T)SAM_Zero,(T)1000.0)); //log(sum(ssb));
+  T lambda = exp(logSPR); // sum(ssb);
 
   if(conf.stockRecruitmentModelCode == 0 ||
      conf.stockRecruitmentModelCode == 3){
@@ -466,16 +478,15 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
 
 
   // Calculate Se
-  T Se = 0.0; //R_NegInf;
+  T Se = SAM_Zero; //R_NegInf;
   
   T dsr0 = 10000.0;
   if(conf.stockRecruitmentModelCode != 62 &&
      conf.stockRecruitmentModelCode != 65 &&
-     conf.stockRecruitmentModelCode != 68 &&
-     conf.stockRecruitmentModelCode != 69)
+     conf.stockRecruitmentModelCode != 65 &&
+     (conf.stockRecruitmentModelCode != 68 || newPar.rec_pars[2] < 0) &&
+     (conf.stockRecruitmentModelCode != 69 || newPar.rec_pars[2] < 0 ))
     dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
-  if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69)
-    dsr0 = CppAD::CondExpLt((T)newPar.rec_pars[2], (T)0, (T)dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode), (T)dsr0);
 
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
@@ -485,9 +496,11 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     Se = exp(-newPar.rec_pars(1)) * (newPar.rec_pars(0) + log(lambda)); //log((exp(newPar.rec_pars(0)) * lambda));
     break;
   case 2:  //BH
-    Se =  CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-			   fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
-			   T(SAM_Zero));
+    // Handle negative values below!
+    Se = (exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1));
+      // CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+      // 			   fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
+      // 			   T(SAM_Zero));
     break;
   case 3: //Constant mean
     Rf_error("Equilibrium SSB not implemented");
@@ -508,19 +521,22 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     Se = exp(1.0 / (1.0 - (exp(newPar.rec_pars(1)) + 1.0001)) * (newPar.rec_pars(0) + log(lambda)));
     break;
   case 66: // Shepherd
-    Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-    			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
-    			  T(SAM_Zero));
+    // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+    // 			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
+    // 			  T(SAM_Zero));
+    Se = exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(softmax(exp(newPar.rec_pars(0)) * lambda - 1.0,(T)SAM_Zero, (T)100.0)) );
     break;
   case 67: // Deriso
-    Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-			  fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
-			   T(SAM_Zero));
+    // Handle negative values below!
+    // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+    // 			  fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
+    // 			   T(SAM_Zero));
+    Se = (exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1));
     break;
-  case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1
+  case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1)
     Se = Se_sl(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
-  case 69: // Sigmoidal Beverton-Holt
+  case 69: // Sigmoidal Beverton-Holt (cases: gamma < 1; gamma >= 1)
     Se = Se_sbh(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
     default:
@@ -530,22 +546,27 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
 
   //T logSe = log(Se);
   //Type logSe = CppAD::CondExpGt(exp(-logSPR), dsr0, Type(SAM_NegInf), log(Se));
-  T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0,
-  			     log(fabs(Se)) - 10.0 * (exp(-logSPR) - dsr0),
-  			     log(fabs(Se)));
-
-  T logYe = CppAD::CondExpGt(exp(-logSPR), dsr0,
-  			     logSe - logSPR + logYPR - 10.0 * (exp(-logSPR) - dsr0),
-  			     logSe - logSPR + logYPR);
-
+  // T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0 - (T)1e-3,
+  // 			     log(fabs(Se)) - 3.0 * (exp(-logSPR) - dsr0),
+  // 			     log(fabs(Se)));
+  T logSe = log(softmax(Se, (T)SAM_Zero, (T)100.0));
+  
+  // T logYe = CppAD::CondExpGt(exp(-logSPR), dsr0,
+  // 			     logSe - logSPR + logYPR - 3.0 * (exp(-logSPR) - dsr0),
+  // 			     logSe - logSPR + logYPR);
+  T logYe = logSe - logSPR + logYPR;
+  //log(softmax(exp(logSe - logSPR + logYPR), (T)SAM_Zero, (T)1.0));
+  T logRe = logSe - logSPR;
+  //log(softmax(exp(logSe - logSPR), (T)SAM_NegInf, (T)1.0));
+  
   // Return
   PERREC_t<T> res = {log(Fbar), // logFbar
-		     logYPR,	   // logYPR
-		     logSPR,	   // logSPR
-		     logSe,	   // logSe
-		     logSe - logSPR,		 // logRe
-		     logYe,   // logYe
-		     dsr0};			// DSR0
+		     logYPR,	// logYPR
+		     logSPR,	// logSPR
+		     logSe,	// logSe
+		     logRe,	// logRe
+		     logYe,	// logYe
+		     dsr0};	// DSR0
 
   return res;
 }
