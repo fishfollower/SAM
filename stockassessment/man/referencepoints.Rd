@@ -8,8 +8,8 @@
 referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
   catchType, ...)
 
-\method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(1e-05,
-  4, len = 200), aveYears = max(fit$data$years) + (-4:0),
+\method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(0, 4,
+  len = 200), aveYears = max(fit$data$years) + (-4:0),
   selYears = max(fit$data$years), SPRpercent = c(0.35),
   catchType = "catch", ...)
 }

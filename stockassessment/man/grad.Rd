@@ -4,7 +4,7 @@
 \alias{grad}
 \title{Calculate gradient of a function}
 \usage{
-grad(func, x, ...)
+grad(func, x, h = 0.1 * 10^floor(log10(abs(x))) + 1e-04, ...)
 }
 \arguments{
 \item{func}{function}

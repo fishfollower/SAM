@@ -4,7 +4,7 @@
 \alias{jacobian}
 \title{Calculate jacobian of a function}
 \usage{
-jacobian(func, x, ...)
+jacobian(func, x, h = 0.1 * 10^floor(log10(abs(x))) + 1e-04, ...)
 }
 \arguments{
 \item{func}{function}
