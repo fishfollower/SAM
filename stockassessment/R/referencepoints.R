@@ -85,13 +85,23 @@ addRecruitmentCurve.sam <- function(fit,
        }
   
        srfit <- function(ssb){
-           v <- .Call("stockRecruitmentModelR",
-                      ssb,
-                      fit$pl$rec_pars,
-                      fit$conf$stockRecruitmentModelCode)
-           res <- v$Recruits
-           g <- matrix(head(v$Gradient,-1), 1)
-           attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
+           if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
+               warning("addRecruitmentCurve is not implemented for this recruitment type.")
+               res <- NA
+               attr(res,"sd") <- NA
+           }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
+               res <- exp(fit$pl$rec_pars[1])
+               g <- matrix(c(exp(fit$pl$rec_pars[1]), 0),1)
+               attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
+           }else{
+               v <- .Call("stockRecruitmentModelR",
+                          ssb,
+                          fit$pl$rec_pars,
+                          fit$conf$stockRecruitmentModelCode)
+               res <- v$Recruits
+               g <- matrix(head(v$Gradient,-1), 1)
+               attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
+           }
            return(res)
        }
 
@@ -171,15 +181,14 @@ forecastMSY.sam <- function(fit,
     
     ## Find MSY value
     args <- argsIn
-    args$parameters$logFScaleMSY <- 0
+    args$parameters$logFScaleMSY <- -2
     args$parameters$implicitFunctionDelta <- 0
     map0 <- args$map
     fix <- setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
     args$map <- args$map[names(args$map) != rp]
     args$map$implicitFunctionDelta <- NULL
-
-
+   
     objOptim <- do.call(TMB::MakeADFun, args)
 
     objOptim$fn(objOptim$par)
@@ -191,7 +200,9 @@ forecastMSY.sam <- function(fit,
         objOptim$env$f(theta, order = 1)[1,which(names(objOptim$env$last.par) == "implicitFunctionDelta")]
     })
 
+    ## Try different values??
 
+    
     opt <- nlminb(objOptim$par[names(objOptim$par) != "implicitFunctionDelta"], fn, control = nlminb.control)
 
     ## Object to do Delta method (no map, no random, delta = 1)
@@ -258,7 +269,14 @@ forecastMSY.sam <- function(fit,
 
     rownames(ssb) <- rownames(yield) <- rownames(rec) <- rownames(fbar) <- min(fit$data$years) + 0:(nrow(ssb)-1)
 
-    res <- list(table = tab, timeseries = list(SSB = ssb, Catch = yield, Recruitment = rec, Fbar = fbar), opt = opt, sdr = sdr)
+    res <- list(table = tab,
+                timeseries = list(SSB = ssb,
+                                  Catch = yield,
+                                  Recruitment = rec,
+                                  Fbar = fbar),
+                opt = opt,
+                sdr = sdr,
+                fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])))
     class(res) <- "sam_forecast_msy"
     res
 }
@@ -293,7 +311,7 @@ referencepoints <- function(fit,
 ##' @method referencepoints sam
 #' @export
 referencepoints.sam <- function(fit,
-                                nYears = 200,
+                                nYears = 100,
                                 Fsequence = seq(0,4, len = 200),
                                 aveYears = max(fit$data$years)+(-4:0),
                                 selYears = max(fit$data$years),
@@ -411,14 +429,14 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }
 
-      if(min(rep$logSe[is.finite(rep$logSe)]) > -4 && any(rp %in% "logScaleFcrash")){
+      if(any(rp %in% "logScaleFcrash") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
         warning("The stock does not appear to have a well-defined Fcrash. Fcrash will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFcrash")]
         args$map$logScaleFcrash <- factor(NA)
         tryAgain <- TRUE
     }
 
-    if(which.max(rep$logYe[is.finite(rep$logYe)]) == length(rep$logYe[is.finite(rep$logYe)]) && any(rp %in% "logScaleFmsy")){
+    if(any(rp %in% "logScaleFmsy") && which.max(rep$logYe[is.finite(rep$logYe)]) == length(rep$logYe[is.finite(rep$logYe)])){
         warning("The stock does not appear to have a well-defined Fmsy. Fmsy will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFmsy")]
         args$map$logScaleFmsy <- factor(NA)
@@ -553,6 +571,7 @@ referencepoints.sam <- function(fit,
                               Recruitment = Rseq),
                 opt = opt,
                 sdr = sdr,
+                fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
                 diagonalCorrection = tv
                 )
                               
@@ -612,7 +631,7 @@ plot.sam_referencepoints <- function(x,
         if(!is.na(tmpf))
             tmpval <- x$graphs[[yp]][abs(x$graphs$F -tmpf) > 0.1,]
         plot(x$graphs$F, x$graphs[[yp]][,1], type = "n", ylim = range(tmpval, finite = TRUE, na.rm = TRUE),
-             xlab = expression(bar(F)), ylab = gsub("([a-z])([A-Z])", "\\1-\\2",names(x$graphs)[yp]),
+             xlab = x$fbarlabel, ylab = gsub("([a-z])([A-Z])", "\\1-\\2",names(x$graphs)[yp]),
              main = paste("Equilibrium",tolower(gsub("([a-z])([A-Z])", "\\1 \\2",names(x$graphs)[yp]))))
         polygon(c(x$graphs$F, rev(x$graphs$F)),
                 c(x$graphs[[yp]][,2], rev(x$graphs[[yp]][,3])),
@@ -647,6 +666,7 @@ plot.sam_referencepoints <- function(x,
                             fill = sapply(seq_along(estimates)+1, getACol, a = 0.2),
                             border = NA,
                             merge = TRUE,
+                            title = "Reference points",
                             col = seq_along(estimates)+1)
             do.call(graphics::legend,
                     c(legend.args,defArgs[which(!names(defArgs) %in% names(legend.args))])

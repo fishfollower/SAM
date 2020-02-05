@@ -8,7 +8,7 @@
 forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
   iter.max = 2000), rec.years = c(), processNoiseF = FALSE, ...)
 
-\method{forecastMSY}{sam}(fit, nYears = 500,
+\method{forecastMSY}{sam}(fit, nYears = 100,
   nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
   rec.years = c(), processNoiseF = FALSE, ...)
 }
