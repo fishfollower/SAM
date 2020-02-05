@@ -483,10 +483,13 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   T dsr0 = 10000.0;
   if(conf.stockRecruitmentModelCode != 62 &&
      conf.stockRecruitmentModelCode != 65 &&
-     conf.stockRecruitmentModelCode != 65 &&
-     (conf.stockRecruitmentModelCode != 68 || newPar.rec_pars[2] < 0) &&
-     (conf.stockRecruitmentModelCode != 69 || newPar.rec_pars[2] < 0 ))
+     (conf.stockRecruitmentModelCode != 68) && // || newPar.rec_pars[2] < 0) &&
+     (conf.stockRecruitmentModelCode != 69)) // || newPar.rec_pars[2] < 0 ))
     dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
+
+  if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69){
+    dsr0 = CppAD::CondExpLt(newPar.rec_pars[2], (T)0.0, dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode), dsr0);
+  }
 
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
@@ -545,7 +548,8 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   }
 
   //T logSe = log(Se);
-  //Type logSe = CppAD::CondExpGt(exp(-logSPR), dsr0, Type(SAM_NegInf), log(Se));
+  if(conf.stockRecruitmentModelCode == 63)
+  Se = CppAD::CondExpGt(-logSPR, log(dsr0), (T)SAM_NegInf, Se);
   // T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0 - (T)1e-3,
   // 			     log(fabs(Se)) - 3.0 * (exp(-logSPR) - dsr0),
   // 			     log(fabs(Se)));
