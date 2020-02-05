@@ -142,7 +142,7 @@ forecastMSY <- function(fit,
 ##' @method forecastMSY sam
 ##' @export
 forecastMSY.sam <- function(fit,
-                    nYears = 500,
+                    nYears = 100,
                     nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
                     rec.years = c(),
                     processNoiseF = FALSE,
@@ -293,13 +293,13 @@ referencepoints <- function(fit,
 ##' @method referencepoints sam
 #' @export
 referencepoints.sam <- function(fit,
-                                nYears = 100,
-                            Fsequence = seq(0,4, len = 200),
-                            aveYears = max(fit$data$years)+(-4:0),
-                            selYears = max(fit$data$years),
-                            SPRpercent = c(0.35),
-                            catchType = "catch",
-                            ...){
+                                nYears = 200,
+                                Fsequence = seq(0,4, len = 200),
+                                aveYears = max(fit$data$years)+(-4:0),
+                                selYears = max(fit$data$years),
+                                SPRpercent = c(0.35),
+                                catchType = "catch",
+                                ...){
 
     ## Get joint precision
     jointPrecision <- TMB::sdreport(fit$obj,
