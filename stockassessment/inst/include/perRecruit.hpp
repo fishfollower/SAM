@@ -762,7 +762,7 @@ struct REFERENCE_POINTS {
 
     // Calculate actual F values
     if(CppAD::Variable(par.logScaleFmsy)){
-      logFmsy = par.logScaleFmsy; // logFsq + par.logScaleFmsy;
+      logFmsy = par.logScaleFmsy + logFsq; // logFsq + par.logScaleFmsy;
       logBmsy = log(Se(exp(logFmsy)));
       logRmsy = log(Re(exp(logFmsy)));
       logYmsy = log(yield(exp(logFmsy)));
@@ -779,7 +779,7 @@ struct REFERENCE_POINTS {
 
     
     if(CppAD::Variable(par.logScaleFmax)){
-      logFmax = par.logScaleFmax; //logFsq + par.logScaleFmax;
+      logFmax = par.logScaleFmax + logFsq; //logFsq + par.logScaleFmax;
       logBmax = log(Se(exp(logFmax)));
       logRmax = log(Re(exp(logFmax)));
       logYmax = log(yield(exp(logFmax)));
@@ -796,7 +796,7 @@ struct REFERENCE_POINTS {
 
 
     if(CppAD::Variable(par.logScaleF01)){
-      logF01 = par.logScaleF01; //logFsq + par.logScaleF01;
+      logF01 = par.logScaleF01 + logFsq; //logFsq + par.logScaleF01;
       logB01 = log(Se(exp(logF01)));
       logR01 = log(Re(exp(logF01)));
       logY01 = log(yield(exp(logF01)));
@@ -813,7 +813,7 @@ struct REFERENCE_POINTS {
 
 
     if(CppAD::Variable(par.logScaleFcrash)){
-      logFcrash = par.logScaleFcrash; //logFsq + par.logScaleFcrash;
+      logFcrash = par.logScaleFcrash + logFsq; //logFsq + par.logScaleFcrash;
       logBcrash = log(Se(exp(logFcrash)));
       logRcrash = log(Re(exp(logFcrash)));
       logYcrash = log(yield(exp(logFcrash)));
@@ -830,7 +830,7 @@ struct REFERENCE_POINTS {
 
     
     if(CppAD::Variable(par.logScaleFext)){
-      logFext = par.logScaleFext; //logFsq + par.logScaleFcrash;
+      logFext = par.logScaleFext + logFsq; //logFsq + par.logScaleFcrash;
       logBext = log(Se(exp(logFext)));
       logRext = log(Re(exp(logFext)));
       logYext = log(yield(exp(logFext)));
@@ -854,7 +854,7 @@ struct REFERENCE_POINTS {
 
     for(int i = 0; i < par.logScaleFxPercent.size(); ++i){
       if(CppAD::Variable(par.logScaleFxPercent(i))){
-	logFxPercent(i) = par.logScaleFxPercent(i); //logFsq + par.logScaleF35;
+	logFxPercent(i) = par.logScaleFxPercent(i) + logFsq; //logFsq + par.logScaleF35;
 	logBxPercent(i) = log(Se(exp(logFxPercent(i))));
 	logRxPercent(i) = log(Re(exp(logFxPercent(i))));
 	logYxPercent(i) = log(yield(exp(logFxPercent(i))));
@@ -873,7 +873,7 @@ struct REFERENCE_POINTS {
     if(CppAD::Variable(par.logScaleFlim) &&
        (conf.stockRecruitmentModelCode == 61 ||
 	conf.stockRecruitmentModelCode == 63)){    
-      logFlim = par.logScaleFlim; //logFsq + par.logScaleFlim;
+      logFlim = par.logScaleFlim + logFsq; //logFsq + par.logScaleFlim;
       logYlim = log(yield(exp(logFlim)));
       if(conf.stockRecruitmentModelCode == 61){
 	logBlim = par.rec_pars(1);
