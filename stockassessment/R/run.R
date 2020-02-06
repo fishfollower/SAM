@@ -138,9 +138,10 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     opt$par <- opt$par - solve(h, g)
     opt$objective <- obj$fn(opt$par)
   }
-  opt$he <- optimHess(opt$par, obj$fn, obj$gr)
+  ## opt$he <- optimHess(opt$par, obj$fn, obj$gr)
   rep <- obj$report()
-  sdrep <- sdreport(obj,opt$par, opt$he, ignore.parm.uncertainty = ignore.parm.uncertainty)
+  sdrep <- sdreport(obj,opt$par, ##opt$he,
+                    ignore.parm.uncertainty = ignore.parm.uncertainty)
 
   # Last two states
   idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
