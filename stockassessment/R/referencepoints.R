@@ -250,7 +250,7 @@ forecastMSY.sam <- function(fit,
     xtra <- diag(1,length(objForecast$env$last.par.best))
     diag(xtra)[objForecast$env$random] <- 0
     dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
-    covAll <- dG %*% JPI %*% t(dG)
+    covAll <- dG %*% svd_solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
     ## i <- 21
     ## tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
@@ -346,8 +346,7 @@ referencepoints.sam <- function(fit,
                                fit$opt$par,
                                solve(fit$sdrep$cov.fixed),
                                getJointPrecision = TRUE)$jointPrecision
-    ss <- svd(jointPrecision)
-    JPI <- ss$v %*% diag(1/ss$d) %*% t(ss$u)
+
     ## Prepare arguments to calculate reference points (fix parameters and latent variables, delta = 1)
     obj0 <- fit$obj
     argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
