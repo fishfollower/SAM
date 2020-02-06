@@ -8,10 +8,10 @@
 referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
   catchType, ...)
 
-\method{referencepoints}{sam}(fit, nYears = 200, Fsequence = seq(0, 4,
+\method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(0, 4,
   len = 200), aveYears = max(fit$data$years) + (-4:0),
   selYears = max(fit$data$years), SPRpercent = c(0.35),
-  catchType = "catch", ...)
+  catchType = "catch", jacobianHScale = 0.5, ...)
 }
 \arguments{
 \item{fit}{an object to calculate reference points for}
