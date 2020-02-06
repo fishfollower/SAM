@@ -10,7 +10,7 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
 
 \method{forecastMSY}{sam}(fit, nYears = 100,
   nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
-  rec.years = c(), processNoiseF = FALSE, ...)
+  rec.years = c(), processNoiseF = FALSE, jacobianHScale = 0.5, ...)
 }
 \arguments{
 \item{fit}{a SAM fit}

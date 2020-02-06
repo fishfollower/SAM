@@ -40,7 +40,10 @@ grad <- function(func, x,
          return(diag(v))         
 }
 
-
+svd_solve <- function(x){
+    ss <- svd(x)
+    ss$v %*% diag(1/ss$d, length(ss$d), length(ss$d)) %*% t(ss$u)
+}
 
 ##' Add stock-recruitment curve to srplot
 ##'
@@ -58,6 +61,9 @@ addRecruitmentCurve <- function(fit,
                                 col = rgb(0.6,0,0),
                                 cicol = rgb(0.6,0,0,0.3),
                                 plot = TRUE,
+                                PI = FALSE,
+                                picol = rgb(0.6,0,0),
+                                pilty = 2,
                                 ...){
     UseMethod("addRecruitmentCurve")
 } 
@@ -70,6 +76,9 @@ addRecruitmentCurve.sam <- function(fit,
                     col = rgb(0.6,0,0),
                     cicol = rgb(0.6,0,0,0.3),
                     plot = TRUE,
+                    PI = FALSE,
+                    picol = rgb(0.6,0,0),
+                    pilty = 2,
                     ...){
        X <- summary(fit)
        R <- X[, 1]
@@ -83,16 +92,21 @@ addRecruitmentCurve.sam <- function(fit,
            covar <- covEst[m,m, drop = FALSE]
            covar[is.na(covar)] <- 0
        }
-  
+
+       if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
+           warning("addRecruitmentCurve is not implemented for this recruitment type.")
+       }
+       
        srfit <- function(ssb){
            if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
-               warning("addRecruitmentCurve is not implemented for this recruitment type.")
                res <- NA
                attr(res,"sd") <- NA
            }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
                res <- exp(fit$pl$rec_pars[1])
                g <- matrix(c(exp(fit$pl$rec_pars[1]), 0),1)
                attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
+               attr(res,"pi_low") <- exp(log(res) - 2 * fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
+               attr(res,"pi_high") <- exp(log(res) + 2 * fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
            }else{
                v <- .Call("stockRecruitmentModelR",
                           ssb,
@@ -111,7 +125,10 @@ addRecruitmentCurve.sam <- function(fit,
            sd <- attr(tmp, "sd")
            c(Estimate = as.vector(tmp),
              CIlow = as.vector(tmp - 2 * sd),
-             CIhigh = as.vector(tmp + 2 * sd))
+             CIhigh = as.vector(tmp + 2 * sd),
+             PIlow = as.vector(attr(tmp,"pi_low")),
+             PIhigh = as.vector(attr(tmp,"pi_high"))
+             )
        })
        if(plot){
            if(CI)
@@ -121,6 +138,10 @@ addRecruitmentCurve.sam <- function(fit,
                        col = cicol,
                        border = NA)
            lines(ssb,tab["Estimate",], col = col, lwd = 3)
+           if(PI){
+               lines(ssb,tab["PIlow",], col = picol, lwd = 3, lty = pilty)
+               lines(ssb,tab["PIhigh",], col = picol, lwd = 3, lty = pilty)               
+           }
        }
        invisible(srfit)
 } 
@@ -156,6 +177,7 @@ forecastMSY.sam <- function(fit,
                     nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
                     rec.years = c(),
                     processNoiseF = FALSE,
+                    jacobianHScale = 0.5,
                     ...){
 
     argsIn <- forecast(fit,
@@ -175,7 +197,6 @@ forecastMSY.sam <- function(fit,
                                     fit$opt$par,
                                     solve(fit$sdrep$cov.fixed),
                                     getJointPrecision = TRUE)$jointPrecision
-
 
     rp <- c("logFScaleMSY")
     
@@ -217,10 +238,10 @@ forecastMSY.sam <- function(fit,
 
     ## Get Jacobian
     gridx <- which(names(objDelta$par) %in% rp)
-    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par, h = abs(1e-04 * objDelta$par) + 1e-04 * (abs(objDelta$par) < sqrt(.Machine$double.eps/7e-07)))
+    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par, h = jacobianHScale * abs(1e-04 * objDelta$par) + 1e-04 * (abs(objDelta$par) < sqrt(.Machine$double.eps/7e-07)))
 
     ## Implicit function gradient
-    dCdTheta <- -solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
+    dCdTheta <- -svd_solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
     rownames(dCdTheta) <- rp
     colnames(dCdTheta) <- names(objForecast$env$last.par)
 
@@ -229,16 +250,16 @@ forecastMSY.sam <- function(fit,
     xtra <- diag(1,length(objForecast$env$last.par.best))
     diag(xtra)[objForecast$env$random] <- 0
     dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
-    covAll <- dG %*% solve(jointPrecision) %*% t(dG)
+    covAll <- dG %*% JPI %*% t(dG)
     covAllOld <- covAll
-    i <- 21
-    tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-    while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
-        i <- i-1
-        covAll <- covAllOld
-        tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-        diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
-    }
+    ## i <- 21
+    ## tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    ## while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
+    ##     i <- i-1
+    ##     covAll <- covAllOld
+    ##     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    ##     diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
+    ## }
 
     ## Object to do sdreport (delta = 0)
     args <- argsIn
@@ -251,7 +272,7 @@ forecastMSY.sam <- function(fit,
     objSDR <- do.call(TMB::MakeADFun, args)
 
     
-    sdr <- TMB::sdreport(objSDR, objSDR$par, solve(covAll))
+    sdr <- TMB::sdreport(objSDR, objSDR$par, svd_solve(covAll))
     ssdr <- summary(sdr)
 
     toCI <- function(what){
@@ -317,6 +338,7 @@ referencepoints.sam <- function(fit,
                                 selYears = max(fit$data$years),
                                 SPRpercent = c(0.35),
                                 catchType = "catch",
+                                jacobianHScale = 0.5,
                                 ...){
 
     ## Get joint precision
@@ -324,7 +346,8 @@ referencepoints.sam <- function(fit,
                                fit$opt$par,
                                solve(fit$sdrep$cov.fixed),
                                getJointPrecision = TRUE)$jointPrecision
-
+    ss <- svd(jointPrecision)
+    JPI <- ss$v %*% diag(1/ss$d) %*% t(ss$u)
     ## Prepare arguments to calculate reference points (fix parameters and latent variables, delta = 1)
     obj0 <- fit$obj
     argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
@@ -448,14 +471,14 @@ referencepoints.sam <- function(fit,
         objOptim <- do.call(TMB::MakeADFun, args)
 
     opt <- nlminb(objOptim$par, objOptim$fn, objOptim$gr)#, objOptim$he)
-    ii <- 0
-    while(max(abs(objOptim$gr(opt$par))) > 1e-4 && ii < 20){
-        g <- as.numeric( objOptim$gr(opt$par) )
-        h <- objOptim$he(opt$par)
-        opt$par <- opt$par - solve(h, g)
-        opt$objective <- objOptim$fn(opt$par)
-        ii <- ii + 1
-    }
+    ## ii <- 0
+    ## while(max(abs(objOptim$gr(opt$par))) > 1e-4 && ii < 20){
+    ##     g <- as.numeric( objOptim$gr(opt$par) )
+    ##     h <- objOptim$he(opt$par)
+    ##     opt$par <- opt$par - solve(h, g)
+    ##     opt$objective <- objOptim$fn(opt$par)
+    ##     ii <- ii + 1
+    ## }
     ## Object to do Delta method (nothing mapped (that's not mapped in fit$obj, nothing random, delta = 1)
     args <- argsIn
     ## Remove random
@@ -469,10 +492,10 @@ referencepoints.sam <- function(fit,
 
     ## Get Jacobian
     gridx <- which(names(objDelta$par) %in% rp)
-    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par, h = abs(1e-04 * objDelta$par) + 1e-04 * (abs(objDelta$par) < sqrt(.Machine$double.eps/7e-07)))
+    JacAll <- jacobian(function(x) objDelta$gr(x)[gridx], objDelta$par, h = jacobianHScale * abs(1e-04 * objDelta$par) + 1e-04 * (abs(objDelta$par) < sqrt(.Machine$double.eps/7e-07)))
 
     ## Implicit function gradient
-    dCdTheta <- -solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
+    dCdTheta <- -svd_solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
     rownames(dCdTheta) <- gsub("^logScale","",names(objDelta$par)[gridx])
     colnames(dCdTheta) <- names(fit$obj$env$last.par)
 
@@ -480,16 +503,16 @@ referencepoints.sam <- function(fit,
     xtra <- diag(1,length(fit$obj$env$last.par.best))
     diag(xtra)[fit$obj$env$random] <- 0
     dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
-    covAll <- dG %*% solve(jointPrecision) %*% t(dG)
+    covAll <- dG %*% svd_solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
     i <- 21
     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-    while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
-        i <- i-1
-        covAll <- covAllOld
-        tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-        diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
-    }
+    ## while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
+    ##     i <- i-1
+    ##     covAll <- covAllOld
+    ##     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    ##     diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
+    ## }
 
     ## Object to do sdreport (delta = 0)
     args <- argsIn
@@ -502,7 +525,7 @@ referencepoints.sam <- function(fit,
     objSDR <- do.call(TMB::MakeADFun, args)
 
     
-    sdr <- TMB::sdreport(objSDR, objSDR$par, solve(covAll))
+    sdr <- TMB::sdreport(objSDR, objSDR$par, svd_solve(covAll))
     ssdr <- summary(sdr)
 
     toCI <- function(what){
@@ -571,8 +594,8 @@ referencepoints.sam <- function(fit,
                               Recruitment = Rseq),
                 opt = opt,
                 sdr = sdr,
-                fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
-                diagonalCorrection = tv
+                fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2]))## ,
+                ## diagonalCorrection = tv
                 )
                               
 
