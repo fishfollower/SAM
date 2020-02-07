@@ -99,23 +99,29 @@ addRecruitmentCurve.sam <- function(fit,
        
        srfit <- function(ssb){
            if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
-               res <- NA
-               attr(res,"sd") <- NA
+               val <- NA
+               valsd <- NA
+               pisig <- NA
            }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
-               res <- exp(fit$pl$rec_pars[1])
+               val <- exp(fit$pl$rec_pars[1])
                g <- matrix(c(exp(fit$pl$rec_pars[1]), 0),1)
-               attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
-               attr(res,"pi_low") <- exp(log(res) - 2 * fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
-               attr(res,"pi_high") <- exp(log(res) + 2 * fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
+               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
+               rho <- 2 / ( 1 + exp( -fit$pl$rec_pars[2] ) ) - 1
+               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1]) / sqrt(1 - rho)
            }else{
                v <- .Call("stockRecruitmentModelR",
                           ssb,
                           fit$pl$rec_pars,
                           fit$conf$stockRecruitmentModelCode)
-               res <- v$Recruits
+               val <- v$Recruits
                g <- matrix(head(v$Gradient,-1), 1)
-               attr(res,"sd") <- as.vector(sqrt(g %*% covar %*% t(g)))
+               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
+               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
            }
+           res <- val
+           attr(res,"sd") <- valsd
+           attr(res,"pi_low") <- exp(log(val) - 2 * pisig)
+           attr(res,"pi_high") <- exp(log(val) + 2 * pisig)
            return(res)
        }
 
@@ -222,9 +228,10 @@ forecastMSY.sam <- function(fit,
     })
 
     ## Try different values??
-
-    
-    opt <- nlminb(objOptim$par[names(objOptim$par) != "implicitFunctionDelta"], fn, control = nlminb.control)
+    testStart <- c(-2,-1, -0.5, -0.1, 0, 0.1, 0.25, 0.3, 0.5)
+    fnTestStart <- sapply(testStart, fn)
+    ## objOptim$par[names(objOptim$par) != "implicitFunctionDelta"]
+    opt <- nlminb(testStart[which(order(fnTestStart) == 1)], fn, control = nlminb.control)
 
     ## Object to do Delta method (no map, no random, delta = 1)
     args <- argsIn
