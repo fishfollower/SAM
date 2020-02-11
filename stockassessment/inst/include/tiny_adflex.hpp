@@ -10,6 +10,9 @@
 #ifndef TINY_ADFLEX_H
 #define TINY_ADFLEX_H
 
+
+namespace tinyad_flex {
+
 /* Standalone ? */
 #ifndef R_RCONFIG_H
 #include <cmath>
@@ -175,7 +178,8 @@ UNARY_MATH_ZERO_DERIV(ceil)
 UNARY_MATH_ZERO_DERIV(trunc)
 UNARY_MATH_ZERO_DERIV(round)
 template<class T>
-double sign(const T &x){return (x > 0) - (x < 0);}
+adflex<T> sign(const adflex<T> &x){return (x > 0) - (x < 0);}
+double sign(const double &x){return (x > 0) - (x < 0);}
 bool isfinite(const double &x)CSKIP( {return std::isfinite(x);} )
   template<class T, class V>
   bool isfinite(const adflex<T> &x){return isfinite(x.value);}
@@ -209,7 +213,10 @@ UNARY_MATH_DERIVATIVE(sqrt, 0.5/sqrt)
 UNARY_MATH_DERIVATIVE(fabs, sign)
 using ::expm1; using ::log1p;
 UNARY_MATH_DERIVATIVE(expm1, exp)
-template<class T> T D_log1p(const T &x) {return 1. / (x + 1.);}
+//template<class T> T D_log1p(const T &x) {return 1. / (x + 1.);}
+template<class T>
+adflex<T> D_log1p(const adflex<T> &x) {return 1. / (x + 1.);}
+  double D_log1p(const double &x) {return 1. / (x + 1.);}
 UNARY_MATH_DERIVATIVE(log1p, D_log1p)
 /* asin, acos, atan */
 using ::asin; using ::acos; using ::atan;
@@ -251,7 +258,7 @@ COMPARISON_OPERATOR_FLIP(==,==)
 COMPARISON_OPERATOR_FLIP(!=,!=)
 #undef COMPARISON_OPERATOR_FLIP
 /* Utility: Return the value of a tiny_adflex type */
-//double asDouble(double x) CSKIP( {return x;} )
+double asDouble(double x) CSKIP( {return x;} )
 template<class T>
 double asDouble (const adflex<T> &x){
   return asDouble(x.value);
@@ -382,7 +389,7 @@ struct variableflex : adflex< VARIABLEFLEX(order-1, Double)> {
 
 
 
-
+}
 
 
 
@@ -403,48 +410,54 @@ TMB_ATOMIC_VECTOR_FUNCTION(					\
    CppAD::vector<Float> x(tx);					\
    ty[0] = CALL;						\
  } else if (order==1) {						\
-   typedef variableflex<1> Float;				\
+   typedef tinyad_flex::variableflex<1> Float;			\
    CppAD::vector<Float> x(tx.size());				\
    for(int i = 0; i < (int)tx.size() - 1; ++i){			\
      x[i] = tx[i];						\
-     x[i].deriv = resize(x[i].deriv,nvar);			\
+     x[i].deriv = tinyad_flex::resize(x[i].deriv,nvar);		\
      if(i < nvar)						\
        x[i].setid(i);						\
-   }								\
+   };								\
    x[x.size()-1] = order;					\
-   tyref = CALL.getDeriv();					\
+   CppAD::vector<double> tmp = CALL.getDeriv();			\
+   if(tmp.size() != 0)						\
+     tyref = tmp;						\
  } else if (order==2) {						\
-   typedef variableflex<2> Float;				\
+   typedef tinyad_flex::variableflex<2> Float;			\
    CppAD::vector<Float> x(tx.size());				\
    for(int i = 0; i < (int)tx.size() - 1; ++i){			\
      x[i] = tx[i];						\
-     x[i].deriv = resize(x[i].deriv,nvar);			\
+     x[i].deriv = tinyad_flex::resize(x[i].deriv,nvar);		\
      if(i < nvar)						\
        x[i].setid(i);						\
    }								\
    x[x.size()-1] = order;					\
-   tyref = CALL.getDeriv();					\
+   CppAD::vector<double> tmp = CALL.getDeriv();			\
+   if(tmp.size() != 0)						\
+     tyref = tmp;						\
  } else if (order==3) {						\
-   typedef variableflex<3> Float;				\
+   typedef tinyad_flex::variableflex<3> Float;			\
    CppAD::vector<Float> x(tx.size());				\
    for(int i = 0; i < (int)tx.size() - 1; ++i){			\
      x[i] = tx[i];						\
-     x[i].deriv = resize(x[i].deriv,nvar);			\
+     x[i].deriv = tinyad_flex::resize(x[i].deriv,nvar);		\
      if(i < nvar)						\
        x[i].setid(i);						\
    }								\
    x[x.size()-1] = order;					\
-   tyref = CALL.getDeriv();					\
+   CppAD::vector<double> tmp = CALL.getDeriv();			\
+   if(tmp.size() != 0)						\
+     tyref = tmp;						\
  } else {							\
    Rf_error("Order not implemented");				\
  }								\
  ,								\
-  int nvar =  LASTVAR + 1;					\
+   int nvar =  LASTVAR + 1;					\
  CppAD::vector<Type> tx_(tx);					\
  tx_[tx.size() - 1] = tx_[tx.size() - 1] + Type(1.0);		\
- vector<Type> tmp = NAME(tx_);					\
- matrix<Type> m = tmp.matrix();					\
- m.resize(nvar, m.size() / nvar);				\
+ vector<Type> tmp = NAME(tx_);						\
+ matrix<Type> m = tmp.matrix();						\
+ m.resize(nvar, m.size() / nvar);					\
  vector<Type> w = py;						\
  vector<Type> px_ = m * w.matrix();				\
  px = px_;							\

@@ -1,4 +1,5 @@
 
+
 template<class Type>
 Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRecruitmentModelCode){
   Type predN = R_NegInf;
@@ -56,6 +57,15 @@ Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRe
   case 69: // Sigmoidal Beverton-Holt
     predN = rec_pars(0)+exp(rec_pars(2)) * log(thisSSB)-log(1.0+exp(rec_pars(1))*exp(exp(rec_pars(2)) * log(thisSSB)));
     break;
+  case 90: // Non-increasing spline on log(R/S)
+    Rf_error("Needs more info");
+    break;
+  case 91: // Integrated spline on log(R/S)
+    Rf_error("Needs more info");
+    break;
+  case 92: // Spline on log(R/S)
+    Rf_error("Needs more info");
+    break;
   default:    
       error("SR model code not recognized");
     break;
@@ -92,7 +102,22 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   case 62: // AR1 (on log-scale)
     predN(0) = par.rec_pars(0) + (2.0 / (1.0 + exp(-par.rec_pars(1))) - 1.0) * (logN(0,i-1) - par.rec_pars(0));
     break;
-    default:
+  case 90: // Non-increasing spline on log R/S
+    predN = log(thisSSB) + ibcdspline(log(thisSSB),
+				     (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+				     par.rec_pars);
+    break;
+  case 91: // integrated spline on log R/S
+    predN = log(thisSSB) + ibcspline(log(thisSSB),
+				      (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+				      par.rec_pars);
+    break;
+   case 92: // spline on log R/S
+    predN = log(thisSSB) + bcspline(log(thisSSB),
+				     (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+				     par.rec_pars);
+    break;
+   default:
       predN(0)=functionalStockRecruitment(thisSSB, par.rec_pars, conf.stockRecruitmentModelCode);
     break;
   }
