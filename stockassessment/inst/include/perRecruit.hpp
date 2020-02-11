@@ -444,8 +444,8 @@ namespace rec_atomic {
     vector<Float> val(valIn);
     Float l = val(0);
     int n = (int)trunc((val.size() - 3) / 2.0); // One more par than knot
-    vector<Float> knots = val.segment(1,n);
-    vector<Float> pars = val.segment(n+1,n+1);
+    vector<Float> pars = val.segment(1,n+1);
+    vector<Float> knots = val.segment(n+2,n);
     matrix<Float> sg = getSigAndGam_raw(knots);
     Float sv = 0.0;
     for(int i = 0; i < knots.size(); ++i)
@@ -475,7 +475,7 @@ namespace rec_atomic {
     return SAM_Zero * l;	// Keep derivative info
   }
 
-  TMB_BIND_ATOMIC_FLEX(Se_ibcd0, Se_ibcd_raw(x))
+  TMB_BIND_ATOMIC_FLEX_PART(Se_ibcd0, Se_ibcd_raw(x), 1 + (tx.size() - 3) / 2.0 + 1) // Only derivative of lambda and pars
 
 
 
@@ -503,13 +503,13 @@ namespace rec_atomic {
     vector<Float> val(valIn);
     Float l = val(0);
     int n = (int)trunc((val.size() - 2) / 2.0); // Same number of pars and knots
-    vector<Float> knots = val.segment(1,n);
+    vector<Float> pars = val.segment(1,n);
+    vector<Float> knots = val.segment(n+1,n);
     matrix<Float> sg = getSigAndGam_raw(knots);
     Float sv = 0.0;
     for(int i = 0; i < knots.size(); ++i)
       sv += knots(i);
     sv /= (Float)knots.size();
-    vector<Float> pars = val.segment(n+1,n);
     IBC<Float> f;
     f.knots = knots; f.pars = pars; f.sg = sg;
     NEWTON_RESULT<Float> r = newton<Float, IBC<Float> >(f, l, sv);
@@ -533,7 +533,7 @@ namespace rec_atomic {
     return SAM_Zero * l;	// Keep derivative info
   }
 
-  TMB_BIND_ATOMIC_FLEX(Se_ibc0, Se_ibc_raw(x))
+  TMB_BIND_ATOMIC_FLEX_PART(Se_ibc0, Se_ibc_raw(x), 1 + (tx.size() - 2) / 2.0) // Only derivative of lambda and pars
 
 
   
@@ -579,8 +579,8 @@ Type Se_ibcd(Type l, vector<Type> knots, vector<Type> pars){
   vector<Type> args(1+knots.size()+pars.size()+1); // Last index reserved for derivative order
   args.setZero();
   args(0) = l;
-  args.segment(1,knots.size()) = knots;
-  args.segment(knots.size()+1,pars.size()) = pars;
+  args.segment(1,pars.size()) = pars;
+  args.segment(pars.size()+1,knots.size()) = knots;
   args(args.size()-1) = 0;
   vector<Type> tmp = rec_atomic::Se_ibcd0(CppAD::vector<Type>(args));
   return tmp(0);
@@ -592,8 +592,8 @@ Type Se_ibc(Type l, vector<Type> knots, vector<Type> pars){
   vector<Type> args(1+knots.size()+pars.size()+1); // Last index reserved for derivative order
   args.setZero();
   args(0) = l;
-  args.segment(1,knots.size()) = knots;
-  args.segment(knots.size()+1,pars.size()) = pars;
+  args.segment(1,pars.size()) = pars;
+  args.segment(pars.size()+11,knots.size()) = knots;
   args(args.size()-1) = 0;
   vector<Type> tmp = rec_atomic::Se_ibc0(CppAD::vector<Type>(args));
   return tmp(0);
@@ -1407,19 +1407,19 @@ struct REFERENCE_POINTS {
       return 0.0;
     if(conf.stockRecruitmentModelCode == 62)
       return exp(par.rec_pars(0));
+    vector<T> rp2 = par.rec_pars.template cast<T>();
     if(conf.stockRecruitmentModelCode == 90)
       return log(ssb) + ibcdspline(log(ssb),
-				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
-				       par.rec_pars);
+				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
+				       rp2);
     if(conf.stockRecruitmentModelCode == 91)
       return log(ssb) + ibcspline(log(ssb),
-				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
-				       par.rec_pars);
+				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
+				       rp2);
     if(conf.stockRecruitmentModelCode == 92)
       return log(ssb) + bcspline(log(ssb),
-				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
-				       par.rec_pars);
-    vector<T> rp2 = par.rec_pars.template cast<T>();
+				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
+				       rp2);
     return exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
   }
 
