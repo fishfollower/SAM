@@ -45,113 +45,6 @@ svd_solve <- function(x){
     ss$v %*% diag(1/ss$d, length(ss$d), length(ss$d)) %*% t(ss$u)
 }
 
-##' Add stock-recruitment curve to srplot
-##'
-##' @param fit Object to show SR-curve for
-##' @param CI Add confidence intervals?
-##' @param col Color of fitted line
-##' @param cicol Color of confidence intervals
-##' @param plot Add the curve to a plot?
-##' @param ... not used
-##' @seealso srplot
-##' @author Christoffer Moesgaard Albertsen
-##' @export
-addRecruitmentCurve <- function(fit,
-                                CI = TRUE,
-                                col = rgb(0.6,0,0),
-                                cicol = rgb(0.6,0,0,0.3),
-                                plot = TRUE,
-                                PI = FALSE,
-                                picol = rgb(0.6,0,0),
-                                pilty = 2,
-                                ...){
-    UseMethod("addRecruitmentCurve")
-} 
-
-##' @rdname addRecruitmentCurve
-##' @method addRecruitmentCurve sam
-##' @export
-addRecruitmentCurve.sam <- function(fit,
-                    CI = TRUE,
-                    col = rgb(0.6,0,0),
-                    cicol = rgb(0.6,0,0,0.3),
-                    plot = TRUE,
-                    PI = FALSE,
-                    picol = rgb(0.6,0,0),
-                    pilty = 2,
-                    ...){
-       X <- summary(fit)
-       R <- X[, 1]
-       S <- X[, 4]
-       cf <- fit$sdrep$cov.fixed
-       covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
-       m <- fit$obj$env$map$rec_pars
-       if(is.null(m)){
-           covar <- covEst
-       }else{
-           covar <- covEst[m,m, drop = FALSE]
-           covar[is.na(covar)] <- 0
-       }
-
-       if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
-           warning("addRecruitmentCurve is not implemented for this recruitment type.")
-       }
-       
-       srfit <- function(ssb){
-           if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
-               val <- NA
-               valsd <- NA
-               pisig <- NA
-           }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
-               val <- exp(fit$pl$rec_pars[1])
-               g <- matrix(c(exp(fit$pl$rec_pars[1]), 0),1)
-               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
-               rho <- 2 / ( 1 + exp( -fit$pl$rec_pars[2] ) ) - 1
-               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1]) / sqrt(1 - rho)
-           }else{
-               v <- .Call("stockRecruitmentModelR",
-                          ssb,
-                          fit$pl$rec_pars,
-                          fit$conf$stockRecruitmentModelCode)
-               val <- v$Recruits
-               g <- matrix(head(v$Gradient,-1), 1)
-               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
-               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
-           }
-           res <- val
-           attr(res,"sd") <- valsd
-           attr(res,"pi_low") <- exp(log(val) - 2 * pisig)
-           attr(res,"pi_high") <- exp(log(val) + 2 * pisig)
-           return(res)
-       }
-
-       ssb <- seq(0, max(S), len = 2000)
-       tab <- sapply(ssb, function(x) {
-           tmp <- srfit(x)
-           sd <- attr(tmp, "sd")
-           c(Estimate = as.vector(tmp),
-             CIlow = as.vector(tmp - 2 * sd),
-             CIhigh = as.vector(tmp + 2 * sd),
-             PIlow = as.vector(attr(tmp,"pi_low")),
-             PIhigh = as.vector(attr(tmp,"pi_high"))
-             )
-       })
-       if(plot){
-           if(CI)
-               polygon(c(ssb, rev(ssb)),
-                       c(tab["CIlow",],
-                         rev(tab["CIhigh",])),
-                       col = cicol,
-                       border = NA)
-           lines(ssb,tab["Estimate",], col = col, lwd = 3)
-           if(PI){
-               lines(ssb,tab["PIlow",], col = picol, lwd = 3, lty = pilty)
-               lines(ssb,tab["PIhigh",], col = picol, lwd = 3, lty = pilty)               
-           }
-       }
-       invisible(srfit)
-} 
-
 
 ##' Estimating Fmsy
 ##'
@@ -201,7 +94,7 @@ forecastMSY.sam <- function(fit,
     ## Get joint precision
     jointPrecision <- TMB::sdreport(objForecast,
                                     fit$opt$par,
-                                    solve(fit$sdrep$cov.fixed),
+                                    svd_solve(fit$sdrep$cov.fixed),
                                     getJointPrecision = TRUE)$jointPrecision
 
     rp <- c("logFScaleMSY")
@@ -511,8 +404,8 @@ referencepoints.sam <- function(fit,
     dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
     covAll <- dG %*% svd_solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
-    i <- 21
-    tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    ## i <- 21
+    ## tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
     ## while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
     ##     i <- i-1
     ##     covAll <- covAllOld

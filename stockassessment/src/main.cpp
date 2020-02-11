@@ -15,6 +15,10 @@ extern "C" {
   SEXP jacobian(SEXP fn, SEXP par, SEXP rho, SEXP maxit, SEXP h, SEXP tolerance);
   SEXP Se_sbhR(SEXP lambda, SEXP a, SEXP b, SEXP g);
   SEXP Se_slR(SEXP lambda, SEXP a, SEXP b, SEXP g);
+  SEXP bcsplineR(SEXP x, SEXP knots, SEXP pars);
+  SEXP ibcsplineR(SEXP x, SEXP knots, SEXP pars);
+  SEXP ibcdsplineR(SEXP x, SEXP knots, SEXP pars);
+  SEXP ibcisplineR(SEXP x, SEXP knots, SEXP pars);
   
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
@@ -42,7 +46,10 @@ extern "C" {
     CALLDEF(jacobian,6),
     CALLDEF(Se_sbhR,4),
     CALLDEF(Se_slR,4),
-
+    CALLDEF(bcsplineR,3),
+    CALLDEF(ibcsplineR,3),
+    CALLDEF(ibcdsplineR,3),
+    CALLDEF(ibcisplineR,3),
     {NULL,NULL,0}
   };
 

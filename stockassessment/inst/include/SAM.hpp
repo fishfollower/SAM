@@ -3,6 +3,8 @@
 
 #include "tiny_adflex.hpp"
 #include "zeroin.hpp"
+#include "pnorm.hpp"
+#include "spline.hpp"
 #include "toF.hpp"
 #include "define.hpp"
 #include "derived.hpp"
