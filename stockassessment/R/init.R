@@ -34,6 +34,10 @@ defpar <- function(dat,conf){
           ret$rec_pars[3] <- log(conf$hockeyStickCurve)
   }else if(conf$stockRecruitmentModelCode %in% c(66,67,68,69)){ # Shepherd, Deriso
       ret$rec_pars <- numeric(3)
+  }else if(conf$stockRecruitmentModelCode %in% c(90,91,92)){
+      ret$rec_pars <- numeric(length(conf$constRecBreaks) + as.integer(conf$stockRecruitmentModelCode==90))
+      if(conf$stockRecruitmentModelCode==90)
+          ret$rec_pars[length(ret$rec_pars)] <- 5
   }else{ # The rest
       ret$rec_pars <- numeric(2)
   }

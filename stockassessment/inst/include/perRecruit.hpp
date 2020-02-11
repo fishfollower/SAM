@@ -43,6 +43,140 @@
 
 
 namespace rec_atomic {
+  /*
+   * Namespace with calculations for finding equilibrium biomass numerically
+   */
+
+
+  
+  /*
+   * Spline functions re-implemented for tiny_ad
+   */
+  
+    // Kumaraswamy-normal (Kw-normal) density function with special choice of a and b
+  template<class Float>
+  Float dkwnorm_raw(Float x, Float mu, Float sig, Float gam, bool give_log = false){
+    Float a = 1.0 + 0.5 * (gam + sqrt(gam * gam));
+    Float b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
+    Float lpv = pnorm_atomic::pnorm5_raw(x,mu,sig,Float(1.0), Float(1.0));
+    Float lGa = a * lpv;
+    Float log_res = log(a) + log(b) + dnorm(x,mu,sig, true) + (a-1.0) * lpv + (b-1.0) * atomic::robust_utils::logspace_sub(Float(0.0),(Float)lGa);
+     if(give_log)
+      return log_res;
+    return exp(log_res);
+  }
+
+  // Kumaraswamy-normal (Kw-normal) distribution function with special choice of a and b
+  template<class Float>
+  Float pkwnorm_raw(Float x, Float mu, Float sig, Float gam){
+    Float a = 1.0 + 0.5 * (gam + sqrt(gam * gam));
+    Float b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
+    Float lpv = pnorm_atomic::pnorm5_raw(x,mu,sig,Float(1.0), Float(1.0));
+    Float lGa = a * lpv;
+    // Float lr = atomic::robust_utils::logspace_sub(Float(0.0), (Float)(b * atomic::robust_utils::logspace_sub(Float(0.0),lGa)));
+    return 1.0 - exp(b * atomic::robust_utils::logspace_sub(Float(0.0),lGa));
+  }
+
+
+  template<class Float>
+  matrix<Float> getSigAndGam_raw(vector<Float> knots){
+    // if(CppAD::Variable(knots(0)))
+    //   Rf_error("Knots can not be parameters");
+    if(knots.size() < 3)
+      Rf_error("The spline must have at least three knots.");
+    matrix<Float> res(knots.size(),2); // Sigma, Gamma
+    res.setZero();
+    for(int i = 1; i < knots.size() - 1; ++i){
+      // Sigma
+      res(i,0) = (knots(i+1) - knots(i-1)) / 3.0;
+      // Gamma
+      if(fabs(knots(i) - knots(i-1)) < 1e-8){
+	res(i,1) = res(i,0);
+      }else if(fabs(knots(i) - knots(i+1)) < 1e-8){
+	res(i,1) = -res(i,0);
+      }else{
+	res(i,1) = log(knots(i+1) - knots(i)) - log(knots(i) - knots(i-1));
+      }
+    }
+    res(0,0) = (knots(2) - knots(0)) / 3.0;
+    res(knots.size()-1,0) = (knots(knots.size()-1) - knots(knots.size()-1-2)) / 3.0;
+    if(fabs(knots(1) - knots(0)) < 1e-8){
+      res(0,1) = 0.0;
+    }else{
+      res(0,1) = res(0,0);
+    }
+    if(fabs(knots(knots.size()-1) - knots(knots.size()-1-1)) < 1e-8){
+      res(knots.size()-1,1) = 0.0;
+    }else{
+      res(knots.size()-1,1) = -res(knots.size()-1,0);
+    }
+    return res;
+  }
+
+  
+  // Spline using Kw-normal density as basis functions
+  template<class Float>
+  Float bcspline_raw(Float x, vector<Float> knots, vector<Float> pars, matrix<Float> sg){
+    if(knots.size() != pars.size())
+      Rf_error("Knots and pars must have same length");
+    // matrix<Float> sg = getSigAndGam(knots);
+    Float res = 0.0;
+    for(int i = 0; i < knots.size(); ++i){
+      Float tmp = dkwnorm_raw(x, knots(i), sg(i,0), sg(i,1), false);
+      res += pars(i) * tmp * sg(i,0);
+    }
+    return res;
+  }
+
+  // Integrated spline using Kw-normal density as basis functions
+  template<class Float>
+  Float ibcspline_raw(Float x, vector<Float> knots, vector<Float> pars, matrix<Float> sg){
+    if(knots.size() != pars.size())
+      Rf_error("Knots and pars must have same length");
+    // matrix<Float> sg = getSigAndGam_raw(knots);
+    Float res = 0.0;
+    for(int i = 0; i < knots.size(); ++i){
+      // Should be zero at NegInf - not left endpoint of knot interval
+      Float v0 = 0.0;
+      // Float v0 = pkwnorm_raw(knots(0), knots(i), sg(i,0), sg(i,1));
+      Float tmp = pkwnorm_raw(x, knots(i), sg(i,0), sg(i,1));
+      res += pars(i) * (tmp - v0);
+    }
+    return res ;
+  }
+
+  // Monotonically non-increasing spline using Kw-nomal as basis functions
+  // Has an extra parameter to allow positive value at left bound
+  template<class Float>
+  Float ibcdspline_raw(Float x, vector<Float> knots, vector<Float> pars, matrix<Float> sg){
+    if(knots.size() + 1 != pars.size())
+      Rf_error("Pars must have one more element than knots");
+    vector<Float> p2(pars.size() - 1);
+    p2.setZero();
+    for(int i = 0; i < p2.size(); ++i)
+      p2(i) = -exp(pars(i));
+    Float r = ibcspline_raw(x, knots, p2, sg);
+    return r + pars(pars.size()-1);
+  }
+
+  // Monotonically non-decreasing spline using Kw-nomal as basis functions
+  // Has an extra parameter to allow negative value at left bound
+  template<class Float>
+  Float ibcispline_raw(Float x, vector<Float> knots, vector<Float> pars, matrix<Float> sg){
+    if(knots.size() + 1 != pars.size())
+      Rf_error("Pars must have one more element than knots");
+    vector<Float> p2(pars.size() - 1);
+    p2.setZero();
+    for(int i = 0; i < p2.size(); ++i)
+      p2(i) = exp(pars(i));
+    Float r = ibcspline_raw(x, knots, p2, sg);
+    return r + pars(pars.size()-1);
+  }
+
+  
+  /*
+   * End of spline functions
+   */
 
   // DOI: 10.1145/361952.361970
   template<class Float>
@@ -234,9 +368,9 @@ namespace rec_atomic {
       Rf_warning("Found unstable equilibrium");
       return exp(r.par);
     }else{
-      return SAM_Zero;
+      return SAM_Zero * l;
     }
-    return SAM_Zero;
+    return SAM_Zero * l;
   }
 
   TMB_BIND_ATOMIC(Se_sbh0, 1111, Se_sbh_raw(x[0],x[1],x[2],x[3]))
@@ -277,13 +411,135 @@ namespace rec_atomic {
       Rf_warning("Found unstable equilibrium");
       return exp(r.par);
     }else{
-      return SAM_Zero;
+      return SAM_Zero * l;
     }
-    return SAM_Zero;
+    return SAM_Zero * l;
   }
 
   TMB_BIND_ATOMIC(Se_sl0, 1111, Se_sl_raw(x[0],x[1],x[2],x[3]))
 
+
+
+
+   /*
+   * Specialization for the non-increasing spline on R/S recruitment model
+   */
+  
+ 
+  template<class Float>
+  struct IBCD {
+    vector<Float> knots;
+    vector<Float> pars;
+    matrix<Float> sg;
+    
+    template<class F>
+    F operator()(F logs){
+      return logs + ibcdspline_raw(logs, (vector<F>)knots.template cast<F>(), (vector<F>)pars.template cast<F>(), (matrix<F>)sg.template cast<F>());
+    }
+  };
+  
+  template<class Float>
+  Float Se_ibcd_raw(CppAD::vector<Float> valIn){
+    // Float l, vector<Float> knots, vector<Float> pars){
+    vector<Float> val(valIn);
+    Float l = val(0);
+    int n = (int)trunc((val.size() - 3) / 2.0); // One more par than knot
+    vector<Float> knots = val.segment(1,n);
+    vector<Float> pars = val.segment(n+1,n+1);
+    matrix<Float> sg = getSigAndGam_raw(knots);
+    Float sv = 0.0;
+    for(int i = 0; i < knots.size(); ++i)
+      sv += knots(i);
+    sv /= (Float)knots.size();
+     IBCD<Float> f;
+     f.knots = knots; f.pars = pars; f.sg = sg;
+    NEWTON_RESULT<Float> r = newton<Float, IBCD<Float> >(f, l, sv);
+    if(r.niter > 990){
+      Rf_warning("Close to iteration limit");
+      r = newton<Float, IBCD<Float> >(f, l, r.par);
+    }
+    if(r.par > log(SAM_Zero) &&
+	    r.objective < 1.0e-6 &&
+	    fabs(r.grSR) < 1){ // Found stable equilibrium
+      return exp(r.par);
+    }else if(r.par > log(SAM_Zero) &&
+	     r.objective < 1.0e-6 &&
+	     fabs(r.grSR) >= 1){ // Found unstable equilibrium
+      Rf_warning("Found unstable equilibrium");
+      return exp(r.par);
+    }else{
+      Rf_warning("Found no equilibrium");
+      return SAM_Zero * l;	// Keep derivative info
+    }
+      Rf_warning("Found no equilibrium");
+    return SAM_Zero * l;	// Keep derivative info
+  }
+
+  TMB_BIND_ATOMIC_FLEX(Se_ibcd0, Se_ibcd_raw(x))
+
+
+
+
+
+   /*
+   * Specialization for the integrated spline on R/S recruitment model
+   */
+  
+ 
+  template<class Float>
+  struct IBC {
+    vector<Float> knots;
+    vector<Float> pars;
+    matrix<Float> sg;
+    
+    template<class F>
+    F operator()(F logs){
+      return logs + ibcspline_raw(logs, (vector<F>)knots.template cast<F>(), (vector<F>)pars.template cast<F>(), (matrix<F>)sg.template cast<F>());
+    }
+  };
+  
+  template<class Float>
+  Float Se_ibc_raw(CppAD::vector<Float> valIn){
+    vector<Float> val(valIn);
+    Float l = val(0);
+    int n = (int)trunc((val.size() - 2) / 2.0); // Same number of pars and knots
+    vector<Float> knots = val.segment(1,n);
+    matrix<Float> sg = getSigAndGam_raw(knots);
+    Float sv = 0.0;
+    for(int i = 0; i < knots.size(); ++i)
+      sv += knots(i);
+    sv /= (Float)knots.size();
+    vector<Float> pars = val.segment(n+1,n);
+    IBC<Float> f;
+    f.knots = knots; f.pars = pars; f.sg = sg;
+    NEWTON_RESULT<Float> r = newton<Float, IBC<Float> >(f, l, sv);
+    if(r.niter > 990){
+      Rf_warning("Close to iteration limit");
+      r = newton<Float, IBC<Float> >(f, l, r.par);
+    }    if(r.par > log(SAM_Zero) &&
+	    r.objective < 1.0e-6 &&
+	    fabs(r.grSR) < 1){ // Found stable equilibrium
+      return exp(r.par);
+    }else if(r.par > log(SAM_Zero) &&
+	     r.objective < 1.0e-6 &&
+	     fabs(r.grSR) >= 1){ // Found unstable equilibrium
+      Rf_warning("Found unstable equilibrium");
+      return exp(r.par);
+    }else{
+      Rf_warning("Found no equilibrium");
+      return SAM_Zero * l;	// Keep derivative info
+    }
+      Rf_warning("Found no equilibrium");
+    return SAM_Zero * l;	// Keep derivative info
+  }
+
+  TMB_BIND_ATOMIC_FLEX(Se_ibc0, Se_ibc_raw(x))
+
+
+  
+  /*
+   * End of namespace
+   */
 
   
 }
@@ -317,6 +573,38 @@ Type Se_sl(Type l, Type a, Type b, Type g){
   args[4] = 0;
   return rec_atomic::Se_sl0(CppAD::vector<Type>(args))[0];
 }
+
+template<class Type>
+Type Se_ibcd(Type l, vector<Type> knots, vector<Type> pars){
+  vector<Type> args(1+knots.size()+pars.size()+1); // Last index reserved for derivative order
+  args.setZero();
+  args(0) = l;
+  args.segment(1,knots.size()) = knots;
+  args.segment(knots.size()+1,pars.size()) = pars;
+  args(args.size()-1) = 0;
+  vector<Type> tmp = rec_atomic::Se_ibcd0(CppAD::vector<Type>(args));
+  return tmp(0);
+}
+
+
+template<class Type>
+Type Se_ibc(Type l, vector<Type> knots, vector<Type> pars){
+  vector<Type> args(1+knots.size()+pars.size()+1); // Last index reserved for derivative order
+  args.setZero();
+  args(0) = l;
+  args.segment(1,knots.size()) = knots;
+  args.segment(knots.size()+1,pars.size()) = pars;
+  args(args.size()-1) = 0;
+  vector<Type> tmp = rec_atomic::Se_ibc0(CppAD::vector<Type>(args));
+  return tmp(0);
+}
+
+
+/*
+ * Functions to get derivatives of stock recruitment curve
+ */
+
+// Functional form
 
 #ifdef TMBAD_FRAMEWORK
 template<class Type>
@@ -358,7 +646,72 @@ Type dFunctionalSR(Type ssb, vector<Type> rp, int srmc){
 #endif
 }
 
+// Spline
 
+#ifdef TMBAD_FRAMEWORK
+template<class Type>
+struct F_dSplineSR {
+  vector<Type> knots;
+  vector<Type> rp;
+  int srmc;
+  template<class T>
+  T operator()(vector<T> x){  // Evaluate function
+    vector<T> rp2 = rp.template cast<T>();
+    vector<T> kn2 = knots.template cast<T>();
+    if(srmc == 90){
+      return x[0] + ibcdspline(x[0], kn2, rp2); 
+    }else if(srmc == 91){
+      return x[0] + ibcspline(x[0], kn2, rp2); 
+    }else if(srmc == 92){
+      return x[0] + bcspline(x[0], kn2, rp2); 
+    }else{
+      Rf_error("Not a spline recruitment model");
+    }
+    return 0.0;
+  }    
+};
+#endif
+
+template<class Type>
+Type dSplineSR(Type ssb, vector<Type> knots, vector<Type> rp, int srmc){
+  
+#ifdef CPPAD_FRAMEWORK
+  vector<AD<Type> > rp2(rp.size());
+  rp2 = rp.template cast<AD<Type> >();
+  vector<AD<Type> > kn2(knots.size());
+  kn2 = knots.template cast<AD<Type> >();
+  CppAD::vector<AD<Type> > x( 1 );
+  x[0] = ssb;
+  CppAD::Independent(x);
+  CppAD::vector<AD<Type> > y( 1 );
+  if(srmc == 90){
+    y[0] = x[0] + ibcdspline(x[0], kn2, rp2); 
+  }else if(srmc == 91){
+    y[0] = x[0] + ibcspline(x[0], kn2, rp2); 
+  }else if(srmc == 92){
+    y[0] = x[0] + bcspline(x[0], kn2, rp2); 
+  }else{
+    Rf_error("Not a spline recruitment model");
+  }
+  CppAD::ADFun<Type> F(x, y);
+  CppAD::vector<Type> x_eval( 1 );
+  x_eval[0] = ssb;
+  vector<Type> r = F.Jacobian(x_eval);
+  return r[0];
+#endif
+#ifdef TMBAD_FRAMEWORK
+  F_dSplineSR<Type> Fd = {knots,rp,srmc};
+  vector<Type> x(1);
+  x(0) = ssb;
+  TMBad::ADFun<> G(TMBad::StdWrap<F_dSplineSR<Type> ,vector<TMBad::ad_aug> >(Fd), x);
+  G = G.JacFun();
+  return G(x)[0];
+#endif
+}
+
+/*
+ * Per-recruit calculations
+ */
 
 template<class Type>
 Type softmax(Type x, Type y, Type k = 1.0){
@@ -484,11 +837,28 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   if(conf.stockRecruitmentModelCode != 62 &&
      conf.stockRecruitmentModelCode != 65 &&
      (conf.stockRecruitmentModelCode != 68) && // || newPar.rec_pars[2] < 0) &&
-     (conf.stockRecruitmentModelCode != 69)) // || newPar.rec_pars[2] < 0 ))
+     (conf.stockRecruitmentModelCode != 69) &&
+     conf.stockRecruitmentModelCode != 90 &&
+     conf.stockRecruitmentModelCode != 91 &&
+     conf.stockRecruitmentModelCode != 92) // || newPar.rec_pars[2] < 0 ))
     dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
 
   if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69){
-    dsr0 = CppAD::CondExpLt(newPar.rec_pars[2], (T)0.0, dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode), dsr0);
+    dsr0 = CppAD::CondExpLt(newPar.rec_pars[2],
+			    (T)0.0,
+			    dFunctionalSR(T(SAM_Zero),
+					  newPar.rec_pars,
+					  conf.stockRecruitmentModelCode),
+			    dsr0);
+  }
+
+  if(conf.stockRecruitmentModelCode == 90 ||
+     conf.stockRecruitmentModelCode == 91 ||
+     conf.stockRecruitmentModelCode == 92){
+    dsr0 = dSplineSR(T(SAM_Zero),
+		     (vector<T>)newConf.constRecBreaks.template cast<T>(),
+		     newPar.rec_pars,
+		     conf.stockRecruitmentModelCode);
   }
 
   switch(conf.stockRecruitmentModelCode){
@@ -542,14 +912,22 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   case 69: // Sigmoidal Beverton-Holt (cases: gamma < 1; gamma >= 1)
     Se = Se_sbh(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
+  case 90: // Non-increasing spline on log R/S
+    Se = Se_ibcd(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars);
+    break;
+  case 91: // integrated spline on log R/S
+    Se = Se_ibc(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars);
+    break;
+  case 92: // spline on log R/S
+    error("Not implemented yet");
+    break;
     default:
       error("SR model code not recognized");
     break;   
   }
-
   //T logSe = log(Se);
   if(conf.stockRecruitmentModelCode == 63)
-  Se = CppAD::CondExpGt(-logSPR, log(dsr0), (T)SAM_NegInf, Se);
+    Se = CppAD::CondExpGt(-logSPR, log(dsr0), (T)SAM_NegInf, Se);
   // T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0 - (T)1e-3,
   // 			     log(fabs(Se)) - 3.0 * (exp(-logSPR) - dsr0),
   // 			     log(fabs(Se)));
@@ -575,6 +953,10 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   return res;
 }
 
+
+/*
+ * struct for reference points
+ */
 
 #ifdef TMBAD_FRAMEWORK
 template<class Type>
@@ -1025,6 +1407,18 @@ struct REFERENCE_POINTS {
       return 0.0;
     if(conf.stockRecruitmentModelCode == 62)
       return exp(par.rec_pars(0));
+    if(conf.stockRecruitmentModelCode == 90)
+      return log(ssb) + ibcdspline(log(ssb),
+				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+				       par.rec_pars);
+    if(conf.stockRecruitmentModelCode == 91)
+      return log(ssb) + ibcspline(log(ssb),
+				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+				       par.rec_pars);
+    if(conf.stockRecruitmentModelCode == 92)
+      return log(ssb) + bcspline(log(ssb),
+				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+				       par.rec_pars);
     vector<T> rp2 = par.rec_pars.template cast<T>();
     return exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
   }
@@ -1037,6 +1431,18 @@ struct REFERENCE_POINTS {
       return 0.0;
     if(conf.stockRecruitmentModelCode == 62)
       return exp(rp(0));
+    if(conf.stockRecruitmentModelCode == 90)
+      return log(s0) + ibcdspline(log(s0),
+				   (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
+				  rp);
+    if(conf.stockRecruitmentModelCode == 91)
+      return log(s0) + ibcspline(log(s0),
+				  (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
+				  rp);
+    if(conf.stockRecruitmentModelCode == 92)
+      return log(s0) + bcspline(log(s0),
+				 (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
+				 rp);
     return exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
   }
 
