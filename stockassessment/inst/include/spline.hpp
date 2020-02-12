@@ -1,5 +1,10 @@
 namespace spline_helper {
   
+  template<class Type>
+  Type softmax(Type x, Type y, Type k = 1.0){
+    return logspace_add(k * x, k * y) / k;
+  }
+
   
   // Kumaraswamy-normal (Kw-normal) density function with special choice of a and b
   template<class Type>
@@ -64,6 +69,11 @@ namespace spline_helper {
 // Spline using Kw-normal density as basis functions
 template<class Type>
 Type bcspline(Type x, vector<Type> knots, vector<Type> pars){
+  // Type x0 = CppAD::CondExpLt(x, knots(0), knots(0),
+  // 			     CppAD::CondExpGt(x, knots(knots.size()-1),
+  // 					      knots(knots.size()-1),
+  // 					      x)
+  // 			     );
   if(knots.size() != pars.size())
     Rf_error("Knots and pars must have same length");
   matrix<Type> sg = spline_helper::getSigAndGam(knots);
@@ -72,7 +82,7 @@ Type bcspline(Type x, vector<Type> knots, vector<Type> pars){
     Type tmp = spline_helper::dkwnorm(x, knots(i), sg(i,0), sg(i,1), false);
     res += pars(i) * tmp * sg(i,0);
   }
-  return res;
+  return res - spline_helper::softmax(x - knots(knots.size() - 1),(Type)0,(Type)100.0);
 }
 
 // Integrated spline using Kw-normal density as basis functions
@@ -80,15 +90,21 @@ template<class Type>
 Type ibcspline(Type x, vector<Type> knots, vector<Type> pars){
   if(knots.size() != pars.size())
     Rf_error("Knots and pars must have same length");
+  // Type x0 = CppAD::CondExpLt(x, knots(0), knots(0),
+  // 			     CppAD::CondExpGt(x, knots(knots.size()-1),
+  // 					      knots(knots.size()-1),
+  // 					      x)
+  // 			     );
   matrix<Type> sg = spline_helper::getSigAndGam(knots);
   Type res = 0.0;
+  Type tmp;
   for(int i = 0; i < knots.size(); ++i){
     // Should be zero at NegInf - not left endpoint of knot interval
     Type v0 = 0.0; //spline_helper::pkwnorm(knots(0), knots(i), sg(i,0), sg(i,1));
-    Type tmp = spline_helper::pkwnorm(x, knots(i), sg(i,0), sg(i,1));
+    tmp = spline_helper::pkwnorm(x, knots(i), sg(i,0), sg(i,1));
     res += pars(i) * (tmp - v0);
   }
-  return res ;
+  return res - spline_helper::softmax(tmp * (x - knots(knots.size() - 1)),(Type)0,(Type)100.0);
 }
 
 // Monotonically non-increasing spline using Kw-nomal as basis functions

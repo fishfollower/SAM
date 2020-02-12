@@ -593,11 +593,93 @@ Type Se_ibc(Type l, vector<Type> knots, vector<Type> pars){
   args.setZero();
   args(0) = l;
   args.segment(1,pars.size()) = pars;
-  args.segment(pars.size()+11,knots.size()) = knots;
+  args.segment(pars.size()+1,knots.size()) = knots;
   args(args.size()-1) = 0;
   vector<Type> tmp = rec_atomic::Se_ibc0(CppAD::vector<Type>(args));
   return tmp(0);
 }
+
+
+
+/*
+ * Quick version for spline recruitment
+ */
+
+
+template<class Type>
+struct IBCD_QUICK {
+  vector<Type> knots;
+  vector<Type> pars;
+  Type l;
+  
+ 
+  Type sr(Type s){
+    return exp(log(s) + ibcdspline(log(s), knots, pars));
+  }
+
+
+  Type fix(Type s){
+    return l *  sr(s);
+  }
+
+};
+
+template<class Type>
+Type Se_ibcd_quick(Type l, vector<Type> knots, vector<Type> pars){
+  Type sv = 0.0;
+  for(int i = 0; i < knots.size(); ++i)
+    sv += knots(i);
+  sv /= (Type)knots.size();
+  sv = exp(sv);
+  IBCD_QUICK<Type> f = {knots, pars, l};
+  for(int i = 0; i < 100; ++i){
+    Type tmp = f.fix(sv);
+    sv = 0.5 * (tmp + l * 100.0 + sqrt((tmp - l * 100.0) * (tmp-l * 100.0) + 1e-3));
+  }
+  return (sv);
+}
+
+
+
+
+template<class Type>
+struct IBC_QUICK {
+  vector<Type> knots;
+  vector<Type> pars;
+  Type l;
+  
+ 
+  Type sr(Type s){
+    return exp(log(s) + ibcspline(log(s), knots, pars));
+  }
+
+
+  Type fix(Type s){
+    return l *  sr(s);
+  }
+
+};
+
+template<class Type>
+Type Se_ibc_quick(Type l, vector<Type> knots, vector<Type> pars){
+  Type sv = 0.0;
+  for(int i = 0; i < knots.size(); ++i)
+    sv += knots(i);
+  sv /= (Type)knots.size();
+  sv = exp(sv);
+  IBC_QUICK<Type> f = {knots, pars, l};
+  for(int i = 0; i < 100; ++i){
+    Type tmp = f.fix(sv);
+    sv = 0.5 * (tmp + l * 100.0 + sqrt((tmp - l * 100.0) * (tmp-l * 100.0) + 0.1));
+  }
+  return (sv);
+}
+
+template<class Type>
+Type softmax(Type x, Type y, Type k = 1.0){
+  return logspace_add(k * x, k * y) / k;
+}
+
 
 
 /*
@@ -656,14 +738,15 @@ struct F_dSplineSR {
   int srmc;
   template<class T>
   T operator()(vector<T> x){  // Evaluate function
+    T logx = log(x[0])
     vector<T> rp2 = rp.template cast<T>();
     vector<T> kn2 = knots.template cast<T>();
     if(srmc == 90){
-      return x[0] + ibcdspline(x[0], kn2, rp2); 
+      return exp(logx + ibcdspline(logx, kn2, rp2)); 
     }else if(srmc == 91){
-      return x[0] + ibcspline(x[0], kn2, rp2); 
+      return exp(logx + ibcspline(logx, kn2, rp2)); 
     }else if(srmc == 92){
-      return x[0] + bcspline(x[0], kn2, rp2); 
+      return exp(logx + bcspline(logx, kn2, rp2)); 
     }else{
       Rf_error("Not a spline recruitment model");
     }
@@ -685,11 +768,11 @@ Type dSplineSR(Type ssb, vector<Type> knots, vector<Type> rp, int srmc){
   CppAD::Independent(x);
   CppAD::vector<AD<Type> > y( 1 );
   if(srmc == 90){
-    y[0] = x[0] + ibcdspline(x[0], kn2, rp2); 
+    y[0] = exp(log(x[0]) + ibcdspline(log(x[0]), kn2, rp2)); 
   }else if(srmc == 91){
-    y[0] = x[0] + ibcspline(x[0], kn2, rp2); 
+    y[0] = exp(log(x[0]) + ibcspline(log(x[0]), kn2, rp2)); 
   }else if(srmc == 92){
-    y[0] = x[0] + bcspline(x[0], kn2, rp2); 
+    y[0] = exp(log(x[0]) + bcspline(log(x[0]), kn2, rp2)); 
   }else{
     Rf_error("Not a spline recruitment model");
   }
@@ -709,15 +792,10 @@ Type dSplineSR(Type ssb, vector<Type> knots, vector<Type> rp, int srmc){
 #endif
 }
 
+
 /*
  * Per-recruit calculations
  */
-
-template<class Type>
-Type softmax(Type x, Type y, Type k = 1.0){
-  return logspace_add(k * x, k * y) / k;
-}
-
 
 template<class Type>
 struct PERREC_t {
@@ -855,7 +933,8 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   if(conf.stockRecruitmentModelCode == 90 ||
      conf.stockRecruitmentModelCode == 91 ||
      conf.stockRecruitmentModelCode == 92){
-    dsr0 = dSplineSR(T(SAM_Zero),
+    // dSplineSR uses logssb
+    dsr0 = dSplineSR((T)SAM_Zero,
 		     (vector<T>)newConf.constRecBreaks.template cast<T>(),
 		     newPar.rec_pars,
 		     conf.stockRecruitmentModelCode);
@@ -913,10 +992,10 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     Se = Se_sbh(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
   case 90: // Non-increasing spline on log R/S
-    Se = Se_ibcd(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars);
+    Se = Se_ibcd_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars);
     break;
   case 91: // integrated spline on log R/S
-    Se = Se_ibc(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars);
+    Se = Se_ibc_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars);
     break;
   case 92: // spline on log R/S
     error("Not implemented yet");
@@ -926,7 +1005,8 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     break;   
   }
   //T logSe = log(Se);
-  if(conf.stockRecruitmentModelCode == 63)
+  if(conf.stockRecruitmentModelCode == 63 ||
+     conf.stockRecruitmentModelCode == 90)
     Se = CppAD::CondExpGt(-logSPR, log(dsr0), (T)SAM_NegInf, Se);
   // T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0 - (T)1e-3,
   // 			     log(fabs(Se)) - 3.0 * (exp(-logSPR) - dsr0),
@@ -1409,17 +1489,17 @@ struct REFERENCE_POINTS {
       return exp(par.rec_pars(0));
     vector<T> rp2 = par.rec_pars.template cast<T>();
     if(conf.stockRecruitmentModelCode == 90)
-      return log(ssb) + ibcdspline(log(ssb),
+      return exp(log(ssb) + ibcdspline(log(ssb),
 				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
-				       rp2);
+				       rp2));
     if(conf.stockRecruitmentModelCode == 91)
-      return log(ssb) + ibcspline(log(ssb),
+      return exp(log(ssb) + ibcspline(log(ssb),
 				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
-				       rp2);
+				      rp2));
     if(conf.stockRecruitmentModelCode == 92)
-      return log(ssb) + bcspline(log(ssb),
+      return exp(log(ssb) + bcspline(log(ssb),
 				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
-				       rp2);
+				     rp2));
     return exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
   }
 
@@ -1432,17 +1512,17 @@ struct REFERENCE_POINTS {
     if(conf.stockRecruitmentModelCode == 62)
       return exp(rp(0));
     if(conf.stockRecruitmentModelCode == 90)
-      return log(s0) + ibcdspline(log(s0),
+      return exp(log(s0) + ibcdspline(log(s0),
 				   (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
-				  rp);
+				      rp));
     if(conf.stockRecruitmentModelCode == 91)
-      return log(s0) + ibcspline(log(s0),
+      return exp(log(s0) + ibcspline(log(s0),
 				  (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
-				  rp);
+				     rp));
     if(conf.stockRecruitmentModelCode == 92)
-      return log(s0) + bcspline(log(s0),
+      return exp(log(s0) + bcspline(log(s0),
 				 (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
-				 rp);
+				    rp));
     return exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
   }
 
