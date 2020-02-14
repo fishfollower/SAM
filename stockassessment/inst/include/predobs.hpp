@@ -112,6 +112,12 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         if(conf.keyBiomassTreat(f-1)==3){
           pred(i) = logCatch(y);
         }
+        if(conf.keyBiomassTreat(f-1)==4){
+          pred(i) = logLand(y);
+        }
+        if(conf.keyBiomassTreat(f-1)==5){
+          pred(i) = logtsb(y)+par.logFpar(conf.keyLogFpar(f-1,a));
+        }
 	break;
   
       case 4:
