@@ -318,6 +318,22 @@ referencepoints.sam <- function(fit,
                 ## "logScaleFext",
                 "logScaleFxPercent"
                 )
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(90)){
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                "logScaleFcrash",
+                ## "logScaleFext",
+                "logScaleFxPercent"
+                )
+       }else if(fit$conf$stockRecruitmentModelCode %in% c(91,92)){
+        rp <- c("logScaleFmsy",
+                "logScaleFmax",
+                "logScaleF01",
+                ##"logScaleFcrash",
+                ## "logScaleFext",
+                "logScaleFxPercent"
+                )
     }else{
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
