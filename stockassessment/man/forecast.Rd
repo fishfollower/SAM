@@ -15,7 +15,7 @@ forecast(fit, ...)
   overwriteSelYears = NULL, deterministic = FALSE,
   processNoiseF = TRUE, customSel = NULL, lagR = FALSE,
   splitLD = FALSE, addTSB = FALSE, biasCorrect = TRUE,
-  returnAllYears = FALSE, ...)
+  returnAllYears = FALSE, useUniroot = FALSE, ...)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
