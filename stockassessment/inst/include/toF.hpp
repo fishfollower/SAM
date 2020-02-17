@@ -97,3 +97,51 @@ Type landing2F(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type>
   return toF_atomic::getCatch2F(CppAD::vector<Type>(args))[0];
 }
 
+// Faster versions
+
+template<class Type>
+struct CATCH2F_QUICK {
+  vector<Type> Flast;
+  vector<Type> M;
+  vector<Type> N;
+  vector<Type> w;
+  vector<Type> frac;
+  Type catchval;
+    
+  Type operator()(Type logFScale){
+    vector<Type> Fa = exp(logFScale) * Flast;
+    vector<Type> Z = Fa + M;
+    vector<Type> C = Fa * (Type(1.0) - exp(-Z)) * N / Z * w * frac;
+    return log(catchval) - log(sum(C) + 1e-5) + logFScale; //(sum(C) / catchval) * FScale;
+  }    
+};
+
+
+
+template<class Type>
+Type catch2F_quick(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w) {
+  Type sv = 0.0;
+  int maxAge = lastF.size();
+  vector<Type> frac(maxAge);
+  frac.setZero();
+  frac += 1.0;
+  CATCH2F_QUICK<Type> f = {lastF, M, N, w, frac, catchval};
+  for(int i = 0; i < 100; ++i){
+    Type tmp = f(sv);
+    sv = tmp;
+  }
+  return exp(sv);
+}
+
+
+template<class Type>
+Type landing2F_quick(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w, vector<Type> frac) {
+  Type sv = 0.0;
+  CATCH2F_QUICK<Type> f = {lastF, M, N, w, frac, landingval};
+  for(int i = 0; i < 100; ++i){
+    Type tmp = f(sv);
+    sv = tmp;
+  }
+  return exp(sv);
+}
+
