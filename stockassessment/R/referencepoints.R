@@ -346,13 +346,13 @@ referencepoints.sam <- function(fit,
     ## Referencepoints to estimate
     args$map <- args$map[-which(names(args$map) %in% rp)]
 
-    args$parameters$logScaleFmsy <- -2
-    args$parameters$logScaleF01 <- -2
-    args$parameters$logScaleFmax <- -2
-    args$parameters$logScaleFcrash <- -2
-    args$parameters$logScaleFext <- -2
-    args$parameters$logScaleFxPercent <- rep(-2, length(SPRpercent))
-    args$parameters$logScaleFlim <- -2
+    args$parameters$logScaleFmsy <- -1
+    args$parameters$logScaleF01 <- -1
+    args$parameters$logScaleFmax <- -1
+    args$parameters$logScaleFcrash <- -1
+    args$parameters$logScaleFext <- -1
+    args$parameters$logScaleFxPercent <- rep(-1, length(SPRpercent))
+    args$parameters$logScaleFlim <- -1
     args$parameters$implicitFunctionDelta <- 1
 
     objOptim <- do.call(TMB::MakeADFun, args)
@@ -367,7 +367,7 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }
 
-      if(any(rp %in% "logScaleFcrash") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
+    if(any(rp %in% "logScaleFcrash") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
         warning("The stock does not appear to have a well-defined Fcrash. Fcrash will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFcrash")]
         args$map$logScaleFcrash <- factor(NA)
@@ -381,8 +381,9 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }
 
+    
 
-    if(tryAgain)
+    if(tryAgain)                        
         objOptim <- do.call(TMB::MakeADFun, args)
 
     opt <- nlminb(objOptim$par, objOptim$fn, objOptim$gr)#, objOptim$he)
