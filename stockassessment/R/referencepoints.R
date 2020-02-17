@@ -282,7 +282,7 @@ referencepoints.sam <- function(fit,
     fix <- names(args$parameters) ## setdiff(names(args$parameters), args$random)
     args$map <- lapply(args$parameters[fix], function(x)factor(x*NA))
 
-    if(fit$conf$stockRecruitmentModelCode %in% c(0,3)){ # RW, constant mean
+    if(fit$conf$stockRecruitmentModelCode %in% c(0)){ # RW
         rp <- c("logScaleFmax",
                 "logScaleF01",
                 "logScaleFxPercent")
@@ -294,7 +294,7 @@ referencepoints.sam <- function(fit,
                 ## "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFlim")
-    }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){ # AR
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(3,62)){ # constant mean, AR
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",

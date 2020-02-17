@@ -893,8 +893,8 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   T logSPR = log(sum(ssb) + (T)exp(-12.0));//log(softmax(sum(ssb),(T)SAM_Zero,(T)1000.0)); //log(sum(ssb));
   T lambda = exp(logSPR); // sum(ssb);
 
-  if(conf.stockRecruitmentModelCode == 0 ||
-     conf.stockRecruitmentModelCode == 3){
+  if(conf.stockRecruitmentModelCode == 0){//  ||
+     // conf.stockRecruitmentModelCode == 3){
     PERREC_t<T> res = {log(Fbar), // logFbar
 		       logYPR,	   // logYPR
 		       logSPR,	   // logSPR
@@ -912,7 +912,9 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   T Se = SAM_Zero; //R_NegInf;
   
   T dsr0 = 10000.0;
-  if(conf.stockRecruitmentModelCode != 62 &&
+  if(conf.stockRecruitmentModelCode != 0 &&
+     conf.stockRecruitmentModelCode != 3 &&
+     conf.stockRecruitmentModelCode != 62 &&
      conf.stockRecruitmentModelCode != 65 &&
      (conf.stockRecruitmentModelCode != 68) && // || newPar.rec_pars[2] < 0) &&
      (conf.stockRecruitmentModelCode != 69) &&
@@ -943,6 +945,9 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
     Rf_error("Equilibrium SSB not implemented");
+    // Projecting forward, the mean on log-scale will always be last years recruitment
+    // Not sure it is a good idea to implement
+    //Se = lambda * newPar.logN(0,newPar.logN.cols());
     break;
   case 1: //ricker
     Se = exp(-newPar.rec_pars(1)) * (newPar.rec_pars(0) + log(lambda)); //log((exp(newPar.rec_pars(0)) * lambda));
@@ -955,7 +960,8 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
       // 			   T(SAM_Zero));
     break;
   case 3: //Constant mean
-    Rf_error("Equilibrium SSB not implemented");
+    // Constant recruitment - last year of assessment
+    Se = lambda * exp(newPar.rec_pars(newPar.rec_pars.size() - 1));
     break;
   case 61: // Hockey stick
     Se = lambda * exp(newPar.rec_pars(0));
@@ -1481,49 +1487,57 @@ struct REFERENCE_POINTS {
     return exp(r.logYe);
   }
 
-    template<class T>
-    T SR(T ssb){
-    if(conf.stockRecruitmentModelCode == 0)
-      return 0.0;
-    if(conf.stockRecruitmentModelCode == 62)
-      return exp(par.rec_pars(0));
+  template<class T>
+  T SR(T ssb){
     vector<T> rp2 = par.rec_pars.template cast<T>();
-    if(conf.stockRecruitmentModelCode == 90)
+    if(conf.stockRecruitmentModelCode == 0){
+      return 0.0;
+    }else if(conf.stockRecruitmentModelCode == 3){
+      return exp(par.rec_pars(par.rec_pars.size() - 1));
+    }else if(conf.stockRecruitmentModelCode == 62){
+      return exp(par.rec_pars(0));
+    }else if(conf.stockRecruitmentModelCode == 90){
       return exp(log(ssb) + ibcdspline(log(ssb),
 				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
 				       rp2));
-    if(conf.stockRecruitmentModelCode == 91)
+    }else if(conf.stockRecruitmentModelCode == 91){
       return exp(log(ssb) + ibcspline(log(ssb),
-				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
+				      (vector<T>)(conf.constRecBreaks.template cast<T>()),
 				      rp2));
-    if(conf.stockRecruitmentModelCode == 92)
+    }else if(conf.stockRecruitmentModelCode == 92){
       return exp(log(ssb) + bcspline(log(ssb),
-				       (vector<T>)(conf.constRecBreaks.template cast<T>()),
+				     (vector<T>)(conf.constRecBreaks.template cast<T>()),
 				     rp2));
-    return exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
+    }else{
+      return exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
+    }
   }
 
   AD<Type> SR(CppAD::vector<AD<Type> > ssb){
     AD<Type> s0 = ssb[0];
     vector<AD<Type> > rp(par.rec_pars.size());
     rp = par.rec_pars.template cast<AD<Type> >();
-    if(conf.stockRecruitmentModelCode == 0)
+    if(conf.stockRecruitmentModelCode == 0){
       return 0.0;
-    if(conf.stockRecruitmentModelCode == 62)
+    }else if(conf.stockRecruitmentModelCode == 3){
+      return exp(rp(rp.size() - 1));
+    }else if(conf.stockRecruitmentModelCode == 62){
       return exp(rp(0));
-    if(conf.stockRecruitmentModelCode == 90)
+    }else if(conf.stockRecruitmentModelCode == 90){
       return exp(log(s0) + ibcdspline(log(s0),
-				   (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
+				      (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
 				      rp));
-    if(conf.stockRecruitmentModelCode == 91)
+    }else if(conf.stockRecruitmentModelCode == 91){
       return exp(log(s0) + ibcspline(log(s0),
 				  (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
 				     rp));
-    if(conf.stockRecruitmentModelCode == 92)
+    }else if(conf.stockRecruitmentModelCode == 92){
       return exp(log(s0) + bcspline(log(s0),
 				 (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
 				    rp));
-    return exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
+    }else{
+      return exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
+    }
   }
 
 

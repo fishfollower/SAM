@@ -51,11 +51,20 @@ addRecruitmentCurve.sam <- function(fit,
            warning("addRecruitmentCurve is not implemented for this recruitment type.")
        }
        
-       srfit <- function(ssb){
-           if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
+       srfit <- function(ssb, year = NA){
+           if(fit$conf$stockRecruitmentModelCode %in% c(0)){
                val <- NA
                valsd <- NA
                pisig <- NA
+           }else if(fit$conf$stockRecruitmentModelCode %in% c(3)){
+               if(is.na(year) && length(year) == 1)
+                   stop("A single year must be given")
+               indx <- cut(year,c(-Inf,fit$conf$constRecBreaks,Inf))
+               val <- fit$pl$rec_pars[indx]
+               g <- matrix(0,1,nlevels(indx))
+               g[1,indx] <- 1
+               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
+               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
            }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
                val <- (fit$pl$rec_pars[1])
                g <- matrix(c(1, 0),1)
@@ -110,29 +119,57 @@ addRecruitmentCurve.sam <- function(fit,
            return(res)
        }
 
-       ssb <- seq(1e-5, max(S), len = 2000)
-       tab <- sapply(ssb, function(x) {
-           tmp <- srfit(x)
+       getSSBtab <- function(x, year = NA) {
+           tmp <- srfit(x, year)
            c(Estimate = as.vector(tmp),
              CIlow = as.vector(attr(tmp,"ci_low")),
              CIhigh = as.vector(attr(tmp,"ci_high")),
              PIlow = as.vector(attr(tmp,"pi_low")),
              PIhigh = as.vector(attr(tmp,"pi_high"))
              )
+       }
+       
+       ssb <- seq(1e-5, max(S), len = 2000)
+       if(fit$conf$stockRecruitmentModelCode == 3){
+           brks <- c(min(fit$data$years),ceiling(fit$conf$constRecBreaks),max(fit$data$years))
+           labels <- levels(cut(0,brks,dig.lab=4))
+           mid <- head(brks,-1) + diff(brks)/2
+           tabList <- lapply(as.list(mid), function(y) sapply(ssb,getSSBtab, year = y))
+           names(tabList) <- labels
+       }else{
+           tabList <- list(sapply(ssb, getSSBtab))
+       }
+
+       transp <- Vectorize(function(col){
+           arg <- as.list(grDevices::col2rgb(col,TRUE)[,1])
+           arg$alpha <- 0.1 * 255
+           arg$maxColorValue <- 255
+           do.call(grDevices::rgb, arg)
        })
-       if(plot){
-           if(CI)
-               polygon(c(ssb, rev(ssb)),
-                       c(tab["CIlow",],
-                         rev(tab["CIhigh",])),
-                       col = cicol,
-                       border = NA)
+       
+       if(plot){           
+           if(CI)               
+               for(i in 1:length(tabList)){
+                   polygon(c(ssb, rev(ssb)),
+                           c(tabList[[i]]["CIlow",],
+                             rev(tabList[[i]]["CIhigh",])),
+                           col = ifelse(length(tabList) == 1,cicol,transp(i)),
+                           border = NA)
+                   }
            if(fit$conf$stockRecruitmentModelCode %in% c(90,91,92))
                abline(v = exp(fit$conf$constRecBreaks), col = "grey")
-           lines(ssb,tab["Estimate",], col = col, lwd = 3)
+           for(i in 1:length(tabList))
+               lines(ssb,tabList[[i]]["Estimate",], col = ifelse(length(tabList) == 1,cicol,i), lwd = 3)
+           if(length(tabList) > 1){
+               for(i in 1:length(tabList)){
+                   text(par("usr")[1],tabList[[i]]["Estimate",1],names(tabList)[[i]],pos=4, col = ifelse(length(tabList) == 1,cicol,i))
+               }
+           }
            if(PI){
-               lines(ssb,tab["PIlow",], col = picol, lwd = 3, lty = pilty)
-               lines(ssb,tab["PIhigh",], col = picol, lwd = 3, lty = pilty)               
+               for(i in 1:length(tabList)){               
+                   lines(ssb,tabList[[i]]["PIlow",], col = ifelse(length(tabList) == 1,picol,i), lwd = 3, lty = pilty)
+                   lines(ssb,tabList[[i]]["PIhigh",], col = ifelse(length(tabList) == 1,picol,i), lwd = 3, lty = pilty)
+               }
            }
        }
        invisible(srfit)
