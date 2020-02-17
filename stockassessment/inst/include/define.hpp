@@ -108,6 +108,7 @@ struct forecastSet {
   Type logRecruitmentVar;
   vector<FSdTimeScaleModel> fsdTimeScaleModel;
   vector<int> simFlag;
+  int uniroot;
 
   void calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par); // Defined after dataSet and confSet
   
@@ -142,6 +143,7 @@ struct forecastSet {
       for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
 	fsdTimeScaleModel(i) = static_cast<FSdTimeScaleModel>(fsdTimeScaleModelTmp(i));
       simFlag = asVector<int>(getListElement(x,"simFlag"));
+      uniroot = (int)*REAL(getListElement(x,"uniroot"));
   
     }
   };
@@ -162,6 +164,7 @@ struct forecastSet {
     logRecruitmentVar = rhs.logRecruitmentVar;
     fsdTimeScaleModel = rhs.fsdTimeScaleModel;
     simFlag = rhs.simFlag;
+    uniroot = rhs.uniroot;
     return *this;
   }
 
@@ -193,6 +196,7 @@ struct forecastSet {
       d.fsdTimeScaleModel(i) = static_cast<typename forecastSet<T>::FSdTimeScaleModel>((int)fsdTimeScaleModel(i));
 
     d.simFlag = simFlag; // <int>
+    d.uniroot = uniroot;
     return d;    
   }
 
@@ -809,7 +813,11 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
       forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
       break;
     case useCatchval: // target is a catch value in weight
-      calcF = catch2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));
+      if(uniroot){
+	calcF = catch2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));
+      }else{
+	calcF = catch2F_quick((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));
+      }
       if(i == 0){
 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
       }else{
@@ -819,7 +827,11 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
     case useNextssb:	
       Rf_error("Forecast type not implemented");
     case useLandval:
-      calcF = landing2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)landMeanWeightT.col(indx), (vector<Type>)landFracT.col(indx));
+      if(uniroot){
+	calcF = landing2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)landMeanWeightT.col(indx), (vector<Type>)landFracT.col(indx));
+      }else{
+	calcF = landing2F_quick((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)landMeanWeightT.col(indx), (vector<Type>)landFracT.col(indx));
+      }
       if(i == 0){
 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
       }else{

@@ -58,6 +58,7 @@ forecast.sam <- function(fit,
                      addTSB = FALSE,
                      biasCorrect = TRUE,
                      returnAllYears = FALSE,
+                     useUniroot = FALSE,
                      ...
                      ){
 
@@ -183,7 +184,8 @@ forecast.sam <- function(fit,
                                logRecruitmentMedian = as.numeric(logRecruitmentMedian),
                                logRecruitmentVar = as.numeric(logRecruitmentVar),
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
-                               simFlag = c(0,0))
+                               simFlag = c(0,0),
+                               uniroot = as.numeric(useUniroot))
 
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
