@@ -35,6 +35,8 @@ gr.sym <- function(x, fn){
     eval(D(parse(text=as.character(functionBody(fn))[2]),"x"))
 }
 
+isTRUE <- function(x){is.logical(x) && length(x) == 1L && !is.na(x) && x}
+
 check <- function(x, fn, gr = grad){
     r <- (gr(fn,x) / gr.sym(x,fn) - 1)
     b <- max(abs(r)) < tol
