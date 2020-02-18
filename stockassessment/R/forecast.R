@@ -199,7 +199,7 @@ forecast.sam <- function(fit,
 
     
     ## Get results
-    sdr <- TMB::sdreport(obj, fit$opt$par, fit$opt$he,
+    sdr <- TMB::sdreport(obj, fit$opt$par, svd_solve(fit$sdrep$cov.fixed),
                          bias.correct= biasCorrect,
                          skip.delta.method = biasCorrect,
                          bias.correct.control = list(sd = TRUE,
