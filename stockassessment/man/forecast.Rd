@@ -15,7 +15,8 @@ forecast(fit, ...)
   overwriteSelYears = NULL, deterministic = FALSE,
   processNoiseF = TRUE, customSel = NULL, lagR = FALSE,
   splitLD = FALSE, addTSB = FALSE, biasCorrect = TRUE,
-  returnAllYears = FALSE, useUniroot = FALSE, ...)
+  returnAllYears = FALSE, useUniroot = FALSE, nCatchAverageYears = 1,
+  ...)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -61,6 +62,8 @@ forecast(fit, ...)
 \item{biasCorrect}{Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).}
 
 \item{returnAllYears}{If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.}
+
+\item{nCatchAverageYears}{Should not be used. See \link{forecastMSY}.}
 }
 \value{
 an object of type samforecast
