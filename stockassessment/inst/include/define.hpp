@@ -123,7 +123,7 @@ struct forecastSet {
     }else{
       using tmbutils::asArray;
       nYears = (int)*REAL(getListElement(x,"nYears"));
-      nYears = (int)*REAL(getListElement(x,"nCatchAverageYears"));
+      nCatchAverageYears = (int)*REAL(getListElement(x,"nCatchAverageYears"));
       aveYears = asVector<int>(getListElement(x,"aveYears"));
       forecastYear = asVector<Type>(getListElement(x,"forecastYear"));
       vector<int> FModelTmp = asVector<int>(getListElement(x,"FModel"));
