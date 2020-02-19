@@ -177,7 +177,7 @@ forecast.sam <- function(fit,
     args$parameters <- pl
     args$random <- unique(names(obj0$env$par[obj0$env$random]))
     args$data$forecast <- list(nYears = as.numeric(nYears),
-                               nCatchAverageYears = nCatchAverageYears,
+                               nCatchAverageYears = as.numeric(nCatchAverageYears),
                                aveYears = as.numeric(ave.years),
                                forecastYear = as.numeric(c(rep(0,fit$data$noYears),seq(1,nYears,length=nYears))),
                                FModel = as.numeric(FModel),
