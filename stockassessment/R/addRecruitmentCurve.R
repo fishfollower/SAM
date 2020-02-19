@@ -159,7 +159,7 @@ addRecruitmentCurve.sam <- function(fit,
            if(fit$conf$stockRecruitmentModelCode %in% c(90,91,92))
                abline(v = exp(fit$conf$constRecBreaks), col = "grey")
            for(i in 1:length(tabList))
-               lines(ssb,tabList[[i]]["Estimate",], col = ifelse(length(tabList) == 1,cicol,i), lwd = 3)
+               lines(ssb,tabList[[i]]["Estimate",], col = ifelse(length(tabList) == 1,col,i), lwd = 3)
            if(length(tabList) > 1){
                for(i in 1:length(tabList)){
                    text(par("usr")[1],tabList[[i]]["Estimate",1],names(tabList)[[i]],pos=4, col = ifelse(length(tabList) == 1,cicol,i))

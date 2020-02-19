@@ -54,7 +54,7 @@ svd_solve <- function(x){
 ##' @param nlminb.control list of control variables for nlminb
 ##' @param rec.years Numeric vector of years to use (to calculate mean and standard deviation) for recruitment. An empty vector will use the recruitment model.
 ##' @param processNoiseF Should random walk process noise be used for F?
-##' @param ... other arguments
+##' @param ... other arguments passed to forecast
 ##' @author Christoffer Moesgaard Albertsen
 ##' @seealso forecast
 ##' @export
@@ -72,17 +72,19 @@ forecastMSY <- function(fit,
 ##' @method forecastMSY sam
 ##' @export
 forecastMSY.sam <- function(fit,
-                    nYears = 100,
-                    nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
-                    rec.years = c(),
-                    processNoiseF = FALSE,
-                    jacobianHScale = 0.5,
-                    ...){
+                            nYears = 100,                            
+                            nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
+                            rec.years = c(),
+                            processNoiseF = FALSE,
+                            jacobianHScale = 0.5,
+                            nCatchAverageYears = 20,
+                            ...){
 
     argsIn <- forecast(fit,
                        findMSY = rep(1,nYears),
                        rec.years = rec.years,
                        processNoiseF = processNoiseF,
+                       nCatchAverageYears = nCatchAverageYears,
                        ...)
     argsIn$DLL <- "stockassessment"
 
@@ -121,8 +123,8 @@ forecastMSY.sam <- function(fit,
     })
 
     ## Try different values??
-    testStart <- c(-2,-1, -0.5, -0.1, 0, 0.1, 0.25, 0.3, 0.5)
-    fnTestStart <- sapply(testStart, fn)
+    ## testStart <- c(-2,-1, -0.5, -0.1, 0, 0.1, 0.25, 0.3, 0.5)
+    ## fnTestStart <- sapply(testStart, fn)
     ## objOptim$par[names(objOptim$par) != "implicitFunctionDelta"]
     opt <- nlminb(testStart[which(order(fnTestStart) == 1)], fn, control = nlminb.control)
 

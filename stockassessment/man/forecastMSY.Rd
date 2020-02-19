@@ -10,7 +10,8 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
 
 \method{forecastMSY}{sam}(fit, nYears = 100,
   nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
-  rec.years = c(), processNoiseF = FALSE, jacobianHScale = 0.5, ...)
+  rec.years = c(), processNoiseF = FALSE, jacobianHScale = 0.5,
+  nCatchAverageYears = 20, ...)
 }
 \arguments{
 \item{fit}{a SAM fit}
@@ -23,7 +24,7 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
 
 \item{processNoiseF}{Should random walk process noise be used for F?}
 
-\item{...}{other arguments}
+\item{...}{other arguments passed to forecast}
 }
 \description{
 Work in progress - do not use

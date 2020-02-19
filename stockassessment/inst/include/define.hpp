@@ -96,6 +96,7 @@ struct forecastSet {
   };
   
   int nYears;
+  int nCatchAverageYears;
   vector<int> aveYears;
   vector<Type> forecastYear;
   vector<FModelType> FModel;
@@ -122,6 +123,7 @@ struct forecastSet {
     }else{
       using tmbutils::asArray;
       nYears = (int)*REAL(getListElement(x,"nYears"));
+      nYears = (int)*REAL(getListElement(x,"nCatchAverageYears"));
       aveYears = asVector<int>(getListElement(x,"aveYears"));
       forecastYear = asVector<Type>(getListElement(x,"forecastYear"));
       vector<int> FModelTmp = asVector<int>(getListElement(x,"FModel"));
@@ -152,6 +154,7 @@ struct forecastSet {
     nYears = rhs.nYears;
     if(nYears == 0)
       return *this;
+    nCatchAverageYears = rhs.nCatchAverageYears;
     aveYears = rhs.aveYears;
     forecastYear = rhs.forecastYear;
     FModel = rhs.FModel;
@@ -174,6 +177,7 @@ struct forecastSet {
     d.nYears = nYears;	// int
     if(nYears == 0)
       return d;
+    d.nCatchAverageYears = nCatchAverageYears; // int
     d.aveYears = aveYears;	// <int>
     d.forecastYear = forecastYear.template cast<T>();
     // d.FModel = FModel; // <int>
