@@ -28,6 +28,7 @@ forecast <- function(fit, ...){
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
 ##' @param biasCorrect Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).
 ##' @param returnAllYears If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.
+##' @param nCatchAverageYears Should not be used. See \link{forecastMSY}.
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @seealso simulationforecast
@@ -59,6 +60,7 @@ forecast.sam <- function(fit,
                      biasCorrect = TRUE,
                      returnAllYears = FALSE,
                      useUniroot = FALSE,
+                     nCatchAverageYears = 1,
                      ...
                      ){
 
@@ -176,6 +178,7 @@ forecast.sam <- function(fit,
     args$parameters <- pl
     args$random <- unique(names(obj0$env$par[obj0$env$random]))
     args$data$forecast <- list(nYears = as.numeric(nYears),
+                               nCatchAverageYears = nCatchAverageYears,
                                aveYears = as.numeric(ave.years),
                                forecastYear = as.numeric(c(rep(0,fit$data$noYears),seq(1,nYears,length=nYears))),
                                FModel = as.numeric(FModel),
