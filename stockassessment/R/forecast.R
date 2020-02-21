@@ -130,7 +130,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   getState <- function(N,F){
     k <- fit$conf$keyLogFsta[1,]
     F <- F[k>=0]
-    k <- unique(k[k>=0]+1)
+    k <- !duplicated(k[k>=0]) 
     x <- log(c(N,F[k]))
     x
   }    
@@ -260,7 +260,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   sim<-rmvnorm(nosim, mu=est, Sigma=cov)
 
   if(is.null(overwriteSelYears) & is.null(customSel)){  
-    if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
+    if(!isTRUE(all.equal(est,getState(getN(est),getF(est)))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
   }
     
   doAve <- function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
