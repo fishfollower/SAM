@@ -427,13 +427,13 @@ referencepoints.sam <- function(fit,
     covAll <- dG %*% svd_solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
     i <- 21
-    tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-    while(!all(eigen(covAll)$values > 1e-8)){
-        i <- i-1
-        covAll <- covAllOld
-        tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-        diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
-    }
+    ## tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    ## while(!all(eigen(covAll)$values > 1e-8)){
+    ##     i <- i-1
+    ##     covAll <- covAllOld
+    ##     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    ##     diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
+    ## }
 
     ## Object to do sdreport (delta = 0)
     args <- argsIn
