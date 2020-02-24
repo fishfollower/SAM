@@ -6,7 +6,8 @@
 ##' @return jacobian matrix
 ##' @author Christoffer Moesgaard Albertsen
 jacobian <- function(func, x,
-                     h = 0.1 * 10^floor(log10(abs(x))) + 1e-4,
+                     h = abs(1e-04 * x) + 1e-04 * (abs(x) < sqrt(.Machine$double.eps/7e-07)),
+                     ## 0.1 * 10^floor(log10(abs(x))) + 1e-4,
                      ...){
          r <- .Call("jacobian",
                    function(x)func(x,...),
@@ -25,7 +26,8 @@ jacobian <- function(func, x,
 ##' @return gradient vector
 ##' @author Christoffer Moesgaard Albertsen
 grad <- function(func, x,
-                 h = 0.1 * 10^floor(log10(abs(x))) + 1e-4,
+                 h = abs(1e-04 * x) + 1e-04 * (abs(x) < sqrt(.Machine$double.eps/7e-07)),
+                 ##0.1 * 10^floor(log10(abs(x))) + 1e-4,
                  ...){
          r <- .Call("jacobian",
                    function(x)func(x,...),
@@ -424,14 +426,14 @@ referencepoints.sam <- function(fit,
     dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
     covAll <- dG %*% svd_solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
-    ## i <- 21
-    ## tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-    ## while(tryCatch({solve(covAll);FALSE},error=function(e)TRUE)){
-    ##     i <- i-1
-    ##     covAll <- covAllOld
-    ##     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-    ##     diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
-    ## }
+    i <- 21
+    tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+    while(!all(eigen(covAll)$values > 1e-8)){
+        i <- i-1
+        covAll <- covAllOld
+        tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
+        diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
+    }
 
     ## Object to do sdreport (delta = 0)
     args <- argsIn
@@ -448,7 +450,9 @@ referencepoints.sam <- function(fit,
     ssdr <- summary(sdr)
 
     toCI <- function(what){
-        exp(ssdr[rownames(ssdr) == what,,drop=FALSE] %*% cbind(Estimate=c(1,0),CIL=c(1,-2),CIH=c(1,2)))
+        tmp <- ssdr[rownames(ssdr) == what,,drop=FALSE]
+        CI <- exp(tmp %*% cbind(CIL=c(1,-2),CIH=c(1,2)))
+        cbind(Estimate = exp(tmp[,1]), CI)
     }
 
     Ftab <- do.call("rbind",sapply(unique(rownames(ssdr)[grepl("referencepoint.logF",rownames(ssdr))]),
