@@ -605,6 +605,12 @@ Type Se_ibc(Type l, vector<Type> knots, vector<Type> pars){
  * Quick version for spline recruitment
  */
 
+template<class Type>
+Type softmax(Type x, Type y, Type k = 1.0){
+  return logspace_add(k * x, k * y) / k;
+}
+
+
 
 template<class Type>
 struct IBCD_QUICK {
@@ -618,8 +624,11 @@ struct IBCD_QUICK {
   }
 
 
-  Type fix(Type s){
-    return l *  sr(s);
+  // Type fix(Type s){
+  //   return l *  sr(s);
+  // }
+  Type fix(Type logs){
+    return log(l + 1e-16) + logs + ibcdspline(logs, knots, pars);
   }
 
 };
@@ -630,13 +639,14 @@ Type Se_ibcd_quick(Type l, vector<Type> knots, vector<Type> pars){
   for(int i = 0; i < knots.size(); ++i)
     sv += knots(i);
   sv /= (Type)knots.size();
-  sv = exp(sv);
+  //  sv = exp(sv);
   IBCD_QUICK<Type> f = {knots, pars, l};
   for(int i = 0; i < 100; ++i){
     Type tmp = f.fix(sv);
-    sv = 0.5 * (tmp + l * 100.0 + sqrt((tmp - l * 100.0) * (tmp-l * 100.0) + 1e-3));
+    sv = softmax(tmp,Type(0.0),(Type)100.0);
+    //sv = tmp; //0.5 * (tmp + l * 100.0 + sqrt((tmp - l * 100.0) * (tmp-l * 100.0) + 1e-3));
   }
-  return (sv);
+  return exp(sv);
 }
 
 
@@ -654,8 +664,9 @@ struct IBC_QUICK {
   }
 
 
-  Type fix(Type s){
-    return l *  sr(s);
+  Type fix(Type logs){
+    // return l *  sr(s);
+    return log(l + 1e-8) + logs + ibcspline(logs, knots, pars);
   }
 
 };
@@ -666,20 +677,14 @@ Type Se_ibc_quick(Type l, vector<Type> knots, vector<Type> pars){
   for(int i = 0; i < knots.size(); ++i)
     sv += knots(i);
   sv /= (Type)knots.size();
-  sv = exp(sv);
+  //sv = exp(sv);
   IBC_QUICK<Type> f = {knots, pars, l};
   for(int i = 0; i < 100; ++i){
     Type tmp = f.fix(sv);
-    sv = 0.5 * (tmp + l * 100.0 + sqrt((tmp - l * 100.0) * (tmp-l * 100.0) + 0.1));
+      sv = softmax(tmp,Type(0.0),(Type)100.0);
   }
-  return (sv);
+  return exp(sv);
 }
-
-template<class Type>
-Type softmax(Type x, Type y, Type k = 1.0){
-  return logspace_add(k * x, k * y) / k;
-}
-
 
 
 /*

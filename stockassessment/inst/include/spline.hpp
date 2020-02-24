@@ -82,7 +82,9 @@ Type bcspline(Type x, vector<Type> knots, vector<Type> pars){
     Type tmp = spline_helper::dkwnorm(x, knots(i), sg(i,0), sg(i,1), false);
     res += pars(i) * tmp * sg(i,0);
   }
-  return res - spline_helper::softmax(x - knots(knots.size() - 1),(Type)0,(Type)100.0);
+  Type t1 = 2.5 * spline_helper::softmax(x - knots(knots.size() - 1),(Type)0,(Type)100.0);
+  // Type t2 = 0.1 * spline_helper::softmax(knots(0) - x,(Type)0,(Type)100.0);
+  return res - t1;// + t2 ;
 }
 
 // Integrated spline using Kw-normal density as basis functions
@@ -104,7 +106,10 @@ Type ibcspline(Type x, vector<Type> knots, vector<Type> pars){
     tmp = spline_helper::pkwnorm(x, knots(i), sg(i,0), sg(i,1));
     res += pars(i) * (tmp - v0);
   }
-  return res - spline_helper::softmax(tmp * (x - knots(knots.size() - 1)),(Type)0,(Type)100.0);
+  // return res - 1.5 * spline_helper::softmax(tmp * (x - knots(knots.size() - 1)),(Type)0,(Type)100.0);
+  Type t1 = 2.5 * spline_helper::softmax(x - knots(knots.size() - 1),(Type)0,(Type)100.0);
+  //Type t2 = 0.1 * spline_helper::softmax(knots(0) - x,(Type)0,(Type)100.0);
+  return res - t1; // + t2 ;
 }
 
 // Monotonically non-increasing spline using Kw-nomal as basis functions
