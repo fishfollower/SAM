@@ -104,7 +104,14 @@ defcon<-function(dat){
   ret$fracMixN <- 0
   ret$fracMixObs <- rep(0,nFleets)
   ret$constRecBreaks <- numeric(0)
-  ret$meanVarObsLink <- matrix(-1, nrow=nFleets, ncol=maxAge -minAge+1)
+
+  ret$meanVarObsLink <- matrix(NA, nrow=nFleets, ncol=maxAge -minAge+1)
+  for(i in 1:nrow(x)){
+    if(ages[i,1]<ages[i,2]){
+      ret$meanVarObsLink[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)]<- -1
+    }
+  }
+  
   return(ret) 
 }
 
