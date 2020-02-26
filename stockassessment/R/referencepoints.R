@@ -125,11 +125,11 @@ forecastMSY.sam <- function(fit,
     })
 
     ## Try different values??
-    ## testStart <- c(-2,-1, -0.5, -0.1, 0, 0.1, 0.25, 0.3, 0.5)
-    ## fnTestStart <- sapply(testStart, fn)
-    ## opt <- nlminb(testStart[which(order(fnTestStart) == 1)], fn, control = nlminb.control)
-    p0 <- objOptim$par[names(objOptim$par) != "implicitFunctionDelta"]
-    opt <- nlminb(p0, fn, control = nlminb.control)
+    testStart <- c(-2, -1, -0.5, -0.1, 0, 0.1, 0.25, 0.3, 0.5, 1, 2)
+    fnTestStart <- sapply(testStart, fn)
+    opt <- nlminb(testStart[which(order(fnTestStart) == 1)], fn, control = nlminb.control)
+    ## p0 <- objOptim$par[names(objOptim$par) != "implicitFunctionDelta"]
+    ## opt <- nlminb(p0, fn, control = nlminb.control)
 
     ## Object to do Delta method (no map, no random, delta = 1)
     args <- argsIn
