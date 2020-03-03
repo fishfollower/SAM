@@ -994,7 +994,7 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
     // 			  fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
     // 			   T(SAM_Zero));
-    Se = (exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1));
+    Se = (exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1) - newPar.rec_pars(2));
     break;
   case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1)
     Se = Se_sl(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
