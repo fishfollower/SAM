@@ -49,7 +49,7 @@ Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRe
     predN = rec_pars(0) + log(thisSSB) - log(1.0 + exp(exp(rec_pars(2)) * (log(thisSSB) - rec_pars(1))));
     break;
   case 67: // Deriso
-    predN = rec_pars(0)+log(thisSSB)-exp(rec_pars(2)) * log(1.0+exp(rec_pars(1))*thisSSB); 
+    predN = rec_pars(0)+log(thisSSB)-exp(rec_pars(2)) * log(1.0+exp(rec_pars(1) + rec_pars(2))*thisSSB); 
     break;
   case 68: // Saila-Lorda (Iles 1994)
     predN = rec_pars(0)+exp(rec_pars(2)) * log(thisSSB) - exp(rec_pars(1))*thisSSB;
