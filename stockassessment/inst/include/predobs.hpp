@@ -36,9 +36,6 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     switch(ft){
       case 0:
         pred(i)=logN(a,y)-log(zz)+log(1-exp(-zz));
-	if((pg==0)&&(ma==1)){
-          error("Last age class in catches need to be treated as plusgroup");
-	}
         if(conf.keyLogFsta(f-1,a)>(-1)){
           pred(i)+=logF(conf.keyLogFsta(0,a),y);
         }
@@ -61,8 +58,8 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
       
       case 2:
- 	if((pg==0)&&(a==(conf.maxAge-conf.minAge))){
-          error("When maximum age for the fleet is the same as maximum age if the assessment it must be treated as a plusgroup");
+ 	if((pg!=conf.maxAgePlusGroup(0))&&(a==(conf.maxAge-conf.minAge))){
+          error("When maximum age for the fleet is the same as maximum age in the assessment it must be treated the same way as catches w.r.t. plusgroup configuration");
   	}
 
 	if((ma==1) && (pg==1)){
