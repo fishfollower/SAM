@@ -177,7 +177,19 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
 ##' @export
 mohn <- function(fits, what=NULL, lag=0, ...){
   if(is.null(what)){
-    what <- function(fit)summary(fit)[,c(1,4,7),drop=FALSE]
+    what <- function(fit){
+      ret <- cbind(rectable(fit,...)[,1], ssbtable(fit)[,1], fbartable(fit)[,1])
+      add <- 0
+      dots <- list(...)
+      if(!is.null(dots$lagR)){
+        if(dots$lagR == TRUE){
+          add <- 1
+        }
+      }
+      colnames(ret) <- c(paste("R(age ", fit$conf$minAge + add, ")", sep = ""), "SSB",
+                         paste("Fbar(", fit$conf$fbarRange[1], "-", fit$conf$fbarRange[2], ")", sep = ""))
+      ret
+    }
   }
   ref <- what(attr(fits,"fit"))
   ret <- lapply(fits, what)

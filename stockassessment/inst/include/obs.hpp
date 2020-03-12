@@ -260,37 +260,38 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   	                thiscov(r,c)=thiscor(r,c)*sqrt(currentVar(r)*currentVar(c));
   	              }
   	            }
-  	            MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
-  	            nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));
-  	            nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
-  	            SIMULATE_F(of){
-  	              dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate();
-  	            }
-              }
-  	          break;
-  	       case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
-              nll +=  nllVec(f)(addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
-              nll += log(log2proportion((vector<Type>)dat.logobs.segment(idxfrom,idxlength))).sum();
-              nll -= dnorm(log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength))),
-               	         log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-                        exp(par.logSdLogTotalObs(totalParKey++)),true);
-              nll += log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength)));
-              nll -= log(abs(jacobianDet((vector<Type>)dat.logobs.segment(idxfrom,idxlength).exp())));
-                    nll -= dat.logobs.segment(idxfrom,idxlength).sum();
-              SIMULATE_F(of){
-                vector<Type> logProb(idxlength);
-                logProb.setZero();
-                logProb.segment(0,idxlength-1) = addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
-                Type logDenom = logExpSum(logProb);
-                logProb -= logDenom;
-                Type logTotal = rnorm(log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-              	    exp(par.logSdLogTotalObs(totalParKey++)));
-                dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal;
-              }
-              break;
-  	        default:
-  	          error("Unknown obsLikelihoodFlag");
-	        }
+	      MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
+	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
+	      nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+	      SIMULATE_F(of){
+	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
+	      }
+            }
+	    break;
+	  case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
+	    nll +=  nllVec(f)(addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
+	    nll += log(log2proportion((vector<Type>)dat.logobs.segment(idxfrom,idxlength))).sum();
+	    nll -= dnorm(log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength))),
+	     	         log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+	   	         exp(par.logSdLogTotalObs(totalParKey++)),true);
+	    nll += log(log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength)));
+	    nll -= log(abs(jacobianDet((vector<Type>)dat.logobs.segment(idxfrom,idxlength).exp())));
+            nll -= dat.logobs.segment(idxfrom,idxlength).sum();
+	    SIMULATE_F(of){
+	      vector<Type> logProb(idxlength);
+	      logProb.setZero();
+	      logProb.segment(0,idxlength-1) = addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
+	      Type logDenom = logExpSum(logProb);
+	      logProb -= logDenom;
+	      Type logTotal = rnorm(log(log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+				    exp(par.logSdLogTotalObs(totalParKey++)));
+	      dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
+	    }
+	    break;
+	  default:
+	    error("Unknown obsLikelihoodFlag");
+	  }
+
         }
       }else{ //dat.fleetTypes(f)==5
         if(dat.fleetTypes(f)==5){
