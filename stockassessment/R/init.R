@@ -47,7 +47,7 @@ defpar <- function(dat,conf){
   
   ret$meanVarObs =if(length(conf$meanVarObsLink)!=0){
     if(max(conf$meanVarObsLink,na.rm=TRUE)>(-1)){
-      rep(2,(max(conf$meanVarObsLink,na.rm=TRUE) + 1))
+      rep(0,(max(conf$meanVarObsLink,na.rm=TRUE) + 1))
     }else{numeric(0)}
   }else{numeric(0)}
   
