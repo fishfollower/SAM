@@ -146,7 +146,7 @@ struct confSet{
   double fracMixF;
   double fracMixN;
   vector<double> fracMixObs;
-  array<int> meanVarObsLink;
+  array<int> predVarObsLink;
   confSet() {};
 
   confSet(SEXP x){
@@ -177,7 +177,7 @@ struct confSet{
     fracMixF = (double)*REAL(getListElement(x,"fracMixF"));
     fracMixN = (double)*REAL(getListElement(x,"fracMixN"));
     fracMixObs = asVector<double>(getListElement(x,"fracMixObs"));
-    meanVarObsLink = asArray<int>(getListElement(x,"meanVarObsLink"));
+    predVarObsLink = asArray<int>(getListElement(x,"predVarObsLink"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -207,7 +207,7 @@ struct confSet{
     fracMixF = rhs.fracMixF;
     fracMixN = rhs.fracMixN;
     fracMixObs = rhs.fracMixObs;
-    meanVarObsLink = rhs.meanVarObsLink;
+    predVarObsLink = rhs.predVarObsLink;
     return *this;
   };
 };
@@ -231,7 +231,7 @@ struct paraSet{
   vector<Type> sepFalpha;   
   vector<Type> sepFlogitRho;   
   vector<Type> sepFlogSd;
-  vector<Type> meanVarObs;
+  vector<Type> predVarObs;
 };
 
 template<class Type>

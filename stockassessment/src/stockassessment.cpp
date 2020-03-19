@@ -92,7 +92,7 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(fracMixF); confset.fracMixF=asDouble(fracMixF); 
   DATA_SCALAR(fracMixN); confset.fracMixN=asDouble(fracMixN); 
   DATA_VECTOR(fracMixObs); vector<double> fracMixObsDouble(fracMixObs.size()); for(int i=0; i<fracMixObs.size(); ++i){fracMixObsDouble(i)=asDouble(fracMixObs(i));} confset.fracMixObs=fracMixObsDouble; 
-  DATA_IARRAY(meanVarObsLink); confset.meanVarObsLink=meanVarObsLink;
+  DATA_IARRAY(predVarObsLink); confset.predVarObsLink=predVarObsLink;
 
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
@@ -113,7 +113,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sepFalpha); paraset.sepFalpha=sepFalpha;    
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
-  PARAMETER_VECTOR(meanVarObs); paraset.meanVarObs=meanVarObs;
+  PARAMETER_VECTOR(predVarObs); paraset.predVarObs=predVarObs;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
