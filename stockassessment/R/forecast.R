@@ -270,22 +270,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
       ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
       theta <- rep(1,length(ii)+1)
       if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.cv")
-      lsfun <- function(th){
-        s <- rep(NA,noCatchFleets)
+      lsfun <- function(logth) {
+        th<-exp(logth)
+        s <- rep(NA, noCatchFleets)
         s[ii] <- th[1:length(ii)]
-        s[-ii] <- th[length(ii)+1]
-        simtmp <<- t(apply(sim, 1, scaleFbyFleet, scale=s))
-        cvfun <- function(x){
-          tcv <- catch(x,nm=nm,cw=cw)
-          cv <- attr(tcv,"byFleet")
+        s[-ii] <- th[length(ii) + 1]
+        simtmp <<- t(apply(sim, 1, scaleFbyFleet, scale = s))
+        cvfun <- function(x) {
+          tcv <- catch(x, nm = nm, cw = cw)
+          cv <- attr(tcv, "byFleet")
           return(cv)
         }
         simcat <- apply(simtmp, 1, cvfun)
-        medcv <- apply(simcat,1,estimate)
-        med <- c(medcv/sum(medcv),medcv,estimate(apply(simcat,2,sum)))
-        return(sum(((cfcvtcv-med)/cfcvtcv)^2, na.rm=TRUE))
+        medcv <- apply(simcat, 1, estimate)
+        med <- c(medcv/sum(medcv), medcv, estimate(apply(simcat, 2, sum)))
+        return(-sum(dnorm(log(cfcvtcv), log(med), sd=1 ,log=TRUE), na.rm = TRUE))
       }
-      ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
+      ff <- nlminb(log(theta), lsfun)
       sim <- simtmp
     }
 
