@@ -129,7 +129,9 @@ addRecruitmentCurve.sam <- function(fit,
              )
        }
        
-       ssb <- seq(1e-5, max(S), len = 2000)
+       ssb <- seq(1e-5,
+                  max(c(max(S), par("usr")[2])), ## max(S),
+                  len = 2000)
        if(fit$conf$stockRecruitmentModelCode == 3){
            brks <- c(min(fit$data$years),ceiling(fit$conf$constRecBreaks),max(fit$data$years))
            labels <- levels(cut(0,brks,dig.lab=4))
