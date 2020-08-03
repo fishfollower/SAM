@@ -361,7 +361,8 @@ referencepoints.sam <- function(fit,
     args$parameters$implicitFunctionDelta <- 1
 
     objOptim <- do.call(TMB::MakeADFun, args)
-
+    pStart <- objOptim$par
+    
     ## Take inital look at YPR / SPR to determine if Fmax makes sense
     rep <- objOptim$report()
     tryAgain <- FALSE
@@ -370,8 +371,10 @@ referencepoints.sam <- function(fit,
         rp <- rp[-which(rp %in% "logScaleFmax")]
         args$map$logScaleFmax <- factor(NA)
         tryAgain <- TRUE
+    }else if(any(rp %in% "logScaleFmax")){
+        pStart[names(pStart) %in% c("logScaleFmax")] <- log(Fsequence[which.max(rep$logYPR[is.finite(rep$logYPR)])]) - log(tail(fbartable(fit)[,"Estimate"],1))
     }
-
+    
     if(any(rp %in% "logScaleFcrash") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
         warning("The stock does not appear to have a well-defined Fcrash. Fcrash will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFcrash")]
@@ -384,14 +387,17 @@ referencepoints.sam <- function(fit,
         rp <- rp[-which(rp %in% "logScaleFmsy")]
         args$map$logScaleFmsy <- factor(NA)
         tryAgain <- TRUE
+    }else if(any(rp %in% "logScaleFmsy")){
+        pStart[names(pStart) %in% c("logScaleFmsy")] <- log(Fsequence[which.max(rep$logYe[is.finite(rep$logYe)])]) - log(tail(fbartable(fit)[,"Estimate"],1))
     }
+
 
     
 
     if(tryAgain)                        
         objOptim <- do.call(TMB::MakeADFun, args)
 
-    opt <- nlminb(objOptim$par, objOptim$fn, objOptim$gr)#, objOptim$he)
+    opt <- nlminb(pStart, objOptim$fn, objOptim$gr)#, objOptim$he)
     ## ii <- 0
     ## while(max(abs(objOptim$gr(opt$par))) > 1e-4 && ii < 20){
     ##     g <- as.numeric( objOptim$gr(opt$par) )
