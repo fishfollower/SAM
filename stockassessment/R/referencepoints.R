@@ -245,7 +245,11 @@ referencepoints.sam <- function(fit,
                                 catchType = "catch",
                                 jacobianHScale = 0.5,
                                 ...){
-
+    if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
+        stop("Values of Fsequence must be positive and increasing.")
+    if(!isTRUE(all.equal(Fsequence[1],0, check.attributes = FALSE, use.names = FALSE)))
+        warning("The first value of Fsequence should be 0.")
+    
     ## Get joint precision
     jointPrecision <- TMB::sdreport(fit$obj,
                                fit$opt$par,
@@ -361,20 +365,25 @@ referencepoints.sam <- function(fit,
     args$parameters$implicitFunctionDelta <- 1
 
     objOptim <- do.call(TMB::MakeADFun, args)
-    pStart <- objOptim$par
+    pStart <- list()
     
-    ## Take inital look at YPR / SPR to determine if Fmax makes sense
     rep <- objOptim$report()
     tryAgain <- FALSE
+
+    ## Fmax
     if(which.max(rep$logYPR[is.finite(rep$logYPR)]) == length(rep$logYPR[is.finite(rep$logYPR)]) && any(rp %in% "logScaleFmax")){
         warning("The stock does not appear to have a well-defined Fmax. Fmax will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFmax")]
         args$map$logScaleFmax <- factor(NA)
         tryAgain <- TRUE
     }else if(any(rp %in% "logScaleFmax")){
-        pStart[names(pStart) %in% c("logScaleFmax")] <- log(Fsequence[which.max(rep$logYPR[is.finite(rep$logYPR)])]) - log(tail(fbartable(fit)[,"Estimate"],1))
+        indx <- which(is.finite(rep$logYPR) & Fsequence > 0)
+        ypr <- rep$logYPR[indx]
+        ff <- Fsequence[indx]
+        pStart$logScaleFmax <- log(ff[which.max(ypr)]) - log(tail(fbartable(fit)[,"Estimate"],1))
     }
-    
+
+    ## FCrash
     if(any(rp %in% "logScaleFcrash") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
         warning("The stock does not appear to have a well-defined Fcrash. Fcrash will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFcrash")]
@@ -382,22 +391,45 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }
 
+    ## Fmsy
     if(any(rp %in% "logScaleFmsy") && which.max(rep$logYe[is.finite(rep$logYe)]) == length(rep$logYe[is.finite(rep$logYe)])){
         warning("The stock does not appear to have a well-defined Fmsy. Fmsy will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFmsy")]
         args$map$logScaleFmsy <- factor(NA)
         tryAgain <- TRUE
     }else if(any(rp %in% "logScaleFmsy")){
-        pStart[names(pStart) %in% c("logScaleFmsy")] <- log(Fsequence[which.max(rep$logYe[is.finite(rep$logYe)])]) - log(tail(fbartable(fit)[,"Estimate"],1))
+        indx <- which(is.finite(rep$logSPR) & Fsequence > 0)
+        ye <- rep$logYe[indx]
+        ff <- Fsequence[indx]
+        pStart$logScaleFmsy <- log(ff[which.max(ye)]) - log(tail(fbartable(fit)[,"Estimate"],1))
     }
 
-
+    ## F01
+    if(any(rp %in% "logScaleF01")){
+        indx <- which(is.finite(rep$logYPR) & Fsequence > 0)
+        ypr <- rep$logYPR[indx]
+        ff <- Fsequence[indx]
+        pStart$logScaleF01 <- log(ff[which.min((diff(ypr)/diff(ff) - 0.1 * diff(ypr)[1] / diff(ff)[1])^2)]) - log(tail(fbartable(fit)[,"Estimate"],1))
+    }
     
+    ## Fx%
+    if(any(rp %in% "logScaleFxPercent")){
+        indx <- which(is.finite(rep$logSPR) & Fsequence > 0)
+        spr <- rep$logSPR[indx]
+        ff <- Fsequence[indx]
+        pStart$logScaleFxPercent <- sapply(SPRpercent,function(x){
+            log(ff[which.min((spr - x * spr[1])^2)]) - log(tail(fbartable(fit)[,"Estimate"],1))
+        })
+    }
 
     if(tryAgain)                        
         objOptim <- do.call(TMB::MakeADFun, args)
 
-    opt <- nlminb(pStart, objOptim$fn, objOptim$gr)#, objOptim$he)
+    p0 <- objOptim$par
+    for(ii in names(pStart))
+        p0[names(p0) %in% ii] <- pStart[[match(ii,names(pStart))]]
+
+    opt <- nlminb(p0, objOptim$fn, objOptim$gr)#, objOptim$he)
     ## ii <- 0
     ## while(max(abs(objOptim$gr(opt$par))) > 1e-4 && ii < 20){
     ##     g <- as.numeric( objOptim$gr(opt$par) )
@@ -406,6 +438,7 @@ referencepoints.sam <- function(fit,
     ##     opt$objective <- objOptim$fn(opt$par)
     ##     ii <- ii + 1
     ## }
+    
     ## Object to do Delta method (nothing mapped (that's not mapped in fit$obj, nothing random, delta = 1)
     args <- argsIn
     ## Remove random
