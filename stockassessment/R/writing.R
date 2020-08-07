@@ -60,26 +60,64 @@ write.surveys <- function(fit,fileout,...){
 }
 
 
-##' Write all data files from a model object in the usual ICES/CEFAS data files  
-##' @param fit A fitted object as returned from sam.fit
+##' Write all data files from a list as created by 'setup.sam.data'  
+##' @param dat A list as created by 'setup.sam.data'
 ##' @param dir Directory where the files are written  
 ##' @details
 ##' 
-##' Write all data files from a model object in the usual ICES/CEFAS data files  
+##' Write all data files from a list as created by 'setup.sam.data'
 ##' 
 ##' @export
-write.data.files<-function(fit, dir="."){
+write.data.files<-function(dat, dir="."){
   od <- setwd(dir)
-  write.ices(fit$data$catchMeanWeight, "cw.dat")
-  write.ices(fit$data$disMeanWeight, "dw.dat")
-  write.ices(fit$data$landMeanWeight, "lw.dat")
-  write.ices(fit$data$landFrac, "lf.dat")  
-  write.ices(fit$data$propMat, "mo.dat")    
-  write.ices(fit$data$stockMeanWeight, "sw.dat")
-  write.ices(fit$data$propF, "pf.dat")
-  write.ices(fit$data$propM, "pm.dat")
-  write.ices(fit$data$natMor, "nm.dat")
+  write.ices(dat$catchMeanWeight, "cw.dat")
+  write.ices(dat$disMeanWeight, "dw.dat")
+  write.ices(dat$landMeanWeight, "lw.dat")
+  write.ices(dat$landFrac, "lf.dat")  
+  write.ices(dat$propMat, "mo.dat")    
+  write.ices(dat$stockMeanWeight, "sw.dat")
+  write.ices(dat$propF, "pf.dat")
+  write.ices(dat$propM, "pm.dat")
+  write.ices(dat$natMor, "nm.dat")
+  fit <- list(data=dat)
   write.ices(getFleet(fit,1), "cn.dat")
   write.surveys(fit, "survey.dat")
   setwd(od)
+}
+
+##' Read all standard data SAM files and return a list as created by 'setup.sam.data'
+##' @param dir Directory to read from
+##' @return list (as created by 'setup.sam.data')
+##' @details
+##'
+##' Read all standard SAM data files
+##'
+##' @export
+read.data.files<-function(dir="."){
+    od <- setwd(dir); on.exit(setwd(od));
+
+    cn<-read.ices("cn.dat")
+    cw<-read.ices("cw.dat")
+    dw<-read.ices("dw.dat")
+    lw<-read.ices("lw.dat")
+    mo<-read.ices("mo.dat")
+    nm<-read.ices("nm.dat")
+    pf<-read.ices("pf.dat")
+    pm<-read.ices("pm.dat")
+    sw<-read.ices("sw.dat")
+    lf<-read.ices("lf.dat")
+    surveys<-read.ices("survey.dat")
+
+    dat<-setup.sam.data(surveys=surveys,
+                    residual.fleet=cn,
+                    prop.mature=mo,
+                    stock.mean.weight=sw,
+                    catch.mean.weight=cw,
+                    dis.mean.weight=dw,
+                    land.mean.weight=lw,
+                    prop.f=pf,
+                    prop.m=pm,
+                    natural.mortality=nm,
+                    land.frac=lf)
+    dat
 }
