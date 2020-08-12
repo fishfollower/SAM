@@ -3,7 +3,7 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.8.1
+Documentation for package ‘stockassessment’ version 0.9.0
 ---------------------------------------------------------
 
 [Package NEWS](../NEWS).
@@ -186,22 +186,23 @@ Help Pages
 <span id="R">-- R --</span>
 ---------------------------
 
-|                                           |                                                                          |
-|-------------------------------------------|--------------------------------------------------------------------------|
-| [read.ices](read.ices.md)                 | Function to read ICES/CEFAS data files and validate if input makes sense |
-| [read.surveys](read.surveys.md)           | Function to read ices survey format                                      |
-| [read.table.nowarn](read.table.nowarn.md) | Function to supress incomplete final line warning                        |
-| [recplot](recplot.md)                     | SAM Recruits plot                                                        |
-| [recplot.sam](recplot.md)                 | SAM Recruits plot                                                        |
-| [recplot.samforecast](recplot.md)         | SAM Recruits plot                                                        |
-| [recplot.samset](recplot.md)              | SAM Recruits plot                                                        |
-| [rectable](rectable.md)                   | Recruit table                                                            |
-| [rectable.default](rectable.md)           | Recruit table                                                            |
-| [reduce](reduce.md)                       | reduce helper function to reduce data                                    |
-| [residuals.sam](residuals.sam.md)         | Extract residuals from sam object                                        |
-| [retro](retro.md)                         | retro run                                                                |
-| [rmvnorm](rmvnorm.md)                     | rmvnorm helper function to draw multivariate normal samples              |
-| [runwithout](runwithout.md)               | runwithout helper function                                               |
+|                                           |                                                                                   |
+|-------------------------------------------|-----------------------------------------------------------------------------------|
+| [read.data.files](read.data.files.md)     | Read all standard data SAM files and return a list as created by 'setup.sam.data' |
+| [read.ices](read.ices.md)                 | Function to read ICES/CEFAS data files and validate if input makes sense          |
+| [read.surveys](read.surveys.md)           | Function to read ices survey format                                               |
+| [read.table.nowarn](read.table.nowarn.md) | Function to supress incomplete final line warning                                 |
+| [recplot](recplot.md)                     | SAM Recruits plot                                                                 |
+| [recplot.sam](recplot.md)                 | SAM Recruits plot                                                                 |
+| [recplot.samforecast](recplot.md)         | SAM Recruits plot                                                                 |
+| [recplot.samset](recplot.md)              | SAM Recruits plot                                                                 |
+| [rectable](rectable.md)                   | Recruit table                                                                     |
+| [rectable.default](rectable.md)           | Recruit table                                                                     |
+| [reduce](reduce.md)                       | reduce helper function to reduce data                                             |
+| [residuals.sam](residuals.sam.md)         | Extract residuals from sam object                                                 |
+| [retro](retro.md)                         | retro run                                                                         |
+| [rmvnorm](rmvnorm.md)                     | rmvnorm helper function to draw multivariate normal samples                       |
+| [runwithout](runwithout.md)               | runwithout helper function                                                        |
 
 <span id="S">-- S --</span>
 ---------------------------
