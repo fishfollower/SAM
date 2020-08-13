@@ -147,6 +147,9 @@ struct confSet{
   double fracMixN;
   vector<double> fracMixObs;
   array<int> predVarObsLink;
+  int stockWeightModel;
+  vector<int> keyStockWeightMean;
+  vector<int> keyStockWeightObsVar;
   confSet() {};
 
   confSet(SEXP x){
@@ -178,6 +181,9 @@ struct confSet{
     fracMixN = (double)*REAL(getListElement(x,"fracMixN"));
     fracMixObs = asVector<double>(getListElement(x,"fracMixObs"));
     predVarObsLink = asArray<int>(getListElement(x,"predVarObsLink"));
+    stockWeightModel = (int)*REAL(getListElement(x,"stockWeightModel"));
+    keyStockWeightMean = asVector<int>(getListElement(x,"keyStockWeightMean"));
+    keyStockWeightObsVar = asVector<int>(getListElement(x,"keyStockWeightObsVar"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -208,6 +214,9 @@ struct confSet{
     fracMixN = rhs.fracMixN;
     fracMixObs = rhs.fracMixObs;
     predVarObsLink = rhs.predVarObsLink;
+    stockWeightModel = rhs.stockWeightModel;
+    keyStockWeightMean = rhs.keyStockWeightMean;
+    keyStockWeightObsVar = rhs.keyStockWeightObsVar;
     return *this;
   };
 };
