@@ -96,7 +96,11 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(fracMixN); confset.fracMixN=asDouble(fracMixN); 
   DATA_VECTOR(fracMixObs); vector<double> fracMixObsDouble(fracMixObs.size()); for(int i=0; i<fracMixObs.size(); ++i){fracMixObsDouble(i)=asDouble(fracMixObs(i));} confset.fracMixObs=fracMixObsDouble; 
   DATA_IARRAY(predVarObsLink); confset.predVarObsLink=predVarObsLink;
+  DATA_INTEGER(stockWeightModel); confset.stockWeightModel=stockWeightModel;
+  DATA_IVECTOR(keyStockWeightMean); confset.keyStockWeightMean=keyStockWeightMean;
+  DATA_IVECTOR(keyStockWeightObsVar); confset.keyStockWeightObsVar=keyStockWeightObsVar; 
 
+  
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
