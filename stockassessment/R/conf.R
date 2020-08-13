@@ -113,6 +113,9 @@ defcon<-function(dat){
   }
   
   ret$hockeyStickCurve <- 20
+  ret$stockWeightModel <- 0
+  ret$keyStockWeightMean <- rep(NA_integer_,nAges)
+  ret$keyStockWeightObsVar <- rep(NA_integer_,nAges)  
   return(ret) 
 }
 
@@ -189,6 +192,9 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet"
     txt$constRecBreaks <- "Vector of break years between which recruitment is at constant level. The break year is included in the left interval. (This option is only used in combination with stock-recruitment code 3)"
     txt$predVarObsLink <- "Coupling of parameters used in a prediction-variance link for observations."
+    txt$stockWeightModel <- "Integer code describing the treatment of stock weights in the model (0 use as known, 1 use as observations to inform stock weight process (GMRF with cohort and within year correlations))"
+    txt$keyStockWeightMean <- "Coupling of stock-weight process mean parameters (not used if stockWeightModel==0)"
+    txt$keyStockWeightObsVar <- "Coupling of stock-weight observation variance parameters (not used if stockWeightModel==0)"
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)
