@@ -9,7 +9,7 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
   catchType, ...)
 
 \method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(0, 4,
-  len = 200), aveYears = max(fit$data$years) + (-4:0),
+  len = 200), aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years), SPRpercent = c(0.35),
   catchType = "catch", jacobianHScale = 0.5, ...)
 }
@@ -20,7 +20,7 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
 
 \item{Fsequence}{Sequence of F values used to report per-recruit and equilibrium values}
 
-\item{aveYears}{Vector of year indices used to calculate average natural mortality, weights, etc. (starting at 0)}
+\item{aveYears}{Vector of year indices used to calculate average natural mortality, weights, etc. Following ICES guidelines, the default is the last 10 years (starting at 0)}
 
 \item{selYears}{Vector of year indices used to calculate selectivity (starting at 0)}
 
@@ -35,6 +35,12 @@ a sam_referencepoints fit
 }
 \description{
 Work in progress - do not use
+}
+\references{
+Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. doi: 10.1016/j.fishres.2020.105618
+}
+\seealso{
+\link{forecastMSY}
 }
 \author{
 Christoffer Moesgaard Albertsen
