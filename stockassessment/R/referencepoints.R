@@ -55,15 +55,19 @@ svd_solve <- function(x){
 ##' @param nYears Number of years to forecast
 ##' @param nlminb.control list of control variables for nlminb
 ##' @param rec.years Numeric vector of years to use (to calculate mean and standard deviation) for recruitment. An empty vector will use the recruitment model.
+##' @param ave.years vector of years to average for weights, maturity, M and such. Following ICES guidelines, the default is the last 10 years.
 ##' @param processNoiseF Should random walk process noise be used for F?
 ##' @param ... other arguments passed to forecast
 ##' @author Christoffer Moesgaard Albertsen
-##' @seealso forecast
+##' @seealso \link{forecast} \link{referencepoints}
+##' @references
+##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. doi: 10.1016/j.fishres.2020.105618
 ##' @export
 forecastMSY <- function(fit,
                     nYears = 100,
                     nlminb.control = list(eval.max = 2000, iter.max = 2000),
                     rec.years = c(),
+                    ave.years = max(fit$data$years)+(-9:0),
                     processNoiseF = FALSE,
                     ...){
     UseMethod("forecastMSY")
@@ -77,19 +81,22 @@ forecastMSY.sam <- function(fit,
                             nYears = 100,                            
                             nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
                             rec.years = c(),
+                            ave.years = max(fit$data$years)+(-9:0),
                             processNoiseF = FALSE,
                             jacobianHScale = 0.5,
                             nCatchAverageYears = 20,
                             ...){
 
-    argsIn <- forecast(fit,
+    argsIn <- modelforecast(fit,
                        findMSY = rep(1,nYears),
                        rec.years = rec.years,
+                       ave.years = ave.years,
                        processNoiseF = processNoiseF,
                        nCatchAverageYears = nCatchAverageYears,
                        ...)
     argsIn$DLL <- "stockassessment"
-
+    argsIn$silent <- fit$obj$env$silent
+    
     args <- argsIn
     args$map$logFScaleMSY <- factor(NA)
     objForecast <- do.call(TMB::MakeADFun, args)
@@ -214,13 +221,16 @@ forecastMSY.sam <- function(fit,
 ##' @param fit an object to calculate reference points for
 ##' @param nYears Number of years to use in per-recruit calculations
 ##' @param Fsequence Sequence of F values used to report per-recruit and equilibrium values
-##' @param aveYears Vector of year indices used to calculate average natural mortality, weights, etc. (starting at 0)
+##' @param aveYears Vector of year indices used to calculate average natural mortality, weights, etc. Following ICES guidelines, the default is the last 10 years (starting at 0)
 ##' @param selYears Vector of year indices used to calculate selectivity (starting at 0)
 ##' @param SPRpercent Vector of x values for F[x * 100\%] reference points. Default is 0.35.
 ##' @param catchType Catch type used: (total) catch, landings, discard.
 ##' @param ... not used
 ##' @return a sam_referencepoints fit
 ##' @author Christoffer Moesgaard Albertsen
+##' @seealso \link{forecastMSY}
+##' @references
+##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. doi: 10.1016/j.fishres.2020.105618
 ##' @export
 referencepoints <- function(fit,
                             nYears,
@@ -239,7 +249,7 @@ referencepoints <- function(fit,
 referencepoints.sam <- function(fit,
                                 nYears = 100,
                                 Fsequence = seq(0,4, len = 200),
-                                aveYears = max(fit$data$years)+(-4:0),
+                                aveYears = max(fit$data$years)+(-9:0),
                                 selYears = max(fit$data$years),
                                 SPRpercent = c(0.35),
                                 catchType = "catch",
@@ -259,6 +269,7 @@ referencepoints.sam <- function(fit,
     ## Prepare arguments to calculate reference points (fix parameters and latent variables, delta = 1)
     obj0 <- fit$obj
     argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
+    argsIn$silent <- fit$obj$env$silent
     argsIn$parameters <- fit$pl
     argsIn$random <- unique(names(obj0$env$par[obj0$env$random]))
     ## Add referencepointSet
@@ -572,6 +583,7 @@ plot.sam_referencepoints <- function(x,
                                      estimates = c("Status quo", "MSY"),
                                      ask = TRUE,
                                      legend.args = list(x = "top", ncol = length(estimates)),
+                                     zoomToCurve = TRUE,
                                      ...){
 
     estimates <- match.arg(estimates,
@@ -615,6 +627,8 @@ plot.sam_referencepoints <- function(x,
         tmpval <- x$graphs[[yp]]
         if(!is.na(tmpf))
             tmpval <- x$graphs[[yp]][abs(x$graphs$F -tmpf) > 0.1,]
+        if(zoomToCurve)
+            tmpval <- tmpval[,1]
         plot(x$graphs$F, x$graphs[[yp]][,1], type = "n", ylim = range(tmpval, finite = TRUE, na.rm = TRUE),
              xlab = x$fbarlabel, ylab = gsub("([a-z])([A-Z])", "\\1-\\2",names(x$graphs)[yp]),
              main = paste("Equilibrium",tolower(gsub("([a-z])([A-Z])", "\\1 \\2",names(x$graphs)[yp]))))

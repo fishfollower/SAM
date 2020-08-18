@@ -6,11 +6,13 @@
 \title{Estimating Fmsy}
 \usage{
 forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
-  iter.max = 2000), rec.years = c(), processNoiseF = FALSE, ...)
+  iter.max = 2000), rec.years = c(), ave.years = max(fit$data$years) +
+  (-9:0), processNoiseF = FALSE, ...)
 
 \method{forecastMSY}{sam}(fit, nYears = 100,
   nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
-  rec.years = c(), processNoiseF = FALSE, jacobianHScale = 0.5,
+  rec.years = c(), ave.years = max(fit$data$years) + (-9:0),
+  processNoiseF = FALSE, jacobianHScale = 0.5,
   nCatchAverageYears = 20, ...)
 }
 \arguments{
@@ -22,6 +24,8 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
 
 \item{rec.years}{Numeric vector of years to use (to calculate mean and standard deviation) for recruitment. An empty vector will use the recruitment model.}
 
+\item{ave.years}{vector of years to average for weights, maturity, M and such. Following ICES guidelines, the default is the last 10 years.}
+
 \item{processNoiseF}{Should random walk process noise be used for F?}
 
 \item{...}{other arguments passed to forecast}
@@ -29,8 +33,11 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
 \description{
 Work in progress - do not use
 }
+\references{
+Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. doi: 10.1016/j.fishres.2020.105618
+}
 \seealso{
-forecast
+\link{forecast} \link{referencepoints}
 }
 \author{
 Christoffer Moesgaard Albertsen

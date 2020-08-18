@@ -2,30 +2,25 @@
 % Please edit documentation in R/forecast.R
 \name{forecast}
 \alias{forecast}
-\alias{forecast.sam}
-\title{Model based forecast function}
+\title{forecast function to do shortterm}
 \usage{
-forecast(fit, ...)
-
-\method{forecast}{sam}(fit, fscale = NULL, catchval = NULL,
-  fval = NULL, nextssb = NULL, landval = NULL, findMSY = NULL,
-  nosim = NULL, year.base = max(fit$data$years),
+forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
+  fval = NULL, nextssb = NULL, landval = NULL, cwF = NULL,
+  nosim = 1000, year.base = max(fit$data$years),
   ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
-  processNoiseF = TRUE, customSel = NULL, lagR = FALSE,
-  splitLD = FALSE, addTSB = FALSE, biasCorrect = TRUE,
-  returnAllYears = FALSE, useUniroot = FALSE, nCatchAverageYears = 1,
-  ...)
+  processNoiseF = TRUE, customWeights = NULL, customSel = NULL,
+  lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
 
-\item{...}{other variables used by the methods}
-
 \item{fscale}{a vector of f-scales. See details.}
 
 \item{catchval}{a vector of target catches. See details.}
+
+\item{catchval.exact}{a vector of target catches which will be met without noise. See details.}
 
 \item{fval}{a vector of target f values. See details.}
 
@@ -33,23 +28,25 @@ forecast(fit, ...)
 
 \item{landval}{a vector of target catches. See details.}
 
-\item{findMSY}{Should not be used. See \link{forecastMSY}.}
+\item{cwF}{a vector target custom weighted F values. customWeights must also be specified}
 
-\item{nosim}{number of simulations. Not used.}
+\item{nosim}{number of simulations default is 1000}
 
 \item{year.base}{starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before}
 
 \item{ave.years}{vector of years to average for weights, maturity, M and such}
 
-\item{rec.years}{vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.}
+\item{rec.years}{vector of years to use to resample recruitment from}
 
 \item{label}{optional label to appear in short table}
 
 \item{overwriteSelYears}{if a vector of years is specified, then the average selectivity of those years is used (not recommended)}
 
-\item{deterministic}{option to set F variance to (almost) zero (not recommended)}
+\item{deterministic}{option to turn all process noise off (not recommended, as it will likely cause bias)}
 
 \item{processNoiseF}{option to turn off process noise in F}
+
+\item{customWeights}{a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)}
 
 \item{customSel}{supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)}
 
@@ -58,24 +55,13 @@ forecast(fit, ...)
 \item{splitLD}{if TRUE the result is split in landing and discards}
 
 \item{addTSB}{if TRUE the total stock biomass (TSB) is added}
-
-\item{biasCorrect}{Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).}
-
-\item{returnAllYears}{If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.}
-
-\item{nCatchAverageYears}{Should not be used. See \link{forecastMSY}.}
 }
 \value{
 an object of type samforecast
 }
 \description{
-Model based forecast function
-
-Model based forecast function
+forecast function to do shortterm
 }
 \details{
-There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run.
-}
-\seealso{
-simulationforecast
+There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run.
 }

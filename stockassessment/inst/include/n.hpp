@@ -39,8 +39,16 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
       nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
       SIMULATE_F(of){
-	if(conf.simFlag(1)==0){
-	  logN.col(i) = predN + neg_log_densityN.simulate();
+	if(dat.forecast.nYears > 0 &&
+	   dat.forecast.forecastYear(i) > 0){
+	  // In forecast
+	  if(dat.forecast.simFlag(1)==0){
+	    logN.col(i) = predN + neg_log_densityN.simulate();
+	  }
+	}else{
+	  if(conf.simFlag(1)==0){
+	    logN.col(i) = predN + neg_log_densityN.simulate();
+	  }
 	}
       }
     }
