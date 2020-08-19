@@ -78,6 +78,7 @@ defpar <- function(dat,conf){
   ret$logScaleFext <- 0
   ret$logScaleFxPercent <- numeric()
   ret$logScaleFlim <- 0
+  ret$logScaleFmsyRange <- matrix(0,2,0)
   
   ## Latent variables
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)

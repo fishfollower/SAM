@@ -129,6 +129,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
   PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
   PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
+  PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);

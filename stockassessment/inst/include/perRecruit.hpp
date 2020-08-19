@@ -1115,11 +1115,11 @@ struct REFERENCE_POINTS {
   Type logF01;			// F such that YPR'(0) = 0.1 * YPR'(F)
   Type logFcrash;		// F such that 1/SPR(f) = SR'(0) (i.e. stock crashes [with compensatory recruitment] if slope of spawner-per-recruit in origin is less than slope of stock-recruitment model in origin)
   Type logFext;			// F such that stock dies out - SSB(F) < epsilon and F smallest possible
-  vector<Type> logFxPercent;			// F such that SSB is reduced to x% of unfished stock (Se(F) = x/100 * Se(0) )
-  //Type logFmed;			// Fishing  mortality  rate  F  corresponding  to  a  SSB/R  equal  to  the  inverse  of  the  50th  percentile of the observed R/SSB
+  vector<Type> logFxPercent;	// F such that SSB is reduced to x% of unfished stock (Se(F) = x/100 * Se(0) )
+  //Type logFmed;		// Fishing  mortality  rate  F  corresponding  to  a  SSB/R  equal  to  the  inverse  of  the  50th  percentile of the observed R/SSB
   Type logFlim;			// F such that Se(F) = Blim (for hockey-stick-like stock recruitment only)
-  //Type logFpa;			// F that corresponds to logBpa
-   
+  //Type logFpa;		// F that corresponds to logBpa
+  matrix<Type> logFmsyRange;		// F that corresponds to yield of x% of MSY
 
   // Corresponding SSB??
   Type logBsq;
@@ -1132,6 +1132,7 @@ struct REFERENCE_POINTS {
   vector<Type> logBxPercent;
   Type logBlim;			// Known from model parameters (for hockey-stick-like stock recruitment only)
   //Type logBpa;			// Ba = Blim * exp(1.645 * sigma) where sigma is the standard deviation of log(SSB) at the start of the year following the terminal year of the assessment if sigma is unknown, 0.2 can be used as default.
+  matrix<Type> logBmsyRange;
 
   // Corresponding Recruitment
   Type logRsq;
@@ -1144,7 +1145,7 @@ struct REFERENCE_POINTS {
   vector<Type> logRxPercent;
   Type logRlim;			// Known from model parameters (for hockey-stick-like stock recruitment only)
   //Type logBpa;			// Ba = Blim * exp(1.645 * sigma) where sigma is the standard deviation of log(SSB) at the start of the year following the terminal year of the assessment if sigma is unknown, 0.2 can be used as default.
-
+  matrix<Type> logRmsyRange;
   
   // Corresponding Yield??
   Type logYsq;
@@ -1156,6 +1157,7 @@ struct REFERENCE_POINTS {
   Type logYext;
   vector<Type> logYxPercent;
   Type logYlim;			// Known from model parameters (for hockey-stick-like stock recruit
+  matrix<Type> logYmsyRange;
 
   Type logYPRsq;
   Type logYPR0;
@@ -1166,6 +1168,7 @@ struct REFERENCE_POINTS {
   Type logYPRext;
   vector<Type> logYPRxPercent;
   Type logYPRlim;
+  matrix<Type> logYPRmsyRange;
 
   Type logSPRsq;
   Type logSPR0;
@@ -1176,6 +1179,7 @@ struct REFERENCE_POINTS {
   Type logSPRext;
   vector<Type> logSPRxPercent;
   Type logSPRlim;
+  matrix<Type> logSPRmsyRange;
 
   
   // Derived values
@@ -1252,6 +1256,49 @@ struct REFERENCE_POINTS {
       logYmsy = R_NaReal;
       logYPRmsy = R_NaReal;
       logSPRmsy = R_NaReal;
+    }
+  
+    // MSY range lower
+    logFmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
+    logBmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
+    logRmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
+    logYmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
+    logYPRmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
+    logSPRmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
+
+    for(int i = 0; i < par.logScaleFmsyRange.cols(); ++i){
+      // Lower end of range
+      if(CppAD::Variable(par.logScaleFmsy) && CppAD::Variable(par.logScaleFmsyRange(0,i))){
+	logFmsyRange(0,i) = logFmsy - exp(-par.logScaleFmsyRange(0,i)); //logFsq + par.logScaleF35;
+	logBmsyRange(0,i) = log(Se(exp(logFmsyRange(0,i))));
+	logRmsyRange(0,i) = log(Re(exp(logFmsyRange(0,i))));
+	logYmsyRange(0,i) = log(yield(exp(logFmsyRange(0,i))));
+	logYPRmsyRange(0,i) = log(YPR(exp(logFmsyRange(0,i))));
+	logSPRmsyRange(0,i) = log(SPR(exp(logFmsyRange(0,i))));
+      }else{
+	logFmsyRange(0,i) = R_NaReal;//R_NaReal;
+	logBmsyRange(0,i) = R_NaReal;
+	logRmsyRange(0,i) = R_NaReal;
+	logYmsyRange(0,i) = R_NaReal;
+	logYPRmsyRange(0,i) = R_NaReal;
+	logSPRmsyRange(0,i) = R_NaReal;
+      }
+      // Upper end of range
+      if(CppAD::Variable(par.logScaleFmsy) && CppAD::Variable(par.logScaleFmsyRange(1,i))){
+	logFmsyRange(1,i) = logFmsy + exp(par.logScaleFmsyRange(1,i)); //logFsq + par.logScaleF35;
+	logBmsyRange(1,i) = log(Se(exp(logFmsyRange(1,i))));
+	logRmsyRange(1,i) = log(Re(exp(logFmsyRange(1,i))));
+	logYmsyRange(1,i) = log(yield(exp(logFmsyRange(1,i))));
+	logYPRmsyRange(1,i) = log(YPR(exp(logFmsyRange(1,i))));
+	logSPRmsyRange(1,i) = log(SPR(exp(logFmsyRange(1,i))));
+      }else{
+	logFmsyRange(1,i) = R_NaReal;//R_NaReal;
+	logBmsyRange(1,i) = R_NaReal;
+	logRmsyRange(1,i) = R_NaReal;
+	logYmsyRange(1,i) = R_NaReal;
+	logYPRmsyRange(1,i) = R_NaReal;
+	logSPRmsyRange(1,i) = R_NaReal;
+      }
     }
 
     
@@ -1375,7 +1422,7 @@ struct REFERENCE_POINTS {
       logSPRlim = R_NaReal;
     }
  
- 
+  
 #ifdef CPPAD_FRAMEWORK
     // Prepare AD
     vector<Type> Fsqvec(1);
@@ -1568,7 +1615,21 @@ struct REFERENCE_POINTS {
     Type nll = 0.0;
 
     if(CppAD::Variable(par.logScaleFmsy)){
-      nll -= log(yield(exp(logFmsy)));
+      Type tmpYmsy = yield(exp(logFmsy));
+      nll -= log(tmpYmsy);
+
+      for(int i = 0; i < par.logScaleFmsyRange.cols(); ++i){
+	// Lower end of range
+	if(CppAD::Variable(par.logScaleFmsyRange(0,i))){
+	  Type tmp = log((yield(exp(logFmsyRange(0,i))))) - (log(dat.referencepoint.MSYRange(i)) + log(tmpYmsy));
+	  nll += tmp * tmp;
+	}
+	// Upper end of range
+	if(CppAD::Variable(par.logScaleFmsyRange(1,i))){
+	  Type tmp = log((yield(exp(logFmsyRange(1,i))))) - (log(dat.referencepoint.MSYRange(i)) + log(tmpYmsy));
+	  nll += tmp * tmp;	  
+	}      
+      }
     }
 
     if(CppAD::Variable(par.logScaleFmax)){
@@ -1684,6 +1745,13 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logYmsy,of);
   ADREPORT_F(referencepoint.logYPRmsy,of);
   ADREPORT_F(referencepoint.logSPRmsy,of);
+
+  ADREPORT_F(referencepoint.logFmsyRange,of);
+  ADREPORT_F(referencepoint.logBmsyRange,of);
+  ADREPORT_F(referencepoint.logRmsyRange,of);
+  ADREPORT_F(referencepoint.logYmsyRange,of);
+  ADREPORT_F(referencepoint.logYPRmsyRange,of);
+  ADREPORT_F(referencepoint.logSPRmsyRange,of);
 
   ADREPORT_F(referencepoint.logFmax,of);
   ADREPORT_F(referencepoint.logBmax,of);
