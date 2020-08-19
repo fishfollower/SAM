@@ -225,6 +225,8 @@ forecastMSY.sam <- function(fit,
 ##' @param selYears Vector of year indices used to calculate selectivity (starting at 0)
 ##' @param SPRpercent Vector of x values for F[x * 100\%] reference points. Default is 0.35.
 ##' @param catchType Catch type used: (total) catch, landings, discard.
+##' @param MSYreduction Vector of proportions for MSY ranges. Default is 0.05 giving an MSY range corresponding to no more than a 5% yield reduction.
+##' @param newtonSteps Number of additional Newton steps at the end of the reference point optimization.
 ##' @param ... not used
 ##' @return a sam_referencepoints fit
 ##' @author Christoffer Moesgaard Albertsen
@@ -239,6 +241,8 @@ referencepoints <- function(fit,
                             selYears,
                             SPRpercent,
                             catchType,
+                            MSYreduction,
+                            newtonSteps = 3,
                             ...){
     UseMethod("referencepoints")
 }
@@ -254,11 +258,17 @@ referencepoints.sam <- function(fit,
                                 SPRpercent = c(0.35),
                                 catchType = "catch",
                                 jacobianHScale = 0.5,
+                                MSYreduction = c(0.05),
+                                newtonSteps = 3,
                                 ...){
     if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
         stop("Values of Fsequence must be positive and increasing.")
     if(!isTRUE(all.equal(Fsequence[1],0, check.attributes = FALSE, use.names = FALSE)))
         warning("The first value of Fsequence should be 0.")
+
+    if(!(all(MSYreduction > 0) && all(MSYreduction < 1)))
+        stop("MSYreduction must be between 0 and 1.")
+    MSYfraction <- 1 - MSYreduction
     
     ## Get joint precision
     jointPrecision <- TMB::sdreport(fit$obj,
@@ -291,7 +301,8 @@ referencepoints.sam <- function(fit,
                                        selYears = selYears,
                                        Fsequence = Fsequence,
                                        xPercent = SPRpercent,
-                                       catchType = catchType-1
+                                       catchType = catchType-1,
+                                       MSYRange = MSYfraction
                                        )
 
     args <- argsIn
@@ -306,6 +317,7 @@ referencepoints.sam <- function(fit,
         rp <- c("logScaleFmax",
                 "logScaleF01",
                 "logScaleFxPercent")
+        MSYfraction <- MSYreduction <- c()
     }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){ # Hockey-sticks
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
@@ -313,30 +325,35 @@ referencepoints.sam <- function(fit,
                 "logScaleFcrash",
                 ## "logScaleFext",
                 "logScaleFxPercent",
-                "logScaleFlim")
+                "logScaleFlim",
+                "logScaleFmsyRange")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(3,62)){ # constant mean, AR
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                "logScaleFxPercent")
+                "logScaleFxPercent",
+                "logScaleFmsyRange")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(64)){ # Pow CMP
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                "logScaleFxPercent"
+                "logScaleFxPercent",
+                "logScaleFmsyRange"
                 )
     }else if(fit$conf$stockRecruitmentModelCode %in% c(65)){ # Pow Non-CMP
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                "logScaleFxPercent"
+                "logScaleFxPercent",
+                "logScaleFmsyRange"
                 )
     }else if(fit$conf$stockRecruitmentModelCode %in% c(68,69) && fit$pl$rec_par[3] > 0){ ## depensatory recruitment; Fcrash does not work.
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
                 ## "logScaleFext",
-                "logScaleFxPercent"
+                "logScaleFxPercent",
+                "logScaleFmsyRange"
                 )
     }else if(fit$conf$stockRecruitmentModelCode %in% c(90)){
         rp <- c("logScaleFmsy",
@@ -344,7 +361,8 @@ referencepoints.sam <- function(fit,
                 "logScaleF01",
                 "logScaleFcrash",
                 ## "logScaleFext",
-                "logScaleFxPercent"
+                "logScaleFxPercent",
+                "logScaleFmsyRange"
                 )
        }else if(fit$conf$stockRecruitmentModelCode %in% c(91,92)){
         rp <- c("logScaleFmsy",
@@ -352,7 +370,8 @@ referencepoints.sam <- function(fit,
                 "logScaleF01",
                 ##"logScaleFcrash",
                 ## "logScaleFext",
-                "logScaleFxPercent"
+                "logScaleFxPercent",
+                "logScaleFmsyRange"
                 )
     }else{
         rp <- c("logScaleFmsy",
@@ -360,7 +379,8 @@ referencepoints.sam <- function(fit,
                 "logScaleF01",
                 "logScaleFcrash",
                 ## "logScaleFext",
-                "logScaleFxPercent"
+                "logScaleFxPercent",
+                "logScaleFmsyRange"
                 )
     }
     ## Referencepoints to estimate
@@ -371,7 +391,10 @@ referencepoints.sam <- function(fit,
     args$parameters$logScaleFmax <- -1
     args$parameters$logScaleFcrash <- -1
     args$parameters$logScaleFext <- -1
-    args$parameters$logScaleFxPercent <- rep(-1, length(SPRpercent))
+    if(length(MSYfraction) > 0){
+        args$parameters$logScaleFmsyRange <- rbind(log(-log(MSYfraction)),
+                                                   log(log(1+(1-MSYfraction))))
+    }
     args$parameters$logScaleFlim <- -1
     args$parameters$implicitFunctionDelta <- 1
 
@@ -402,17 +425,42 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }
 
-    ## Fmsy
+   ## Fmsy
     if(any(rp %in% "logScaleFmsy") && which.max(rep$logYe[is.finite(rep$logYe)]) == length(rep$logYe[is.finite(rep$logYe)])){
         warning("The stock does not appear to have a well-defined Fmsy. Fmsy will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFmsy")]
+        rp <- rp[-which(rp %in% "logScaleFmsyRangeLower")]
+        rp <- rp[-which(rp %in% "logScaleFmsyRangeUpper")]
         args$map$logScaleFmsy <- factor(NA)
+        MSYfraction <- MSYreduction <- numeric(0)
+        args$parameters$logScaleFmsyRangeLower <- numeric(0)
+        args$parameters$logScaleFmsyRangeUpper <- numeric(0)
         tryAgain <- TRUE
     }else if(any(rp %in% "logScaleFmsy")){
-        indx <- which(is.finite(rep$logSPR) & Fsequence > 0)
+        indx <- which(is.finite(rep$logYe) & Fsequence > 0)
         ye <- rep$logYe[indx]
         ff <- Fsequence[indx]
         pStart$logScaleFmsy <- log(ff[which.max(ye)]) - log(tail(fbartable(fit)[,"Estimate"],1))
+        if(any(rp %in% "logScaleFmsyRange")){
+            indx2 <- which(is.finite(rep$logYe) & Fsequence > 0 & Fsequence < ff[which.max(ye)])
+            ye2 <- rep$logYe[indx2]
+            ff2 <- Fsequence[indx2]
+            fmsy <- ff[which.max(ye)]
+            FmsyRangeLower <- sapply(MSYfraction, function(x){
+                fL <- ff2[which.min((ye2 - x * max(ye))^2)]
+                -log(-(log(fL) - log(fmsy)))
+            })
+            indx3 <- which(is.finite(rep$logYe) & Fsequence > 0 & Fsequence > ff[which.max(ye)])
+            ye3 <- rep$logYe[indx3]
+            ff3 <- Fsequence[indx3]
+            fmsy <- ff[which.max(ye)]
+            FmsyRangeUpper <- sapply(MSYfraction, function(x){
+                fL <- ff3[which.min((ye3 - x * max(ye))^2)]
+                  log(log(fL) - log(fmsy))
+            })
+            pStart$logScaleFmsyRange <- rbind(FmsyRangeLower,
+                                              FmsyRangeUpper)
+        }
     }
 
     ## F01
@@ -440,15 +488,13 @@ referencepoints.sam <- function(fit,
     for(ii in names(pStart))
         p0[names(p0) %in% ii] <- pStart[[match(ii,names(pStart))]]
 
-    opt <- nlminb(p0, objOptim$fn, objOptim$gr)#, objOptim$he)
-    ## ii <- 0
-    ## while(max(abs(objOptim$gr(opt$par))) > 1e-4 && ii < 20){
-    ##     g <- as.numeric( objOptim$gr(opt$par) )
-    ##     h <- objOptim$he(opt$par)
-    ##     opt$par <- opt$par - solve(h, g)
-    ##     opt$objective <- objOptim$fn(opt$par)
-    ##     ii <- ii + 1
-    ## }
+    opt <- nlminb(p0, objOptim$fn, objOptim$gr, objOptim$he)
+    for(ii in seq_len(newtonSteps)){
+        g <- as.numeric( objOptim$gr(opt$par) )
+        h <- objOptim$he(opt$par)
+        opt$par <- opt$par - solve(h, g)
+        opt$objective <- objOptim$fn(opt$par)
+    }
     
     ## Object to do Delta method (nothing mapped (that's not mapped in fit$obj, nothing random, delta = 1)
     args <- argsIn
@@ -524,17 +570,22 @@ referencepoints.sam <- function(fit,
                "sq"="Status quo",
                "0"="Zero catch",
                "msy"="MSY",
+               "msyRange"="xMR",
                "max"="Max",
                "01"="0.1",
                "crash"="Crash",
                "ext"="Ext",
-               "xPercent"=NA,
+               "xPercent"="xP",
                "lim"="lim",
                x
         )               
     })
     rn <- toRowNames(rownames(Ftab))
-    rn[is.na(rn)] <- sapply(SPRpercent,function(x)sprintf("%s%%",x * 100))    
+    rn[which(rn == "xP")] <- sapply(SPRpercent,function(x)sprintf("%s%%",x * 100))
+    rn[which(rn == "xMR")] <- sapply(MSYreduction,function(x){
+        c(sprintf("MSY %s%% reduction range (Lower)",x * 100),
+          sprintf("MSY %s%% reduction range (Upper)",x * 100))
+    })
     rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rn
 
     ## Ftab["Ext",c("Low","High")] <- NA

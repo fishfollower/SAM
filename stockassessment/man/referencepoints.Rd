@@ -6,12 +6,13 @@
 \title{Estimate reference points}
 \usage{
 referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
-  catchType, ...)
+  catchType, MSYreduction, newtonSteps = 3, ...)
 
 \method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(0, 4,
   len = 200), aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years), SPRpercent = c(0.35),
-  catchType = "catch", jacobianHScale = 0.5, ...)
+  catchType = "catch", jacobianHScale = 0.5, MSYreduction = c(0.05),
+  newtonSteps = 3, ...)
 }
 \arguments{
 \item{fit}{an object to calculate reference points for}
@@ -27,6 +28,10 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
 \item{SPRpercent}{Vector of x values for F[x * 100\%] reference points. Default is 0.35.}
 
 \item{catchType}{Catch type used: (total) catch, landings, discard.}
+
+\item{MSYreduction}{Vector of proportions for MSY ranges. Default is 0.05 giving an MSY range corresponding to no more than a 5% yield reduction.}
+
+\item{newtonSteps}{Number of additional Newton steps at the end of the reference point optimization.}
 
 \item{...}{not used}
 }

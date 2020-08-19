@@ -220,6 +220,7 @@ struct referencepointSet {
   vector<int> selYears;
   vector<Type> Fsequence;
   vector<Type> xPercent;
+  vector<Type> MSYRange;
   CatchType catchType;
 
   referencepointSet() : nYears(0) {};
@@ -237,6 +238,7 @@ struct referencepointSet {
       Fsequence = asVector<Type>(getListElement(x,"Fsequence"));
       xPercent = asVector<Type>(getListElement(x,"xPercent"));
       catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
+      MSYRange = asVector<Type>(getListElement(x,"MSYRange"));
     }
   }
   
@@ -249,6 +251,7 @@ struct referencepointSet {
     Fsequence = rhs.Fsequence;
     xPercent = rhs.xPercent;
     catchType = rhs.catchType;
+    MSYRange = rhs.MSYRange;
     return *this;
   }
 
@@ -263,6 +266,7 @@ struct referencepointSet {
     d.Fsequence = Fsequence.template cast<T>();
     d.xPercent = xPercent.template cast<T>();
     d.catchType = static_cast<typename referencepointSet<T>::CatchType>((int)catchType);
+    d.MSYRange = MSYRange.template cast<T>();
     return d;    
   }
   
@@ -606,6 +610,7 @@ struct paraSet{
   Type logScaleFext;
   vector<Type> logScaleFxPercent;
   Type logScaleFlim;
+  matrix<Type> logScaleFmsyRange;
 
   paraSet() {};
   
@@ -632,6 +637,7 @@ struct paraSet{
     logScaleFext = (Type)Rf_asReal(getListElement(x,"logScaleFext"));
     logScaleFxPercent = asVector<Type>(getListElement(x,"logScaleFxPercent"));
     logScaleFlim = (Type)Rf_asReal(getListElement(x,"logScaleFlim"));
+    logScaleFmsyRange = asMatrix<Type>(getListElement(x,"logScaleFmsyRange"));
   }
 
   paraSet<Type>& operator=(const paraSet<Type>& rhs) {
@@ -657,6 +663,7 @@ struct paraSet{
     logScaleFext = rhs.logScaleFext;
     logScaleFxPercent = rhs.logScaleFxPercent;
     logScaleFlim = rhs.logScaleFlim;
+    logScaleFmsyRange = rhs.logScaleFmsyRange;
     return *this;
 
   }
@@ -686,7 +693,7 @@ struct paraSet{
     d.logScaleFext = T(logScaleFext);
     d.logScaleFxPercent = logScaleFxPercent.template cast<T>();
     d.logScaleFlim = T(logScaleFlim);
-
+    d.logScaleFmsyRange = logScaleFmsyRange.template cast<T>();
     return d;    
   }
 
