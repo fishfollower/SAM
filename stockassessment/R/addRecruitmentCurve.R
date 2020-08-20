@@ -128,9 +128,15 @@ addRecruitmentCurve.sam <- function(fit,
              PIhigh = as.vector(attr(tmp,"pi_high"))
              )
        }
-       
+
+
+       if(plot){
+           ssbMax <- max(c(max(S), par("usr")[2]))
+       }else{
+           ssbMax <- max(S)
+       }
        ssb <- seq(1e-5,
-                  max(c(max(S), par("usr")[2])), ## max(S),
+                  ssbMax, ## max(S),
                   len = 2000)
        if(fit$conf$stockRecruitmentModelCode == 3){
            brks <- c(min(fit$data$years),ceiling(fit$conf$constRecBreaks),max(fit$data$years))
