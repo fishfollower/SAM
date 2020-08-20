@@ -391,6 +391,7 @@ referencepoints.sam <- function(fit,
     args$parameters$logScaleFmax <- -1
     args$parameters$logScaleFcrash <- -1
     args$parameters$logScaleFext <- -1
+    args$parameters$logScaleFxPercent <- rep(-1, length(SPRpercent))
     if(length(MSYfraction) > 0){
         args$parameters$logScaleFmsyRange <- rbind(log(-log(MSYfraction)),
                                                    log(log(1+(1-MSYfraction))))
