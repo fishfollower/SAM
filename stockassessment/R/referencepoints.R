@@ -434,8 +434,7 @@ referencepoints.sam <- function(fit,
         rp <- rp[-which(rp %in% "logScaleFmsyRangeUpper")]
         args$map$logScaleFmsy <- factor(NA)
         MSYfraction <- MSYreduction <- numeric(0)
-        args$parameters$logScaleFmsyRangeLower <- numeric(0)
-        args$parameters$logScaleFmsyRangeUpper <- numeric(0)
+        args$parameters$logScaleFmsyRange <- numeric(0)
         tryAgain <- TRUE
     }else if(any(rp %in% "logScaleFmsy")){
         indx <- which(is.finite(rep$logYe) & Fsequence > 0)

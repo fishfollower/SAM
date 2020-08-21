@@ -1017,6 +1017,7 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
   }
   //T logSe = log(Se);
   if(conf.stockRecruitmentModelCode == 63 ||
+     conf.stockRecruitmentModelCode == 66 ||
      conf.stockRecruitmentModelCode == 90)
     Se = CppAD::CondExpGt(-logSPR, log(dsr0), (T)SAM_NegInf, Se);
   // T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0 - (T)1e-3,
