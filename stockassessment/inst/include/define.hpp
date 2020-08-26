@@ -611,6 +611,10 @@ struct paraSet{
   vector<Type> logScaleFxPercent;
   Type logScaleFlim;
   matrix<Type> logScaleFmsyRange;
+  vector<Type> logPhiSW; 
+  vector<Type> logSdProcLogSW;
+  vector<Type> meanLogSW; 
+  vector<Type> logSdLogSW; 
 
   paraSet() {};
   
@@ -641,6 +645,10 @@ struct paraSet{
     logScaleFxPercent = asVector<Type>(getListElement(x,"logScaleFxPercent"));
     logScaleFlim = (Type)Rf_asReal(getListElement(x,"logScaleFlim"));
     logScaleFmsyRange = asMatrix<Type>(getListElement(x,"logScaleFmsyRange"));
+    logPhiSW = asVector<Type>(getListElement(x,"logPhiSW")); 
+    logSdProcLogSW = asVector<Type>(getListElement(x,"logSdProcLogSW"));
+    meanLogSW  = asVector<Type>(getListElement(x,"meanLogSW")); 
+    logSdLogSW = asVector<Type>(getListElement(x,"logSdLogSW"));
   }
 
   paraSet<Type>& operator=(const paraSet<Type>& rhs) {
@@ -670,6 +678,10 @@ struct paraSet{
     logScaleFxPercent = rhs.logScaleFxPercent;
     logScaleFlim = rhs.logScaleFlim;
     logScaleFmsyRange = rhs.logScaleFmsyRange;
+    logPhiSW = rhs.logPhiSW; 
+    logSdProcLogSW = rhs.logSdProcLogSW;
+    meanLogSW = rhs.meanLogSW; 
+    logSdLogSW = rhs.logSdLogSW; 
     return *this;
 
   }
@@ -703,10 +715,12 @@ struct paraSet{
     d.logScaleFxPercent = logScaleFxPercent.template cast<T>();
     d.logScaleFlim = T(logScaleFlim);
     d.logScaleFmsyRange = logScaleFmsyRange.template cast<T>();
+    d.logPhiSW = logPhiSW.template cast<T>(); 
+    d.logSdProcLogSW = logSdProcLogSW.template cast<T>();
+    d.meanLogSW = meanLogSW.template cast<T>();
+    d.logSdLogSW = logSdLogSW.template cast<T>(); 
     return d;    
-  }
-
-  
+  }  
 };
 
 

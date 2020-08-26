@@ -72,6 +72,11 @@ defpar <- function(dat,conf){
       rep(log(1),(max(conf$predVarObsLink,na.rm=TRUE) + 1))
     }else{numeric(0)}
   }else{numeric(0)}
+
+  ret$logPhiSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(2)}
+  ret$logSdProcLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(1)}
+  ret$meanLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightMean,na.rm=TRUE)+1)}
+  ret$logSdLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightObsVar,na.rm=TRUE)+1)}
   
 
   ## Reference points
@@ -89,6 +94,7 @@ defpar <- function(dat,conf){
   ## Latent variables
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
+  ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=conf$maxAge-conf$minAge+1, nrow=dat$noYears)}
 
   return(ret)
 }

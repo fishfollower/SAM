@@ -7,6 +7,7 @@
 #include "spline.hpp"
 #include "toF.hpp"
 #include "define.hpp"
+#include "biopar.hpp"
 #include "derived.hpp"
 #include "f.hpp"
 #include "predn.hpp"
