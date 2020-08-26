@@ -31,3 +31,15 @@ GithubUsername: fishfollower
 GithubRef: master
 GithubSHA1: c28bdc2a44ad0a8c3e71ba8d311ea657e6d13aea
 GithubSubdir: stockassessment
+RemoteType: github
+RemoteHost: https://api.github.com
+RemoteRepo: SAM
+RemoteUsername: fishfollower
+RemoteRef: master
+RemoteSha: 648857371c151d1ead79c5f63de6fc02ae8472dc
+RemoteSubdir: stockassessment
+GithubRepo: SAM
+GithubUsername: fishfollower
+GithubRef: master
+GithubSHA1: 648857371c151d1ead79c5f63de6fc02ae8472dc
+GithubSubdir: stockassessment

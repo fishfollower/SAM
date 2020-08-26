@@ -1,4 +1,5 @@
 #include "define.hpp"
+#include "biopar.hpp"
 #include "derived.hpp"
 #include "f.hpp"
 #include "predn.hpp"

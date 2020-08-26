@@ -241,6 +241,10 @@ struct paraSet{
   vector<Type> sepFlogitRho;   
   vector<Type> sepFlogSd;
   vector<Type> predVarObs;
+  vector<Type> logPhiSW; 
+  vector<Type> logSdProcLogSW;
+  vector<Type> meanLogSW; 
+  vector<Type> logSdLogSW; 
 };
 
 template<class Type>

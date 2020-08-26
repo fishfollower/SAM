@@ -118,9 +118,15 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
   PARAMETER_VECTOR(predVarObs); paraset.predVarObs=predVarObs;
+
+  PARAMETER_VECTOR(logPhiSW); paraset.logPhiSW=logPhiSW;
+  PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
+  PARAMETER_VECTOR(meanLogSW); paraset.meanLogSW=meanLogSW;
+  PARAMETER_VECTOR(logSdLogSW); paraset.logSdLogSW=logSdLogSW;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
+  PARAMETER_ARRAY(logSW);
   PARAMETER_VECTOR(missing);
 
   // patch missing 
@@ -139,6 +145,7 @@ Type objective_function<Type>::operator() ()
   } 
 
   ans += nllF(confset, paraset, logF, keep, this);
+  ans += nllSW(logSW, dataset, confset, paraset, this);  
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
   return ans;
