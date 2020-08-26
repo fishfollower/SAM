@@ -134,9 +134,14 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
   PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
   PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
+  PARAMETER_VECTOR(logPhiSW); paraset.logPhiSW=logPhiSW;
+  PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
+  PARAMETER_VECTOR(meanLogSW); paraset.meanLogSW=meanLogSW;
+  PARAMETER_VECTOR(logSdLogSW); paraset.logSdLogSW=logSdLogSW;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
+  PARAMETER_ARRAY(logSW);
   PARAMETER_VECTOR(missing);
   
   // patch missing 
@@ -158,6 +163,7 @@ Type objective_function<Type>::operator() ()
   dataset.forecast.calculateForecast(logF,logN, dataset, confset, paraset);
     
   ans += nllF(dataset, confset, paraset, logF, keep, this);
+  ans += nllSW(logSW, dataset, confset, paraset, this);  
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   forecastSimulation(dataset, confset, paraset, logN, logF, this);
 

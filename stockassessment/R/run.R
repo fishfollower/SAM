@@ -70,7 +70,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
-  ran <- c("logN", "logF", "missing")
+  ran <- c("logN", "logF", "missing", "logSW")
 
   
   args <- c(list(data = tmball,
@@ -104,7 +104,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
 
   obj <- do.call(MakeADFun,args)
 
-  
+ 
   if(rm.unidentified){
     gr <- obj$gr()
     #grNA[abs(grNA)<1.0e-15] <- NA
