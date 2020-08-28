@@ -30,26 +30,28 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	}
       }
     }
-    matrix<Type> pred(nrow,ncol);
-      
-    vector<Type> phi=exp(par.logPhiSW);
     
+    array<Type> mLogSW(nrow,ncol);
+    for(int i=0; i<nrow; ++i){
+      for(int j=0; j<ncol; ++j){
+	mLogSW(i,j)=par.meanLogSW(conf.keyStockWeightMean(j));
+      }
+    }
+    
+    vector<Type> phi=exp(par.logPhiSW);
     matrix<Type> I(Wc.rows(),Wc.cols());
     I.setIdentity();
     matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
     
-    
     using namespace density;
-    nll += SCALE(GMRF(asSparseMatrix(Q)),exp(par.logSdProcLogSW(0)))(logSW.vec());
-    
-    
+    nll += SCALE(GMRF(asSparseMatrix(Q)),exp(par.logSdProcLogSW(0)))((logSW-mLogSW).vec());
+        
     for(int i=0; i<nrow; ++i){
       for(int j=0; j<ncol; ++j){
-        pred(i,j)=logSW(i,j)+par.meanLogSW(conf.keyStockWeightMean(j));
         if(!isNA(sw(i,j))){
-          nll += -dnorm(log(sw(i,j)),pred(i,j),exp(par.logSdLogSW(conf.keyStockWeightObsVar(j))),true);
+          nll += -dnorm(log(sw(i,j)),logSW(i,j),exp(par.logSdLogSW(conf.keyStockWeightObsVar(j))),true);
         }
-	dat.stockMeanWeight(i,j)=exp(pred(i,j));
+	dat.stockMeanWeight(i,j)=exp(logSW(i,j));
       }
     }
     return nll;

@@ -17,7 +17,8 @@ setup.sam.data(
   prop.f = NULL,
   prop.m = NULL,
   land.frac = NULL,
-  recapture = NULL
+  recapture = NULL,
+  spinoutyear = 10
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ setup.sam.data(
 \item{land.frac}{...}
 
 \item{recapture}{...}
+
+\item{spinoutyear}{Technical setting only used when stockWeightModel=1 configuration to insure equilibrium distribution in final edge year}
 }
 \description{
 Combine the data sources to SAM readable object
