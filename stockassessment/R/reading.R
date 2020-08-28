@@ -230,13 +230,14 @@ read.ices<-function(filen){
 ##' @param prop.m ...
 ##' @param land.frac ...
 ##' @param recapture ...
+##' @param spinoutyear Technical setting only used when stockWeightModel=1 configuration to insure equilibrium distribution in final edge year 
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, spinoutyear=10){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -374,7 +375,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
   attr(dat,'prop.mature')<-cutY(prop.mature)
-  attr(dat,'stock.mean.weight')<-cutY(stock.mean.weight)
+  stock.mean.weight<-do.call(function(...)rbind(stock.mean.weight,...), as.list(rep(NA,spinoutyear)))
+  rownames(stock.mean.weight)<-1:nrow(stock.mean.weight)+as.integer(rownames(stock.mean.weight)[1])-1
+  attr(dat,'stock.mean.weight')<-stock.mean.weight
   attr(dat,'catch.mean.weight')<-cutY(catch.mean.weight)
   attr(dat,'dis.mean.weight')<-cutY(dis.mean.weight)
   attr(dat,'land.mean.weight')<-cutY(land.mean.weight)
