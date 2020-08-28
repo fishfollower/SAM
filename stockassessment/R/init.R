@@ -58,6 +58,6 @@ defpar <- function(dat,conf){
   
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
-  ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=conf$maxAge-conf$minAge+1, nrow=dat$noYears)}
+  ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$stockMeanWeight), nrow=nrow(dat$stockMeanWeight))}
   return(ret)
 }

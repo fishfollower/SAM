@@ -8,7 +8,8 @@ setup.sam.data(fleets = NULL, surveys = NULL, residual.fleet = NULL,
   prop.mature = NULL, stock.mean.weight = NULL,
   catch.mean.weight = NULL, dis.mean.weight = NULL,
   land.mean.weight = NULL, natural.mortality = NULL, prop.f = NULL,
-  prop.m = NULL, land.frac = NULL, recapture = NULL)
+  prop.m = NULL, land.frac = NULL, recapture = NULL,
+  spinoutyear = 10)
 }
 \arguments{
 \item{fleets}{comm fleets vith effort (currently unimplemented)}
@@ -36,6 +37,8 @@ setup.sam.data(fleets = NULL, surveys = NULL, residual.fleet = NULL,
 \item{land.frac}{...}
 
 \item{recapture}{...}
+
+\item{spinoutyear}{Technical setting only used when stockWeightModel=1 configuration to insure equilibrium distribution in final edge year}
 }
 \description{
 Combine the data sources to SAM readable object
