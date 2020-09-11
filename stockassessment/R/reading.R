@@ -416,13 +416,25 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
 ##' Read a fitted model from stockassessment.org   
 ##' @param stockname The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.
 ##' @param character.only a logical indicating whether 'stockname' can be assumed to be a character string
+##' @param return.all a logical indicating whether everything from model.RData should be returned in an environment
 ##' @details ...
 ##' @export
-fitfromweb <- function(stockname, character.only=FALSE){
-  if (!character.only) stockname <- as.character(substitute(stockname))
-  nam <- load(con <- url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData")))
-  close(con)
-  eval(parse(text = nam))
+fitfromweb <- function(stockname, character.only=FALSE, return.all = FALSE){
+    if (!character.only) stockname <- as.character(substitute(stockname))
+    con <- url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData"))
+    e <- new.env()
+    nam <- load(con, e)    
+    close(con)
+    if(return.all)
+        return(e)
+    hasFit <- grepl("fit",nam)    
+    if(!any(hasFit)){
+        warning(sprintf("No object named fit. Found %s in model.RData.",paste0(nam,collapse = ", ")))
+        return(NA)
+    }else if(length(nam > 1)){
+        message(sprintf("Not returning %s from model.RData",paste0(nam[!hasFit],collapse = ", ")))
+    }
+    return(e$fit)
 }
 
 ##' Re-fit a model from stockassessment.org
