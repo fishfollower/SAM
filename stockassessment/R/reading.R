@@ -420,7 +420,39 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
 ##' @export
 fitfromweb <- function(stockname, character.only=FALSE){
   if (!character.only) stockname <- as.character(substitute(stockname))
-  fit<-NA
-  load(url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData")))
-  fit
+  nam <- load(con <- url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData")))
+  close(con)
+  eval(parse(text = nam))
+}
+
+##' Re-fit a model from stockassessment.org
+##' @param fit a sam fit or the name of a fit from stockassessment.org
+##' @param newConf list changes to the configuration
+##' @param ... Arguments passed to sam.fit
+##' @return A new sam fit
+refit <- function(fit, newConf, ...){
+    if(is(fit,"character")){
+        fit2 <- fitfromweb(fit, TRUE)
+    }else if(is(fit,"sam")){
+        fit2 <- fit
+    }else{
+        stop("fit must be a sam fit or the name of a fit from stockassessment.org")
+    }
+    if(is.null(fit2$data$idxCor))
+        fit2$data$idxCor <- matrix(NA, nrow=fit2$data$noFleets,
+                                   ncol=fit2$data$noYears)
+    if(!missing(newConf))
+        fit2$conf[names(newConf)] <- newConf
+    ## Add missing parts from defcon
+    dc <- defcon(fit2$data)
+    nm <- intersect(names(dc),setdiff(names(dc),names(fit2$conf)))
+    fit2$conf[nm] <- dc[nm]
+    ## Update parameters
+    dp <- defpar(fit2$data,fit2$conf)
+    for(i in intersect(names(dp),names(fit2$pl)))
+        if(length(dp[[i]]) == length(fit2$pl[[i]]))
+            dp[[i]] <- fit2$pl[[i]]
+    fit2$pl <- dp
+    ##runwithout(fit2, ...)
+    sam.fit(fit2$data, fit2$conf, dp, rm.unidentified = TRUE, ...)
 }
