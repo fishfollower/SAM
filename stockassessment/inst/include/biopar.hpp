@@ -54,6 +54,7 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	dat.stockMeanWeight(i,j)=exp(logSW(i,j));
       }
     }
+    ADREPORT_F(logSW,of);
     return nll;
   }
   return Type(0);
