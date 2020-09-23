@@ -36,7 +36,7 @@ When exploring the correlation structure for a given survey, it is often conveni
 SAM can accomondate for a possible link between observation variance and the corresponding predicted observation. The intuition behind the link is that the relative uncertainty typically decrease with the expected observation size. E.g. if we predict 1 fish, the observation is typically more likely to miss the prediction with a given factor compared to if we prediced a million fish. 
 
 \vspace{2mm}
-Let $\mu_{a,y}$ be the predicted observation for age $a$ at year $y$ on natural scale, and let $v_{a,y}$ be the correspondning variance. With this option we impose the assumption that
+Let $\mu_{a,y}$ be the predicted observation for age $a$ at year $y$ on natural scale, and let $v_{a,y}$ be the corresponding variance. With this option we impose the assumption that
 \begin{align}
 v_{a,y} = \alpha \mu_{a,y}^{\beta},  \nonumber
 \end{align}
