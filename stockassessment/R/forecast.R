@@ -105,6 +105,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
     mean(getF(x)[fromto[1]:fromto[2]])
   }    
+
+  fbarbyfleet <- function(x) {
+    fromto <- fit$conf$fbarRange - (fit$conf$minAge - 1)
+    f<-function(fleet)mean(getF(x, fleet)[fromto[1]:fromto[2]])
+    sapply(which(fit$data$fleetTypes == 0),f)
+  }
     
   getN <- function(x){
     idx <- fit$conf$keyLogFsta[1,]+1
@@ -319,11 +325,12 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
     }
     
     fbarsim <- apply(sim, 1, fbar)
+    fbarbyfleetsim <- apply(sim, 1, fbarbyfleet)
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
     ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
     recsim <- exp(sim[,1])
     catchbysim <- apply(sim, 1, function(x)attr(catch(x, nm=nm, cw=cw), "byFleet"))
-    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y, catchby=catchbysim)
+    simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y, catchby=catchbysim)
   }
   attr(simlist, "fit")<-fit
 
@@ -340,14 +347,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   }else{
     catchby <- round(do.call(rbind, lapply(simlist,function(xx)as.vector(apply(xx$catchby,1,collect)))))
   }
+  if(sum(fit$data$fleetTypes == 0) == 1) {
+    fbarby <- fbar
+  }
+  else{
+    fbarby <- round(do.call(rbind, lapply(simlist, function(xx) as.vector(apply(xx$fbarbyfleet, 1, collect)))),3)
+  }
   tab <- cbind(fbar, rec, ssb, catch)
   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
   rownames(catchby) <- rownames(tab)
+  rownames(fbarby) <- rownames(tab)
   nam <- c("Estimate","low","high")
   colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
   colnames(catchby) <- paste0(rep(paste0("F",1:sum(fit$data$fleetTypes==0),":"), each=length(nam)), nam)
+  colnames(fbarby) <- paste0(rep(paste0("F", 1:sum(fit$data$fleetTypes == 0), ":"), each = length(nam)), nam)
   attr(simlist, "tab") <- tab
   attr(simlist, "catchby") <- catchby
+  attr(simlist, "fbarby") <- fbarby
   shorttab <- t(tab[,grep("Estimate",colnames(tab))])
   rownames(shorttab) <- sub(":Estimate","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
   attr(simlist, "shorttab") <- shorttab
