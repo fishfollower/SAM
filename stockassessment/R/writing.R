@@ -60,7 +60,6 @@ write.surveys <- function(fit,fileout,...){
   }
 }
 
-
 ##' Write all data files from a list as created by 'setup.sam.data'  
 ##' @param dat A list as created by 'setup.sam.data'
 ##' @param dir Directory where the files are written  
