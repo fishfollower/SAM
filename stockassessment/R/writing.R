@@ -16,6 +16,7 @@ write.ices <- function(x, fileout, ...){
 ##' Extract a fleet from a fitted object 
 ##' @param fit A fitted object as returned from sam.fit
 ##' @param fleet The number of the fleet 
+##' @export
 getFleet <- function(fit, fleet){
   fidx <- fit$data$aux[,"fleet"]==fleet
   aux <- fit$data$aux[fidx,]
