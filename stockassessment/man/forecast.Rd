@@ -11,7 +11,7 @@ forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
   processNoiseF = TRUE, customWeights = NULL, customSel = NULL,
-  lagR = FALSE, splitLD = FALSE, addTSB = FALSE)
+  lagR = FALSE, splitLD = FALSE, addTSB = FALSE, savesim = FALSE)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -55,6 +55,8 @@ forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
 \item{splitLD}{if TRUE the result is split in landing and discards}
 
 \item{addTSB}{if TRUE the total stock biomass (TSB) is added}
+
+\item{savesim}{save the individual simulations}
 }
 \value{
 an object of type samforecast

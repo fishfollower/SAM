@@ -46,11 +46,12 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param lagR if the second youngest age should be reported as recruits
 ##' @param splitLD if TRUE the result is split in landing and discards
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
+##' @param savesim save the individual simulations 
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, savesim=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -469,5 +470,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   attr(simlist, "label") <- label
   attr(simlist, "caytable")<-caytable    
   class(simlist) <- "samforecast"
-  simlist
+  if(!savesim){  
+    simlistsmall<-lapply(simlist, function(x)list(year=x$year))
+    attributes(simlistsmall)<-attributes(simlist)
+    return(simlistsmall)
+  }else{
+    return(simlist)
+  }
 }
