@@ -26,9 +26,11 @@ forecast(
   lagR = FALSE,
   splitLD = FALSE,
   addTSB = FALSE,
-  useSWmodel = (fit$conf$stockWeightModel == 1)
+  useSWmodel = (fit$conf$stockWeightModel == 1),
+  savesim = FALSE
 )
 }
+
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
 
@@ -73,6 +75,8 @@ forecast(
 \item{addTSB}{if TRUE the total stock biomass (TSB) is added}
 
 \item{useSWmodel}{if TRUE the mean weight predicted from the assessment model is used (can only be used for configurations supporting this)}
+
+\item{savesim}{save the individual simulations}
 }
 \value{
 an object of type samforecast
