@@ -36,6 +36,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param label optional label to appear in short table
 ##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 ##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
+##' @param processNoiseF option to turn off process noise in F
 ##' @param cf.cv.keep.cv exotic option 
 ##' @param cf.cv.keep.fv exotic option
 ##' @param cf.keep.fv.offset exotic option
@@ -45,7 +46,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom Matrix bdiag
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
+forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
 
   idxN <- 1:nrow(fit$rep$nvar)
     
@@ -120,7 +121,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, fval=NULL, nosim=1000, yea
   }
 
   getProcessVar <- function(fit, set.rec.var.zero=TRUE){
-    cov <- bdiag(fit$rep[c("nvar","fvar")])
+    varList <- fit$rep[c("nvar","fvar")]
+    if(processNoiseF==FALSE){
+      varList$fvar<-varList$fvar*0
+    }
+    cov <- bdiag(varList)
     if(set.rec.var.zero){
       cov[1,1] <- 0
     }

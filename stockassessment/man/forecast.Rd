@@ -9,11 +9,12 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
   ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0), label = NULL,
   overwriteSelYears = NULL, deterministic = FALSE,
-  cf.cv.keep.cv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0),
-  nrow = length(catchval)), cf.cv.keep.fv = matrix(NA, ncol = 2 *
+  processNoiseF = TRUE, cf.cv.keep.cv = matrix(NA, ncol = 2 *
   sum(fit$data$fleetTypes == 0), nrow = length(catchval)),
-  cf.keep.fv.offset = matrix(0, ncol = sum(fit$data$fleetTypes == 0),
-  nrow = length(catchval)), estimate = median)
+  cf.cv.keep.fv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0),
+  nrow = length(catchval)), cf.keep.fv.offset = matrix(0, ncol =
+  sum(fit$data$fleetTypes == 0), nrow = length(catchval)),
+  estimate = median)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -37,6 +38,8 @@ forecast(fit, fscale = NULL, catchval = NULL, fval = NULL,
 \item{overwriteSelYears}{if a vector of years is specified, then the average selectivity of those years is used (not recommended)}
 
 \item{deterministic}{option to turn all process noise off (not recommended, as it will likely cause bias)}
+
+\item{processNoiseF}{option to turn off process noise in F}
 
 \item{cf.cv.keep.cv}{exotic option}
 
