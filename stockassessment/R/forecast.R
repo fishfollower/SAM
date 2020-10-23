@@ -283,9 +283,13 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   }
   procVar<-getProcessVar(fit)  
   simlist<-list()
-  for(i in 0:(length(fscale)-1)){
+  rs <- NULL  
+  for(i in 0:(length(fscale)-1)){    
     y<-year.base+i  
-
+    if(!is.null(rs)){
+      assign(".Random.seed", rs, envir = .GlobalEnv)
+      rs <- NULL    
+    }
     sw<-getThisOrAve(fit$data$stockMeanWeight, y, ave.sw)
     cw<-getThisOrAve(fit$data$catchMeanWeight, y, ave.cw)
     mo<-getThisOrAve(fit$data$propMat, y, ave.mo)
@@ -296,7 +300,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     pf<-getThisOrAve(fit$data$propF, y, ave.pf)
 
     sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
-    if(i!=0){
+    if(i!=0){  
       cof <- coef(fit)
       if(deterministic){procVar<-procVar*0}
       if(!is.null(overwriteSelYears)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
@@ -393,7 +397,9 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     if(!is.na(nextssb[i+1])){
       if((sum(pm)!=0) | (sum(pf)!=0))stop("nextssb option only available if SSB is calculated in the beginning of the year")  
       simtmp<-NA
+      rs<-.Random.seed
       fun<-function(s){
+        assign(".Random.seed", rs, envir = .GlobalEnv)
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))
         simsim<-t(apply(simtmp, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
         if(i!=0){
