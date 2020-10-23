@@ -86,7 +86,7 @@ External covariance matrices can be provided by assigning a list with the covari
 ```r
 attr(surveys[[2]], "cov-weight") <- lapply(1:23, function(i)estcov)
 ```
-Note that the estimated variances will be scaled internally in SAM when we provide the `cov-weight` attribute, and the correlation structure will be used as fixed. If we want to use the externally estiamted variances as fixed (probably never used), we rename the attribut to `cov`, i.e:
+Note that the estimated variances will be scaled internally in SAM when we provide the `cov-weight` attribute, and the correlation structure will be used as fixed. If we want to use the externally estiamted variances as fixed, we rename the attribut to `cov`, i.e:
 ```r
 attr(surveys[[2]], "cov") <- lapply(1:23, function(i)estcov)
 ```
