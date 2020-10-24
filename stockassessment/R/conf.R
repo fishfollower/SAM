@@ -156,20 +156,21 @@ saveConf <- function(x, file="", overwrite=FALSE){
     cat(paste0("# Configuration saved: ",date()), file=file)
     cat("\n#\n# Where a matrix is specified rows corresponds to fleets and columns to ages.\n" , file=file, append=TRUE)
     cat("# Same number indicates same parameter used\n" , file=file, append=TRUE)
-    cat("# Numbers (integers) starts from zero and must be consecutive\n#" , file=file, append=TRUE)
+    cat("# Numbers (integers) starts from zero and must be consecutive\n" , file=file, append=TRUE)
+    cat("# Negative numbers indicate that the parameter is not included in the model\n#" , file=file, append=TRUE)
     #
 
     txt<-list()
     txt$minAge <- "The minimium age class in the assessment"
     txt$maxAge <- "The maximum age class in the assessment"
     txt$maxAgePlusGroup <- "Is last age group considered a plus group for each fleet (1 yes, or 0 no)." 
-    txt$keyLogFsta <- "Coupling of the fishing mortality states (nomally only first row is used)."
-    txt$corFlag <- "Correlation of fishing mortality across ages (0 independent, 1 compound symmetry, 2 AR(1), 3 separable AR(1)."
-    txt$keyLogFpar <- "Coupling of the survey catchability parameters (nomally first row is not used, as that is covered by fishing mortality)."
+    txt$keyLogFsta <- "Coupling of the fishing mortality states processes for each age (normally only \n# the first row (= fleet) is used). \n# Sequential numbers indicate that the fishing mortality is estimated individually \n# for those ages; if the same number is used for two or more ages, F is bound for \n# those ages (assumed to be the same). Binding fully selected ages will result in a \n# flat selection pattern for those ages."
+    txt$corFlag <-"Correlation of fishing mortality across ages (0 independent, 1 compound symmetry, \n# 2 AR(1), 3 separable AR(1). \n# 0: independent means there is no correlation between F across age \n# 1: compound symmetry means that all ages are equally correlated; \n# 2: AR(1) first order autoregressive - similar ages are more highly correlated than \n# ages that are further apart, so similar ages have similar F patterns over time. \n# if the estimated correlation is high, then the F pattern over time for each age \n# varies in a similar way. E.g if almost one, then they are parallel (like a \n# separable model) and if almost zero then they are independent. \n# 3: Separable AR - Included for historic reasons . . .  more later"
+    txt$keyLogFpar <- "Coupling of the survey catchability parameters (nomally first row is \n# not used, as that is covered by fishing mortality)."
     txt$keyQpow <- "Density dependent catchability power parameters (if any)."
-    txt$keyVarF <- "Coupling of process variance parameters for log(F)-process (nomally only first row is used)"
-    txt$keyVarLogN <- "Coupling of process variance parameters for log(N)-process"
-    txt$keyVarObs <- "Coupling of the variance parameters for the observations."
+    txt$keyVarF <- "Coupling of process variance parameters for log(F)-process (Fishing mortality \n# normally applies to the first (fishing) fleet; therefore only first row is used)"
+    txt$keyVarLogN <- "Coupling of the recruitment and survival process variance parameters for the \n# log(N)-process at the different ages. It is advisable to have at least the first age \n# class (recruitment) separate, because recruitment is a different process than \n# survival."
+    txt$keyVarObs <- "Coupling of the variance parameters for the observations. \n# First row refers to the coupling of the variance parameters for the catch data \n# observations by age \n# Second and further rows refers to coupling of the variance parameters for the \n# index data observations by age"
     txt$obsCorStruct <- "Covariance structure for each fleet (\"ID\" independent, \"AR\" AR(1), or \"US\" for unstructured)."
     txt$keyCorObs <- paste0("Coupling of correlation parameters can only be specified if the AR(1) structure is chosen above.",
                             "\n# NA's indicate where correlation parameters can be specified (-1 where they cannot).",

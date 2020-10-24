@@ -9,14 +9,33 @@
 \usage{
 fbarplot(fit, ...)
 
-\method{fbarplot}{sam}(fit, partial = TRUE, drop = NULL,
-  pcol = "lightblue", page = NULL, plot = TRUE, ...)
+\method{fbarplot}{sam}(
+  fit,
+  partial = TRUE,
+  drop = NULL,
+  pcol = "lightblue",
+  page = NULL,
+  plot = TRUE,
+  ...
+)
 
-\method{fbarplot}{samset}(fit, partial = FALSE, drop = NULL,
-  pcol = "lightblue", page = NULL, ...)
+\method{fbarplot}{samset}(
+  fit,
+  partial = FALSE,
+  drop = NULL,
+  pcol = "lightblue",
+  page = NULL,
+  ...
+)
 
-\method{fbarplot}{samforecast}(fit, partial = FALSE, drop = NULL,
-  pcol = "lightblue", page = NULL, ...)
+\method{fbarplot}{samforecast}(
+  fit,
+  partial = FALSE,
+  drop = NULL,
+  pcol = "lightblue",
+  page = NULL,
+  ...
+)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

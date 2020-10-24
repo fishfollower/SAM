@@ -9,23 +9,59 @@
 \usage{
 plotit(fit, what, ...)
 
-\method{plotit}{sam}(fit, what, x = fit$data$years, ylab = what,
-  xlab = "Years", ex = numeric(0), trans = function(x) x,
-  add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
-  addCI = NA, drop = 0, unnamed.basename = "current", xlim = NULL,
-  ...)
+\method{plotit}{sam}(
+  fit,
+  what,
+  x = fit$data$years,
+  ylab = what,
+  xlab = "Years",
+  ex = numeric(0),
+  trans = function(x) x,
+  add = FALSE,
+  ci = TRUE,
+  cicol = gray(0.5, alpha = 0.5),
+  addCI = NA,
+  drop = 0,
+  unnamed.basename = "current",
+  xlim = NULL,
+  ...
+)
 
-\method{plotit}{samset}(fit, what, x = fit$data$years, ylab = what,
-  xlab = "Years", ex = numeric(0), trans = function(x) x,
-  add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
-  addCI = rep(FALSE, length(fit)), drop = 0,
-  unnamed.basename = "current", xlim = NULL, ...)
+\method{plotit}{samset}(
+  fit,
+  what,
+  x = fit$data$years,
+  ylab = what,
+  xlab = "Years",
+  ex = numeric(0),
+  trans = function(x) x,
+  add = FALSE,
+  ci = TRUE,
+  cicol = gray(0.5, alpha = 0.5),
+  addCI = rep(FALSE, length(fit)),
+  drop = 0,
+  unnamed.basename = "current",
+  xlim = NULL,
+  ...
+)
 
-\method{plotit}{samforecast}(fit, what, x = fit$data$years,
-  ylab = what, xlab = "Years", ex = numeric(0), trans = function(x)
-  x, add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
-  addCI = NA, drop = 0, unnamed.basename = "current", xlim = NULL,
-  ...)
+\method{plotit}{samforecast}(
+  fit,
+  what,
+  x = fit$data$years,
+  ylab = what,
+  xlab = "Years",
+  ex = numeric(0),
+  trans = function(x) x,
+  add = FALSE,
+  ci = TRUE,
+  cicol = gray(0.5, alpha = 0.5),
+  addCI = NA,
+  drop = 0,
+  unnamed.basename = "current",
+  xlim = NULL,
+  ...
+)
 }
 \arguments{
 \item{fit}{the fitted object from sam.fit of a set of such fits c(fit1,fit2)}
