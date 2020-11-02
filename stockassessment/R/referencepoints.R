@@ -430,11 +430,10 @@ referencepoints.sam <- function(fit,
     if(any(rp %in% "logScaleFmsy") && which.max(rep$logYe[is.finite(rep$logYe)]) == length(rep$logYe[is.finite(rep$logYe)])){
         warning("The stock does not appear to have a well-defined Fmsy. Fmsy will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFmsy")]
-        rp <- rp[-which(rp %in% "logScaleFmsyRangeLower")]
-        rp <- rp[-which(rp %in% "logScaleFmsyRangeUpper")]
+        rp <- rp[-which(rp %in% "logScaleFmsyRange")]
         args$map$logScaleFmsy <- factor(NA)
         MSYfraction <- MSYreduction <- numeric(0)
-        args$parameters$logScaleFmsyRange <- numeric(0)
+        args$parameters$logScaleFmsyRange <- matrix(0,2,0)
         tryAgain <- TRUE
     }else if(any(rp %in% "logScaleFmsy")){
         indx <- which(is.finite(rep$logYe) & Fsequence > 0)
