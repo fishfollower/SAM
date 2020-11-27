@@ -27,21 +27,29 @@ vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
 }
 
 template <class Type>
-vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
   int len=dat.catchMeanWeight.dim(0);
-  vector<Type> cat(len);
+  matrix<Type> cat(conf.maxAge - conf.minAge + 1, len);
   cat.setZero();
   for(int y=0;y<len;y++){
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
       Type z=dat.natMor(y,a-conf.minAge);
       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
         z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-        cat(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge);
+        cat(a-conf.minAge, y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge);
       }
     }
   }
   return cat;
 }
+
+
+template <class Type>
+vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+  matrix<Type> cat = catchFunAge(dat,conf,logN,logF);  
+  return (vector<Type>)cat.colwise().sum();
+}
+
 
 template <class Type>
 vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, paraSet<Type> par){

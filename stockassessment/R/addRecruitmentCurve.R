@@ -180,5 +180,5 @@ addRecruitmentCurve.sam <- function(fit,
                }
            }
        }
-       invisible(srfit)
+       invisible(Vectorize(srfit,"ssb"))
 } 
