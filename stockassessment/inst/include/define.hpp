@@ -222,6 +222,7 @@ struct referencepointSet {
   vector<Type> xPercent;
   vector<Type> MSYRange;
   CatchType catchType;
+  int optN;
 
   referencepointSet() : nYears(0) {};
   
@@ -230,6 +231,7 @@ struct referencepointSet {
     if(Rf_isNull(getListElement(x,"nYears")) ||
        (int)*REAL(getListElement(x,"nYears")) == 0){
       nYears = 0;
+      optN = 1;
     }else{
       using tmbutils::asArray;
       nYears = (int)*REAL(getListElement(x,"nYears"));
@@ -239,11 +241,13 @@ struct referencepointSet {
       xPercent = asVector<Type>(getListElement(x,"xPercent"));
       catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
       MSYRange = asVector<Type>(getListElement(x,"MSYRange"));
+      optN = (int)*REAL(getListElement(x,"optN"));	    
     }
   }
   
   referencepointSet<Type>& operator=(const referencepointSet<Type>& rhs) {
     nYears = rhs.nYears;
+    optN = rhs.optN;
     if(nYears == 0)
       return *this;
     aveYears = rhs.aveYears;
@@ -259,6 +263,7 @@ struct referencepointSet {
   referencepointSet<T> cast() const {
     referencepointSet<T> d;
     d.nYears = nYears;
+    d.optN = optN;
     if(nYears == 0)
       return d;
     d.aveYears = aveYears;

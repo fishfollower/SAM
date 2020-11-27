@@ -6,13 +6,13 @@
 \title{Estimate reference points}
 \usage{
 referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
-  catchType, MSYreduction, newtonSteps = 3, ...)
+  catchType, MSYreduction, newtonSteps = 3, optN = 100, ...)
 
 \method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(0, 4,
   len = 200), aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years), SPRpercent = c(0.35),
   catchType = "catch", jacobianHScale = 0.5, MSYreduction = c(0.05),
-  newtonSteps = 3, ...)
+  newtonSteps = 3, optN = 100, ...)
 }
 \arguments{
 \item{fit}{an object to calculate reference points for}
