@@ -120,6 +120,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> cat = catchFun(dat, conf, logN, logF);
   vector<Type> logCatch = log(cat);
 
+  matrix<Type> catAge = catchFunAge(dat, conf, logN, logF);
+  matrix<Type> logCatchAge = catAge.array().log().matrix();
+
   vector<Type> land = landFun(dat, conf, logN, logF);
   vector<Type> logLand = log(land);
 
@@ -135,6 +138,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
   vector<Type> fbar = fbarFun(conf, logF);
   vector<Type> logfbar = log(fbar);
+
+  vector<Type> fbarL = landFbarFun(dat, conf, logF);
+  vector<Type> logfbarL = log(fbarL);
 
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logtsb, logfsb, logCatch, logLand);
   
@@ -357,7 +363,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
       //if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
 	REPORT_F(logssb,of);
 	REPORT_F(logfbar,of);
+	REPORT_F(logfbarL,of);
 	REPORT_F(logCatch,of);
+	REPORT_F(logCatchAge,of);
 	REPORT_F(logLand,of);
 	REPORT_F(logtsb,of);      
 	//}
