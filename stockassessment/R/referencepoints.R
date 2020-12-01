@@ -261,7 +261,7 @@ referencepoints.sam <- function(fit,
                                 jacobianHScale = 0.5,
                                 MSYreduction = c(0.05),
                                 newtonSteps = 3,
-                                optN = 100,
+                                optN = 20,
                                 ...){
     if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
         stop("Values of Fsequence must be positive and increasing.")
@@ -542,7 +542,7 @@ referencepoints.sam <- function(fit,
     args$parameters$implicitFunctionDelta <- 0
 
     objSDR <- do.call(TMB::MakeADFun, args)
-    objSDR$fn(objSDR$par)
+    ## objSDR$fn(objSDR$par)
     
     sdr <- TMB::sdreport(objSDR, objSDR$par, svd_solve(covAll))
     ssdr <- summary(sdr)
