@@ -30,7 +30,6 @@ forecast(
   savesim = FALSE
 )
 }
-
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
 
