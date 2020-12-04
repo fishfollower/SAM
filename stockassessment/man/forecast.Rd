@@ -16,11 +16,19 @@ forecast(
   nosim = 1000,
   year.base = max(fit$data$years),
   ave.years = max(fit$data$years) + (-4:0),
-  rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL, deterministic = FALSE,
-  processNoiseF = TRUE, customWeights = NULL, customSel = NULL,
-  lagR = FALSE, splitLD = FALSE, addTSB = FALSE, savesim=FALSE,
-  useSWmodel = (fit$conf$stockWeightModel == 1))
+  rec.years = max(fit$data$years) + (-9:0),
+  label = NULL,
+  overwriteSelYears = NULL,
+  deterministic = FALSE,
+  processNoiseF = TRUE,
+  customWeights = NULL,
+  customSel = NULL,
+  lagR = FALSE,
+  splitLD = FALSE,
+  addTSB = FALSE,
+  savesim = FALSE,
+  useSWmodel = (fit$conf$stockWeightModel == 1)
+)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -68,7 +76,6 @@ forecast(
 \item{savesim}{save the individual simulations}
 
 \item{useSWmodel}{if TRUE the mean weight predicted from the assessment model is used (can only be used for configurations supporting this)}
-
 }
 \value{
 an object of type samforecast
