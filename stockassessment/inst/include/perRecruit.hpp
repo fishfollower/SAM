@@ -215,7 +215,7 @@ namespace rec_atomic {
 	wn = wn * (1.0 + en);
       }while(en > 1e-8);   
     }else{
-      Rf_error("lambertW is only implemented for x>0");
+      Rf_warning("lambertW is only implemented for x>0");
       wn = SAM_Zero;
     }
     return wn;
