@@ -1735,9 +1735,11 @@ struct REFERENCE_POINTS {
     }
  
     if(CppAD::Variable(par.logScaleFext)){
-      Type tmp1 = Se(exp(logFext));
-      Type tmp2 = exp(logFext);
-      nll += tmp1 * tmp1 + tmp2 * tmp2;
+      // Type tmp1 = Se(exp(logFext));
+      // Type tmp2 = exp(logFext);
+      // nll += tmp1 * tmp1 + tmp2 * tmp2;
+      Type tmp = Se(exp(logFext)) - Se(exp(logFext - 0.001));
+      nll += tmp;
     }
     
     for(int i = 0; i < par.logScaleFxPercent.size(); ++i){
