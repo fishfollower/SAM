@@ -326,7 +326,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
-                ## "logScaleFext",
+                "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFlim",
                 "logScaleFmsyRange")
@@ -354,7 +354,7 @@ referencepoints.sam <- function(fit,
         rp <- c("logScaleFmsy",
                 "logScaleFmax",
                 "logScaleF01",
-                ## "logScaleFext",
+                "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
@@ -363,7 +363,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
-                ## "logScaleFext",
+                "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
@@ -372,7 +372,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmax",
                 "logScaleF01",
                 ##"logScaleFcrash",
-                ## "logScaleFext",
+                "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
@@ -381,7 +381,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
-                ## "logScaleFext",
+                "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
