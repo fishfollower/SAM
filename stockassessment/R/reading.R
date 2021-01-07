@@ -466,5 +466,5 @@ refit <- function(fit, newConf, ...){
             dp[[i]] <- fit2$pl[[i]]
     fit2$pl <- dp
     ##runwithout(fit2, ...)
-    sam.fit(fit2$data, fit2$conf, dp, rm.unidentified = TRUE, ...)
+    sam.fit(fit2$data, fit2$conf, dp, ...)
 }
