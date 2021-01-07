@@ -9,7 +9,8 @@ struct confSet;
 template <class Type>
 struct paraSet;
 
-
+template <class Type>
+Type hcr(Type ssb, vector<Type> hcrConf);
 
 #define REPORT_F(name,F)					\
   if(isDouble<Type>::value && F->current_parallel_region<0) {	\
@@ -82,7 +83,9 @@ struct forecastSet {
 		   useCatchval,
 		   useNextssb,
 		   useLandval,
-		   findMSY
+		   findMSY,
+		   HCR,
+		   customHCR
   };
   enum recModelType {
 		     asRecModel,
@@ -102,16 +105,22 @@ struct forecastSet {
   vector<FModelType> FModel;
   vector<Type> target;
   vector<Type> selectivity;
-  matrix<Type> forecastCalculatedMedian;
-  vector<Type> forecastCalculatedLogSdCorrection;
   vector<recModelType> recModel;
   Type logRecruitmentMedian;
   Type logRecruitmentVar;
   vector<FSdTimeScaleModel> fsdTimeScaleModel;
   vector<int> simFlag;
   int uniroot;
+  vector<Type> hcrConf;
 
+  matrix<Type> forecastCalculatedMedian;
+  vector<Type> forecastCalculatedLogSdCorrection;
+  vector<Type> sel;
+  vector<Type> selFull;
+  Type initialFbar;
+  
   void calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par); // Defined after dataSet and confSet
+  void updateForecast(int i, array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par); // Defined after dataSet and confSet
   
   forecastSet() : nYears(0) {};
   
@@ -146,7 +155,7 @@ struct forecastSet {
 	fsdTimeScaleModel(i) = static_cast<FSdTimeScaleModel>(fsdTimeScaleModelTmp(i));
       simFlag = asVector<int>(getListElement(x,"simFlag"));
       uniroot = (int)*REAL(getListElement(x,"uniroot"));
-  
+      hcrConf = asVector<Type>(getListElement(x,"hcrConf"));
     }
   };
 
@@ -160,14 +169,19 @@ struct forecastSet {
     FModel = rhs.FModel;
     target = rhs.target;
     selectivity = rhs.selectivity;
-    forecastCalculatedMedian = rhs.forecastCalculatedMedian;
-    forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
     recModel = rhs.recModel;
     logRecruitmentMedian = rhs.logRecruitmentMedian;
     logRecruitmentVar = rhs.logRecruitmentVar;
     fsdTimeScaleModel = rhs.fsdTimeScaleModel;
     simFlag = rhs.simFlag;
     uniroot = rhs.uniroot;
+    hcrConf = rhs.hcrConf;
+    forecastCalculatedMedian = rhs.forecastCalculatedMedian;
+    forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
+    sel = rhs.sel;
+    selFull = rhs.selFull;
+    initialFbar = rhs.initialFbar;
+
     return *this;
   }
 
@@ -186,8 +200,6 @@ struct forecastSet {
       d.FModel(i) = static_cast<typename forecastSet<T>::FModelType>((int)FModel(i));
     d.target = target.template cast<T>();
     d.selectivity = selectivity.template cast<T>();
-    d.forecastCalculatedMedian = forecastCalculatedMedian.template cast<T>();
-    d.forecastCalculatedLogSdCorrection = forecastCalculatedLogSdCorrection.template cast<T>();
     // d.recModel = recModel; // <int>
     d.recModel = vector<typename forecastSet<T>::recModelType>(recModel.size());
     for(int i = 0; i < recModel.size(); ++i)
@@ -201,6 +213,12 @@ struct forecastSet {
 
     d.simFlag = simFlag; // <int>
     d.uniroot = uniroot;
+    d.hcrConf = hcrConf.template cast<T>();
+    d.forecastCalculatedMedian = forecastCalculatedMedian.template cast<T>();
+    d.forecastCalculatedLogSdCorrection = forecastCalculatedLogSdCorrection.template cast<T>();
+    d.sel = sel.template cast<T>();
+    d.selFull = selFull.template cast<T>();
+    d.initialFbar = T(initialFbar);
     return d;    
   }
 
@@ -462,38 +480,6 @@ void extendArray(array<Type>& x, int nModelYears, int nForecastYears, vector<int
   return;
 }
 
-template <class Type>
-void prepareForForecast(dataSet<Type>& dat){
-  int nFYears = dat.forecast.nYears;
-  int nMYears = dat.noYears;
-  if(nFYears == 0)
-    return;
-  vector<int> aveYears = dat.forecast.aveYears;
-  // propMat
-  extendArray(dat.propMat, nMYears, nFYears, aveYears);
-  // stockMeanWeight
-  extendArray(dat.stockMeanWeight, nMYears, nFYears, aveYears);
-  // catchMeanWeight
-  extendArray(dat.catchMeanWeight, nMYears, nFYears, aveYears);
-  // natMor
-  extendArray(dat.natMor, nMYears, nFYears, aveYears);
-  // landFrac
-  extendArray(dat.landFrac, nMYears, nFYears, aveYears);
-  // disMeanWeight
-  extendArray(dat.disMeanWeight, nMYears, nFYears, aveYears);
-  // landMeanWeight
-  extendArray(dat.landMeanWeight, nMYears, nFYears, aveYears);
-  // propF
-  extendArray(dat.propF, nMYears, nFYears, aveYears);
-  // propM
-  extendArray(dat.propM, nMYears, nFYears, aveYears);
-  return;  
-}
-
-
-
-
-
 struct confSet{
   int minAge;
   int maxAge;
@@ -707,43 +693,62 @@ struct paraSet{
 };
 
 
-template<class Type>
-void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par){
-  if(nYears == 0){ // no forecast
+template <class Type>
+void prepareForForecast(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logN){
+  int nFYears = dat.forecast.nYears;
+  int nMYears = dat.noYears;
+  if(nFYears == 0)
     return;
-  }
-  
-  //array<Type>& natMor, array<Type>& catchMeanWeight, ){
-  matrix<Type> natMorT = dat.natMor.matrix().transpose();
-  matrix<Type> catchMeanWeightT = dat.catchMeanWeight.matrix().transpose();
-  matrix<Type> landMeanWeightT = dat.landMeanWeight.matrix().transpose();
-  matrix<Type> landFracT = dat.landFrac.matrix().transpose();
-  forecastCalculatedMedian = matrix<Type>(logF.rows(), nYears);
-  forecastCalculatedMedian.setZero();
-  forecastCalculatedLogSdCorrection = vector<Type>(nYears);
-  forecastCalculatedLogSdCorrection.setZero();
+  vector<int> aveYears = dat.forecast.aveYears;
+  // propMat
+  extendArray(dat.propMat, nMYears, nFYears, aveYears);
+  // stockMeanWeight
+  extendArray(dat.stockMeanWeight, nMYears, nFYears, aveYears);
+  // catchMeanWeight
+  extendArray(dat.catchMeanWeight, nMYears, nFYears, aveYears);
+  // natMor
+  extendArray(dat.natMor, nMYears, nFYears, aveYears);
+  // landFrac
+  extendArray(dat.landFrac, nMYears, nFYears, aveYears);
+  // disMeanWeight
+  extendArray(dat.disMeanWeight, nMYears, nFYears, aveYears);
+  // landMeanWeight
+  extendArray(dat.landMeanWeight, nMYears, nFYears, aveYears);
+  // propF
+  extendArray(dat.propF, nMYears, nFYears, aveYears);
+  // propM
+  extendArray(dat.propM, nMYears, nFYears, aveYears);
+
+  // Prepare forecastCalculated...
+  dat.forecast.forecastCalculatedMedian = matrix<Type>(logF.rows(), nFYears);
+  dat.forecast.forecastCalculatedMedian.setZero();
+  dat.forecast.forecastCalculatedLogSdCorrection = vector<Type>(nFYears);
+  dat.forecast.forecastCalculatedLogSdCorrection.setZero();
+
+  // Calculate initial Fbar
   int fbarFirst = conf.fbarRange(0) - conf.minAge;
   int fbarLast = conf.fbarRange(1) - conf.minAge;
-  Type initialFbar = 0.0;
+  dat.forecast.initialFbar = 0.0;
   for(int a = fbarFirst; a <= fbarLast; ++a){  
-    initialFbar += exp(logF(conf.keyLogFsta(0,a),forecastYear.size() - nYears - 1));
+    dat.forecast.initialFbar += exp(logF(conf.keyLogFsta(0,a),dat.forecast.forecastYear.size() - nFYears - 1));
   }
-  initialFbar /= Type(fbarLast - fbarFirst + 1);
+  dat.forecast.initialFbar /= Type(fbarLast - fbarFirst + 1);
 
-  vector<Type> sel(logF.rows());
-  sel.setZero();
-  vector<Type> selFull(logN.rows());
-  selFull.setZero();
+  // Calculate selectivity
+  dat.forecast.sel = vector<Type>(logF.rows());
+  dat.forecast.sel.setZero();
+  dat.forecast.selFull = vector<Type>(logN.rows());
+  dat.forecast.selFull.setZero();
 
   // Correct input selectivity to have Fbar == 1
   Type inputFbar = 0.0;
-  if(selectivity.size() > 0){
+  if(dat.forecast.selectivity.size() > 0){
     Rcout << "Using custom selectivity!\n";
     for(int a = fbarFirst; a <= fbarLast; ++a){  
-      if(selectivity.size() == logF.rows()){
-	inputFbar += selectivity(conf.keyLogFsta(0,a));
-      }else if(selectivity.size() == logN.rows()){
-	inputFbar += selectivity(a);
+      if(dat.forecast.selectivity.size() == logF.rows()){
+	inputFbar += dat.forecast.selectivity(conf.keyLogFsta(0,a));
+      }else if(dat.forecast.selectivity.size() == logN.rows()){
+	inputFbar += dat.forecast.selectivity(a);
       }else{
 	Rf_error("Wrong size of selectivity. Must match logF or logN array.");
       }
@@ -751,31 +756,53 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
     inputFbar /= Type(fbarLast - fbarFirst + 1);
     if(inputFbar != 1.0){
       Rf_warning("The input selectivity was re-scaled to have Fbar equal to one.");
-      selectivity /= inputFbar;
+      dat.forecast.selectivity /= inputFbar;
     }
   }
-    
 
-    
   for(int j = 0; j < logN.rows(); ++j){
     if(conf.keyLogFsta(0,j)>(-1)){
-      if(selectivity.size() == 0){
-	selFull(j) = exp(logF(conf.keyLogFsta(0,j),forecastYear.size() - nYears - 1)) / initialFbar;
-	sel(conf.keyLogFsta(0,j)) = selFull(j);
-      }else if(selectivity.size() == logF.rows()){
-	selFull(j) = selectivity(conf.keyLogFsta(0,j));
-      }else if(selectivity.size() == logN.rows()){
-	selFull(j) = selectivity(j);
+      if(dat.forecast.selectivity.size() == 0){
+	dat.forecast.selFull(j) = exp(logF(conf.keyLogFsta(0,j),dat.forecast.forecastYear.size() - nFYears - 1)) / dat.forecast.initialFbar;
+	dat.forecast.sel(conf.keyLogFsta(0,j)) = dat.forecast.selFull(j);
+      }else if(dat.forecast.selectivity.size() == logF.rows()){
+	dat.forecast.selFull(j) = dat.forecast.selectivity(conf.keyLogFsta(0,j));
+      }else if(dat.forecast.selectivity.size() == logN.rows()){
+	dat.forecast.selFull(j) = dat.forecast.selectivity(j);
       }else{
 	Rf_error("Wrong size of selectivity. Must match logF or logN array.");
       }
-      sel(conf.keyLogFsta(0,j)) = selFull(j);
+      dat.forecast.sel(conf.keyLogFsta(0,j)) = dat.forecast.selFull(j);
     }
   }
-        
+  
+  return;  
+}
+
+
+template<class Type>
+void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par){
+  if(nYears == 0){ // no forecast
+    return;
+  }
+
   for(int i = 0; i < nYears; ++i){
-    int indx = forecastYear.size() - nYears + i;
-    Type y = forecastYear(indx);
+    updateForecast(i, logF, logN, dat, conf, par);
+  }
+  return;
+
+}
+
+template<class Type>
+void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par){
+  if(nYears == 0){ // no forecast
+    return;
+  }
+
+  
+    int indx = forecastYear.size() - nYears + i;    
+    Type y = forecastYear(indx);    
+    Type lastSSB = ssbi(dat, conf, logN, logF, indx-1);
     Type calcF = 0.0;
  
     vector<Type> lastFullLogF(logN.rows());
@@ -825,9 +852,17 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
       break;
     case useCatchval: // target is a catch value in weight
       if(uniroot){
-	calcF = catch2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));
+	calcF = catch2F((Type)target(i),
+			exp(lastFullLogF),
+			(vector<Type>)dat.natMor.matrix().row(indx),
+			exp((vector<Type>)logN.col(indx)),
+			(vector<Type>)dat.catchMeanWeight.matrix().row(indx));
       }else{
-	calcF = catch2F_quick((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)catchMeanWeightT.col(indx));
+	calcF = catch2F_quick((Type)target(i),
+			      exp(lastFullLogF),
+			      (vector<Type>)dat.natMor.matrix().row(indx),
+			      exp((vector<Type>)logN.col(indx)),
+			      (vector<Type>)dat.catchMeanWeight.matrix().row(indx));
       }
       if(i == 0){
 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
@@ -839,9 +874,19 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
       Rf_error("Forecast type not implemented");
     case useLandval:
       if(uniroot){
-	calcF = landing2F((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)landMeanWeightT.col(indx), (vector<Type>)landFracT.col(indx));
+	calcF = landing2F((Type)target(i),
+			  exp(lastFullLogF),
+			  (vector<Type>)dat.natMor.matrix().row(indx),
+			  exp((vector<Type>)logN.col(indx)),
+			  (vector<Type>)dat.landMeanWeight.matrix().row(indx),
+			  (vector<Type>)dat.landFrac.matrix().row(indx));
       }else{
-	calcF = landing2F_quick((Type)target(i), exp(lastFullLogF), (vector<Type>)natMorT.col(indx), exp((vector<Type>)logN.col(indx)), (vector<Type>)landMeanWeightT.col(indx), (vector<Type>)landFracT.col(indx));
+	calcF = landing2F_quick((Type)target(i),
+				exp(lastFullLogF),
+				(vector<Type>)dat.natMor.matrix().row(indx),
+				exp((vector<Type>)logN.col(indx)),
+				(vector<Type>)dat.landMeanWeight.matrix().row(indx),
+				(vector<Type>)dat.landFrac.matrix().row(indx));
       }
       if(i == 0){
 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
@@ -852,17 +897,18 @@ void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, 
     case findMSY:
       forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel); // 
       break;
+    case HCR:
+      forecastCalculatedMedian.col(i) = hcr(lastSSB, hcrConf) + log(sel); // 
+      break;
+    case customHCR:
+      Rf_error("Forecast type not implemented");
+      break;
     default:
       Rf_error("Forecast type not implemented");
     }
-  }
-    
+    return;
 }
-
-
-
-
-
+    
 
 
 

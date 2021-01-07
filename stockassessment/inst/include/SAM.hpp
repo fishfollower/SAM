@@ -14,5 +14,6 @@
 #include "predobs.hpp"
 #include "obs.hpp"
 #include "perRecruit.hpp"
+#include "hcr.hpp"
 
 #endif

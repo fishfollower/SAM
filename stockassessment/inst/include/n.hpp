@@ -1,9 +1,7 @@
 template <class Type>
-Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){ 
-  Type nll=0;
+matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF){
   int stateDimN=logN.dim[0];
   int timeSteps=logN.dim[1];
-  array<Type> resN(stateDimN,timeSteps-1);
   matrix<Type> nvar(stateDimN,stateDimN);
   vector<Type> varLogN=exp(par.logSdLogN*Type(2.0));
   for(int i=0; i<stateDimN; ++i){
@@ -11,6 +9,23 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(conf.keyVarLogN(i));}
     }
   }
+  return nvar;
+}
+
+template <class Type>
+Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){ 
+  Type nll=0;
+  int stateDimN=logN.dim[0];
+  int timeSteps=logN.dim[1];
+  array<Type> resN(stateDimN,timeSteps-1);
+  // matrix<Type> nvar(stateDimN,stateDimN);
+  // vector<Type> varLogN=exp(par.logSdLogN*Type(2.0));
+  // for(int i=0; i<stateDimN; ++i){
+  //   for(int j=0; j<stateDimN; ++j){
+  //     if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(conf.keyVarLogN(i));}
+  //   }
+  // }
+  matrix<Type> nvar = get_nvar(dat, conf, par, logN, logF);
   MVMIX_t<Type> neg_log_densityN(nvar,Type(conf.fracMixN));
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovN(nvar);
   matrix<Type> LN = lltCovN.matrixL();
@@ -28,7 +43,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       Nscale(0) = sqrt(dat.forecast.logRecruitmentVar) / sqrt(nvar(0,0));
       vector<Type> predNTmp = predN;
       predNTmp(0) = dat.forecast.logRecruitmentMedian;
-      MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
+      // MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
       nll+=neg_log_densityN((logN.col(i)-predNTmp) / Nscale) + (log(Nscale)).sum();
       SIMULATE_F(of){
 	if(dat.forecast.simFlag(1) == 0){

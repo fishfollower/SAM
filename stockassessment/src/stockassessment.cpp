@@ -66,8 +66,6 @@ Type objective_function<Type>::operator() ()
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
   DATA_STRUCT(forecast, forecastSet); dataset.forecast = forecast;
   DATA_STRUCT(referencepoint, referencepointSet); dataset.referencepoint = referencepoint;
-
-  prepareForForecast(dataset);
     
   confSet confset;
   DATA_INTEGER(minAge); confset.minAge=minAge; 
@@ -136,7 +134,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_VECTOR(missing);
-
+  
   // patch missing 
   int idxmis=0; 
   for(int i=0;i<nobs;i++){
@@ -152,10 +150,13 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   } 
 
+  prepareForForecast(dataset, confset, paraset, logF, logN);
   dataset.forecast.calculateForecast(logF,logN, dataset, confset, paraset);
 
   ans += nllF(dataset, confset, paraset, logF, keep, this);
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
+  forecastSimulation(dataset, confset, paraset, logN, logF, this);
+
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
 
   ans += nllReferencepoints(dataset, confset, paraset, logN, logF, this);

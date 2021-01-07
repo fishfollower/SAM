@@ -185,7 +185,8 @@ modelforecast.sam <- function(fit,
                                logRecruitmentVar = as.numeric(logRecruitmentVar),
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
                                simFlag = c(0,0),
-                               uniroot = as.numeric(useUniroot))
+                               uniroot = as.numeric(useUniroot),
+                               hcrConf = numeric(0))
 
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
