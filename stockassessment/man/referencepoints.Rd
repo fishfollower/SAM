@@ -12,7 +12,7 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
   len = 200), aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years), SPRpercent = c(0.35),
   catchType = "catch", jacobianHScale = 0.5, MSYreduction = c(0.05),
-  newtonSteps = 3, optN = 100, ...)
+  newtonSteps = 3, optN = 20, ...)
 }
 \arguments{
 \item{fit}{an object to calculate reference points for}

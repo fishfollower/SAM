@@ -26,10 +26,9 @@ Type jacobiUVtrans( array<Type> logF){
   return nr*log(CppAD::abs(A.determinant()));
 }
 
-template <class Type>
-Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+template<class Type>
+matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF){
   using CppAD::abs;
-  Type nll=0; 
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
   int stateDimN=conf.keyLogFsta.dim[1];
@@ -39,11 +38,6 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
 
-  
-  if(conf.corFlag==3){
-    return(nllFseparable(conf, par, logF, keep ,of));
-  }
-  
   if(conf.corFlag==0){
     fcor.setZero();
   }
@@ -83,7 +77,25 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
     }
   }
+  return fvar;
+};
+
+template <class Type>
+Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+  Type nll=0; 
+  int stateDimF=logF.dim[0];
+  int timeSteps=logF.dim[1];
+  int stateDimN=conf.keyLogFsta.dim[1];
+  // vector<Type> sdLogFsta=exp(par.logSdLogFsta);
+  array<Type> resF(stateDimF,timeSteps-1);
+
+  
+  if(conf.corFlag==3){
+    return(nllFseparable(dat, conf, par, logF, keep ,of));
+  }
+ 
   //density::MVNORM_t<Type> neg_log_densityF(fvar);
+  matrix<Type> fvar = get_fvar(dat, conf, par, logF);
   MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovF(fvar);
   matrix<Type> LF = lltCovF.matrixL();

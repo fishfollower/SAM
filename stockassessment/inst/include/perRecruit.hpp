@@ -1495,6 +1495,24 @@ struct REFERENCE_POINTS {
       logRlim = log(Re(exp(logFlim)));
       logYPRlim = log(YPR(exp(logFlim)));
       logSPRlim = log(SPR(exp(logFlim)));
+    }else if(CppAD::Variable(par.logScaleFcrash) &&
+			     !(conf.stockRecruitmentModelCode == 61 ||
+			       conf.stockRecruitmentModelCode == 63)){
+      logFlim = par.logScaleFcrash + logFsq + log(0.99); //logFsq + par.logScaleFcrash;
+      logBlim = log(Se(exp(logFlim)));
+      logRcrash = log(Re(exp(logFlim)));
+      logYcrash = log(yield(exp(logFlim)));
+      logYPRcrash = log(YPR(exp(logFlim)));
+      logSPRcrash = log(SPR(exp(logFlim)));
+    }else if(CppAD::Variable(par.logScaleFext) &&
+	     (conf.stockRecruitmentModelCode == 61 ||
+	      conf.stockRecruitmentModelCode == 63)){
+      logFlim = par.logScaleFext + logFsq + log(0.99); //logFsq + par.logScaleFcrash;
+      logBlim = log(Se(exp(logFlim)));
+      logRcrash = log(Re(exp(logFlim)));
+      logYcrash = log(yield(exp(logFlim)));
+      logYPRcrash = log(YPR(exp(logFlim)));
+      logSPRcrash = log(SPR(exp(logFlim)));
     }else{
       logFlim = R_NaReal;//R_NaReal;
       if(conf.stockRecruitmentModelCode == 61){
