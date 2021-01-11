@@ -689,7 +689,6 @@ struct paraSet{
   }
 
   
->>>>>>> 99889c9... Start reference point calculation
 };
 
 

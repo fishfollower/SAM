@@ -49,7 +49,7 @@ fit<-sam.fit(dat,conf,par)
 tol <- 1e-6
 ## Test fscale
 target <- c(0.9,0.9,0.9,1.1,1.1,1.1,1,1,1)
-fv <- forecast(fit, fscale = target, biasCorrect = FALSE)
+fv <- modelforecast(fit, fscale = target, biasCorrect = FALSE)
 cat("fscale tab:\t",paste(all.equal(tail(fbartable(fit)[,1],1) * cumprod(c(1,target)),
                      attr(fv,"tab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out")
 cat("fscale fulltab:\t",paste(all.equal(c(head(fbartable(fit)[,1],-1),tail(fbartable(fit)[,1],1) * cumprod(c(1,target))),
@@ -58,7 +58,7 @@ cat("fscale fulltab:\t",paste(all.equal(c(head(fbartable(fit)[,1],-1),tail(fbart
 
 ## Test fval
 target <- c(0.1,0.2,0.3,0.1)
-fv <- forecast(fit, fval = target, biasCorrect = FALSE)
+fv <- modelforecast(fit, fval = target, biasCorrect = FALSE)
 cat("fval tab:\t",paste(all.equal(c(tail(fbartable(fit)[,1],1), target),
                  attr(fv,"tab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol)),"\n", file="res.out", append = TRUE) 
 cat("fval fulltab:\t",paste(all.equal(c(head(fbartable(fit)[,1],-1),tail(fbartable(fit)[,1],1), target),
@@ -66,7 +66,7 @@ cat("fval fulltab:\t",paste(all.equal(c(head(fbartable(fit)[,1],-1),tail(fbartab
 
 ## Test catchval
 target <- round(c(0.5,0.3) * mean(tail(rep(catchtable(fit)[,1],4))))
-fv <- forecast(fit, catchval = target, biasCorrect = FALSE)
+fv <- modelforecast(fit, catchval = target, biasCorrect = FALSE)
 cat("catchval tab:\t",paste(all.equal(target,
                      round(attr(fv,"tab")[-1,"catch:median"]), check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 cat("catchval fulltab:\t",paste(all.equal(head(catchtable(fit)[,1],-1),
@@ -74,14 +74,14 @@ cat("catchval fulltab:\t",paste(all.equal(head(catchtable(fit)[,1],-1),
 
 ## Test landval
 target <- round(c(0.1,0.1) * mean(tail(rep(catchtable(fit)[,1],4))))
-fv <- forecast(fit, landval = target, biasCorrect = FALSE, splitLD = TRUE)
+fv <- modelforecast(fit, landval = target, biasCorrect = FALSE, splitLD = TRUE)
 cat("landval tab:\t",paste(all.equal(target,
                      round(attr(fv,"tab")[-1,"Land:median"]), check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 
 
 ## Test fmodel
 target <- rep(NA,5)
-fv <- forecast(fit, landval = target, biasCorrect = FALSE)
+fv <- modelforecast(fit, landval = target, biasCorrect = FALSE)
 cat("fmodel tab:\t",paste(all.equal(rep(tail(fbartable(fit)[,1],1),length(target)),
                      attr(fv,"tab")[-1,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 cat("fmodel tab:\t",paste(all.equal(c(fbartable(fit)[,1],rep(tail(fbartable(fit)[,1],1),length(target))),
