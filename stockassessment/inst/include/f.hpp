@@ -164,11 +164,22 @@ Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<
   vector<Type> logV(timeSteps);
   logV.setZero();
   for(int i=0; i<timeSteps; ++i){
-    logV(i)=(logF).col(i).mean();
-  }
-  for(int i=0; i<timeSteps; ++i){
-    for(int j=0; j<stateDimF-1; ++j){
-      logU(i,j)=logF(j,i)-logV(i);
+    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+      Rf_warning("Forecast with separable F is experimental");
+      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
+      vector<Type> logFtmp = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex);
+      logV(i)=(logFtmp).mean();
+      for(int j=0; j<stateDimF-1; ++j){
+	logU(i,j)=logFtmp(j)-logV(i);
+      }
+    }else{
+      logV(i)=(logF).col(i).mean();
+      // }
+      // for(int i=0; i<timeSteps; ++i){
+      for(int j=0; j<stateDimF-1; ++j){
+	logU(i,j)=logF(j,i)-logV(i);
+      }      
+      logV(i)=(logF).col(i).mean();
     }
   }
 
