@@ -140,7 +140,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
 
 
 template <class Type>
-Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
@@ -180,7 +180,7 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
     nll += nldens(diff);
 
     SIMULATE_F(of){
-      if(conf.simFlag==0){
+      if(conf.simFlag(0)==0){
         vector<Type> uu = nldens.simulate();
         Type sumUZero = 0;
         for(int j=0; j<stateDimF-1; ++j){
@@ -195,7 +195,7 @@ Type nllFseparable(confSet &conf, paraSet<Type> &par, array<Type> &logF, data_in
   for(int y=1; y<timeSteps; ++y){
     nll += -dnorm(logV(y),rhoV* logV(y-1) - par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
     SIMULATE_F(of){
-      if(conf.simFlag==0){
+      if(conf.simFlag(0)==0){
         logV(y)=rhoV*logV(y-1)+ rnorm( Type(0) , sdV(0))+ par.sepFalpha(par.sepFalpha.size()-1); 
         for(int j=0; j<stateDimF; ++j){
           logF(j,y) =  logF(j,y)+ logV(y) ;

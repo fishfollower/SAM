@@ -101,6 +101,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
          conf$stockRecruitmentModelCode == 63)
           args$map$rec_pars = factor(c(1,2,NA))
 
+  args$checkParameterOrder <- FALSE
   obj <- do.call(MakeADFun,args)
 
   
