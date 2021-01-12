@@ -73,9 +73,6 @@ defpar <- function(dat,conf){
     }else{numeric(0)}
   }else{numeric(0)}
   
-  ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
-  ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
-  
 
   ## Reference points
   ret$logFScaleMSY <- 0
