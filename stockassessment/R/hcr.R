@@ -1,20 +1,3 @@
-
-
-softmin <- function(a,b){
-    0.5 * (a + b - sqrt(1e-4 + (a-b)^2))
-}
-softmax <- function(a,b){
-    0.5 * (a + b + sqrt(1e-4 + (a-b)^2))
-}
-
-## hcr <- function(SSB, Ftarget, Flim, Flow, Blim, Blow, Btrigger){
-##     if(SSB < Blow)
-##         return(Flow);
-##     softmin(Ftarget, softmax(Flim, Flim + (SSB-Blim) * (Ftarget - Flim) / (Btrigger-Blim)))
-## }
-
-
-
 ##' Harvest control rule forecast
 ##'
 ##' @details
@@ -92,5 +75,3 @@ hcr <- function(fit,
 
 }
 
-
-plot.hcr
