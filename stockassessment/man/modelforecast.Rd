@@ -9,14 +9,13 @@ modelforecast(fit, ...)
 
 \method{modelforecast}{sam}(fit, fscale = NULL, catchval = NULL,
   fval = NULL, nextssb = NULL, landval = NULL, findMSY = NULL,
-  nosim = NULL, year.base = max(fit$data$years),
-  ave.years = max(fit$data$years) + (-4:0),
-  rec.years = max(fit$data$years) + (-9:0), label = NULL,
-  overwriteSelYears = NULL, deterministic = FALSE,
+  hcr = NULL, nosim = NULL, year.base = max(fit$data$years),
+  ave.years = max(fit$data$years) + (-4:0), rec.years = c(),
+  label = NULL, overwriteSelYears = NULL, deterministic = FALSE,
   processNoiseF = TRUE, customSel = NULL, lagR = FALSE,
   splitLD = FALSE, addTSB = FALSE, biasCorrect = TRUE,
   returnAllYears = FALSE, useUniroot = FALSE, nCatchAverageYears = 1,
-  returnObj = FALSE, ...)
+  returnObj = FALSE, hcrConf = numeric(0), ...)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}

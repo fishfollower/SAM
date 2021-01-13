@@ -1,4 +1,40 @@
 
+namespace rec_atomic {
+
+  
+  template<class T>
+  T logspace_add2_raw (const T &logx, const T &logy) {
+    // Was:
+    //  fmax2 (logx, logy) + log1p (exp (-fabs (logx - logy)));
+    if(logx == R_NegInf)
+      return(logy);
+    if(logy == R_NegInf)
+      return(logx);
+    return ( logx < logy ?
+             logy + log1p (exp (logx - logy)) :
+             logx + log1p (exp (logy - logx)) );
+  }
+
+  
+  TMB_BIND_ATOMIC(logspace_add2,
+		  11,
+		  logspace_add2_raw(x[0], x[1]) )
+
+}
+
+
+template<class Type>
+Type logspace_add2(Type logx, Type logy) {
+  if ( !CppAD::Variable(logx) && logx == Type(-INFINITY) )
+    return logy;
+  if ( !CppAD::Variable(logy) && logy == Type(-INFINITY) )
+    return logx;
+  CppAD::vector<Type> tx(3);
+  tx[0] = logx;
+  tx[1] = logy;
+  tx[2] = 0; // order
+  return rec_atomic::logspace_add2(tx)[0];
+}
 
 
 template <class Type>
@@ -14,6 +50,26 @@ Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &log
   }
   return ssb;
 }
+// template <class Type>
+// Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i, bool give_log = false){
+//   int stateDimN=logN.dim[0];
+//   Type logssb = R_NegInf;
+//   for(int j=0; j<stateDimN; ++j){
+//     if(dat.propMat(i,j) > 0){
+//       Type lssbNew = R_NegInf;
+//       if(conf.keyLogFsta(0,j)>(-1)){
+//         lssbNew = logN(j,i) - exp(logF(conf.keyLogFsta(0,j),i)) * (dat.propF(i,j)) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));	
+//       }else{
+//         lssbNew = logN(j,i) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));
+//       }
+//       logssb = logspace_add2(logssb, lssbNew);
+//     }
+//   }
+//   if(give_log)
+//     return logssb;
+//   return exp(logssb);
+// }
+
 
 template <class Type>
 vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){

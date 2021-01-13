@@ -517,7 +517,14 @@ referencepoints.sam <- function(fit,
     dCdTheta <- -svd_solve(JacAll[,gridx,drop=FALSE]) %*% JacAll[,-gridx,drop=FALSE]
     rownames(dCdTheta) <- gsub("^logScale","",names(objDelta$par)[gridx])
     colnames(dCdTheta) <- names(fit$obj$env$last.par)
-
+    dCdTheta2 <- dCdTheta
+    aa <- as.character(seq(fit$conf$minAge,fit$conf$maxAge,1))
+    yy <- as.character(fit$data$years)
+    colnames(dCdTheta2)[colnames(dCdTheta2) == "logF"] <- paste0("logF_","",row(objDelta$env$parameters$logF),"Y",yy[col(objDelta$env$parameters$logF)])
+    colnames(dCdTheta2)[colnames(dCdTheta2) == "logN"] <- paste0("logN_","A",aa[row(objDelta$env$parameters$logN)],"Y",yy[col(objDelta$env$parameters$logN)])
+    ## Gradient
+    gradient <- dCdTheta2[,apply(dCdTheta2,2,function(x)sum(abs(x))) > 0]
+    
     ## Do delta method
     xtra <- diag(1,length(fit$obj$env$last.par.best))
     diag(xtra)[fit$obj$env$random] <- 0

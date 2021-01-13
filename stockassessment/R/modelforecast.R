@@ -45,10 +45,11 @@ modelforecast.sam <- function(fit,
                      nextssb = NULL,
                      landval = NULL,
                      findMSY = NULL,
+                     hcr = NULL,
                      nosim = NULL,
                      year.base = max(fit$data$years),
                      ave.years = max(fit$data$years)+(-4:0),
-                     rec.years = max(fit$data$years)+(-9:0),
+                     rec.years = c(), #max(fit$data$years)+(-9:0),
                      label = NULL,
                      overwriteSelYears = NULL,
                      deterministic = FALSE,
@@ -62,6 +63,7 @@ modelforecast.sam <- function(fit,
                      useUniroot = FALSE,
                      nCatchAverageYears = 1,
                      returnObj = FALSE,
+                     hcrConf = numeric(0),
                      ...
                      ){
     
@@ -82,10 +84,11 @@ modelforecast.sam <- function(fit,
     ## Get number of forecast years
     lengthVec <- c(length(fscale),
                    length(catchval),
-                   length(fval),length(nextssb),length(landval))
+                   length(fval),length(nextssb),length(landval),
+                   length(hcr))
     if(any(lengthVec > 0 & lengthVec < max(lengthVec)))
         stop("...")    
-    nYears <- max(length(fscale),length(catchval),length(fval),length(nextssb),length(landval),length(findMSY))
+    nYears <- max(length(fscale),length(catchval),length(fval),length(nextssb),length(landval),length(findMSY), length(hcr))
 
     ## Convert input to an F model code and a target value
     if(is.null(fscale))
@@ -100,7 +103,9 @@ modelforecast.sam <- function(fit,
         landval <- rep(NA_real_, nYears)
     if(is.null(findMSY))
         findMSY <- rep(NA_real_, nYears)
-    tab <- rbind(fscale,fval,catchval,nextssb,landval, findMSY)
+    if(is.null(hcr))
+        hcr <- rep(NA_real_, nYears)
+    tab <- rbind(fscale,fval,catchval,nextssb,landval, findMSY, hcr)
     FModel <- apply(tab,2, function(x){
         y <- which(!is.na(x))
         switch(as.character(length(y)),
@@ -186,7 +191,7 @@ modelforecast.sam <- function(fit,
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
                                simFlag = c(0,0),
                                uniroot = as.numeric(useUniroot),
-                               hcrConf = numeric(0))
+                               hcrConf = hcrConf)
 
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
@@ -199,8 +204,6 @@ modelforecast.sam <- function(fit,
     if(returnObj)
         return(obj)
     
-    obj$fn(fit$opt$par)
-
     if(!is.null(nosim) && nosim > 0){
         if(year.base==max(fit$data$years)){
             est <- fit$sdrep$estY
@@ -244,10 +247,9 @@ modelforecast.sam <- function(fit,
         rownames(simlist[[i+1]]$catchatage) <- min(fit$data$minAgePerFleet):max(fit$data$maxAgePerFleet)
         }
         attr(simlist, "fit")<-fit
-
         ## Similar to stockassessment::forecast
         collect <- function(x){
-            quan <- quantile(x, c(.50,.025,.975))
+            quan <- quantile(x, c(.50,.025,.975, na.rm = TRUE))
             c(median=quan[1], low=quan[2], high=quan[3])
         }
 
@@ -290,7 +292,8 @@ modelforecast.sam <- function(fit,
         class(simlist) <- "samforecast"
           
         return(simlist)
-    }else{    
+    }else{
+        obj$fn(fit$opt$par)
         ## Get results
         sdr <- TMB::sdreport(obj, fit$opt$par, svd_solve(fit$sdrep$cov.fixed),
                              bias.correct= biasCorrect,
