@@ -152,7 +152,7 @@ Type objective_function<Type>::operator() ()
 
   prepareForForecast(dataset, confset, paraset, logF, logN);
   dataset.forecast.calculateForecast(logF,logN, dataset, confset, paraset);
-
+  
   ans += nllF(dataset, confset, paraset, logF, keep, this);
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   forecastSimulation(dataset, confset, paraset, logN, logF, this);

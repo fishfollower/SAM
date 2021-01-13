@@ -24,6 +24,19 @@ Type hcr(Type ssb, vector<Type> hcrConf){
 };
 
 
+extern "C" {
+  SEXP hcrR(SEXP ssb, SEXP hcrConf){
+    vector<double> s = asVector<double>(ssb);
+    vector<double> hc = asVector<double>(hcrConf);
+    vector<double> r(s.size());
+    r.setZero();
+    for(int i = 0; i < s.size(); ++i)
+      r(i) = hcr(s(i), hc);
+    return asSEXP(exp(r));
+  }
+}
+
+
 template <class Type>
 void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, objective_function<Type> *of){
   // Only for forecast simulation
@@ -57,17 +70,17 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
     }
     // Simulate N
     if(dat.forecast.simFlag(1) == 0){
-      vector<Type> predN = predNFun(dat,conf,par,logN,logF,i);
+      vector<Type> predN = predNFun(dat,conf,par,logN,logF,indx);
       vector<Type> Nscale(logN.rows());
       Nscale.setConstant((Type)1.0);
-      vector<Type> predNTmp = predN;
-      if(dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(i))-1) != dat.forecast.asRecModel){
+      if(dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(indx))-1) != dat.forecast.asRecModel){
 	Nscale(0) = sqrt(dat.forecast.logRecruitmentVar) / sqrt(nvar(0,0));
-	predNTmp(0) = dat.forecast.logRecruitmentMedian;
+	predN(0) = dat.forecast.logRecruitmentMedian;
       }
-      logN.col(indx) = predNTmp + neg_log_densityN.simulate() * Nscale;
+      logN.col(indx) = predN + neg_log_densityN.simulate();// * Nscale;
     }
   }
+
   return;
 };
 

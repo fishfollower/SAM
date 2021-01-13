@@ -78,7 +78,8 @@ template <class Type>
 vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, int i){
   int stateDimN=logN.dim[0];
 
-  vector<Type> predN(stateDimN); 
+  vector<Type> predN(stateDimN);
+  predN.setZero();
   Type thisSSB=Type(0);
 
   if((i-conf.minAge)>=0){
@@ -103,17 +104,17 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     predN(0) = par.rec_pars(0) + (2.0 / (1.0 + exp(-par.rec_pars(1))) - 1.0) * (logN(0,i-1) - par.rec_pars(0));
     break;
   case 90: // Non-increasing spline on log R/S
-    predN = log(thisSSB) + ibcdspline(log(thisSSB),
+    predN(0) = log(thisSSB) + ibcdspline(log(thisSSB),
 				     (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
 				     par.rec_pars);
     break;
   case 91: // integrated spline on log R/S
-    predN = log(thisSSB) + ibcspline(log(thisSSB),
+    predN(0) = log(thisSSB) + ibcspline(log(thisSSB),
 				      (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
 				      par.rec_pars);
     break;
    case 92: // spline on log R/S
-    predN = log(thisSSB) + bcspline(log(thisSSB),
+     predN(0) = log(thisSSB) + bcspline(log(thisSSB),
 				     (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
 				     par.rec_pars);
     break;
@@ -133,6 +134,7 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     predN(stateDimN-1)=log(exp(logN(stateDimN-2,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-2),i-1))-dat.natMor(i-1,stateDimN-2))+
                            exp(logN(stateDimN-1,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-1),i-1))-dat.natMor(i-1,stateDimN-1)));
   }
+  
   return predN;  
 }
 
