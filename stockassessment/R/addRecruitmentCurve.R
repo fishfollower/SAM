@@ -6,6 +6,9 @@
 ##' @param col Color of fitted line
 ##' @param cicol Color of confidence intervals
 ##' @param plot Add the curve to a plot?
+##' @param PI Add prediction intervals?
+##' @param picol Color of prediction interval line
+##' @param pilty Line type of prediction interval line
 ##' @param ... not used
 ##' @seealso srplot
 ##' @author Christoffer Moesgaard Albertsen
@@ -24,6 +27,7 @@ addRecruitmentCurve <- function(fit,
 
 ##' @rdname addRecruitmentCurve
 ##' @method addRecruitmentCurve sam
+##' @importFrom utils head
 ##' @export
 addRecruitmentCurve.sam <- function(fit,
                     CI = TRUE,
@@ -107,7 +111,7 @@ addRecruitmentCurve.sam <- function(fit,
                           fit$pl$rec_pars,
                           fit$conf$stockRecruitmentModelCode)
                val <- log(v$Recruits)
-               g <- matrix(head((1/v$Recruits) * v$Gradient,-1), 1)
+               g <- matrix(utils::head((1/v$Recruits) * v$Gradient,-1), 1)
                valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
                pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
            }

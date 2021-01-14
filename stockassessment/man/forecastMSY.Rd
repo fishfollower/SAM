@@ -29,9 +29,13 @@ forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
 \item{processNoiseF}{Should random walk process noise be used for F?}
 
 \item{...}{other arguments passed to forecast}
+
+\item{jacobianHScale}{Scale step size in jacobian calculation}
+
+\item{nCatchAverageYears}{Number of years to average catch over for finding MSY}
 }
 \description{
-Work in progress - do not use
+Estimating Fmsy
 }
 \references{
 Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. doi: 10.1016/j.fishres.2020.105618

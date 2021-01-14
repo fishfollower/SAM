@@ -14,24 +14,29 @@ modelforecast <- function(fit, ...){
 ##' @param nextssb a vector target SSB values the following year. See details
 ##' @param landval a vector of target catches. See details.   
 ##' @param findMSY Should not be used. See \link{forecastMSY}.
+##' @param hcr Should not be used. See \link{hcr}.
 ##' @param nosim number of simulations. Not used.
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
 ##' @param rec.years vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.
 ##' @param label optional label to appear in short table
 ##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
-##' @param deterministic option to set F variance to (almost) zero (not recommended)
-##' @param processNoiseF option to turn off process noise in F 
+##' @param deterministicF option to set F variance to (almost) zero (not recommended)
+##' @param processNoiseF option to turn off process noise in F
+##' @param resampleFirst Resample base year when nosim > 0?
 ##' @param customSel supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
 ##' @param lagR if the second youngest age should be reported as recruits
 ##' @param splitLD if TRUE the result is split in landing and discards
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
 ##' @param biasCorrect Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).
 ##' @param returnAllYears If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.
+##' @param useUniroot Use uniroot to find catchval, landval, and nextssb?
 ##' @param nCatchAverageYears Should not be used. See \link{forecastMSY}.
+##' @param returnObj Only return TMB object?
+##' @param hcrConf Should not be used. See \link{hcr}.
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
-##' @seealso simulationforecast
+##' @seealso forecast
 ##' @importFrom methods formalArgs
 ##' @importFrom stats var
 ##' @importFrom utils tail
@@ -52,13 +57,14 @@ modelforecast.sam <- function(fit,
                      rec.years = c(), #max(fit$data$years)+(-9:0),
                      label = NULL,
                      overwriteSelYears = NULL,
-                     deterministic = FALSE,
+                     deterministicF = FALSE,
                      processNoiseF = TRUE,
+                     resampleFirst = !is.null(nosim) && nosim > 0,
                      customSel = NULL,
                      lagR = FALSE,
                      splitLD = FALSE,
                      addTSB = FALSE,
-                     biasCorrect = TRUE,
+                     biasCorrect = FALSE,
                      returnAllYears = FALSE,
                      useUniroot = FALSE,
                      nCatchAverageYears = 1,
@@ -75,7 +81,7 @@ modelforecast.sam <- function(fit,
     }
     
     ## Checks
-    if(deterministic && length(fscale) > 0 && any(!is.na(fscale)) && is.null(customSel))
+    if(deterministicF && length(fscale) > 0 && any(!is.na(fscale)) && is.null(customSel))
         warning("Forecasted F values may depend on the last estimated F vector and can therefore have uncertainty. Provide a custom selectivity to circumvent this.")
 
     
@@ -153,7 +159,7 @@ modelforecast.sam <- function(fit,
     ## Get F process time scale model
     ## By default, scale as random walk
     fsdTimeScaleModel <- rep(0,nYears)
-    if(deterministic){ ## 'Zero' variance of F process
+    if(deterministicF){ ## 'Zero' variance of F process
         fsdTimeScaleModel <- rep(2,nYears)
     }else if(!processNoiseF){ ## Constant variance of F process
         fsdTimeScaleModel <- rep(1,nYears)
@@ -217,7 +223,7 @@ modelforecast.sam <- function(fit,
         names(est) <- gsub("(^.*[lL]ast)(Log[NF]$)","\\2",names(est))
         i0 <- which(fit$data$year == year.base)
         doSim <- function(){            
-            sim0 <- rmvnorm(1, mu=est, Sigma=cov * as.numeric(!deterministic))
+            sim0 <- rmvnorm(1, mu=est, Sigma=cov * as.numeric(resampleFirst))
             estList0 <- split(as.vector(sim0), names(est))
             p <- obj$env$last.par.best
             ## Only works when year.base is last assessment year
@@ -244,7 +250,7 @@ modelforecast.sam <- function(fit,
                                    fbarL = sapply(simvals,function(x) exp(x$logfbarL[ii])),
                                    tsb = sapply(simvals,function(x) exp(x$logtsb[ii])),
                                    year=y)
-        rownames(simlist[[i+1]]$catchatage) <- min(fit$data$minAgePerFleet):max(fit$data$maxAgePerFleet)
+            rownames(simlist[[i+1]]$catchatage) <- seq(fit$conf$minAge,fit$conf$maxAge,1)
         }
         attr(simlist, "fit")<-fit
         ## Similar to stockassessment::forecast

@@ -2,6 +2,7 @@
 ##'
 ##' @param func function
 ##' @param x parameter values
+##' @param h step size
 ##' @param ... passed to func
 ##' @return jacobian matrix
 ##' @author Christoffer Moesgaard Albertsen
@@ -22,6 +23,7 @@ jacobian <- function(func, x,
 ##'
 ##' @param func function
 ##' @param x parameter values
+##' @param h step size
 ##' @param ... passed to func
 ##' @return gradient vector
 ##' @author Christoffer Moesgaard Albertsen
@@ -50,7 +52,6 @@ svd_solve <- function(x){
 
 ##' Estimating Fmsy
 ##'
-##' Work in progress - do not use
 ##' @param fit a SAM fit
 ##' @param nYears Number of years to forecast
 ##' @param nlminb.control list of control variables for nlminb
@@ -76,6 +77,8 @@ forecastMSY <- function(fit,
 
 ##' @rdname forecastMSY
 ##' @method forecastMSY sam
+##' @param jacobianHScale Scale step size in jacobian calculation
+##' @param nCatchAverageYears Number of years to average catch over for finding MSY
 ##' @export
 forecastMSY.sam <- function(fit,
                             nYears = 100,                            
@@ -217,7 +220,6 @@ forecastMSY.sam <- function(fit,
 
 ##' Estimate reference points
 ##'
-##' Work in progress - do not use
 ##' @param fit an object to calculate reference points for
 ##' @param nYears Number of years to use in per-recruit calculations
 ##' @param Fsequence Sequence of F values used to report per-recruit and equilibrium values
@@ -225,8 +227,10 @@ forecastMSY.sam <- function(fit,
 ##' @param selYears Vector of year indices used to calculate selectivity (starting at 0)
 ##' @param SPRpercent Vector of x values for F[x * 100\%] reference points. Default is 0.35.
 ##' @param catchType Catch type used: (total) catch, landings, discard.
-##' @param MSYreduction Vector of proportions for MSY ranges. Default is 0.05 giving an MSY range corresponding to no more than a 5% yield reduction.
+##' @param MSYreduction Vector of proportions for MSY ranges. Default is 0.05 giving an MSY range corresponding to no more than a 5\% yield reduction.
 ##' @param newtonSteps Number of additional Newton steps at the end of the reference point optimization.
+##' @param optN N used for numerical optimizers to find equilibrium biomass
+##' @param jacobianHScale Scale step size in jacobian calculation
 ##' @param ... not used
 ##' @return a sam_referencepoints fit
 ##' @author Christoffer Moesgaard Albertsen
@@ -244,6 +248,7 @@ referencepoints <- function(fit,
                             MSYreduction,
                             newtonSteps = 3,
                             optN = 100,
+                            jacobianHScale = 0.5,   
                             ...){
     UseMethod("referencepoints")
 }
@@ -258,10 +263,10 @@ referencepoints.sam <- function(fit,
                                 selYears = max(fit$data$years),
                                 SPRpercent = c(0.35),
                                 catchType = "catch",
-                                jacobianHScale = 0.5,
                                 MSYreduction = c(0.05),
                                 newtonSteps = 3,
                                 optN = 20,
+                                jacobianHScale = 0.5,                               
                                 ...){
     if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
         stop("Values of Fsequence must be positive and increasing.")
@@ -637,6 +642,12 @@ referencepoints.sam <- function(fit,
     return(res)
 }
 
+
+##' @importFrom grDevices col2rgb devAskNewPage
+##' @importFrom graphics legend segments polygon
+##' @importFrom methods is
+##' @importFrom stats na.omit
+##' @importFrom utils head
 ##' @export   
 plot.sam_referencepoints <- function(x,
                                      show = c(1L:3L,5L),
@@ -675,7 +686,7 @@ plot.sam_referencepoints <- function(x,
 
     doPlot <- function(y){
         getACol <- function(col, a){
-            do.call("rgb",c(as.list(col2rgb(col,TRUE))[-4],
+            do.call("rgb",c(as.list(grDevices::col2rgb(col,TRUE))[-4],
                             list(alpha = a * 255),
                             list(maxColorValue = 255)))
         }
@@ -707,13 +718,13 @@ plot.sam_referencepoints <- function(x,
                 usr <- par("usr")
                 xvals <- x$tables$F[r,]
                 yvals <- x$tables[[yt]][r,]
-                polygon(c(usr[1], xvals[2], xvals[2], xvals[3], xvals[3], usr[1]),
+                graphics::polygon(c(usr[1], xvals[2], xvals[2], xvals[3], xvals[3], usr[1]),
                         c(yvals[2], yvals[2], usr[3], usr[3], yvals[3], yvals[3]),
                         border = NA,
                         col = acol)
-                segments(xvals[1], usr[3], xvals[1], yvals[1],
+                graphics::segments(xvals[1], usr[3], xvals[1], yvals[1],
                          col = j+1, lwd = 3, lty = 1)
-                segments(usr[1], yvals[1], xvals[1], yvals[1],
+                graphics::segments(usr[1], yvals[1], xvals[1], yvals[1],
                          col = j+1, lwd = 3, lty = 1)
                 
             }
@@ -735,7 +746,7 @@ plot.sam_referencepoints <- function(x,
     
     bshow <- rep(FALSE, 5)
     if(is.character(show)){
-        show <- na.omit(pmatch(show, c("YieldPerRecruit", "SpawnersPerRecruit", "Yield", "Biomass", "Recruitment")))
+        show <- stats::na.omit(pmatch(show, c("YieldPerRecruit", "SpawnersPerRecruit", "Yield", "Biomass", "Recruitment")))
     }
         
     bshow[show[show %in% (1:length(bshow))]] <- TRUE    

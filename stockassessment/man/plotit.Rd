@@ -5,6 +5,7 @@
 \alias{plotit.sam}
 \alias{plotit.samset}
 \alias{plotit.samforecast}
+\alias{plotit.hcr}
 \title{Plot helper}
 \usage{
 plotit(fit, what, ...)
@@ -24,6 +25,12 @@ plotit(fit, what, ...)
 \method{plotit}{samforecast}(fit, what, x = fit$data$years,
   ylab = what, xlab = "Years", ex = numeric(0), trans = function(x)
   x, add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
+  addCI = NA, drop = 0, unnamed.basename = "current", xlim = NULL,
+  ...)
+
+\method{plotit}{hcr}(fit, what, x = fit$data$years, ylab = what,
+  xlab = "Years", ex = numeric(0), trans = function(x) x,
+  add = FALSE, ci = TRUE, cicol = gray(0.5, alpha = 0.5),
   addCI = NA, drop = 0, unnamed.basename = "current", xlim = NULL,
   ...)
 }

@@ -5,6 +5,7 @@
 \alias{fbarplot.sam}
 \alias{fbarplot.samset}
 \alias{fbarplot.samforecast}
+\alias{fbarplot.hcr}
 \title{SAM Fbar plot}
 \usage{
 fbarplot(fit, ...)
@@ -16,6 +17,9 @@ fbarplot(fit, ...)
   pcol = "lightblue", page = NULL, ...)
 
 \method{fbarplot}{samforecast}(fit, partial = FALSE, drop = NULL,
+  pcol = "lightblue", page = NULL, ...)
+
+\method{fbarplot}{hcr}(fit, partial = FALSE, drop = NULL,
   pcol = "lightblue", page = NULL, ...)
 }
 \arguments{

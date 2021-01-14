@@ -91,6 +91,14 @@ plotit.samforecast <- function(fit, what, x=fit$data$years, ylab=what, xlab="Yea
     plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
 }
 
+##' @rdname plotit
+##' @method plotit hcr
+##' @export
+plotit.hcr <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
+    plotit.samforecast(fit$forecast, what = what, x = x, ylab = ylab, xlab = xlab, ex = ex, trans = trans, add = add, ci = ci, cicol = cicol, addCI = addCI, drop = drop, unnamed.basename = unnamed.basename, xlim = xlim, ...)
+}
+
 
 ##' SAM add forecasts 
 ##' @param fit the object returned from sam.fit
@@ -124,6 +132,9 @@ addforecast.samforecast <- function(fit, what, dotcol="black", dotpch=19, dotcex
     points(y,x[,paste(what,"median", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
 }
 
+addforecast.hcr <- function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5),...){
+    addforecast(fit$forecast, what = what, dotcol = dotcol, dotpch = dotpch, dotcex = dotcex, intervalcol = intervalcol, ...)
+}
 
 
 ##' Plot by one or two  
@@ -383,6 +394,20 @@ fbarplot.samforecast <- function(fit,partial = FALSE, drop=NULL, pcol="lightblue
     addforecast(fit,"fbar")
 }
 
+##' @rdname fbarplot
+##' @method fbarplot hcr
+##' @export
+fbarplot.hcr <- function(fit,partial = FALSE, drop=NULL, pcol="lightblue", page=NULL,...){
+    fitlocal <- attr(fit,"fit")
+    tmp <- fbarplot(fitlocal,partial,drop,pcol,page,plot=FALSE,...)
+    plotit(fit, "logfbar", ylab=tmp$fbarlab, trans=exp, ex=tmp$exx, drop=tmp$drop, ...)
+    if(partial){
+        idxx <- 1:(length(fitlocal$data$years)-tmp$drop)
+        matplot(fitlocal$data$years[idxx], t(tmp$fmat[tmp$idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(tmp$page))
+    }
+    addforecast(fit$forecast,"fbar")
+}
+
 
 
 ##' SAM F-selectivity plot 
@@ -427,6 +452,14 @@ ssbplot.default <- function(fit,...){
 ##' @method ssbplot samforecast
 ##' @export
 ssbplot.samforecast <- function(fit,...){
+    plotit(fit, "logssb", ylab="SSB", trans=exp,...)
+    addforecast(fit,"ssb")
+}
+
+##' @rdname ssbplot
+##' @method ssbplot hcr
+##' @export
+ssbplot.hcr <- function(fit,...){
     plotit(fit, "logssb", ylab="SSB", trans=exp,...)
     addforecast(fit,"ssb")
 }
@@ -506,6 +539,22 @@ recplot.samforecast <- function(fit, lagR=FALSE, ...){
     }
 }
 
+##' @rdname recplot
+##' @method recplot hcr
+##' @export
+recplot.hcr <- function(fit, lagR=FALSE, ...){
+    fitlocal <- attr(fit,"fit")
+    if(!lagR){
+      lab<-paste("Recruits (age ", fitlocal$conf$minAge, ")", sep="")
+      plotit(fit, "logR", ylab=lab, trans=exp,...)
+      addforecast(fit, "rec")
+    }else{
+      lab<-paste("Recruits (age ", fitlocal$conf$minAge+1, ")", sep="")
+      plotit(fit, "logLagR", ylab=lab, trans=exp,...)
+      addforecast(fit, "rec")
+    }
+}
+
 ##' SAM catch plot 
 ##' @param fit the object returned from sam.fit
 ##' @param obs.show if observations are to be shown also
@@ -565,6 +614,18 @@ catchplot.samset <- function(fit, obs.show=TRUE, drop=NULL,...){
 ##' @method catchplot samforecast
 ##' @export
 catchplot.samforecast <- function(fit, obs.show=TRUE, drop=NULL,...){
+    fitlocal <- attr(fit,"fit")
+    tmp <- catchplot(fitlocal,obs.show,drop,plot=FALSE,...)
+    plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=tmp$drop,...)
+    if(obs.show){
+        points(tmp$obs$x, tmp$obs$y, pch=4, lwd=2, cex=1.2)
+    }
+    addforecast(fit, "catch")
+}
+##' @rdname catchplot
+##' @method catchplot hcr
+##' @export
+catchplot.hcr <- function(fit, obs.show=TRUE, drop=NULL,...){
     fitlocal <- attr(fit,"fit")
     tmp <- catchplot(fitlocal,obs.show,drop,plot=FALSE,...)
     plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=tmp$drop,...)

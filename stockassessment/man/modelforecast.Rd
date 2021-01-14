@@ -11,11 +11,12 @@ modelforecast(fit, ...)
   fval = NULL, nextssb = NULL, landval = NULL, findMSY = NULL,
   hcr = NULL, nosim = NULL, year.base = max(fit$data$years),
   ave.years = max(fit$data$years) + (-4:0), rec.years = c(),
-  label = NULL, overwriteSelYears = NULL, deterministic = FALSE,
-  processNoiseF = TRUE, customSel = NULL, lagR = FALSE,
-  splitLD = FALSE, addTSB = FALSE, biasCorrect = TRUE,
-  returnAllYears = FALSE, useUniroot = FALSE, nCatchAverageYears = 1,
-  returnObj = FALSE, hcrConf = numeric(0), ...)
+  label = NULL, overwriteSelYears = NULL, deterministicF = FALSE,
+  processNoiseF = TRUE, resampleFirst = !is.null(nosim) && nosim > 0,
+  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE,
+  biasCorrect = FALSE, returnAllYears = FALSE, useUniroot = FALSE,
+  nCatchAverageYears = 1, returnObj = FALSE, hcrConf = numeric(0),
+  ...)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}
@@ -34,6 +35,8 @@ modelforecast(fit, ...)
 
 \item{findMSY}{Should not be used. See \link{forecastMSY}.}
 
+\item{hcr}{Should not be used. See \link{hcr}.}
+
 \item{nosim}{number of simulations. Not used.}
 
 \item{year.base}{starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before}
@@ -46,9 +49,11 @@ modelforecast(fit, ...)
 
 \item{overwriteSelYears}{if a vector of years is specified, then the average selectivity of those years is used (not recommended)}
 
-\item{deterministic}{option to set F variance to (almost) zero (not recommended)}
+\item{deterministicF}{option to set F variance to (almost) zero (not recommended)}
 
 \item{processNoiseF}{option to turn off process noise in F}
+
+\item{resampleFirst}{Resample base year when nosim > 0?}
 
 \item{customSel}{supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)}
 
@@ -62,7 +67,13 @@ modelforecast(fit, ...)
 
 \item{returnAllYears}{If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.}
 
+\item{useUniroot}{Use uniroot to find catchval, landval, and nextssb?}
+
 \item{nCatchAverageYears}{Should not be used. See \link{forecastMSY}.}
+
+\item{returnObj}{Only return TMB object?}
+
+\item{hcrConf}{Should not be used. See \link{hcr}.}
 }
 \value{
 an object of type samforecast
@@ -76,5 +87,5 @@ Model based forecast function
 There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run.
 }
 \seealso{
-simulationforecast
+forecast
 }

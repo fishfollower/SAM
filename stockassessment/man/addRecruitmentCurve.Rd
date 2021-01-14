@@ -24,6 +24,12 @@ addRecruitmentCurve(fit, CI = TRUE, col = rgb(0.6, 0, 0),
 
 \item{plot}{Add the curve to a plot?}
 
+\item{PI}{Add prediction intervals?}
+
+\item{picol}{Color of prediction interval line}
+
+\item{pilty}{Line type of prediction interval line}
+
 \item{...}{not used}
 }
 \description{

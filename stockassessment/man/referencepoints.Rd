@@ -6,13 +6,14 @@
 \title{Estimate reference points}
 \usage{
 referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
-  catchType, MSYreduction, newtonSteps = 3, optN = 100, ...)
+  catchType, MSYreduction, newtonSteps = 3, optN = 100,
+  jacobianHScale = 0.5, ...)
 
 \method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(0, 4,
   len = 200), aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years), SPRpercent = c(0.35),
-  catchType = "catch", jacobianHScale = 0.5, MSYreduction = c(0.05),
-  newtonSteps = 3, optN = 20, ...)
+  catchType = "catch", MSYreduction = c(0.05), newtonSteps = 3,
+  optN = 20, jacobianHScale = 0.5, ...)
 }
 \arguments{
 \item{fit}{an object to calculate reference points for}
@@ -29,9 +30,13 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
 
 \item{catchType}{Catch type used: (total) catch, landings, discard.}
 
-\item{MSYreduction}{Vector of proportions for MSY ranges. Default is 0.05 giving an MSY range corresponding to no more than a 5% yield reduction.}
+\item{MSYreduction}{Vector of proportions for MSY ranges. Default is 0.05 giving an MSY range corresponding to no more than a 5\% yield reduction.}
 
 \item{newtonSteps}{Number of additional Newton steps at the end of the reference point optimization.}
+
+\item{optN}{N used for numerical optimizers to find equilibrium biomass}
+
+\item{jacobianHScale}{Scale step size in jacobian calculation}
 
 \item{...}{not used}
 }
@@ -39,7 +44,7 @@ referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
 a sam_referencepoints fit
 }
 \description{
-Work in progress - do not use
+Estimate reference points
 }
 \references{
 Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. doi: 10.1016/j.fishres.2020.105618

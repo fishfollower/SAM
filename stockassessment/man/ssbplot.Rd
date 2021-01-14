@@ -4,6 +4,7 @@
 \alias{ssbplot}
 \alias{ssbplot.default}
 \alias{ssbplot.samforecast}
+\alias{ssbplot.hcr}
 \title{SAM SSB plot}
 \usage{
 ssbplot(fit, ...)
@@ -11,6 +12,8 @@ ssbplot(fit, ...)
 \method{ssbplot}{default}(fit, ...)
 
 \method{ssbplot}{samforecast}(fit, ...)
+
+\method{ssbplot}{hcr}(fit, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

@@ -7,7 +7,7 @@
 \method{print}{samres}(x, ...)
 }
 \arguments{
-\item{x}{a sam residual object as returnd from either \code{\link{residuals.sam}} or \code{\link{procres}}}
+\item{x}{a sam residual object as returned from either \code{\link{residuals.sam}} or \code{\link{procres}}}
 
 \item{...}{extra arguments}
 }
