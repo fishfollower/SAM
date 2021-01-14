@@ -104,9 +104,9 @@ updateData:
 	echo "library(stockassessment); \
 	      source('stockassessment/tests/nscod/script.R', chdir=TRUE, echo=TRUE); \
 	      nscodData <- dat; nscodConf <- conf; nscodParameters <- par; \
-	      save(nscodData, file='stockassessment/data/nscodData.RData'); \
-	      save(nscodConf, file='stockassessment/data/nscodConf.RData'); \
-	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData'); " | R --slave
+	      save(nscodData, file='stockassessment/data/nscodData.RData', version=2); \
+	      save(nscodConf, file='stockassessment/data/nscodConf.RData', version=2); \
+	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData', version=2); " | R --slave
 
 updateDocs:
 	rm -rf docs
