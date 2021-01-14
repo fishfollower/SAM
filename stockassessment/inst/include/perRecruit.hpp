@@ -798,7 +798,7 @@ struct F_dSplineSR {
   int srmc;
   template<class T>
   T operator()(vector<T> x){  // Evaluate function
-    T logx = log(x[0])
+    T logx = log(x[0]);
     vector<T> rp2 = rp.template cast<T>();
     vector<T> kn2 = knots.template cast<T>();
     if(srmc == 90){
@@ -1756,7 +1756,7 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 
 
 
-  if(false || dat.referencepoint.Fsequence.size() > 0){
+  if(dat.referencepoint.Fsequence.size() > 0){
     vector<Type> Fseq = dat.referencepoint.Fsequence;
     vector<Type> logYPR(Fseq.size());
     logYPR.setZero();

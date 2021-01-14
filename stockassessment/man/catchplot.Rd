@@ -5,6 +5,7 @@
 \alias{catchplot.sam}
 \alias{catchplot.samset}
 \alias{catchplot.samforecast}
+\alias{catchplot.hcr}
 \title{SAM catch plot}
 \usage{
 catchplot(fit, obs.show = TRUE, drop = NULL, ...)
@@ -15,6 +16,8 @@ catchplot(fit, obs.show = TRUE, drop = NULL, ...)
 \method{catchplot}{samset}(fit, obs.show = TRUE, drop = NULL, ...)
 
 \method{catchplot}{samforecast}(fit, obs.show = TRUE, drop = NULL, ...)
+
+\method{catchplot}{hcr}(fit, obs.show = TRUE, drop = NULL, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

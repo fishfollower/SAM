@@ -751,7 +751,7 @@ void prepareForForecast(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
   // Correct input selectivity to have Fbar == 1
   Type inputFbar = 0.0;
   if(dat.forecast.selectivity.size() > 0){
-    Rcout << "Using custom selectivity!\n";
+    // Rcout << "Using custom selectivity!\n";
     for(int a = fbarFirst; a <= fbarLast; ++a){  
       if(dat.forecast.selectivity.size() == logF.rows()){
 	inputFbar += dat.forecast.selectivity(conf.keyLogFsta(0,a));
@@ -763,7 +763,7 @@ void prepareForForecast(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
     }
     inputFbar /= Type(fbarLast - fbarFirst + 1);
     if(inputFbar != 1.0){
-      Rf_warning("The input selectivity was re-scaled to have Fbar equal to one.");
+      // Rf_warning("The input selectivity was re-scaled to have Fbar equal to one.");
       dat.forecast.selectivity /= inputFbar;
     }
   }
@@ -916,7 +916,7 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
     }
     return;
 }
-    
+
 
 
 

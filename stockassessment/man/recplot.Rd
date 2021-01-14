@@ -5,6 +5,7 @@
 \alias{recplot.sam}
 \alias{recplot.samset}
 \alias{recplot.samforecast}
+\alias{recplot.hcr}
 \title{SAM Recruits plot}
 \usage{
 recplot(fit, lagR = FALSE, ...)
@@ -14,6 +15,8 @@ recplot(fit, lagR = FALSE, ...)
 \method{recplot}{samset}(fit, lagR = FALSE, ...)
 
 \method{recplot}{samforecast}(fit, lagR = FALSE, ...)
+
+\method{recplot}{hcr}(fit, lagR = FALSE, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

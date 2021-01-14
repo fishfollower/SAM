@@ -30,6 +30,21 @@ plot.samforecast<-function(x, ...){
   par(op)
 }
 
+##' Plot hcr object 
+##' @method plot hcr
+##' @param  x output from the \code{\link{hcr}} function
+##' @param  ... extra arguments
+##' @importFrom graphics par
+##' @details ...
+##' @export
+plot.hcr<-function(x, ...){
+  op<-par(mfrow=c(3,1))
+  ssbplot(x,...)
+  fbarplot(x, drop=0,...)
+  recplot(x,...)
+  par(op)
+}
+
 ##' Collect sam objects 
 ##' @method c sam
 ##' @param  ... one or more sam fits (as returned from the \code{\link{sam.fit}} function) to be combined 
@@ -180,7 +195,7 @@ print.sam<-function(x, ...){
 
 ##' Print samres object 
 ##' @method print samres 
-##' @param  x a sam residual object as returnd from either \code{\link{residuals.sam}} or \code{\link{procres}}
+##' @param  x a sam residual object as returned from either \code{\link{residuals.sam}} or \code{\link{procres}}
 ##' @param  ... extra arguments
 ##' @details prints the residuals as a data.frame 
 ##' @export
@@ -188,6 +203,28 @@ print.samres<-function(x, ...){
   class(x)<-NULL
   print(as.data.frame(x))
 }
+
+##' Print hcr object 
+##' @method print hcr 
+##' @param  x a sam hcr object as returned by \code{\link{hcr}}
+##' @param  ... extra arguments
+##' @details prints the HCR forecast
+##' @export
+print.hcr<-function(x, ...){
+  print(x$forecast)
+}
+
+
+##' Print referencepoint object 
+##' @method print sam_referencepoints 
+##' @param  x a sam referencepoint object as returned by \code{\link{referencepoints}}
+##' @param  ... extra arguments
+##' @details prints the F reference point table
+##' @export
+print.sam_referencepoints<-function(x, ...){
+  print(x$tables$F)
+}
+
 
 ##' Log likelihood of sam object 
 ##' @method logLik sam 

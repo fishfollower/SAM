@@ -12,6 +12,8 @@ jacobian(func, x, h = abs(1e-04 * x) + 1e-04 * (abs(x) <
 
 \item{x}{parameter values}
 
+\item{h}{step size}
+
 \item{...}{passed to func}
 }
 \value{

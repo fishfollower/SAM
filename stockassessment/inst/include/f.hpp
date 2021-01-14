@@ -5,8 +5,8 @@ Type trans(Type x){
 
 template <class Type>
 Type jacobiUVtrans( array<Type> logF){
-//  int nr=logF.rows(); //Cange to .rows eller .cols
-//  int nc=logF.cols();
+  //  int nr=logF.rows(); //Cange to .rows eller .cols
+  //  int nc=logF.cols();
   int nr=logF.cols(); //Cange to .rows eller .cols
   int nc=logF.rows();
   matrix<Type> A(nc,nc);
@@ -86,7 +86,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
   int stateDimN=conf.keyLogFsta.dim[1];
-  // vector<Type> sdLogFsta=exp(par.logSdLogFsta);
+  vector<Type> sdLogFsta=exp(par.logSdLogFsta);
   array<Type> resF(stateDimF,timeSteps-1);
 
   
@@ -112,9 +112,9 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
 
       SIMULATE_F(of){
-	if(dat.forecast.simFlag(0) == 0){
-	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
-	}
+    	if(dat.forecast.simFlag(0) == 0){
+    	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
+    	}
       }
     }else{
       nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
@@ -195,9 +195,9 @@ Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<
         vector<Type> uu = nldens.simulate();
         Type sumUZero = 0;
         for(int j=0; j<stateDimF-1; ++j){
-            logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
-            logF(j,y) = logU(y,j);
-            sumUZero += logU(y,j);
+	  logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
+	  logF(j,y) = logU(y,j);
+	  sumUZero += logU(y,j);
         }
         logF(stateDimF-1,y) = -sumUZero;
       }
