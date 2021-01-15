@@ -67,7 +67,7 @@ Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRe
     Rf_error("Needs more info");
     break;
   default:    
-      error("SR model code not recognized");
+      Rf_error("SR model code not recognized");
     break;
   }
   return predN;

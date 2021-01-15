@@ -211,7 +211,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
         }
         cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
       } else { 
-        error("Unkown obsCorStruct code"); 
+        Rf_error("Unkown obsCorStruct code"); 
       }
       nllVec(f).setSigma(cov, conf.fracMixObs(f));
       obsCov(f) = cov;
@@ -295,7 +295,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	    }
 	    break;
 	  default:
-	    error("Unknown obsLikelihoodFlag");
+	    Rf_error("Unknown obsLikelihoodFlag");
 	  }
         }
       }else{ //dat.fleetTypes(f)==5
