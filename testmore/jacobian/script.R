@@ -28,8 +28,8 @@ set.seed(298374)
 ##          return(diag(v))         
 ## }
 
-jacobian <- stockassessment:::jacobian
-grad <- stockassessment:::grad
+jacobian <- function(f, x) stockassessment:::jacobian(f, x, 0.1 * 10^floor(log10(abs(x))) + 1e-4)
+grad <- function(f, x) stockassessment:::grad(f, x, 0.1 * 10^floor(log10(abs(x))) + 1e-4)
 
 gr.sym <- function(x, fn){
     eval(D(parse(text=as.character(functionBody(fn))[2]),"x"))
