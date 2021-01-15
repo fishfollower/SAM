@@ -4,11 +4,21 @@
 \alias{setup.sam.data}
 \title{Combine the data sources to SAM readable object}
 \usage{
-setup.sam.data(fleets = NULL, surveys = NULL, residual.fleet = NULL,
-  prop.mature = NULL, stock.mean.weight = NULL,
-  catch.mean.weight = NULL, dis.mean.weight = NULL,
-  land.mean.weight = NULL, natural.mortality = NULL, prop.f = NULL,
-  prop.m = NULL, land.frac = NULL, recapture = NULL)
+setup.sam.data(
+  fleets = NULL,
+  surveys = NULL,
+  residual.fleet = NULL,
+  prop.mature = NULL,
+  stock.mean.weight = NULL,
+  catch.mean.weight = NULL,
+  dis.mean.weight = NULL,
+  land.mean.weight = NULL,
+  natural.mortality = NULL,
+  prop.f = NULL,
+  prop.m = NULL,
+  land.frac = NULL,
+  recapture = NULL
+)
 }
 \arguments{
 \item{fleets}{comm fleets vith effort (currently unimplemented)}

@@ -7,16 +7,36 @@
 \usage{
 modelforecast(fit, ...)
 
-\method{modelforecast}{sam}(fit, fscale = NULL, catchval = NULL,
-  fval = NULL, nextssb = NULL, landval = NULL, findMSY = NULL,
-  hcr = NULL, nosim = NULL, year.base = max(fit$data$years),
-  ave.years = max(fit$data$years) + (-4:0), rec.years = c(),
-  label = NULL, overwriteSelYears = NULL, deterministicF = FALSE,
-  processNoiseF = TRUE, resampleFirst = !is.null(nosim) && nosim > 0,
-  customSel = NULL, lagR = FALSE, splitLD = FALSE, addTSB = FALSE,
-  biasCorrect = FALSE, returnAllYears = FALSE, useUniroot = FALSE,
-  nCatchAverageYears = 1, returnObj = FALSE, hcrConf = numeric(0),
-  ...)
+\method{modelforecast}{sam}(
+  fit,
+  fscale = NULL,
+  catchval = NULL,
+  fval = NULL,
+  nextssb = NULL,
+  landval = NULL,
+  findMSY = NULL,
+  hcr = NULL,
+  nosim = NULL,
+  year.base = max(fit$data$years),
+  ave.years = max(fit$data$years) + (-4:0),
+  rec.years = c(),
+  label = NULL,
+  overwriteSelYears = NULL,
+  deterministicF = FALSE,
+  processNoiseF = TRUE,
+  resampleFirst = !is.null(nosim) && nosim > 0,
+  customSel = NULL,
+  lagR = FALSE,
+  splitLD = FALSE,
+  addTSB = FALSE,
+  biasCorrect = FALSE,
+  returnAllYears = FALSE,
+  useUniroot = FALSE,
+  nCatchAverageYears = 1,
+  returnObj = FALSE,
+  hcrConf = numeric(0),
+  ...
+)
 }
 \arguments{
 \item{fit}{an assessment object of type sam, as returned from the function sam.fit}

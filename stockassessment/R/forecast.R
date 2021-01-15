@@ -46,11 +46,12 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param lagR if the second youngest age should be reported as recruits
 ##' @param splitLD if TRUE the result is split in landing and discards
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
+##' @param savesim save the individual simulations 
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, savesim=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -130,7 +131,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   getState <- function(N,F){
     k <- fit$conf$keyLogFsta[1,]
     F <- F[k>=0]
-    k <- unique(k[k>=0]+1)
+    k <- !duplicated(k[k>=0]) 
     x <- log(c(N,F[k]))
     x
   }    
@@ -260,7 +261,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   sim<-rmvnorm(nosim, mu=est, Sigma=cov)
 
   if(is.null(overwriteSelYears) & is.null(customSel)){  
-    if(!all.equal(est,getState(getN(est),getF(est))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
+    if(!isTRUE(all.equal(est,getState(getN(est),getF(est)))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
   }
     
   doAve <- function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
@@ -282,9 +283,13 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   }
   procVar<-getProcessVar(fit)  
   simlist<-list()
-  for(i in 0:(length(fscale)-1)){
+  rs <- NULL  
+  for(i in 0:(length(fscale)-1)){    
     y<-year.base+i  
-
+    if(!is.null(rs)){
+      assign(".Random.seed", rs, envir = .GlobalEnv)
+      rs <- NULL    
+    }
     sw<-getThisOrAve(fit$data$stockMeanWeight, y, ave.sw)
     cw<-getThisOrAve(fit$data$catchMeanWeight, y, ave.cw)
     mo<-getThisOrAve(fit$data$propMat, y, ave.mo)
@@ -295,7 +300,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     pf<-getThisOrAve(fit$data$propF, y, ave.pf)
 
     sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
-    if(i!=0){
+    if(i!=0){  
       cof <- coef(fit)
       if(deterministic){procVar<-procVar*0}
       if(!is.null(overwriteSelYears)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
@@ -392,7 +397,9 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     if(!is.na(nextssb[i+1])){
       if((sum(pm)!=0) | (sum(pf)!=0))stop("nextssb option only available if SSB is calculated in the beginning of the year")  
       simtmp<-NA
+      rs<-.Random.seed
       fun<-function(s){
+        assign(".Random.seed", rs, envir = .GlobalEnv)
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))
         simsim<-t(apply(simtmp, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
         if(i!=0){
@@ -469,5 +476,11 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   attr(simlist, "label") <- label
   attr(simlist, "caytable")<-caytable    
   class(simlist) <- "samforecast"
-  simlist
+  if(!savesim){  
+    simlistsmall<-lapply(simlist, function(x)list(year=x$year))
+    attributes(simlistsmall)<-attributes(simlist)
+    return(simlistsmall)
+  }else{
+    return(simlist)
+  }
 }
