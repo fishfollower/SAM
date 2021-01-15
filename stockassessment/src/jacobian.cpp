@@ -139,7 +139,7 @@ extern "C" {
 	  break;
       }
     endloop:
-      setAttrib(VECTOR_ELT(ans,p+1), Rf_install("error"), asSEXP(err));
+      Rf_setAttrib(VECTOR_ELT(ans,p+1), Rf_install("error"), asSEXP(err));
     }    
     
     UNPROTECT(2);

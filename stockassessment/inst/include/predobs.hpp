@@ -53,13 +53,13 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
   
       case 1:
-  	error("Unknown fleet code");
+  	Rf_error("Unknown fleet code");
         return(0);
       break;
       
       case 2:
  	if((pg!=conf.maxAgePlusGroup(0))&&(a==(conf.maxAge-conf.minAge))){
-          error("When maximum age for the fleet is the same as maximum age in the assessment it must be treated the same way as catches w.r.t. plusgroup configuration");
+          Rf_error("When maximum age for the fleet is the same as maximum age in the assessment it must be treated the same way as catches w.r.t. plusgroup configuration");
   	}
 
 	if((ma==1) && (pg==1)){
@@ -106,7 +106,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 	break;
   
       case 4:
-  	error("Unknown fleet code");
+  	Rf_error("Unknown fleet code");
         return 0;
       break;
   
@@ -116,17 +116,17 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       break;
   
       case 6:
-  	error("Unknown fleet code");
+  	Rf_error("Unknown fleet code");
         return 0;
       break;
   
       case 7:
-  	error("Unknown fleet code");
+  	Rf_error("Unknown fleet code");
         return 0;
       break;
   
       default:
-  	error("Unknown fleet code");
+  	Rf_error("Unknown fleet code");
         return 0 ;
       break;
     }    

@@ -1060,10 +1060,10 @@ PERREC_t<T> perRecruit(T Fbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>&
     Se = Se_ibc_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars, dat.referencepoint.optN);
     break;
   case 92: // spline on log R/S
-    error("Not implemented yet");
+    Rf_error("Not implemented yet");
     break;
     default:
-      error("SR model code not recognized");
+      Rf_error("SR model code not recognized");
     break;   
   }
   //T logSe = log(Se);

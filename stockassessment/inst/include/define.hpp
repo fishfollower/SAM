@@ -14,7 +14,7 @@ Type hcr(Type ssb, vector<Type> hcrConf);
 
 #define REPORT_F(name,F)					\
   if(isDouble<Type>::value && F->current_parallel_region<0) {	\
-    defineVar(install(#name),					\
+    Rf_defineVar(Rf_install(#name),					\
 	      PROTECT(asSEXP(name)),F->report);			\
     UNPROTECT(1);						\
   }
