@@ -17,12 +17,12 @@
  recplot(retro)                                            d0c5981d926f901c2bd0315b66118695
  catchplot(retro)                                          5d3d2db32f7129cf0e6a8b503f7fc7b1
  parplot(retro)                                            cd3db8aa199ced26a7baad04f72fd408
- plot(forec)                                               155d7e8f92bf82ccf95f9f427b1cb76f
- fbarplot(forec)                                           f4f40d273ee1342c197f3ba310c60ff8
- ssbplot(forec)                                            43d48888cfcdcef5eefb10259f4ad328
+ plot(forec)                                               62a8243a3103261d683b25022079e6b7
+ fbarplot(forec)                                           61f3752d90f3f5835f0b3ceae3adf03f
+ ssbplot(forec)                                            3a4a1ba4a376e0ef7df5794afbf20744
  tsbplot(forec)                                            8883d8855bad6b48850f7ba97dd002bb
  recplot(forec)                                            14e3ff605ac7067bdc79cea229aea9e7
- catchplot(forec)                                          9c6d95d2537b050b324bf1efdf7e6cbc
- plot(resid)                                               c8482faff4cae0011a2685c9e2e34f9c
- corplot(resid)                                            e6a8afda65524948bbb43aaf5504bf12
+ catchplot(forec)                                          9969ff141e1bc9b7010fe6327c5c0bda
+ plot(resid)                                               7bdf8b057ab67b8b356695b8951f1e2e
+ corplot(resid)                                            b2c086bb8bf6271e43819cfb5ddd30ca
  plot(resp)                                                61409eee4d249ab6a6b401a8b05f01ed
