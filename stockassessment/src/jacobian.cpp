@@ -21,7 +21,7 @@ typedef struct r_function {
     vector<double> operator()(SEXP x){
     SEXP ans;
     SETCADR(fcall, x);    
-    PROTECT(ans = duplicate(eval(fcall, env)));
+    PROTECT(ans = Rf_duplicate(Rf_eval(fcall, env)));
     UNPROTECT(1);
     return asVector<double>(ans);
   }
@@ -69,7 +69,7 @@ extern "C" {
 
     
     Rfunction RF = (Rfunction) R_alloc(1, sizeof(r_function));
-    RF->fcall = PROTECT(lang2(fn, R_NilValue));
+    RF->fcall = PROTECT(Rf_lang2(fn, R_NilValue));
     RF->env = rho;
     RF->nIn = Rf_length(par);
 
@@ -82,7 +82,7 @@ extern "C" {
     
     RF->nOut = funres.size();
     
-    ans = PROTECT(allocVector(VECSXP, RF->nIn+1));
+    ans = PROTECT(Rf_allocVector(VECSXP, RF->nIn+1));
     SET_VECTOR_ELT(ans, 0, asSEXP(funres));
 
     vector<double> dpar = asVector<double>(par);
@@ -139,7 +139,7 @@ extern "C" {
 	  break;
       }
     endloop:
-      setAttrib(VECTOR_ELT(ans,p+1), install("error"), asSEXP(err));
+      setAttrib(VECTOR_ELT(ans,p+1), Rf_install("error"), asSEXP(err));
     }    
     
     UNPROTECT(2);
