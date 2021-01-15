@@ -4,10 +4,21 @@
 \alias{hcr}
 \title{Harvest control rule forecast}
 \usage{
-hcr(fit, nYears = 20, Ftarget, Btrigger, Flim = 0, Blim = 0,
-  Flow = 0, Blow = 0, nosim = 10000,
-  ave.years = max(fit$data$years) + (-4:0), rec.years = c(),
-  preForecast = list(), ...)
+hcr(
+  fit,
+  nYears = 20,
+  Ftarget,
+  Btrigger,
+  Flim = 0,
+  Blim = 0,
+  Flow = 0,
+  Blow = 0,
+  nosim = 10000,
+  ave.years = max(fit$data$years) + (-4:0),
+  rec.years = c(),
+  preForecast = list(),
+  ...
+)
 }
 \arguments{
 \item{fit}{A SAM fit}
