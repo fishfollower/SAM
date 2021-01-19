@@ -48,14 +48,14 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
 ##' @param savesim save the individual simulations 
 ##' @param useSWmodel if TRUE the mean weight predicted from the assessment model is used (can only be used for configurations supporting this)
+##' @param useMOmodel if TRUE the proportion mature predicted from the assessment model is used (can only be used for configurations supporting this)
 ##' @param savesim save the individual simulations 
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom TMB sdreport MakeADFun
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), savesim=FALSE){
-
+forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), useMOmodel=(fit$conf$matureModel==1), savesim=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -90,21 +90,35 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
     customSel <- customSel/mean(customSel[fromto[1]:fromto[2]])
   }
+
+  odat<-fit$obj$env$data
+  opar<-fit$obj$env$parameters
+  omap<-fit$obj$env$map
   if(useSWmodel & (fit$conf$stockWeightModel==0)){
     stop("stockWeightModel cannot be used for forecast when it was not part of the fitted model")
   }
   if(useSWmodel){
-    odat<-fit$obj$env$data
     odat$stockMeanWeight<-do.call(function(...)rbind(odat$stockMeanWeight,...), as.list(rep(NA,ns)))
     rownames(odat$stockMeanWeight)<-1:nrow(odat$stockMeanWeight)+as.integer(rownames(odat$stockMeanWeight)[1])-1
-    opar<-fit$obj$env$parameters
     opar$logSW<-matrix(0,nrow=nrow(odat$stockMeanWeight), ncol=ncol(odat$stockMeanWeight))
     oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
-    omap<-fit$obj$env$map
-    obj <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
-    sdrep<- sdreport(obj, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
+    objsw <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
+    sdrep<- sdreport(objsw, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
     idx<-names(sdrep$value)=="logSW"
     simLogSw <-rmvnorm(nosim, sdrep$value[idx], sdrep$cov[idx,idx])
+  }
+  if(useMOmodel & (fit$conf$matureModel==0)){
+    stop("matureModel cannot be used for forecast when it was not part of the fitted model")
+  }
+  if(useMOmodel){
+    odat$propMat<-do.call(function(...)rbind(odat$propMat,...), as.list(rep(NA,ns)))
+    rownames(odat$propMat)<-1:nrow(odat$propMat)+as.integer(rownames(odat$propMat)[1])-1
+    opar$logitMO<-matrix(0,nrow=nrow(odat$propMat), ncol=ncol(odat$propMat))
+    oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
+    objmo <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
+    sdrep<- sdreport(objmo, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
+    idx<-names(sdrep$value)=="logitMO"
+    simLogitMO <-rmvnorm(nosim, sdrep$value[idx], sdrep$cov[idx,idx])
   }
     
   getF <- function(x, allowSelOverwrite=FALSE){
@@ -426,13 +440,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
           if(deterministic)procVar<-procVar*0  
           simsim <- simsim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
         }
-        if(useSWmodel){
-          ssbswi<-function(i){
-            thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
-            thissw <-matrix(exp(simLogSw[i,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
-            ssb(simsim[i,],nm=nm,sw=thissw,mo=mo,pm=pm,pf=pf)
+        if(useSWmodel | useMOmodel){
+          ssbswmoi<-function(i){
+            if(useSWmodel){    
+              thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
+              thissw <-matrix(exp(simLogSw[i,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
+            }else{
+              thissw <-sw
+            }
+            if(useMOmodel){    
+              thisy <- which(as.integer(rownames(odat$propMat))==y)
+              thismo <-matrix(plogis(simLogitMO[i,]),nrow=nrow(odat$propMat))[thisy,]
+            }else{
+              thismo <-mo
+            }
+            ssb(sim[i,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
           }  
-          simnextssb <- sapply(1:nrow(simsim), ssbswi)
+          simnextssb <- sapply(1:nrow(simsim), ssbswmoi)
         }else{
           simnextssb <- apply(simsim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
         }
@@ -447,13 +471,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
     landsim <- apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
     catchatagesim <- apply(sim, 1, catchatage, nm=nm)
-    if(useSWmodel){
-      ssbswi<-function(i){
-        thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
-        thissw <-matrix(exp(simLogSw[i,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
-        ssb(sim[i,],nm=nm,sw=thissw,mo=mo,pm=pm,pf=pf)
+    if(useSWmodel | useMOmodel){
+      ssbswmoi<-function(i){
+        if(useSWmodel){    
+          thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
+          thissw <-matrix(exp(simLogSw[i,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
+        }else{
+          thissw <-sw
+        }
+        if(useMOmodel){    
+          thisy <- which(as.integer(rownames(odat$propMat))==y)
+          thismo <-matrix(plogis(simLogitMO[i,]),nrow=nrow(odat$propMat))[thisy,]
+        }else{
+          thismo <-mo
+        }
+        ssb(sim[i,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
       }  
-      ssbsim <- sapply(1:nrow(sim), ssbswi)
+      ssbsim <- sapply(1:nrow(sim), ssbswmoi)
     }else{
       ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
     }
