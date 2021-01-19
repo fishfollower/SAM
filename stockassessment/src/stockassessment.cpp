@@ -96,7 +96,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stockWeightModel); confset.stockWeightModel=stockWeightModel;
   DATA_IVECTOR(keyStockWeightMean); confset.keyStockWeightMean=keyStockWeightMean;
   DATA_IVECTOR(keyStockWeightObsVar); confset.keyStockWeightObsVar=keyStockWeightObsVar; 
-
+  DATA_INTEGER(matureModel); confset.matureModel=matureModel;
+  DATA_IVECTOR(keyMatureMean); confset.keyMatureMean=keyMatureMean;
   
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
@@ -123,10 +124,15 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
   PARAMETER_VECTOR(meanLogSW); paraset.meanLogSW=meanLogSW;
   PARAMETER_VECTOR(logSdLogSW); paraset.logSdLogSW=logSdLogSW;
+  PARAMETER_VECTOR(logPhiMO); paraset.logPhiMO=logPhiMO;
+  PARAMETER_VECTOR(logSdProcLogitMO); paraset.logSdProcLogitMO=logSdProcLogitMO;
+  PARAMETER_VECTOR(meanLogitMO); paraset.meanLogitMO=meanLogitMO;
+  PARAMETER_VECTOR(logSdMO); paraset.logSdMO=logSdMO;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_ARRAY(logSW);
+  PARAMETER_ARRAY(logitMO);  
   PARAMETER_VECTOR(missing);
 
   // patch missing 
@@ -145,7 +151,8 @@ Type objective_function<Type>::operator() ()
   } 
 
   ans += nllF(confset, paraset, logF, keep, this);
-  ans += nllSW(logSW, dataset, confset, paraset, this);  
+  ans += nllSW(logSW, dataset, confset, paraset, this);
+  ans += nllMO(logitMO, dataset, confset, paraset, this);    
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
   return ans;

@@ -150,6 +150,8 @@ struct confSet{
   int stockWeightModel;
   vector<int> keyStockWeightMean;
   vector<int> keyStockWeightObsVar;
+  int matureModel;
+  vector<int> keyMatureMean;
   confSet() {};
 
   confSet(SEXP x){
@@ -184,6 +186,8 @@ struct confSet{
     stockWeightModel = (int)*REAL(getListElement(x,"stockWeightModel"));
     keyStockWeightMean = asVector<int>(getListElement(x,"keyStockWeightMean"));
     keyStockWeightObsVar = asVector<int>(getListElement(x,"keyStockWeightObsVar"));
+    matureModel = (int)*REAL(getListElement(x,"matureModel"));
+    keyMatureMean = asVector<int>(getListElement(x,"keyMatureMean"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -217,6 +221,8 @@ struct confSet{
     stockWeightModel = rhs.stockWeightModel;
     keyStockWeightMean = rhs.keyStockWeightMean;
     keyStockWeightObsVar = rhs.keyStockWeightObsVar;
+    matureModel = rhs.matureModel;
+    keyMatureMean = rhs.keyMatureMean;
     return *this;
   };
 };
@@ -245,6 +251,10 @@ struct paraSet{
   vector<Type> logSdProcLogSW;
   vector<Type> meanLogSW; 
   vector<Type> logSdLogSW; 
+  vector<Type> logPhiMO; 
+  vector<Type> logSdProcLogitMO;
+  vector<Type> meanLogitMO; 
+  vector<Type> logSdMO; 
 };
 
 template<class Type>

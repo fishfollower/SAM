@@ -55,9 +55,15 @@ defpar <- function(dat,conf){
   ret$logSdProcLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(1)}
   ret$meanLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightMean,na.rm=TRUE)+1)}
   ret$logSdLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightObsVar,na.rm=TRUE)+1)}
+
+  ret$logPhiMO=if(conf$matureModel==0){numeric(0)}else{numeric(2)}
+  ret$logSdProcLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
+  ret$meanLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(max(conf$keyMatureMean,na.rm=TRUE)+1)}
+  ret$logSdMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
   
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
   ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$stockMeanWeight), nrow=nrow(dat$stockMeanWeight))}
+  ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat))}  
   return(ret)
 }
