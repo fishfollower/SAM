@@ -374,7 +374,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
-  attr(dat,'prop.mature')<-cutY(prop.mature)
+  prop.mature<-do.call(function(...)rbind(prop.mature,...), as.list(rep(NA,spinoutyear)))
+  rownames(prop.mature)<-1:nrow(prop.mature)+as.integer(rownames(prop.mature)[1])-1
+  attr(dat,'prop.mature')<-prop.mature
   stock.mean.weight<-do.call(function(...)rbind(stock.mean.weight,...), as.list(rep(NA,spinoutyear)))
   rownames(stock.mean.weight)<-1:nrow(stock.mean.weight)+as.integer(rownames(stock.mean.weight)[1])-1
   attr(dat,'stock.mean.weight')<-stock.mean.weight
