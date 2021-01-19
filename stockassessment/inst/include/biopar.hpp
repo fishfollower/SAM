@@ -122,7 +122,7 @@ Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type
         if(!isNA(mo(i,j))){
 	  m = invlogit(logitMO(i,j));
  	  //Francisco Cribari-Neto, Achim Zeileis (2010). "Beta Regression in R."
-	  prec=exp(par.logSdMO(0));
+	  prec=invlogit(par.logSdMO(0))*1.0e3;
 	  a = m*prec;                 //
           b = (Type(1)-m)*prec;       //v=mu*(1-mu)/(1+precision)
 	  //v=m*(1-m)/(1+exp(logPrecision));
