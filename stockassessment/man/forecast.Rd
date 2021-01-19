@@ -73,8 +73,6 @@ forecast(
 
 \item{addTSB}{if TRUE the total stock biomass (TSB) is added}
 
-\item{savesim}{save the individual simulations}
-
 \item{useSWmodel}{if TRUE the mean weight predicted from the assessment model is used (can only be used for configurations supporting this)}
 
 \item{savesim}{save the individual simulations}

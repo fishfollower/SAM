@@ -116,6 +116,9 @@ defcon<-function(dat){
   ret$stockWeightModel <- 0
   ret$keyStockWeightMean <- rep(NA_integer_,nAges)
   ret$keyStockWeightObsVar <- rep(NA_integer_,nAges)  
+  ret$matureModel <- 0
+  ret$keyMatureMean <- rep(NA_integer_,nAges)
+
   return(ret) 
 }
 
@@ -195,6 +198,8 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$stockWeightModel <- "Integer code describing the treatment of stock weights in the model (0 use as known, 1 use as observations to inform stock weight process (GMRF with cohort and within year correlations))"
     txt$keyStockWeightMean <- "Coupling of stock-weight process mean parameters (not used if stockWeightModel==0)"
     txt$keyStockWeightObsVar <- "Coupling of stock-weight observation variance parameters (not used if stockWeightModel==0)"
+    txt$matureModel <- "Integer code describing the treatment of proportion mature in the model (0 use as known, 1 use as observations to inform proportion mature process (GMRF with cohort and within year correlations on logit(proportion mature)))"
+    txt$keyMatureMean <- "Coupling of mature process mean parameters (not used if matureModel==0)"
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)
