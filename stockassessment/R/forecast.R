@@ -298,7 +298,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     if(!isTRUE(all.equal(est,getState(getN(est),getF(est)))))stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
   }
     
-  doAve <- function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE]) 
+  doAve <- function(x,y)colMeans(x[rownames(x)%in%ave.years,,drop=FALSE], na.rm=TRUE) 
   ave.sw <- doAve(fit$data$stockMeanWeight)
   ave.cw <- doAve(fit$data$catchMeanWeight)
   ave.mo <- doAve(fit$data$propMat)

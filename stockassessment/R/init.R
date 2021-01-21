@@ -78,6 +78,11 @@ defpar <- function(dat,conf){
   ret$meanLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightMean,na.rm=TRUE)+1)}
   ret$logSdLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightObsVar,na.rm=TRUE)+1)}
 
+  ret$logPhiCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(2)}
+  ret$logSdProcLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(1)}
+  ret$meanLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(max(conf$keyCatchWeightMean,na.rm=TRUE)+1)}
+  ret$logSdLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(max(conf$keyCatchWeightObsVar,na.rm=TRUE)+1)}
+
   ret$logPhiMO=if(conf$matureModel==0){numeric(0)}else{numeric(2)}
   ret$logSdProcLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
   ret$meanLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(max(conf$keyMatureMean,na.rm=TRUE)+1)}
@@ -102,6 +107,7 @@ defpar <- function(dat,conf){
   ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=conf$maxAge-conf$minAge+1, nrow=dat$noYears)}
 
   ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$stockMeanWeight), nrow=nrow(dat$stockMeanWeight))}
+  ret$logCW=if(conf$catchWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$catchMeanWeight), nrow=nrow(dat$catchMeanWeight))}  
   ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat))}  
   return(ret)
 }

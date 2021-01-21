@@ -578,6 +578,7 @@ catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,plot=TRUE,...){
         drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
     }
     CW <- fit$data$catchMeanWeight
+    CW <- CW[apply(!is.na(CW),1,all),]
     x <- as.numeric(rownames(CW))
     obs <- NULL
     if(plot)
