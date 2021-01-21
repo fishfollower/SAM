@@ -99,7 +99,8 @@ catchtable<-function(fit, obs.show=FALSE,...){
 ##' @method catchtable sam
 ##' @export
 catchtable.sam <- function(fit, obs.show=FALSE,...){
-   CW <- fit$data$catchMeanWeight 
+   CW <- fit$data$catchMeanWeight
+   CW <- CW[apply(!is.na(CW),1,all),] 
    xx <- as.integer(rownames(CW))
    ret <- tableit(fit, x=xx, "logCatch", trans=exp)
    if(obs.show){

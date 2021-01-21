@@ -511,6 +511,9 @@ struct confSet{
   int stockWeightModel;
   vector<int> keyStockWeightMean;
   vector<int> keyStockWeightObsVar;
+  int catchWeightModel;
+  vector<int> keyCatchWeightMean;
+  vector<int> keyCatchWeightObsVar;
   int matureModel;
   vector<int> keyMatureMean;
   confSet() {};
@@ -547,6 +550,9 @@ struct confSet{
     stockWeightModel = (int)*REAL(getListElement(x,"stockWeightModel"));
     keyStockWeightMean = asVector<int>(getListElement(x,"keyStockWeightMean"));
     keyStockWeightObsVar = asVector<int>(getListElement(x,"keyStockWeightObsVar"));
+    catchWeightModel = (int)*REAL(getListElement(x,"catchWeightModel"));
+    keyCatchWeightMean = asVector<int>(getListElement(x,"keyCatchWeightMean"));
+    keyCatchWeightObsVar = asVector<int>(getListElement(x,"keyCatchWeightObsVar"));
     matureModel = (int)*REAL(getListElement(x,"matureModel"));
     keyMatureMean = asVector<int>(getListElement(x,"keyMatureMean"));
   };
@@ -582,6 +588,9 @@ struct confSet{
     stockWeightModel = rhs.stockWeightModel;
     keyStockWeightMean = rhs.keyStockWeightMean;
     keyStockWeightObsVar = rhs.keyStockWeightObsVar;
+    catchWeightModel = rhs.catchWeightModel;
+    keyCatchWeightMean = rhs.keyCatchWeightMean;
+    keyCatchWeightObsVar = rhs.keyCatchWeightObsVar;
     matureModel = rhs.matureModel;
     keyMatureMean = rhs.keyMatureMean;
     return *this;
@@ -621,6 +630,10 @@ struct paraSet{
   vector<Type> logSdProcLogSW;
   vector<Type> meanLogSW; 
   vector<Type> logSdLogSW; 
+  vector<Type> logPhiCW; 
+  vector<Type> logSdProcLogCW;
+  vector<Type> meanLogCW; 
+  vector<Type> logSdLogCW; 
   vector<Type> logPhiMO; 
   vector<Type> logSdProcLogitMO;
   vector<Type> meanLogitMO; 
@@ -659,6 +672,10 @@ struct paraSet{
     logSdProcLogSW = asVector<Type>(getListElement(x,"logSdProcLogSW"));
     meanLogSW  = asVector<Type>(getListElement(x,"meanLogSW")); 
     logSdLogSW = asVector<Type>(getListElement(x,"logSdLogSW"));
+    logPhiCW = asVector<Type>(getListElement(x,"logPhiCW")); 
+    logSdProcLogCW = asVector<Type>(getListElement(x,"logSdProcLogCW"));
+    meanLogCW  = asVector<Type>(getListElement(x,"meanLogCW")); 
+    logSdLogCW = asVector<Type>(getListElement(x,"logSdLogCW"));
     logPhiMO = asVector<Type>(getListElement(x,"logPhiMO")); 
     logSdProcLogitMO = asVector<Type>(getListElement(x,"logSdProcLogitMO"));
     meanLogitMO  = asVector<Type>(getListElement(x,"meanLogitMO")); 
@@ -696,6 +713,10 @@ struct paraSet{
     logSdProcLogSW = rhs.logSdProcLogSW;
     meanLogSW = rhs.meanLogSW; 
     logSdLogSW = rhs.logSdLogSW; 
+    logPhiCW = rhs.logPhiCW; 
+    logSdProcLogCW = rhs.logSdProcLogCW;
+    meanLogCW = rhs.meanLogCW; 
+    logSdLogCW = rhs.logSdLogCW;  
     logPhiMO = rhs.logPhiMO; 
     logSdProcLogitMO = rhs.logSdProcLogitMO;
     meanLogitMO = rhs.meanLogitMO; 
@@ -737,6 +758,10 @@ struct paraSet{
     d.logSdProcLogSW = logSdProcLogSW.template cast<T>();
     d.meanLogSW = meanLogSW.template cast<T>();
     d.logSdLogSW = logSdLogSW.template cast<T>(); 
+    d.logPhiCW = logPhiCW.template cast<T>(); 
+    d.logSdProcLogCW = logSdProcLogCW.template cast<T>();
+    d.meanLogCW = meanLogCW.template cast<T>();
+    d.logSdLogCW = logSdLogCW.template cast<T>(); 
     d.logPhiMO = logPhiMO.template cast<T>(); 
     d.logSdProcLogitMO = logSdProcLogitMO.template cast<T>();
     d.meanLogitMO = meanLogitMO.template cast<T>();
