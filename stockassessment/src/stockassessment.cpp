@@ -96,6 +96,9 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(stockWeightModel); confset.stockWeightModel=stockWeightModel;
   DATA_IVECTOR(keyStockWeightMean); confset.keyStockWeightMean=keyStockWeightMean;
   DATA_IVECTOR(keyStockWeightObsVar); confset.keyStockWeightObsVar=keyStockWeightObsVar; 
+  DATA_INTEGER(catchWeightModel); confset.catchWeightModel=catchWeightModel;
+  DATA_IVECTOR(keyCatchWeightMean); confset.keyCatchWeightMean=keyCatchWeightMean;
+  DATA_IVECTOR(keyCatchWeightObsVar); confset.keyCatchWeightObsVar=keyCatchWeightObsVar; 
   DATA_INTEGER(matureModel); confset.matureModel=matureModel;
   DATA_IVECTOR(keyMatureMean); confset.keyMatureMean=keyMatureMean;
   
@@ -124,6 +127,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
   PARAMETER_VECTOR(meanLogSW); paraset.meanLogSW=meanLogSW;
   PARAMETER_VECTOR(logSdLogSW); paraset.logSdLogSW=logSdLogSW;
+  PARAMETER_VECTOR(logPhiCW); paraset.logPhiCW=logPhiCW;
+  PARAMETER_VECTOR(logSdProcLogCW); paraset.logSdProcLogCW=logSdProcLogCW;
+  PARAMETER_VECTOR(meanLogCW); paraset.meanLogCW=meanLogCW;
+  PARAMETER_VECTOR(logSdLogCW); paraset.logSdLogCW=logSdLogCW;
   PARAMETER_VECTOR(logPhiMO); paraset.logPhiMO=logPhiMO;
   PARAMETER_VECTOR(logSdProcLogitMO); paraset.logSdProcLogitMO=logSdProcLogitMO;
   PARAMETER_VECTOR(meanLogitMO); paraset.meanLogitMO=meanLogitMO;
@@ -132,6 +139,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
   PARAMETER_ARRAY(logSW);
+  PARAMETER_ARRAY(logCW);  
   PARAMETER_ARRAY(logitMO);  
   PARAMETER_VECTOR(missing);
 
@@ -152,6 +160,7 @@ Type objective_function<Type>::operator() ()
 
   ans += nllF(confset, paraset, logF, keep, this);
   ans += nllSW(logSW, dataset, confset, paraset, this);
+  ans += nllCW(logCW, dataset, confset, paraset, this);
   ans += nllMO(logitMO, dataset, confset, paraset, this);    
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);

@@ -28,7 +28,7 @@ vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
 
 template <class Type>
 vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
-  int len=dat.catchMeanWeight.dim(0);
+  int len=dat.landFrac.dim(0);
   vector<Type> cat(len);
   cat.setZero();
   for(int y=0;y<len;y++){
@@ -45,7 +45,7 @@ vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, arra
 
 template <class Type>
 vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, paraSet<Type> par){
-  int len=dat.catchMeanWeight.dim(0);
+  int len=dat.landFrac.dim(0);
   vector<Type> cat(len);
   cat.setZero();
   vector<Type> varLogCat(len);
@@ -126,7 +126,7 @@ vector<Type> varLogLandFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN,
 
 template <class Type>
 vector<Type> fsbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
-  int len=dat.catchMeanWeight.dim(0);
+  int len=dat.landFrac.dim(0);
   vector<Type> fsb(len);
   fsb.setZero();
   Type sumF;

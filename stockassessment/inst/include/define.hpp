@@ -150,6 +150,9 @@ struct confSet{
   int stockWeightModel;
   vector<int> keyStockWeightMean;
   vector<int> keyStockWeightObsVar;
+  int catchWeightModel;
+  vector<int> keyCatchWeightMean;
+  vector<int> keyCatchWeightObsVar;
   int matureModel;
   vector<int> keyMatureMean;
   confSet() {};
@@ -186,6 +189,9 @@ struct confSet{
     stockWeightModel = (int)*REAL(getListElement(x,"stockWeightModel"));
     keyStockWeightMean = asVector<int>(getListElement(x,"keyStockWeightMean"));
     keyStockWeightObsVar = asVector<int>(getListElement(x,"keyStockWeightObsVar"));
+    catchWeightModel = (int)*REAL(getListElement(x,"catchWeightModel"));
+    keyCatchWeightMean = asVector<int>(getListElement(x,"keyCatchWeightMean"));
+    keyCatchWeightObsVar = asVector<int>(getListElement(x,"keyCatchWeightObsVar"));
     matureModel = (int)*REAL(getListElement(x,"matureModel"));
     keyMatureMean = asVector<int>(getListElement(x,"keyMatureMean"));
   };
@@ -221,6 +227,9 @@ struct confSet{
     stockWeightModel = rhs.stockWeightModel;
     keyStockWeightMean = rhs.keyStockWeightMean;
     keyStockWeightObsVar = rhs.keyStockWeightObsVar;
+    catchWeightModel = rhs.catchWeightModel;
+    keyCatchWeightMean = rhs.keyCatchWeightMean;
+    keyCatchWeightObsVar = rhs.keyCatchWeightObsVar;
     matureModel = rhs.matureModel;
     keyMatureMean = rhs.keyMatureMean;
     return *this;
@@ -251,6 +260,10 @@ struct paraSet{
   vector<Type> logSdProcLogSW;
   vector<Type> meanLogSW; 
   vector<Type> logSdLogSW; 
+  vector<Type> logPhiCW; 
+  vector<Type> logSdProcLogCW;
+  vector<Type> meanLogCW; 
+  vector<Type> logSdLogCW; 
   vector<Type> logPhiMO; 
   vector<Type> logSdProcLogitMO;
   vector<Type> meanLogitMO; 

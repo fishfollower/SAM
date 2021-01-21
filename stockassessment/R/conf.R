@@ -91,7 +91,7 @@ defcon<-function(dat){
   ret$keyScaledYears <- numeric(0)
   ret$keyParScaledYA <- array(0,c(0,0))
 
-  cs <- colSums(dat$catchMeanWeight)
+  cs <- colSums(dat$catchMeanWeight, na.rm=TRUE)
   ii <- min(which(dat$fleetTypes==0))
   tc <- tapply(dat$logobs[dat$aux[,2]==ii], INDEX=dat$aux[,3][dat$aux[,2]==ii], function(x)sum(x,na.rm=TRUE))
   tc <- tc*cs[names(cs)%in%names(tc)]
@@ -115,6 +115,9 @@ defcon<-function(dat){
   ret$stockWeightModel <- 0
   ret$keyStockWeightMean <- rep(NA_integer_,nAges)
   ret$keyStockWeightObsVar <- rep(NA_integer_,nAges)  
+  ret$catchWeightModel <- 0
+  ret$keyCatchWeightMean <- rep(NA_integer_,nAges)
+  ret$keyCatchWeightObsVar <- rep(NA_integer_,nAges)  
   ret$matureModel <- 0
   ret$keyMatureMean <- rep(NA_integer_,nAges)
 
@@ -197,6 +200,9 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$stockWeightModel <- "Integer code describing the treatment of stock weights in the model (0 use as known, 1 use as observations to inform stock weight process (GMRF with cohort and within year correlations))"
     txt$keyStockWeightMean <- "Coupling of stock-weight process mean parameters (not used if stockWeightModel==0)"
     txt$keyStockWeightObsVar <- "Coupling of stock-weight observation variance parameters (not used if stockWeightModel==0)"
+    txt$catchWeightModel <- "Integer code describing the treatment of catch weights in the model (0 use as known, 1 use as observations to inform stock weight process (GMRF with cohort and within year correlations))"
+    txt$keyCatchWeightMean <- "Coupling of catch-weight process mean parameters (not used if catchWeightModel==0)"
+    txt$keyCatchWeightObsVar <- "Coupling of catch-weight observation variance parameters (not used if catchWeightModel==0)"
     txt$matureModel <- "Integer code describing the treatment of proportion mature in the model (0 use as known, 1 use as observations to inform proportion mature process (GMRF with cohort and within year correlations on logit(proportion mature)))"
     txt$keyMatureMean <- "Coupling of mature process mean parameters (not used if matureModel==0)"
     nam<-names(x)
