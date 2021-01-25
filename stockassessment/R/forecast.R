@@ -46,8 +46,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param lagR if the second youngest age should be reported as recruits
 ##' @param splitLD if TRUE the result is split in landing and discards
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
-##' @param savesim save the individual simulations 
-##' @param useSWmodel if TRUE the mean weight predicted from the assessment model is used (can only be used for configurations supporting this)
+##' @param useCWmodel if TRUE the catch mean weight predicted from the assessment model is used (can only be used for configurations supporting this)
 ##' @param useMOmodel if TRUE the proportion mature predicted from the assessment model is used (can only be used for configurations supporting this)
 ##' @param savesim save the individual simulations 
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
@@ -55,7 +54,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom TMB sdreport MakeADFun
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), useMOmodel=(fit$conf$matureModel==1), savesim=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), useCWmodel=(fit$conf$catchWeightModel==1), useMOmodel=(fit$conf$matureModel==1), savesim=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -106,6 +105,19 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     sdrep<- sdreport(objsw, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
     idx<-names(sdrep$value)=="logSW"
     simLogSw <-rmvnorm(nosim, sdrep$value[idx], sdrep$cov[idx,idx])
+  }
+  if(useCWmodel & (fit$conf$catchWeightModel==0)){
+    stop("catchWeightModel cannot be used for forecast when it was not part of the fitted model")
+  }
+  if(useCWmodel){
+    odat$catchMeanWeight<-do.call(function(...)rbind(odat$catchMeanWeight,...), as.list(rep(NA,ns)))
+    rownames(odat$catchMeanWeight)<-1:nrow(odat$catchMeanWeight)+as.integer(rownames(odat$catchMeanWeight)[1])-1
+    opar$logCW<-matrix(0,nrow=nrow(odat$catchMeanWeight), ncol=ncol(odat$catchMeanWeight))
+    oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
+    objcw <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
+    sdrep<- sdreport(objcw, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
+    idx<-names(sdrep$value)=="logCW"
+    simLogCW <-rmvnorm(nosim, sdrep$value[idx], sdrep$cov[idx,idx])
   }
   if(useMOmodel & (fit$conf$matureModel==0)){
     stop("matureModel cannot be used for forecast when it was not part of the fitted model")
@@ -396,7 +408,15 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
       simtmp<-NA
       fun<-function(s){
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))
-        simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
+        if(useCWmodel){  
+          simcat<-apply(1:length(simtmp), 1, function(k){
+            thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y);
+            thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,];
+            catch(simtmp[k,], nm=nm, cw=thiscw)}
+          )
+        }else{ 
+          simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
+        }
         return(catchval[i+1]-median(simcat))
       }
       ff <- uniroot(fun, c(0,100))$root
@@ -406,9 +426,15 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     if(!is.na(catchval.exact[i+1])){
       simtmp<-sim
       funk<-function(k){
+        if(useCWmodel){
+          thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y)
+          thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,]
+        }else{
+          thiscw=cw
+        }
         one<-function(s){
-          simtmp[k,]<<-scaleF(sim[k,],s)
-          simcat<-catch(simtmp[k,], nm=nm, cw=cw)
+          simtmp[k,]<<-scaleF(sim[k,],s)  
+          simcat<-catch(simtmp[k,], nm=nm, cw=thiscw)
           return(catchval.exact[i+1]-simcat)
         }
         ff <- uniroot(one, c(0,100))$root
@@ -441,20 +467,20 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
           simsim <- simsim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
         }
         if(useSWmodel | useMOmodel){
-          ssbswmoi<-function(i){
+          ssbswmoi<-function(k){
             if(useSWmodel){    
               thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
-              thissw <-matrix(exp(simLogSw[i,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
+              thissw <-matrix(exp(simLogSw[k,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
             }else{
               thissw <-sw
             }
             if(useMOmodel){    
               thisy <- which(as.integer(rownames(odat$propMat))==y)
-              thismo <-matrix(plogis(simLogitMO[i,]),nrow=nrow(odat$propMat))[thisy,]
+              thismo <-matrix(plogis(simLogitMO[k,]),nrow=nrow(odat$propMat))[thisy,]
             }else{
               thismo <-mo
             }
-            ssb(sim[i,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
+            ssb(sim[k,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
           }  
           simnextssb <- sapply(1:nrow(simsim), ssbswmoi)
         }else{
@@ -468,24 +494,33 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     
     fbarsim <- apply(sim, 1, fbar)
     fbarLsim <- apply(sim, 1, fbarFrac, lf=lf)
-    catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
+    if(useCWmodel){
+      catchcwi<-function(k){  
+        thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y)
+        thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,]
+        catch(sim[k,], nm=nm, cw=thiscw)
+      }
+      catchsim <- sapply(1:nrow(sim), catchcwi)
+    }else{
+      catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
+    }
     landsim <- apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
     catchatagesim <- apply(sim, 1, catchatage, nm=nm)
     if(useSWmodel | useMOmodel){
-      ssbswmoi<-function(i){
+      ssbswmoi<-function(k){
         if(useSWmodel){    
           thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
-          thissw <-matrix(exp(simLogSw[i,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
+          thissw <-matrix(exp(simLogSw[k,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
         }else{
           thissw <-sw
         }
         if(useMOmodel){    
           thisy <- which(as.integer(rownames(odat$propMat))==y)
-          thismo <-matrix(plogis(simLogitMO[i,]),nrow=nrow(odat$propMat))[thisy,]
+          thismo <-matrix(plogis(simLogitMO[k,]),nrow=nrow(odat$propMat))[thisy,]
         }else{
           thismo <-mo
         }
-        ssb(sim[i,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
+        ssb(sim[k,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
       }  
       ssbsim <- sapply(1:nrow(sim), ssbswmoi)
     }else{
