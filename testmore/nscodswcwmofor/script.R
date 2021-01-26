@@ -99,3 +99,4 @@ cat(capture.output(attr(fc101,"shorttab")), file = 'res.out', sep = '\n', append
 cat(capture.output(attr(fc011,"shorttab")), file = 'res.out', sep = '\n', append=TRUE)
 cat(capture.output(attr(fc111,"shorttab")), file = 'res.out', sep = '\n', append=TRUE)
 
+ 
