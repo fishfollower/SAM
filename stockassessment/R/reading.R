@@ -427,11 +427,11 @@ fitfromweb <- function(stockname, character.only=FALSE, return.all = FALSE){
     close(con)
     if(return.all)
         return(e)
-    hasFit <- grepl("fit",nam)    
+    hasFit <- grepl("^fit$",nam)    
     if(!any(hasFit)){
         warning(sprintf("No object named fit. Found %s in model.RData.",paste0(nam,collapse = ", ")))
         return(NA)
-    }else if(length(nam > 1)){
+    }else if(length(nam) > 1){
         message(sprintf("Not returning %s from model.RData",paste0(nam[!hasFit],collapse = ", ")))
     }
     return(e$fit)
