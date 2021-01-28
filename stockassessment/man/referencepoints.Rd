@@ -5,35 +5,15 @@
 \alias{referencepoints.sam}
 \title{Estimate reference points}
 \usage{
-referencepoints(
-  fit,
-  nYears,
-  Fsequence,
-  aveYears,
-  selYears,
-  SPRpercent,
-  catchType,
-  MSYreduction,
-  newtonSteps = 3,
-  optN = 100,
-  jacobianHScale = 0.5,
-  ...
-)
+referencepoints(fit, nYears, Fsequence, aveYears, selYears, SPRpercent,
+  catchType, MSYreduction, newtonSteps = 3, optN = 100,
+  jacobianHScale = 0.5, ...)
 
-\method{referencepoints}{sam}(
-  fit,
-  nYears = 100,
-  Fsequence = seq(0, 4, len = 200),
-  aveYears = max(fit$data$years) + (-9:0),
-  selYears = max(fit$data$years),
-  SPRpercent = c(0.35),
-  catchType = "catch",
-  MSYreduction = c(0.05),
-  newtonSteps = 3,
-  optN = 20,
-  jacobianHScale = 0.5,
-  ...
-)
+\method{referencepoints}{sam}(fit, nYears = 100, Fsequence = seq(0, 4,
+  len = 200), aveYears = max(fit$data$years) + (-9:0),
+  selYears = max(fit$data$years), SPRpercent = c(0.35),
+  catchType = "catch", MSYreduction = c(0.05), newtonSteps = 3,
+  optN = 20, jacobianHScale = 0.5, ...)
 }
 \arguments{
 \item{fit}{an object to calculate reference points for}

@@ -1,3 +1,6 @@
+#ifndef SAM_N_HPP
+#define SAM_N_HPP
+
 template <class Type>
 matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF){
   int stateDimN=logN.dim[0];
@@ -77,3 +80,5 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   } 
   return nll;
 }
+
+#endif

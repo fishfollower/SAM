@@ -1,3 +1,6 @@
+#ifndef SAM_HCR_HPP
+#define SAM_HCR_HPP
+
 template <class Type>
 Type hcr_min(Type a, Type b){
   return 0.5 * (a + b - sqrt(1e-4 + (a-b) * (a-b)));
@@ -22,19 +25,6 @@ Type hcr(Type ssb, vector<Type> hcrConf){
 			       hcr_min(Ftarget, hcr_max(Flim, Flim + (ssb - Blim) * (Ftarget - Flim) / (Btrigger - Blim))));
   return log(hcr_max(newF, (Type)exp(-10)));	  
 };
-
-
-extern "C" {
-  SEXP hcrR(SEXP ssb, SEXP hcrConf){
-    vector<double> s = asVector<double>(ssb);
-    vector<double> hc = asVector<double>(hcrConf);
-    vector<double> r(s.size());
-    r.setZero();
-    for(int i = 0; i < s.size(); ++i)
-      r(i) = hcr(s(i), hc);
-    return asSEXP(exp(r));
-  }
-}
 
 
 template <class Type>
@@ -85,16 +75,4 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
 };
 
 
-// template<class Type>
-// void simulationForecast(){
-//   if(dat.forecast.nYears == 0)
-//     return;
-
-//   int nYears = dat.forecast.nYears;
-//   for(int i = 0; i < nYears; ++i){
-//     int indx = dat.forecast.forecastYear.size() - nYears + i;
-//     // Simulate F
-
-//     // Simulate N
-//   }
-// }
+#endif

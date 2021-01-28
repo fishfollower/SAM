@@ -1,3 +1,6 @@
+#ifndef SAM_PREDOBS_HPP
+#define SAM_PREDOBS_HPP
+
 template <class Type>
 vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand){
   vector<Type> pred(dat.nobs);
@@ -133,3 +136,5 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   }
   return pred;
 }
+
+#endif

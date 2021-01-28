@@ -5,23 +5,11 @@
 \alias{ypr.sam}
 \title{Yield per recruit calculation}
 \usage{
-ypr(
-  fit,
-  Flimit = 2,
-  Fdelta = 0.01,
-  aveYears = min(15, length(fit$data$years)),
-  ageLimit = 100,
-  ...
-)
+ypr(fit, Flimit = 2, Fdelta = 0.01, aveYears = min(15,
+  length(fit$data$years)), ageLimit = 100, ...)
 
-\method{ypr}{sam}(
-  fit,
-  Flimit = 2,
-  Fdelta = 0.01,
-  aveYears = min(15, length(fit$data$years)),
-  ageLimit = 100,
-  ...
-)
+\method{ypr}{sam}(fit, Flimit = 2, Fdelta = 0.01, aveYears = min(15,
+  length(fit$data$years)), ageLimit = 100, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

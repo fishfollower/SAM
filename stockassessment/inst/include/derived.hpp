@@ -1,3 +1,5 @@
+#ifndef SAM_DERIVED_HPP
+#define SAM_DERIVED_HPP
 
 namespace rec_atomic {
 
@@ -305,3 +307,5 @@ vector<Type> disFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF){
   }
   return fbar;
 }
+
+#endif
