@@ -27,8 +27,6 @@ hcr(fit, ...)
 \arguments{
 \item{fit}{A SAM fit}
 
-\item{...}{additional arguments passed to \link{modelforecast}}
-
 \item{nYears}{Number of years to forecast}
 
 \item{Ftarget}{Target F for high SSB}

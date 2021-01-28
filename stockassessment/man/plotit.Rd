@@ -62,10 +62,7 @@ plotit(fit, what, ...)
   drop = 0,
   unnamed.basename = "current",
   xlim = NULL,
-<<<<<<< HEAD
   ylim = NULL,
-=======
->>>>>>> Start modelforecast with nextssb
   ...
 )
 
