@@ -5,27 +5,15 @@
 \alias{forecastMSY.sam}
 \title{Estimating Fmsy}
 \usage{
-forecastMSY(
-  fit,
-  nYears = 100,
-  nlminb.control = list(eval.max = 2000, iter.max = 2000),
-  rec.years = c(),
-  ave.years = max(fit$data$years) + (-9:0),
-  processNoiseF = FALSE,
-  ...
-)
+forecastMSY(fit, nYears = 100, nlminb.control = list(eval.max = 2000,
+  iter.max = 2000), rec.years = c(), ave.years = max(fit$data$years) +
+  (-9:0), processNoiseF = FALSE, ...)
 
-\method{forecastMSY}{sam}(
-  fit,
-  nYears = 100,
+\method{forecastMSY}{sam}(fit, nYears = 100,
   nlminb.control = list(eval.max = 2000, iter.max = 2000, trace = 1),
-  rec.years = c(),
-  ave.years = max(fit$data$years) + (-9:0),
-  processNoiseF = FALSE,
-  jacobianHScale = 0.5,
-  nCatchAverageYears = 20,
-  ...
-)
+  rec.years = c(), ave.years = max(fit$data$years) + (-9:0),
+  processNoiseF = FALSE, jacobianHScale = 0.5,
+  nCatchAverageYears = 20, ...)
 }
 \arguments{
 \item{fit}{a SAM fit}

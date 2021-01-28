@@ -20,6 +20,8 @@ extern "C" {
   SEXP ibcsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcdsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcisplineR(SEXP x, SEXP knots, SEXP pars);
+
+
   
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
@@ -55,6 +57,8 @@ extern "C" {
     {NULL,NULL,0}
   };
 
+#define CALLABLE(name) R_RegisterCCallable("stockassessment", #name, (DL_FUNC) &name)
+  
   void R_init_stockassessment(DllInfo *info)
   {
     /* Register the .C and .Call routines.
@@ -64,6 +68,18 @@ extern "C" {
     R_registerRoutines(info,
 		       NULL, callMethods,
 		       NULL, NULL);
+
+    CALLABLE(hcrR);
+    CALLABLE(jacobian);
+    CALLABLE(perRecruitR);
+    CALLABLE(stockRecruitmentModelR);
+    CALLABLE(Se_sbhR);
+    CALLABLE(Se_slR);
+    CALLABLE(bcsplineR);
+    CALLABLE(ibcsplineR);
+    CALLABLE(ibcdsplineR);
+    CALLABLE(ibcisplineR);
+
     R_useDynamicSymbols(info, (Rboolean)FALSE);
   }
 

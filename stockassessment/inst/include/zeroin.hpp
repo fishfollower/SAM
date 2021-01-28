@@ -1,3 +1,6 @@
+#ifndef SAM_ZEROIN_HPP
+#define SAM_ZEROIN_HPP
+
 /*
  *  R : A Computer Language for Statistical Data Analysis
  *  Copyright (C) 1999-2016  The R Core Team
@@ -85,6 +88,7 @@
 // #include <math.h>
 
 // #include <R_ext/Applic.h>
+
 
 #define EPSILON DBL_EPSILON
 
@@ -194,3 +198,5 @@ struct UNIROOT {
   }
 
 };
+
+#endif

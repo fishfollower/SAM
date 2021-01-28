@@ -1,3 +1,6 @@
+#ifndef SAM_PNORM_HPP
+#define SAM_PNORM_HPP
+
 /*
  *  Mathlib : A C Library of Special Functions
  *  Copyright (C) 1998	    Ross Ihaka
@@ -363,3 +366,4 @@ Type pnorm5(Type x, Type mu, Type sigma, Type lower_tail, Type log_p){
   return res;
 }
 
+#endif

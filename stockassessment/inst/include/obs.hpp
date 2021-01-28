@@ -1,3 +1,6 @@
+#ifndef SAM_OBS_HPP
+#define SAM_OBS_HPP
+
 #include <algorithm>
 
 template <class Type>
@@ -429,3 +432,5 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   
   return nll;
 }
+
+#endif
