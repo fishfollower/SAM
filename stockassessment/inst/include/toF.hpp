@@ -1,3 +1,5 @@
+#ifndef SAM_TOF_HPP
+#define SAM_TOF_HPP
 
 namespace toF_atomic {
 
@@ -145,3 +147,4 @@ Type landing2F_quick(Type landingval, vector<Type> lastF, vector<Type> M, vector
   return exp(sv);
 }
 
+#endif

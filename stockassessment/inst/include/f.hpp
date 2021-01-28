@@ -1,3 +1,6 @@
+#ifndef SAM_F_HPP
+#define SAM_F_HPP
+
 template <class Type>
 Type trans(Type x){
   return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);
@@ -220,3 +223,4 @@ Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<
 }
 
 
+#endif

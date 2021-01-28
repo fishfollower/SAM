@@ -1,4 +1,16 @@
 ##' Harvest control rule forecast
+##' @rdname hcr 
+##' @param fit A SAM fit
+##' @param ... other variables used by the methods
+##' @seealso modelforecast
+##' @export
+hcr <- function(fit, ...){
+    UseMethod("hcr")
+}
+
+
+
+##' Harvest control rule forecast
 ##'
 ##' The formula below is used to determine a new F based on the previous SSB.
 ##' \deqn{F = \left\{
@@ -23,8 +35,10 @@
 ##' @param ... additional arguments passed to \link{modelforecast}
 ##' @return hcr object 
 ##' @author Christoffer Moesgaard Albertsen
+##' @rdname hcr
+##' @method hcr sam
 ##' @export
-hcr <- function(fit,
+hcr.sam <- function(fit,
                 nYears = 20,
                 Ftarget,
                 Btrigger,
