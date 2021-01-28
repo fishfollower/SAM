@@ -147,7 +147,6 @@ Type landing2F_quick(Type landingval, vector<Type> lastF, vector<Type> M, vector
   return exp(sv);
 }
 
-
 template<class Type>
 struct SSB2F_QUICK {
   vector<Type> logFlast;
