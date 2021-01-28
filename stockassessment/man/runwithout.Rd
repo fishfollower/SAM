@@ -4,7 +4,8 @@
 \alias{runwithout}
 \title{runwithout helper function}
 \usage{
-runwithout(fit, year, fleet, ...)
+runwithout(fit, year = NULL, fleet = NULL, map = fit$obj$env$map,
+  ...)
 }
 \arguments{
 \item{fit}{a fitted model object as returned from sam.fit}

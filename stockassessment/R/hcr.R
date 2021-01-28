@@ -1,4 +1,16 @@
 ##' Harvest control rule forecast
+##' @rdname hcr 
+##' @param fit A SAM fit
+##' @param ... other variables used by the methods
+##' @seealso modelforecast
+##' @export
+hcr <- function(fit, ...){
+    UseMethod("hcr")
+}
+
+
+
+##' Harvest control rule forecast
 ##'
 ##' @param fit A SAM fit
 ##' @param ... other variables used by the methods

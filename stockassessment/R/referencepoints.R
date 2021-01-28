@@ -282,7 +282,6 @@ referencepoints.sam <- function(fit,
         stop("MSYreduction must be between 0 and 1.")
     MSYfraction <- 1 - MSYreduction
     
- 
     ## Prepare arguments to calculate reference points (fix parameters and latent variables, delta = 1)
     obj0 <- fit$obj
     argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]

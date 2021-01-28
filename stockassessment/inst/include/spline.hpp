@@ -1,7 +1,6 @@
 #ifndef SAM_SPLINE_HPP
 #define SAM_SPLINE_HPP
 
-
 namespace spline_helper {
   
   template<class Type>
