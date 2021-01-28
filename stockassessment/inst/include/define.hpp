@@ -1,3 +1,6 @@
+#ifndef SAM_DEFINE_HPP
+#define SAM_DEFINE_HPP
+
 template <class Type>
 struct forecastSet;
 
@@ -68,10 +71,11 @@ bool isNA(Type x){
   return R_IsNA(asDouble(x));
 }
 
+#ifndef WITH_LIBTMB
 bool isNAINT(int x){
   return NA_INTEGER==x;
 }
-
+#endif
 
 template <class Type>
 struct forecastSet {
@@ -1016,3 +1020,5 @@ Type findLinkV(Type k, int n=0){
   return v;
 }
 
+
+#endif

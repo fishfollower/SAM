@@ -1,4 +1,5 @@
-
+#ifndef SAM_PREDN_HPP
+#define SAM_PREDN_HPP
 
 template<class Type>
 Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRecruitmentModelCode){
@@ -137,4 +138,6 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   
   return predN;  
 }
+
+#endif
 

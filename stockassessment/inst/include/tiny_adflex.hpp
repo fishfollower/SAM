@@ -7,11 +7,8 @@
  */
 
 
-#ifndef TINY_ADFLEX_H
-#define TINY_ADFLEX_H
-
-
-namespace tinyad_flex {
+#ifndef TINY_ADFLEX_HPP
+#define TINY_ADFLEX_HPP
 
 /* Standalone ? */
 #ifndef R_RCONFIG_H
@@ -19,6 +16,9 @@ namespace tinyad_flex {
 #include <iostream>
 #define CSKIP(x) x
 #endif
+
+namespace tinyad_flex {
+
 
 template<class Type>
 vector<Type> resize(vector<Type> x, int n){
@@ -179,8 +179,10 @@ UNARY_MATH_ZERO_DERIV(trunc)
 UNARY_MATH_ZERO_DERIV(round)
 template<class T>
 adflex<T> sign(const adflex<T> &x){return (x > 0) - (x < 0);}
+#ifndef WITH_LIBTMB
 double sign(const double &x){return (x > 0) - (x < 0);}
 bool isfinite(const double &x)CSKIP( {return std::isfinite(x);} )
+#endif
   template<class T, class V>
   bool isfinite(const adflex<T> &x){return isfinite(x.value);}
 #undef UNARY_MATH_ZERO_DERIV
@@ -216,7 +218,9 @@ UNARY_MATH_DERIVATIVE(expm1, exp)
 //template<class T> T D_log1p(const T &x) {return 1. / (x + 1.);}
 template<class T>
 adflex<T> D_log1p(const adflex<T> &x) {return 1. / (x + 1.);}
+#ifndef WITH_LIBTMB
   double D_log1p(const double &x) {return 1. / (x + 1.);}
+#endif
 UNARY_MATH_DERIVATIVE(log1p, D_log1p)
 /* asin, acos, atan */
 using ::asin; using ::acos; using ::atan;
@@ -258,14 +262,18 @@ COMPARISON_OPERATOR_FLIP(==,==)
 COMPARISON_OPERATOR_FLIP(!=,!=)
 #undef COMPARISON_OPERATOR_FLIP
 /* Utility: Return the value of a tiny_adflex type */
+#ifndef WITH_LIBTMB
 double asDouble(double x) CSKIP( {return x;} )
+#endif
 template<class T>
 double asDouble (const adflex<T> &x){
   return asDouble(x.value);
 }
 /* Utility: Return the max absolute value of all members of a
    tiny_adflex type */
+#ifndef WITH_LIBTMB
 double max_fabs(double x) CSKIP( {return fabs(x);} )
+#endif
   template<class T>
   double max_fabs (const adflex<T> &x){
   double ans = max_fabs(x.value);
@@ -282,6 +290,7 @@ extern "C" {
   double	Rf_lgammafn(double);
   double	Rf_psigamma(double, double);
 }
+#ifndef WITH_LIBTMB
 template<int deriv>
 double lgamma(const double &x) {
   return Rf_psigamma(x, deriv-1);
@@ -289,6 +298,7 @@ double lgamma(const double &x) {
 template<>
 double lgamma<0>(const double &x) CSKIP( {return Rf_lgammafn(x);} )
   double lgamma(const double &x) CSKIP( {return lgamma<0>(x);} )
+#endif
   template<int deriv, class T>
   adflex<T> lgamma (const adflex<T> &x){
   return adflex<T> (lgamma< deriv >(x.value),

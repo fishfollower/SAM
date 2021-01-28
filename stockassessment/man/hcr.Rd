@@ -2,26 +2,20 @@
 % Please edit documentation in R/hcr.R
 \name{hcr}
 \alias{hcr}
+\alias{hcr.sam}
 \title{Harvest control rule forecast}
 \usage{
-hcr(
-  fit,
-  nYears = 20,
-  Ftarget,
-  Btrigger,
-  Flim = 0,
-  Blim = 0,
-  Flow = 0,
-  Blow = 0,
-  nosim = 10000,
-  ave.years = max(fit$data$years) + (-4:0),
-  rec.years = c(),
-  preForecast = list(),
-  ...
-)
+hcr(fit, ...)
+
+\method{hcr}{sam}(fit, nYears = 20, Ftarget, Btrigger, Flim = 0,
+  Blim = 0, Flow = 0, Blow = 0, nosim = 10000,
+  ave.years = max(fit$data$years) + (-4:0), rec.years = c(),
+  preForecast = list(), ...)
 }
 \arguments{
 \item{fit}{A SAM fit}
+
+\item{...}{other variables used by the methods}
 
 \item{nYears}{Number of years to forecast}
 
@@ -45,6 +39,8 @@ hcr(
 
 \item{preForecast}{list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR}
 
+\item{fit}{A SAM fit}
+
 \item{...}{additional arguments passed to \link{modelforecast}}
 }
 \value{
@@ -58,6 +54,9 @@ The formula below is used to determine a new F based on the previous SSB.
                   min\left(Ftarget, \max\left( F_{lim}, (SSB - B_{lim}) \cdot (F_{target} - F_{lim}) / (B_{trigger}-B_{lim}) \right)\right) & SSB \ge B_{low}
               \end{array}\right.
 }
+}
+\seealso{
+modelforecast
 }
 \author{
 Christoffer Moesgaard Albertsen

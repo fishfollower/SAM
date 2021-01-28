@@ -1,3 +1,6 @@
+#ifndef SAM_SPLINE_HPP
+#define SAM_SPLINE_HPP
+
 namespace spline_helper {
   
   template<class Type>
@@ -140,30 +143,4 @@ Type ibcispline(Type x, vector<Type> knots, vector<Type> pars){
   return r + pars(pars.size()-1);
 }
 
-
-extern "C" {
-  SEXP bcsplineR(SEXP x, SEXP knots, SEXP pars){
-    double r = bcspline(Rf_asReal(x),
-			asVector<double>(knots),
-			asVector<double>(pars));
-    return asSEXP(r);
-  }
-  SEXP ibcsplineR(SEXP x, SEXP knots, SEXP pars){
-    double r = ibcspline(Rf_asReal(x),
-			 asVector<double>(knots),
-			 asVector<double>(pars));
-    return asSEXP(r);
-  }
-  SEXP ibcdsplineR(SEXP x, SEXP knots, SEXP pars){
-    double r = ibcdspline(Rf_asReal(x),
-			  asVector<double>(knots),
-			  asVector<double>(pars));
-    return asSEXP(r);
-  }
-  SEXP ibcisplineR(SEXP x, SEXP knots, SEXP pars){
-    double r = ibcdspline(Rf_asReal(x),
-			  asVector<double>(knots),
-			  asVector<double>(pars));
-    return asSEXP(r);
-  }
-}
+#endif

@@ -1,3 +1,6 @@
+#ifndef SAM_P_HPP
+#define SAM_P_HPP
+
 template <class Type>
 Type nllP(confSet &conf, paraSet<Type> &par, array<Type> &logP, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
 
@@ -70,3 +73,4 @@ Type nllP(confSet &conf, paraSet<Type> &par, array<Type> &logP, data_indicator<v
 
 
   
+#endif

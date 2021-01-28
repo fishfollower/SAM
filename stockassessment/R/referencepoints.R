@@ -280,7 +280,7 @@ referencepoints.sam <- function(fit,
     ## Get joint precision
     jointPrecision <- TMB::sdreport(fit$obj,
                                fit$opt$par,
-                               solve(fit$sdrep$cov.fixed),
+                               svd_solve(fit$sdrep$cov.fixed),
                                getJointPrecision = TRUE)$jointPrecision
 
     ## Prepare arguments to calculate reference points (fix parameters and latent variables, delta = 1)
