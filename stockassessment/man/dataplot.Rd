@@ -7,8 +7,7 @@
 \usage{
 dataplot(fit, col = NULL, fleet_type = NULL, fleet_names = NULL)
 
-\method{dataplot}{sam}(fit, col = NULL, fleet_type = NULL,
-  fleet_names = NULL)
+\method{dataplot}{sam}(fit, col = NULL, fleet_type = NULL, fleet_names = NULL)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

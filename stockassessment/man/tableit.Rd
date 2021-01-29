@@ -7,8 +7,7 @@
 \usage{
 tableit(fit, what, x = fit$data$years, trans = function(x) x, ...)
 
-\method{tableit}{sam}(fit, what, x = fit$data$years,
-  trans = function(x) x, ...)
+\method{tableit}{sam}(fit, what, x = fit$data$years, trans = function(x) x, ...)
 }
 \arguments{
 \item{fit}{returned object from sam.fit}

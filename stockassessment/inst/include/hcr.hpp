@@ -34,9 +34,9 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
     return;
 
   // General setup
-  int stateDimF=logF.dim[0];
-  int timeSteps=logF.dim[1];
-  int stateDimN=conf.keyLogFsta.dim[1];
+  // int stateDimF=logF.dim[0];
+  // int timeSteps=logF.dim[1];
+  // int stateDimN=conf.keyLogFsta.dim[1];
 
   // Setup for F
   matrix<Type> fvar = get_fvar(dat, conf, par, logF);
