@@ -4,9 +4,17 @@
 \alias{forecast}
 \title{forecast function to do shortterm}
 \usage{
-forecast(fit, fscale = NULL, catchval = NULL, catchval.exact = NULL,
-  fval = NULL, nextssb = NULL, landval = NULL, cwF = NULL,
-  nosim = 1000, year.base = max(fit$data$years),
+forecast(
+  fit,
+  fscale = NULL,
+  catchval = NULL,
+  catchval.exact = NULL,
+  fval = NULL,
+  nextssb = NULL,
+  landval = NULL,
+  cwF = NULL,
+  nosim = 1000,
+  year.base = max(fit$data$years),
   ave.years = max(fit$data$years) + (-4:0),
   rec.years = max(fit$data$years) + (-9:0),
   label = NULL,
