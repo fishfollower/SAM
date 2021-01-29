@@ -83,9 +83,7 @@ modelforecast.sam <- function(fit,
     ## Checks
     if(deterministicF && length(fscale) > 0 && any(!is.na(fscale)) && is.null(customSel))
         warning("Forecasted F values may depend on the last estimated F vector and can therefore have uncertainty. Provide a custom selectivity to circumvent this.")
-
-    
-    
+  
     
     ## Get number of forecast years
     lengthVec <- c(length(fscale),
@@ -93,7 +91,7 @@ modelforecast.sam <- function(fit,
                    length(fval),length(nextssb),length(landval),
                    length(hcr))
     if(any(lengthVec > 0 & lengthVec < max(lengthVec)))
-        stop("...")    
+        stop("All target vectors must have the same length")    
     nYears <- max(length(fscale),length(catchval),length(fval),length(nextssb),length(landval),length(findMSY), length(hcr))
 
     ## Convert input to an F model code and a target value
@@ -111,6 +109,12 @@ modelforecast.sam <- function(fit,
         findMSY <- rep(NA_real_, nYears)
     if(is.null(hcr))
         hcr <- rep(NA_real_, nYears)
+
+    if(any(!is.na(nextssb)))
+        warning("The nextssb target is not currently supported.")
+    if(any(!is.na(nextssb)) && (any(fit$data$propM != 0) || any(fit$data$propM != 0)))
+        warning("The nextssb target is at the beginning of the year.")
+    
     tab <- rbind(fscale,fval,catchval,nextssb,landval, findMSY, hcr)
     FModel <- apply(tab,2, function(x){
         y <- which(!is.na(x))
