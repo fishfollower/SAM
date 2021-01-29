@@ -7,8 +7,7 @@
 \usage{
 fitplot(fit, log = TRUE, ...)
 
-\method{fitplot}{sam}(fit, log = TRUE, fleets = unique(fit$data$aux[,
-  "fleet"]), ...)
+\method{fitplot}{sam}(fit, log = TRUE, fleets = unique(fit$data$aux[, "fleet"]), ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}

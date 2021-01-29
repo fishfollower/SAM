@@ -5,12 +5,25 @@
 \alias{addforecast.samforecast}
 \title{SAM add forecasts}
 \usage{
-addforecast(fit, what, dotcol = "black", dotpch = 19, dotcex = 1.5,
-  intervalcol = gray(0.5, alpha = 0.5), ...)
+addforecast(
+  fit,
+  what,
+  dotcol = "black",
+  dotpch = 19,
+  dotcex = 1.5,
+  intervalcol = gray(0.5, alpha = 0.5),
+  ...
+)
 
-\method{addforecast}{samforecast}(fit, what, dotcol = "black",
-  dotpch = 19, dotcex = 1.5, intervalcol = gray(0.5, alpha = 0.5),
-  ...)
+\method{addforecast}{samforecast}(
+  fit,
+  what,
+  dotcol = "black",
+  dotpch = 19,
+  dotcex = 1.5,
+  intervalcol = gray(0.5, alpha = 0.5),
+  ...
+)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
