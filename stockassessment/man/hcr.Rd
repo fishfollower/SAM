@@ -7,15 +7,26 @@
 \usage{
 hcr(fit, ...)
 
-\method{hcr}{sam}(fit, nYears = 20, Ftarget, Btrigger, Flim = 0,
-  Blim = 0, Flow = 0, Blow = 0, nosim = 10000,
-  ave.years = max(fit$data$years) + (-4:0), rec.years = c(),
-  preForecast = list(), ...)
+\method{hcr}{sam}(
+  fit,
+  nYears = 20,
+  Ftarget,
+  Btrigger,
+  Flim = 0,
+  Blim = 0,
+  Flow = 0,
+  Blow = 0,
+  nosim = 10000,
+  ave.years = max(fit$data$years) + (-4:0),
+  rec.years = c(),
+  preForecast = list(),
+  ...
+)
 }
 \arguments{
 \item{fit}{A SAM fit}
 
-\item{...}{other variables used by the methods}
+\item{...}{additional arguments passed to \link{modelforecast}}
 
 \item{nYears}{Number of years to forecast}
 
@@ -38,10 +49,6 @@ hcr(fit, ...)
 \item{rec.years}{vector of years to use to resample recruitment from. If an empty vector is given, recruitment is based on the fitted model.}
 
 \item{preForecast}{list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR}
-
-\item{fit}{A SAM fit}
-
-\item{...}{additional arguments passed to \link{modelforecast}}
 }
 \value{
 hcr object

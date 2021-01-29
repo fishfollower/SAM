@@ -792,6 +792,22 @@ void prepareForForecast(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
 }
 
 
+
+// Forward declarations
+template<class Type>
+Type ssb2F_quick(Type ssbval, vector<Type> logFlast, dataSet<Type> dat, confSet conf, paraSet<Type> par, array<Type> logF, array<Type> logN, int i, Type rec_mean);
+template<class Type>
+Type landing2F_quick(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w, vector<Type> frac);
+template<class Type>
+Type catch2F_quick(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w);
+template<class Type>
+Type landing2F(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w, vector<Type> frac);
+template<class Type>
+Type catch2F(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w);
+// 
+
+
+
 template<class Type>
 void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par){
   if(nYears == 0){ // no forecast
@@ -816,19 +832,28 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
     Type y = forecastYear(indx);    
     Type lastSSB = ssbi(dat, conf, logN, logF, indx-1);
     Type calcF = 0.0;
- 
+
+    vector<Type> lastShortLogF(logF.rows());
+    if(i == 0){
+      lastShortLogF = log(initialFbar) + log(sel);
+    }else{
+      lastShortLogF = forecastCalculatedMedian.col(i-1);
+    }
+      
     vector<Type> lastFullLogF(logN.rows());
     for(int j = 0; j < logN.rows(); ++j){
       if(conf.keyLogFsta(0,j)>(-1)){
-	if(i == 0){
-	  lastFullLogF(j) = log(initialFbar) + log(selFull(j));
-	}else{
-	  lastFullLogF(j) = forecastCalculatedMedian(conf.keyLogFsta(0,j),i-1);
-	}
+	// if(i == 0){
+	//   lastFullLogF(j) = log(initialFbar) + log(selFull(j));
+	// }else{
+	//   lastFullLogF(j) = forecastCalculatedMedian(conf.keyLogFsta(0,j),i-1);
+	// }
+	lastFullLogF(j) = lastShortLogF(conf.keyLogFsta(0,j));
       }else{
 	lastFullLogF(j)= 0.0; 
       }
     }
+
 
     switch(fsdTimeScaleModel(i)) {
     case rwScale:
@@ -882,8 +907,23 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
 	forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
       }
       break;
-    case useNextssb:	
-      Rf_error("Forecast type not implemented");
+    case useNextssb:
+      calcF = ssb2F_quick((Type)target(i),
+			  log(sel), //lastShortLogF,
+			  dat,
+			  conf,
+			  par,
+			  logF,
+			  logN,
+			  indx,
+			  logRecruitmentMedian);
+      // if(i == 0){
+      // 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
+      // }else{
+      // 	forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+      // }
+      forecastCalculatedMedian.col(i) = log(calcF) + log(sel);
+      break;
     case useLandval:
       if(uniroot){
 	calcF = landing2F((Type)target(i),

@@ -4,8 +4,13 @@
 \alias{jit}
 \title{Jitter runs}
 \usage{
-jit(fit, nojit = 10, par = defpar(fit$data, fit$conf), sd = 0.25,
-  ncores = detectCores())
+jit(
+  fit,
+  nojit = 10,
+  par = defpar(fit$data, fit$conf),
+  sd = 0.25,
+  ncores = detectCores()
+)
 }
 \arguments{
 \item{fit}{a fitted model object as returned from sam.fit}

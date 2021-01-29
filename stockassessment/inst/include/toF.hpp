@@ -147,4 +147,76 @@ Type landing2F_quick(Type landingval, vector<Type> lastF, vector<Type> M, vector
   return exp(sv);
 }
 
+
+template<class Type>
+struct SSB2F_QUICK {
+  vector<Type> logFlast;
+    
+  array<Type> logN;
+  array<Type> logF;
+  
+  confSet cf;
+  dataSet<Type> ds;
+  paraSet<Type> ps;
+  int i;
+
+  Type ssbval;
+  Type rec_mean;
+
+  Type f(Type logFScale){
+    array<Type> lN = logN;
+    array<Type> lF = logF;
+    lF += logFScale;
+    vector<Type> nextN = predNFun(ds, cf, ps, lN, lF, i);
+    if(!isNA(rec_mean))
+      nextN(0) = rec_mean;
+    int jj = i;
+    if(i + 1 < lN.cols())
+      jj = i+1;
+    Type newSSB = 0.0;
+    for(int q = 0; q < nextN.size(); ++q)
+      newSSB += exp(nextN(q)) * ds.propMat(jj,q) * ds.stockMeanWeight(jj,q);    
+    // if(i + 1 < logN.cols()){      
+    //   lN.col(i+1) = nextN;
+    //   lF.col(i+1) = logFScale + logFlast;
+    //   newSSB = ssbi(ds, cf, lN, lF, i+1);
+    // }else{
+    //   lN.col(i) = nextN;
+    //   lF.col(i) = logFScale + logFlast;
+    //   newSSB = ssbi(ds, cf, lN, lF, i);
+    // }
+    return log(ssbval) - log(newSSB + 1e-5);
+  }
+
+  Type softmax(Type x, Type y, Type k = 1.0){
+    return logspace_add(k * x, k * y) / k;
+  }
+  Type sign0(Type x){
+    return x / (fabs(x) + 1e-8);
+  }
+  Type numnewt(Type logs){
+    Type h = 0.0001 * softmax(fabs(logs),Type(0.01), Type(100.0));
+    Type a = f(logs);
+    Type g = (-f(logs + 2.0 * h) + 8.0 * f(logs + h) - 8.0 * f(logs-h) + f(logs-2.0*h)) / (12 * h);
+    // Type g = (f(logs + h) - f(logs - h)) / (2.0 * h);
+    Type s = sign0(a) * sign0(g);
+    Type y = log(fabs(a)) - log(softmax(fabs(g), (Type)0.001, (Type)1000.0)); // Damp the gradient
+    return logs - 0.9 * s * exp(y); //softmax(exp(y), 0.5 * fabs(logs), Type(1000.0));
+  }
+  
+};
+
+
+
+template<class Type>
+Type ssb2F_quick(Type ssbval, vector<Type> logFlast, dataSet<Type> dat, confSet conf, paraSet<Type> par, array<Type> logF, array<Type> logN, int i, Type rec_mean) {
+  Type sv = 0;
+  SSB2F_QUICK<Type> f = {logFlast, logN, logF, conf, dat, par, i, ssbval, rec_mean};
+  for(int j = 0; j < 30; ++j){
+    sv = f.numnewt(sv);
+  }
+  return exp(sv);
+}
+
+
 #endif
