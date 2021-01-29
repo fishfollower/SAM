@@ -88,7 +88,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   Type nll=0; 
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
-  int stateDimN=conf.keyLogFsta.dim[1];
+  // int stateDimN=conf.keyLogFsta.dim[1];
   vector<Type> sdLogFsta=exp(par.logSdLogFsta);
   array<Type> resF(stateDimF,timeSteps-1);
 

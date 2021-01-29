@@ -4,7 +4,7 @@
 template <class Type>
 matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF){
   int stateDimN=logN.dim[0];
-  int timeSteps=logN.dim[1];
+  // int timeSteps=logN.dim[1];
   matrix<Type> nvar(stateDimN,stateDimN);
   vector<Type> varLogN=exp(par.logSdLogN*Type(2.0));
   for(int i=0; i<stateDimN; ++i){
