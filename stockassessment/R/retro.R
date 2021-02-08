@@ -53,6 +53,7 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
     conf$keyQpow <- .reidx(conf$keyQpow[suf,,drop=FALSE])
     conf$keyVarF <- .reidx(conf$keyVarF[suf,,drop=FALSE])
     conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
+    conf$predVarObsLink <- .reidx(conf$predVarObsLink[suf,,drop=FALSE])
     conf$obsCorStruct <- conf$obsCorStruct[suf]
     conf$maxAgePlusGroup <- conf$maxAgePlusGroup[suf]
     conf$keyCorObs <- .reidx(conf$keyCorObs[suf,,drop=FALSE])
@@ -64,6 +65,7 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
     }
     conf$keyBiomassTreat <- conf$keyBiomassTreat[suf]
     conf$obsLikelihoodFlag <- conf$obsLikelihoodFlag[suf]
+    conf$fracMixObs <- conf$fracMixObs[suf]
     attr(data, "conf") <- conf
   }
   data
