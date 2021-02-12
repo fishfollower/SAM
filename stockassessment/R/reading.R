@@ -385,7 +385,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'catch.mean.weight')<-catch.mean.weight
   attr(dat,'dis.mean.weight')<-cutY(dis.mean.weight)
   attr(dat,'land.mean.weight')<-cutY(land.mean.weight)
-  attr(dat,'natural.mortality')<-cutY(natural.mortality)
+  natural.mortality<-do.call(function(...)rbind(natural.mortality,...), as.list(rep(NA,spinoutyear)))
+  rownames(natural.mortality)<-1:nrow(natural.mortality)+as.integer(rownames(natural.mortality)[1])-1
+  attr(dat,'natural.mortality')<-natural.mortality
   attr(dat,'prop.f')<-cutY(prop.f)
   attr(dat,'prop.m')<-cutY(prop.m)
   attr(dat,'land.frac')<-cutY(land.frac)

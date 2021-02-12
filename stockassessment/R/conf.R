@@ -120,6 +120,9 @@ defcon<-function(dat){
   ret$keyCatchWeightObsVar <- rep(NA_integer_,nAges)  
   ret$matureModel <- 0
   ret$keyMatureMean <- rep(NA_integer_,nAges)
+  ret$mortalityModel <- 0
+  ret$keyMortalityMean <- rep(NA_integer_,nAges)
+  ret$keyMortalityObsVar <- rep(NA_integer_,nAges)  
 
   return(ret) 
 }
@@ -200,11 +203,15 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$stockWeightModel <- "Integer code describing the treatment of stock weights in the model (0 use as known, 1 use as observations to inform stock weight process (GMRF with cohort and within year correlations))"
     txt$keyStockWeightMean <- "Coupling of stock-weight process mean parameters (not used if stockWeightModel==0)"
     txt$keyStockWeightObsVar <- "Coupling of stock-weight observation variance parameters (not used if stockWeightModel==0)"
-    txt$catchWeightModel <- "Integer code describing the treatment of catch weights in the model (0 use as known, 1 use as observations to inform stock weight process (GMRF with cohort and within year correlations))"
+    txt$catchWeightModel <- "Integer code describing the treatment of catch weights in the model (0 use as known, 1 use as observations to inform catch weight process (GMRF with cohort and within year correlations))"
     txt$keyCatchWeightMean <- "Coupling of catch-weight process mean parameters (not used if catchWeightModel==0)"
     txt$keyCatchWeightObsVar <- "Coupling of catch-weight observation variance parameters (not used if catchWeightModel==0)"
     txt$matureModel <- "Integer code describing the treatment of proportion mature in the model (0 use as known, 1 use as observations to inform proportion mature process (GMRF with cohort and within year correlations on logit(proportion mature)))"
     txt$keyMatureMean <- "Coupling of mature process mean parameters (not used if matureModel==0)"
+    txt$mortalityModel <- "Integer code describing the treatment of natural mortality in the model (0 use as known, 1 use as observations to inform natural mortality process (GMRF with cohort and within year correlations))"
+    txt$MortalityMean <- "Coupling of natural mortality process mean parameters (not used if mortalityModel==0)"
+    txt$keyMortalityObsVar <- "Coupling of natural mortality observation variance parameters (not used if mortalityModel==0)"
+  
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)
