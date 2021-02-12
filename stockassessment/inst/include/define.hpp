@@ -516,6 +516,10 @@ struct confSet{
   vector<int> keyCatchWeightObsVar;
   int matureModel;
   vector<int> keyMatureMean;
+  int mortalityModel;
+  vector<int> keyMortalityMean;
+  vector<int> keyMortalityObsVar;
+
   confSet() {};
 
   confSet(SEXP x){
@@ -555,6 +559,10 @@ struct confSet{
     keyCatchWeightObsVar = asVector<int>(getListElement(x,"keyCatchWeightObsVar"));
     matureModel = (int)*REAL(getListElement(x,"matureModel"));
     keyMatureMean = asVector<int>(getListElement(x,"keyMatureMean"));
+    mortalityModel = (int)*REAL(getListElement(x,"mortalityModel"));
+    keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean"));
+    keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
+
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -593,6 +601,10 @@ struct confSet{
     keyCatchWeightObsVar = rhs.keyCatchWeightObsVar;
     matureModel = rhs.matureModel;
     keyMatureMean = rhs.keyMatureMean;
+    mortalityModel = rhs.mortalityModel;
+    keyMortalityMean = rhs.keyMortalityMean;
+    keyMortalityObsVar = rhs.keyMortalityObsVar;
+
     return *this;
   };
 };
@@ -637,7 +649,11 @@ struct paraSet{
   vector<Type> logPhiMO; 
   vector<Type> logSdProcLogitMO;
   vector<Type> meanLogitMO; 
-  vector<Type> logSdMO; 
+  vector<Type> logSdMO;
+  vector<Type> logPhiNM; 
+  vector<Type> logSdProcLogNM;
+  vector<Type> meanLogNM; 
+  vector<Type> logSdLogNM; 
 
   paraSet() {};
   
@@ -680,6 +696,10 @@ struct paraSet{
     logSdProcLogitMO = asVector<Type>(getListElement(x,"logSdProcLogitMO"));
     meanLogitMO  = asVector<Type>(getListElement(x,"meanLogitMO")); 
     logSdMO = asVector<Type>(getListElement(x,"logSdMO"));
+    logPhiNM = asVector<Type>(getListElement(x,"logPhiNM")); 
+    logSdProcLogNM = asVector<Type>(getListElement(x,"logSdProcLogNM"));
+    meanLogNM  = asVector<Type>(getListElement(x,"meanLogNM")); 
+    logSdLogNM = asVector<Type>(getListElement(x,"logSdLogNM"));
   }
 
   paraSet<Type>& operator=(const paraSet<Type>& rhs) {
@@ -721,6 +741,10 @@ struct paraSet{
     logSdProcLogitMO = rhs.logSdProcLogitMO;
     meanLogitMO = rhs.meanLogitMO; 
     logSdMO = rhs.logSdMO; 
+    logPhiNM = rhs.logPhiNM;
+    logSdProcLogNM = rhs.logSdProcLogNM;
+    meanLogNM = rhs.meanLogNM;
+    logSdLogNM = rhs.logSdLogNM;
     return *this;
 
   }
@@ -766,6 +790,10 @@ struct paraSet{
     d.logSdProcLogitMO = logSdProcLogitMO.template cast<T>();
     d.meanLogitMO = meanLogitMO.template cast<T>();
     d.logSdMO = logSdMO.template cast<T>(); 
+    d.logPhiNM = logPhiNM.template cast<T>(); 
+    d.logSdProcLogNM = logSdProcLogNM.template cast<T>();
+    d.meanLogNM = meanLogNM.template cast<T>();
+    d.logSdLogNM = logSdLogNM.template cast<T>(); 
     return d;    
   }  
 };

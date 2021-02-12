@@ -204,3 +204,67 @@ Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type
   }
   return Type(0);
 }
+
+
+
+template <class Type>
+Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
+  if(conf.mortalityModel==1){
+    Type nll=0;
+    array<Type> nm=dat.natMor;
+    int nrow=nm.dim[0];
+    int ncol=nm.dim[1];
+    int n=nrow*ncol;
+    vector<int> r(n); r.setZero();   
+    vector<int> c(n); c.setZero();
+    int idx=0;
+    for(int j=0; j<ncol; ++j){
+      for(int i=0; i<nrow; ++i){
+        r(idx)=i;
+	c(idx)=j;
+	++idx;
+      }
+    }
+    matrix<Type> Wc(n,n); Wc.setZero();
+    matrix<Type> Wd(n,n); Wd.setZero();
+    for(int i=0; i<n; ++i){
+      for(int j=0; j<n; ++j){
+	if((c(i)==c(j))&&(abs(r(i)-r(j))==1)){
+	  Wc(i,j)=1;
+	  Wc(i,i)-=1;
+        }   
+ 	if( (((r(i)-r(j))==1)&&((c(i)-c(j))==1))||(((r(i)-r(j)==(-1)))&&((c(i)-c(j))==(-1))) ){
+       	  Wd(i,j)=1;
+	  Wd(i,i)-=1;
+	}
+      }
+    }
+    
+    array<Type> mLogNM(nrow,ncol);
+    for(int i=0; i<nrow; ++i){
+      for(int j=0; j<ncol; ++j){
+	mLogNM(i,j)=par.meanLogNM(conf.keyMortalityMean(j));
+      }
+    }
+    
+    vector<Type> phi=exp(par.logPhiNM);
+    matrix<Type> I(Wc.rows(),Wc.cols());
+    I.setIdentity();
+    matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
+    
+    using namespace density;
+    nll += SCALE(GMRF(asSparseMatrix(Q)),exp(par.logSdProcLogNM(0)))((logNM-mLogNM).vec());
+        
+    for(int i=0; i<nrow; ++i){
+      for(int j=0; j<ncol; ++j){
+        if(!isNA(nm(i,j))){
+          nll += -dnorm(log(nm(i,j)),logNM(i,j),exp(par.logSdLogNM(conf.keyMortalityObsVar(j))),true);
+        }
+	dat.natMor(i,j)=exp(logNM(i,j));
+      }
+    }
+    ADREPORT_F(logNM,of);
+    return nll;
+  }
+  return Type(0);
+}

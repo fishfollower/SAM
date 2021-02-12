@@ -87,6 +87,11 @@ defpar <- function(dat,conf){
   ret$logSdProcLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
   ret$meanLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(max(conf$keyMatureMean,na.rm=TRUE)+1)}
   ret$logSdMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
+
+  ret$logPhiNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(2)}
+  ret$logSdProcLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(1)}
+  ret$meanLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityMean,na.rm=TRUE)+1)}
+  ret$logSdLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityObsVar,na.rm=TRUE)+1)}
   
 
   ## Reference points
@@ -108,6 +113,7 @@ defpar <- function(dat,conf){
 
   ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$stockMeanWeight), nrow=nrow(dat$stockMeanWeight))}
   ret$logCW=if(conf$catchWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$catchMeanWeight), nrow=nrow(dat$catchMeanWeight))}  
-  ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat))}  
+  ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat))}
+  ret$logNM=if(conf$mortalityModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$natMor), nrow=nrow(dat$natMor))}    
   return(ret)
 }
