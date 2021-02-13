@@ -48,13 +48,14 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
 ##' @param useCWmodel if TRUE the catch mean weight predicted from the assessment model is used (can only be used for configurations supporting this)
 ##' @param useMOmodel if TRUE the proportion mature predicted from the assessment model is used (can only be used for configurations supporting this)
+##' @param useNMmodel if TRUE the natural mortality predicted from the assessment model is used (can only be used for configurations supporting this)
 ##' @param savesim save the individual simulations 
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @importFrom stats median uniroot quantile
 ##' @importFrom TMB sdreport MakeADFun
 ##' @export
-forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), useCWmodel=(fit$conf$catchWeightModel==1), useMOmodel=(fit$conf$matureModel==1), savesim=FALSE){
+forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=NULL, nextssb=NULL, landval=NULL, cwF=NULL, nosim=1000, year.base=max(fit$data$years), ave.years=max(fit$data$years)+(-4:0), rec.years=max(fit$data$years)+(-9:0), label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE, customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), useCWmodel=(fit$conf$catchWeightModel==1), useMOmodel=(fit$conf$matureModel==1), useNMmodel=(fit$conf$mortalityModel==1), savesim=FALSE){
     
   resample <- function(x, ...){
     if(deterministic){
@@ -118,6 +119,19 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     sdrep<- sdreport(objcw, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
     idx<-names(sdrep$value)=="logCW"
     simLogCW <-rmvnorm(nosim, sdrep$value[idx], sdrep$cov[idx,idx])
+  }
+  if(useNMmodel & (fit$conf$mortalityModel==0)){
+    stop("mortalityModel cannot be used for forecast when it was not part of the fitted model")
+  }
+  if(useNMmodel){
+    odat$natMor<-do.call(function(...)rbind(odat$natMor,...), as.list(rep(NA,ns)))
+    rownames(odat$natMor)<-1:nrow(odat$natMor)+as.integer(rownames(odat$natMor)[1])-1
+    opar$logNM<-matrix(0,nrow=nrow(odat$natMor), ncol=ncol(odat$natMor))
+    oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
+    objnm <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
+    sdrep<- sdreport(objnm, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
+    idx<-names(sdrep$value)=="logNM"
+    simLogNM <-rmvnorm(nosim, sdrep$value[idx], sdrep$cov[idx,idx])
   }
   if(useMOmodel & (fit$conf$matureModel==0)){
     stop("matureModel cannot be used for forecast when it was not part of the fitted model")
