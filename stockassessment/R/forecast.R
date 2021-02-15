@@ -359,8 +359,17 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     lw<-getThisOrAve(fit$data$landMeanWeight, y, ave.lw)
     pm<-getThisOrAve(fit$data$propM, y, ave.pm)
     pf<-getThisOrAve(fit$data$propF, y, ave.pf)
-
-    sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
+    if(useNMmodel){
+      sim<-t(sapply(1:nrow(sim),
+	             function(s){
+                       yidx<-which(as.integer(rownames(odat$natMor))==as.integer(y))   
+                       thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(odat$natMor))[yidx,]
+                       step(sim[s,], nm=thisnm, recpool=recpool, scale=1, inyear=(i==0))
+	             }
+                    ))      
+    }else{
+      sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0)))) 
+    }
     if(i!=0){  
       cof <- coef(fit)
       if(deterministic){procVar<-procVar*0}
@@ -423,11 +432,21 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
       simtmp<-NA
       fun<-function(s){
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))
-        if(useCWmodel){  
-          simcat<-apply(1:length(simtmp), 1, function(k){
-            thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y);
-            thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,];
-            catch(simtmp[k,], nm=nm, cw=thiscw)}
+        if(useCWmodel | useNMmodel){  
+          simcat<-sapply(1:nrow(simtmp), function(k){
+            if(useCWmodel){      
+              thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y);
+              thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,];
+            }else{
+              thiscw <- cw
+            }  
+            if(useNMmodel){      
+              thisy <- which(as.integer(rownames(odat$natMor))==y);
+              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,];
+            }else{
+              thisnm <- nm
+            }  
+            catch(simtmp[k,], nm=thisnm, cw=thiscw)}
           )
         }else{ 
           simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
@@ -447,9 +466,15 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
         }else{
           thiscw=cw
         }
+        if(useNMmodel){
+          thisy <- which(as.integer(rownames(odat$natMor))==y)
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+        }else{
+          thisnm=nm
+        }
         one<-function(s){
           simtmp[k,]<<-scaleF(sim[k,],s)  
-          simcat<-catch(simtmp[k,], nm=nm, cw=thiscw)
+          simcat<-catch(simtmp[k,], nm=thisnm, cw=thiscw)
           return(catchval.exact[i+1]-simcat)
         }
         ff <- uniroot(one, c(0,100))$root
@@ -462,7 +487,16 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
       simtmp<-NA
       fun<-function(s){
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))
-        simcat<-apply(simtmp, 1, catchFrac, nm=nm, w=lw, frac=lf)
+        if(useNMmodel){
+          simcat<-sapply(1:nrow(simtmp), function(k){      
+              thisy <- which(as.integer(rownames(odat$natMor))==y);
+              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,];
+              catchFrac(simtmp[k,], nm=thisnm, w=lw, frac=lf)
+            }
+          )
+        }else{
+          simcat<-apply(simtmp, 1, catchFrac, nm=nm, w=lw, frac=lf)
+        }
         return(landval[i+1]-median(simcat))
       }
       ff <- uniroot(fun, c(0,100))$root
@@ -476,12 +510,23 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
       fun<-function(s){
         assign(".Random.seed", rs, envir = .GlobalEnv)
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))
-        simsim<-t(apply(simtmp, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0))))
+
+        if(useNMmodel){
+          simsim<-t(sapply(1:nrow(simtmp),
+	                 function(s){
+                           yidx<-which(as.integer(rownames(odat$natMor))==as.integer(y))   
+                           thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(odat$natMor))[yidx,]
+                           step(simtmp[s,], nm=thisnm, recpool=recpool, scale=1, inyear=(i==0))
+  	                 }
+                        ))      
+        }else{
+          simsim <- t(apply(simtmp, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0)))) 
+        }
         if(i!=0){
           if(deterministic)procVar<-procVar*0  
           simsim <- simsim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
         }
-        if(useSWmodel | useMOmodel){
+        if(useSWmodel | useMOmodel | useNMmodel){
           ssbswmoi<-function(k){
             if(useSWmodel){    
               thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
@@ -495,7 +540,13 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
             }else{
               thismo <-mo
             }
-            ssb(sim[k,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
+            if(useNMmodel){    
+              thisy <- which(as.integer(rownames(odat$natMor))==y)
+              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+            }else{
+              thisnm <-nm
+            }
+            ssb(simsim[k,],nm=thisnm,sw=thissw,mo=thismo,pm=pm,pf=pf)
           }  
           simnextssb <- sapply(1:nrow(simsim), ssbswmoi)
         }else{
@@ -509,19 +560,39 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     
     fbarsim <- apply(sim, 1, fbar)
     fbarLsim <- apply(sim, 1, fbarFrac, lf=lf)
-    if(useCWmodel){
-      catchcwi<-function(k){  
-        thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y)
-        thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,]
-        catch(sim[k,], nm=nm, cw=thiscw)
+    if(useCWmodel | useNMmodel){
+      catchcwi<-function(k){
+        if(useCWmodel){      
+          thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y)
+          thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,]
+        }else{
+          thiscw <- cw
+        }
+        if(useNMmodel){      
+          thisy <- which(as.integer(rownames(odat$natMor))==y)
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+        }else{
+          thisnm <- nm
+        }
+        catch(sim[k,], nm=thisnm, cw=thiscw)
       }
       catchsim <- sapply(1:nrow(sim), catchcwi)
     }else{
       catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
     }
-    landsim <- apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
+
+    if(useNMmodel){
+      landsim<-sapply(1:nrow(sim), function(k){      
+          thisy <- which(as.integer(rownames(odat$natMor))==y);
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,];
+          catchFrac(sim[k,], nm=thisnm, w=lw, frac=lf)
+        }
+      )
+    }else{
+      landsim<-apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
+    }
     catchatagesim <- apply(sim, 1, catchatage, nm=nm)
-    if(useSWmodel | useMOmodel){
+    if(useSWmodel | useMOmodel | useNMmodel){
       ssbswmoi<-function(k){
         if(useSWmodel){    
           thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
@@ -535,7 +606,13 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
         }else{
           thismo <-mo
         }
-        ssb(sim[k,],nm=nm,sw=thissw,mo=thismo,pm=pm,pf=pf)
+        if(useNMmodel){    
+          thisy <- which(as.integer(rownames(odat$natMor))==y)
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+        }else{
+          thisnm <-nm
+        }
+        ssb(sim[k,],nm=thisnm,sw=thissw,mo=thismo,pm=pm,pf=pf)
       }  
       ssbsim <- sapply(1:nrow(sim), ssbswmoi)
     }else{
