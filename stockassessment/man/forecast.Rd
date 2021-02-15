@@ -29,6 +29,7 @@ forecast(
   useSWmodel = (fit$conf$stockWeightModel == 1),
   useCWmodel = (fit$conf$catchWeightModel == 1),
   useMOmodel = (fit$conf$matureModel == 1),
+  useNMmodel = (fit$conf$mortalityModel == 1),
   savesim = FALSE
 )
 }
@@ -78,6 +79,8 @@ forecast(
 \item{useCWmodel}{if TRUE the catch mean weight predicted from the assessment model is used (can only be used for configurations supporting this)}
 
 \item{useMOmodel}{if TRUE the proportion mature predicted from the assessment model is used (can only be used for configurations supporting this)}
+
+\item{useNMmodel}{if TRUE the natural mortality predicted from the assessment model is used (can only be used for configurations supporting this)}
 
 \item{savesim}{save the individual simulations}
 }
