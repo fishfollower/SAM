@@ -519,7 +519,7 @@ struct confSet{
   int mortalityModel;
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
-
+  matrix<int> keyXtraSd;
   confSet() {};
 
   confSet(SEXP x){
@@ -562,6 +562,7 @@ struct confSet{
     mortalityModel = (int)*REAL(getListElement(x,"mortalityModel"));
     keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean"));
     keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
+    keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
 
   };
 
@@ -604,6 +605,7 @@ struct confSet{
     mortalityModel = rhs.mortalityModel;
     keyMortalityMean = rhs.keyMortalityMean;
     keyMortalityObsVar = rhs.keyMortalityObsVar;
+    keyXtraSd = rhs.keyXtraSd;
 
     return *this;
   };
@@ -653,7 +655,8 @@ struct paraSet{
   vector<Type> logPhiNM; 
   vector<Type> logSdProcLogNM;
   vector<Type> meanLogNM; 
-  vector<Type> logSdLogNM; 
+  vector<Type> logSdLogNM;
+  vector<Type> logXtraSd;
 
   paraSet() {};
   
@@ -700,6 +703,7 @@ struct paraSet{
     logSdProcLogNM = asVector<Type>(getListElement(x,"logSdProcLogNM"));
     meanLogNM  = asVector<Type>(getListElement(x,"meanLogNM")); 
     logSdLogNM = asVector<Type>(getListElement(x,"logSdLogNM"));
+    logXtraSd = asVector<Type>(getListElement(x,"logXtraSd"));
   }
 
   paraSet<Type>& operator=(const paraSet<Type>& rhs) {
@@ -745,6 +749,7 @@ struct paraSet{
     logSdProcLogNM = rhs.logSdProcLogNM;
     meanLogNM = rhs.meanLogNM;
     logSdLogNM = rhs.logSdLogNM;
+    logXtraSd = rhs.logXtraSd;
     return *this;
 
   }
@@ -794,6 +799,7 @@ struct paraSet{
     d.logSdProcLogNM = logSdProcLogNM.template cast<T>();
     d.meanLogNM = meanLogNM.template cast<T>();
     d.logSdLogNM = logSdLogNM.template cast<T>(); 
+    d.logXtraSd = logXtraSd.template cast<T>(); 
     return d;    
   }  
 };

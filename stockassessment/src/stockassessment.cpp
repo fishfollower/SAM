@@ -84,8 +84,7 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(constRecBreaks); vector<double> constRecBreaksDouble(constRecBreaks.size()); for(int i=0; i<constRecBreaks.size(); ++i){constRecBreaksDouble(i)=asDouble(constRecBreaks(i));} confset.constRecBreaks=constRecBreaksDouble; 
   DATA_INTEGER(noScaledYears); confset.noScaledYears=noScaledYears; 
   DATA_IVECTOR(keyScaledYears); confset.keyScaledYears=keyScaledYears; 
-  DATA_IMATRIX(keyParScaledYA); 
-  confset.keyParScaledYA=keyParScaledYA; 
+  DATA_IMATRIX(keyParScaledYA); confset.keyParScaledYA=keyParScaledYA; 
   DATA_IVECTOR(fbarRange); confset.fbarRange=fbarRange; 
   DATA_IVECTOR(keyBiomassTreat); confset.keyBiomassTreat=keyBiomassTreat;   
   DATA_IVECTOR(simFlag); confset.simFlag=simFlag;  //1 means simulations should not redo F and N
@@ -107,6 +106,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(mortalityModel); confset.mortalityModel=mortalityModel;
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
+  DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
   
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
@@ -157,6 +157,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdProcLogNM); paraset.logSdProcLogNM=logSdProcLogNM;
   PARAMETER_VECTOR(meanLogNM); paraset.meanLogNM=meanLogNM;
   PARAMETER_VECTOR(logSdLogNM); paraset.logSdLogNM=logSdLogNM;
+  PARAMETER_VECTOR(logXtraSd); paraset.logXtraSd=logXtraSd;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);

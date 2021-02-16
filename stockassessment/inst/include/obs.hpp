@@ -243,6 +243,16 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                   if(conf.predVarObsLink(f,a)>(-1)){
                     sqrtW(idxV) = sqrt(findLinkV(par.logSdLogObs(conf.keyVarObs(f,a))+(exp(par.predVarObs(conf.predVarObsLink(f,a))) -Type(1))*predObs(idxfrom+idxV))/currentVar(idxV));
                   }
+		  for(int idxXtraSd=0; idxXtraSd<(conf.keyXtraSd).rows(); ++idxXtraSd){
+		    int realfleet=f+1;
+		    int realyear=y+CppAD::Integer(min(dat.years));
+		    int realage=dat.aux(idxfrom+idxV,2);		    
+		    vector<int> fyac=conf.keyXtraSd.row(idxXtraSd);
+		    if((realfleet==fyac(0))&&(realyear==fyac(1))&&(realage==fyac(2))){
+                      sqrtW(idxV)=exp(par.logXtraSd(fyac(3)));
+		      break;
+		    }
+		  }
                 }else{
                   if(conf.fixVarToWeight==1){
                     sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
