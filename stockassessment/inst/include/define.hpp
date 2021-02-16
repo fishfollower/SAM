@@ -158,7 +158,7 @@ struct confSet{
   int mortalityModel;
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
-
+  matrix<int> keyXtraSd;
   confSet() {};
 
   confSet(SEXP x){
@@ -201,6 +201,7 @@ struct confSet{
     mortalityModel = (int)*REAL(getListElement(x,"mortalityModel"));
     keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean"));
     keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
+    keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
 
   };
 
@@ -243,6 +244,7 @@ struct confSet{
     mortalityModel = rhs.mortalityModel;
     keyMortalityMean = rhs.keyMortalityMean;
     keyMortalityObsVar = rhs.keyMortalityObsVar;
+    keyXtraSd = rhs.keyXtraSd;
 
     return *this;
   };
@@ -283,7 +285,8 @@ struct paraSet{
   vector<Type> logPhiNM; 
   vector<Type> logSdProcLogNM;
   vector<Type> meanLogNM; 
-  vector<Type> logSdLogNM; 
+  vector<Type> logSdLogNM;
+  vector<Type> logXtraSd;
 };
 
 template<class Type>
