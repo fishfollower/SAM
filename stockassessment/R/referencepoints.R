@@ -434,6 +434,15 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }
 
+        ## FCrash
+    if(any(rp %in% "logScaleFext") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
+        warning("The stock does not appear to have a well-defined Fext. Fext will not be estimated. Increase the upper bound of Fsequence to try again.")
+        rp <- rp[-which(rp %in% "logScaleFext")]
+        args$map$logScaleFext <- factor(NA)
+        tryAgain <- TRUE
+    }
+
+    
    ## Fmsy
     if(any(rp %in% "logScaleFmsy") && which.max(rep$logYe[is.finite(rep$logYe)]) == length(rep$logYe[is.finite(rep$logYe)])){
         warning("The stock does not appear to have a well-defined Fmsy. Fmsy will not be estimated. Increase the upper bound of Fsequence to try again.")
@@ -495,13 +504,15 @@ referencepoints.sam <- function(fit,
     for(ii in names(pStart))
         p0[names(p0) %in% ii] <- pStart[[match(ii,names(pStart))]]
 
-    opt <- nlminb(p0, objOptim$fn, objOptim$gr, objOptim$he)
+    opt <- nlminb(p0, objOptim$fn, objOptim$gr, objOptim$he)    
     for(ii in seq_len(newtonSteps)){
         g <- as.numeric( objOptim$gr(opt$par) )
         h <- objOptim$he(opt$par)
         opt$par <- opt$par - solve(h, g)
         opt$objective <- objOptim$fn(opt$par)
     }
+    opt$gr <- as.numeric( objOptim$gr(opt$par) )
+    opt$he <- objOptim$he(opt$par)
     
     ## Object to do Delta method (nothing mapped (that's not mapped in fit$obj, nothing random, delta = 1)
     args <- argsIn
@@ -537,14 +548,14 @@ referencepoints.sam <- function(fit,
     covAll <- dG %*% svd_solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
     i <- 21
-    ## tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-    ## while(!all(eigen(covAll)$values > 1e-8)){
-    ##     i <- i-1
-    ##     covAll <- covAllOld
-    ##     tv <- ((10^(-i))*10^floor(log10(diag(covAll)[gridx])))
-    ##     diag(covAll)[gridx] <- diag(covAll)[gridx] + tv
-    ## }
 
+    if(any(abs(covAll[lower.tri(covAll)]) > 1-1e-8)){
+        warning("Some estimates are highly correlated. The covariance matrix was modified slighly to be invertible.")
+        ii <- unique(as.vector(which(abs(covAll) > 1-1e-8 & row(covAll) < col(covAll), arr.ind = TRUE)))
+        CX <- local({x <- diag(0, nrow(covAll)); diag(x)[ii] <- 1e-5; x})
+        covAll <- covAll + CX
+    }
+            
     ## Object to do sdreport (delta = 0)
     args <- argsIn
     ## Remvoe rp from map
@@ -557,6 +568,7 @@ referencepoints.sam <- function(fit,
     ## objSDR$fn(objSDR$par)
     
     sdr <- TMB::sdreport(objSDR, objSDR$par, svd_solve(covAll))
+    sdr$covAll <- covAll
     ssdr <- summary(sdr)
 
     toCI <- function(what){

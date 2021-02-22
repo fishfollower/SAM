@@ -101,9 +101,16 @@ runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
 ##' @param ncores the number of cores to attempt to use
 ##' @param ... extra arguments to \code{\link{sam.fit}}
 ##' @details ...
-##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster clusterEvalQ
 ##' @export
 retro <- function(fit, year=NULL, ncores=detectCores(), ...){
+    UseMethod("retro")
+}
+
+##' @rdname retro
+##' @method retro sam
+##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster clusterEvalQ
+##' @export
+retro.sam <- function(fit, year=NULL, ncores=detectCores(), ...){
   data <- fit$data
   y <- fit$data$aux[,"year"]
   f <- fit$data$aux[,"fleet"]
@@ -179,6 +186,13 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
 ##' @details ...
 ##' @export
 mohn <- function(fits, what=NULL, lag=0, ...){
+    UseMethod("mohn")
+}
+
+##' @rdname mohn
+##' @method mohn samset
+##' @export
+mohn.samset <- function(fits, what=NULL, lag=0, ...){
   if(is.null(what)){
     what <- function(fit){
       ret <- cbind(rectable(fit,...)[,1], ssbtable(fit)[,1], fbartable(fit)[,1])
