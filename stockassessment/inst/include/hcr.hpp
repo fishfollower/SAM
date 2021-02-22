@@ -4,11 +4,11 @@
 template <class Type>
 Type hcr_min(Type a, Type b){
   return 0.5 * (a + b - sqrt(1e-4 + (a-b) * (a-b)));
-};
+}
 template <class Type>
 Type hcr_max(Type a, Type b){
   return 0.5 * (a + b + sqrt(1e-4 + (a-b) * (a-b)));
-};
+}
 
 template <class Type>
 Type hcr(Type ssb, vector<Type> hcrConf){
@@ -24,8 +24,7 @@ Type hcr(Type ssb, vector<Type> hcrConf){
 			       Flow,
 			       hcr_min(Ftarget, hcr_max(Flim, Flim + (ssb - Blim) * (Ftarget - Flim) / (Btrigger - Blim))));
   return log(hcr_max(newF, (Type)exp(-10)));	  
-};
-
+}
 
 template <class Type>
 void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, objective_function<Type> *of){
@@ -72,7 +71,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
   }
 
   return;
-};
+}
 
 
 #endif

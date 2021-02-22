@@ -2,9 +2,12 @@
 % Please edit documentation in R/retro.R
 \name{mohn}
 \alias{mohn}
+\alias{mohn.samset}
 \title{Mohn's rho calculation}
 \usage{
 mohn(fits, what = NULL, lag = 0, ...)
+
+\method{mohn}{samset}(fits, what = NULL, lag = 0, ...)
 }
 \arguments{
 \item{fits}{a samset object as returned from the retro function.}
