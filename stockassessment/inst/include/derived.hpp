@@ -280,7 +280,7 @@ vector<Type> fbarFun(confSet &conf, array<Type> &logF){
 
 template <class Type>
 vector<Type> landFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF){
-  int timeSteps=logF.dim[1];
+  int timeSteps=dat.landFrac.dim(0);
   vector<Type> fbar(timeSteps);
   fbar.setZero();
   for(int y=0;y<timeSteps;y++){  
@@ -294,7 +294,7 @@ vector<Type> landFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF){
 
 template <class Type>
 vector<Type> disFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF){
-  int timeSteps=logF.dim[1];
+  int timeSteps=dat.landFrac.dim(0);
   vector<Type> fbar(timeSteps);
   fbar.setZero();
   for(int y=0;y<timeSteps;y++){  
