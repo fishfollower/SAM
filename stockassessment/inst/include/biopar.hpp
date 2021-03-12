@@ -1,10 +1,7 @@
 template <class Type>
-Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
-  if(conf.stockWeightModel==1){
-    Type nll=0;
-    array<Type> sw=dat.stockMeanWeight;
-    int nrow=sw.dim[0];
-    int ncol=sw.dim[1];
+Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, vector<Type> logPhi, Type logSdP){
+    int nrow=P.dim[0];
+    int ncol=P.dim[1];
     int n=nrow*ncol;
     vector<int> r(n); r.setZero();   
     vector<int> c(n); c.setZero();
@@ -31,23 +28,32 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
       }
     }
     
-    array<Type> mLogSW(nrow,ncol);
+    array<Type> mP(nrow,ncol);
     for(int i=0; i<nrow; ++i){
       for(int j=0; j<ncol; ++j){
-	mLogSW(i,j)=par.meanLogSW(conf.keyStockWeightMean(j));
+	mP(i,j)=meanVec(keyMeanVec(j));
       }
     }
     
-    vector<Type> phi=exp(par.logPhiSW);
+    vector<Type> phi=exp(logPhi);
     matrix<Type> I(Wc.rows(),Wc.cols());
     I.setIdentity();
     matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
     
     using namespace density;
-    nll += SCALE(GMRF(asSparseMatrix(Q)),exp(par.logSdProcLogSW(0)))((logSW-mLogSW).vec());
-        
-    for(int i=0; i<nrow; ++i){
-      for(int j=0; j<ncol; ++j){
+    return SCALE(GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
+}
+
+
+
+template <class Type>
+Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
+  if(conf.stockWeightModel==1){
+    Type nll=0;
+    array<Type> sw=dat.stockMeanWeight;
+    nll += nllBioProcess(logSW, par.meanLogSW, conf.keyStockWeightMean, par.logPhiSW, par.logSdProcLogSW(0));
+    for(int i=0; i<sw.dim[0]; ++i){
+      for(int j=0; j<sw.dim[1]; ++j){
         if(!isNA(sw(i,j))){
           nll += -dnorm(log(sw(i,j)),logSW(i,j),exp(par.logSdLogSW(conf.keyStockWeightObsVar(j))),true);
         }
@@ -66,51 +72,9 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
   if(conf.catchWeightModel==1){
     Type nll=0;
     array<Type> cw=dat.catchMeanWeight;
-    int nrow=cw.dim[0];
-    int ncol=cw.dim[1];
-    int n=nrow*ncol;
-    vector<int> r(n); r.setZero();   
-    vector<int> c(n); c.setZero();
-    int idx=0;
-    for(int j=0; j<ncol; ++j){
-      for(int i=0; i<nrow; ++i){
-        r(idx)=i;
-	c(idx)=j;
-	++idx;
-      }
-    }
-    matrix<Type> Wc(n,n); Wc.setZero();
-    matrix<Type> Wd(n,n); Wd.setZero();
-    for(int i=0; i<n; ++i){
-      for(int j=0; j<n; ++j){
-	if((c(i)==c(j))&&(abs(r(i)-r(j))==1)){
-	  Wc(i,j)=1;
-	  Wc(i,i)-=1;
-        }   
- 	if( (((r(i)-r(j))==1)&&((c(i)-c(j))==1))||(((r(i)-r(j)==(-1)))&&((c(i)-c(j))==(-1))) ){
-       	  Wd(i,j)=1;
-	  Wd(i,i)-=1;
-	}
-      }
-    }
-    
-    array<Type> mLogCW(nrow,ncol);
-    for(int i=0; i<nrow; ++i){
-      for(int j=0; j<ncol; ++j){
-	mLogCW(i,j)=par.meanLogCW(conf.keyCatchWeightMean(j));
-      }
-    }
-    
-    vector<Type> phi=exp(par.logPhiCW);
-    matrix<Type> I(Wc.rows(),Wc.cols());
-    I.setIdentity();
-    matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
-    
-    using namespace density;
-    nll += SCALE(GMRF(asSparseMatrix(Q)),exp(par.logSdProcLogCW(0)))((logCW-mLogCW).vec());
-        
-    for(int i=0; i<nrow; ++i){
-      for(int j=0; j<ncol; ++j){
+    nll += nllBioProcess(logCW, par.meanLogCW, conf.keyCatchWeightMean, par.logPhiCW, par.logSdProcLogCW(0));
+    for(int i=0; i<cw.dim[0]; ++i){
+      for(int j=0; j<cw.dim[1]; ++j){
         if(!isNA(cw(i,j))){
           nll += -dnorm(log(cw(i,j)),logCW(i,j),exp(par.logSdLogCW(conf.keyCatchWeightObsVar(j))),true);
         }
@@ -136,52 +100,10 @@ Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type
   if(conf.matureModel==1){
     Type nll=0;
     array<Type> mo=dat.propMat;
-    int nrow=mo.dim[0];
-    int ncol=mo.dim[1];
-    int n=nrow*ncol;
-    vector<int> r(n); r.setZero();   
-    vector<int> c(n); c.setZero();
-    int idx=0;
-    for(int j=0; j<ncol; ++j){
-      for(int i=0; i<nrow; ++i){
-        r(idx)=i;
-	c(idx)=j;
-	++idx;
-      }
-    }
-    matrix<Type> Wc(n,n); Wc.setZero();
-    matrix<Type> Wd(n,n); Wd.setZero();
-    for(int i=0; i<n; ++i){
-      for(int j=0; j<n; ++j){
-	if((c(i)==c(j))&&(abs(r(i)-r(j))==1)){
-	  Wc(i,j)=1;
-	  Wc(i,i)-=1;
-        }   
- 	if( (((r(i)-r(j))==1)&&((c(i)-c(j))==1))||(((r(i)-r(j)==(-1)))&&((c(i)-c(j))==(-1))) ){
-       	  Wd(i,j)=1;
-	  Wd(i,i)-=1;
-	}
-      }
-    }
-    
-    array<Type> mLogitMO(nrow,ncol);
-    for(int i=0; i<nrow; ++i){
-      for(int j=0; j<ncol; ++j){
-	mLogitMO(i,j)=par.meanLogitMO(conf.keyMatureMean(j));
-      }
-    }
-    
-    vector<Type> phi=exp(par.logPhiMO);
-    matrix<Type> I(Wc.rows(),Wc.cols());
-    I.setIdentity();
-    matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
-    
-    using namespace density;
-    nll += SCALE(GMRF(asSparseMatrix(Q)),exp(par.logSdProcLogitMO(0)))((logitMO-mLogitMO).vec());
-
+    nll += nllBioProcess(logitMO, par.meanLogitMO, conf.keyMatureMean, par.logPhiMO, par.logSdProcLogitMO(0));
     Type m,a,b,v, prec;
-    for(int i=0; i<nrow; ++i){
-      for(int j=0; j<ncol; ++j){
+    for(int i=0; i<mo.dim[0]; ++i){
+      for(int j=0; j<mo.dim[1]; ++j){
 	m = invlogit(logitMO(i,j));
         if(!isNA(mo(i,j))){
 
@@ -213,51 +135,9 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
   if(conf.mortalityModel==1){
     Type nll=0;
     array<Type> nm=dat.natMor;
-    int nrow=nm.dim[0];
-    int ncol=nm.dim[1];
-    int n=nrow*ncol;
-    vector<int> r(n); r.setZero();   
-    vector<int> c(n); c.setZero();
-    int idx=0;
-    for(int j=0; j<ncol; ++j){
-      for(int i=0; i<nrow; ++i){
-        r(idx)=i;
-	c(idx)=j;
-	++idx;
-      }
-    }
-    matrix<Type> Wc(n,n); Wc.setZero();
-    matrix<Type> Wd(n,n); Wd.setZero();
-    for(int i=0; i<n; ++i){
-      for(int j=0; j<n; ++j){
-	if((c(i)==c(j))&&(abs(r(i)-r(j))==1)){
-	  Wc(i,j)=1;
-	  Wc(i,i)-=1;
-        }   
- 	if( (((r(i)-r(j))==1)&&((c(i)-c(j))==1))||(((r(i)-r(j)==(-1)))&&((c(i)-c(j))==(-1))) ){
-       	  Wd(i,j)=1;
-	  Wd(i,i)-=1;
-	}
-      }
-    }
-    
-    array<Type> mLogNM(nrow,ncol);
-    for(int i=0; i<nrow; ++i){
-      for(int j=0; j<ncol; ++j){
-	mLogNM(i,j)=par.meanLogNM(conf.keyMortalityMean(j));
-      }
-    }
-    
-    vector<Type> phi=exp(par.logPhiNM);
-    matrix<Type> I(Wc.rows(),Wc.cols());
-    I.setIdentity();
-    matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
-    
-    using namespace density;
-    nll += SCALE(GMRF(asSparseMatrix(Q)),exp(par.logSdProcLogNM(0)))((logNM-mLogNM).vec());
-        
-    for(int i=0; i<nrow; ++i){
-      for(int j=0; j<ncol; ++j){
+    nll += nllBioProcess(logNM, par.meanLogNM, conf.keyMortalityMean, par.logPhiNM, par.logSdProcLogNM(0));
+    for(int i=0; i<nm.dim[0]; ++i){
+      for(int j=0; j<nm.dim[1]; ++j){
         if(!isNA(nm(i,j))){
           nll += -dnorm(log(nm(i,j)),logNM(i,j),exp(par.logSdLogNM(conf.keyMortalityObsVar(j))),true);
         }
