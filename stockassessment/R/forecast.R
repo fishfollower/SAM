@@ -99,9 +99,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     stop("stockWeightModel cannot be used for forecast when it was not part of the fitted model")
   }
   if(useSWmodel){
-    odat$stockMeanWeight<-do.call(function(...)rbind(odat$stockMeanWeight,...), as.list(rep(NA,ns)))
-    rownames(odat$stockMeanWeight)<-1:nrow(odat$stockMeanWeight)+as.integer(rownames(odat$stockMeanWeight)[1])-1
-    opar$logSW<-matrix(0,nrow=nrow(odat$stockMeanWeight), ncol=ncol(odat$stockMeanWeight))
+    rnSW<-1:(nrow(opar$logSW)+ns)+as.integer(rownames(odat$stockMeanWeight)[1])-1  
+    opar$logSW<-matrix(0,nrow=nrow(opar$logSW)+ns, ncol=ncol(opar$logSW))
     oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
     objsw <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
     sdrep<- sdreport(objsw, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
@@ -112,9 +111,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     stop("catchWeightModel cannot be used for forecast when it was not part of the fitted model")
   }
   if(useCWmodel){
-    odat$catchMeanWeight<-do.call(function(...)rbind(odat$catchMeanWeight,...), as.list(rep(NA,ns)))
-    rownames(odat$catchMeanWeight)<-1:nrow(odat$catchMeanWeight)+as.integer(rownames(odat$catchMeanWeight)[1])-1
-    opar$logCW<-matrix(0,nrow=nrow(odat$catchMeanWeight), ncol=ncol(odat$catchMeanWeight))
+    rnCW<-1:(nrow(opar$logCW)+ns)+as.integer(rownames(odat$catchMeanWeight)[1])-1      
+    opar$logCW<-matrix(0,nrow=nrow(opar$logCW)+ns, ncol=ncol(opar$logCW))
     oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
     objcw <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
     sdrep<- sdreport(objcw, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
@@ -125,9 +123,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     stop("mortalityModel cannot be used for forecast when it was not part of the fitted model")
   }
   if(useNMmodel){
-    odat$natMor<-do.call(function(...)rbind(odat$natMor,...), as.list(rep(NA,ns)))
-    rownames(odat$natMor)<-1:nrow(odat$natMor)+as.integer(rownames(odat$natMor)[1])-1
-    opar$logNM<-matrix(0,nrow=nrow(odat$natMor), ncol=ncol(odat$natMor))
+    rnNM<-1:(nrow(opar$logNM)+ns)+as.integer(rownames(odat$natMor)[1])-1            
+    opar$logNM<-matrix(0,nrow=nrow(opar$logNM)+ns, ncol=ncol(opar$logNM))
     oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
     objnm <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
     sdrep<- sdreport(objnm, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
@@ -138,9 +135,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     stop("matureModel cannot be used for forecast when it was not part of the fitted model")
   }
   if(useMOmodel){
-    odat$propMat<-do.call(function(...)rbind(odat$propMat,...), as.list(rep(NA,ns)))
-    rownames(odat$propMat)<-1:nrow(odat$propMat)+as.integer(rownames(odat$propMat)[1])-1
-    opar$logitMO<-matrix(0,nrow=nrow(odat$propMat), ncol=ncol(odat$propMat))
+    rnMO<-1:(nrow(opar$logitMO)+ns)+as.integer(rownames(odat$propMat)[1])-1                  
+    opar$logitMO<-matrix(0,nrow=nrow(opar$logitMO)+ns, ncol=ncol(opar$logitMO))
     oran<-unique(names(fit$obj$env$par[fit$obj$env$random]))
     objmo <- MakeADFun(odat, opar, random = oran, DLL = "stockassessment", map=omap)
     sdrep<- sdreport(objmo, par.fixed=fit$opt$par, ignore.parm.uncertainty=TRUE)
@@ -362,8 +358,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     if(useNMmodel){
       sim<-t(sapply(1:nrow(sim),
 	             function(s){
-                       yidx<-which(as.integer(rownames(odat$natMor))==as.integer(y))   
-                       thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(odat$natMor))[yidx,]
+                       yidx<-which(rnNM==as.integer(y))   
+                       thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(opar$logNM))[yidx,]
                        step(sim[s,], nm=thisnm, recpool=recpool, scale=1, inyear=(i==0))
 	             }
                     ))      
@@ -435,14 +431,14 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
         if(useCWmodel | useNMmodel){  
           simcat<-sapply(1:nrow(simtmp), function(k){
             if(useCWmodel){      
-              thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y);
-              thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,];
+              thisy <- which(rnCW==y);
+              thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(opar$logCW))[thisy,];
             }else{
               thiscw <- cw
             }  
             if(useNMmodel){      
-              thisy <- which(as.integer(rownames(odat$natMor))==y);
-              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,];
+              thisy <- which(rnNM==y);
+              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,];
             }else{
               thisnm <- nm
             }  
@@ -461,14 +457,14 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
       simtmp<-sim
       funk<-function(k){
         if(useCWmodel){
-          thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y)
-          thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,]
+          thisy <- which(rnCW==y)
+          thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(opar$logCW))[thisy,]
         }else{
           thiscw=cw
         }
         if(useNMmodel){
-          thisy <- which(as.integer(rownames(odat$natMor))==y)
-          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+          thisy <- which(rnNM==y)
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,]
         }else{
           thisnm=nm
         }
@@ -489,8 +485,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
         simtmp<<-t(apply(sim, 1, scaleF, scale=s))
         if(useNMmodel){
           simcat<-sapply(1:nrow(simtmp), function(k){      
-              thisy <- which(as.integer(rownames(odat$natMor))==y);
-              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,];
+              thisy <- which(rnNM==y);
+              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,];
               catchFrac(simtmp[k,], nm=thisnm, w=lw, frac=lf)
             }
           )
@@ -514,8 +510,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
         if(useNMmodel){
           simsim<-t(sapply(1:nrow(simtmp),
 	                 function(s){
-                           yidx<-which(as.integer(rownames(odat$natMor))==as.integer(y))   
-                           thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(odat$natMor))[yidx,]
+                           yidx<-which(rnNM==as.integer(y))   
+                           thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(opar$logNM))[yidx,]
                            step(simtmp[s,], nm=thisnm, recpool=recpool, scale=1, inyear=(i==0))
   	                 }
                         ))      
@@ -529,20 +525,20 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
         if(useSWmodel | useMOmodel | useNMmodel){
           ssbswmoi<-function(k){
             if(useSWmodel){    
-              thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
-              thissw <-matrix(exp(simLogSw[k,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
+              thisy <- which(rnSW==y)
+              thissw <-matrix(exp(simLogSw[k,]),nrow=nrow(opar$logSW))[thisy,]
             }else{
               thissw <-sw
             }
             if(useMOmodel){    
-              thisy <- which(as.integer(rownames(odat$propMat))==y)
-              thismo <-matrix(plogis(simLogitMO[k,]),nrow=nrow(odat$propMat))[thisy,]
+              thisy <- which(rnMO==y)
+              thismo <-matrix(plogis(simLogitMO[k,]),nrow=nrow(opar$logitMO))[thisy,]
             }else{
               thismo <-mo
             }
             if(useNMmodel){    
-              thisy <- which(as.integer(rownames(odat$natMor))==y)
-              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+              thisy <- which(rnNM==y)
+              thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,]
             }else{
               thisnm <-nm
             }
@@ -563,14 +559,14 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     if(useCWmodel | useNMmodel){
       catchcwi<-function(k){
         if(useCWmodel){      
-          thisy <- which(as.integer(rownames(odat$catchMeanWeight))==y)
-          thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(odat$catchMeanWeight))[thisy,]
+          thisy <- which(rnCW==y)
+          thiscw <-matrix(exp(simLogCW[k,]),nrow=nrow(opar$logCW))[thisy,]
         }else{
           thiscw <- cw
         }
         if(useNMmodel){      
-          thisy <- which(as.integer(rownames(odat$natMor))==y)
-          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+          thisy <- which(rnNM==y)
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,]
         }else{
           thisnm <- nm
         }
@@ -583,8 +579,8 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
 
     if(useNMmodel){
       landsim<-sapply(1:nrow(sim), function(k){      
-          thisy <- which(as.integer(rownames(odat$natMor))==y);
-          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,];
+          thisy <- which(rnNM==y);
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,];
           catchFrac(sim[k,], nm=thisnm, w=lw, frac=lf)
         }
       )
@@ -595,20 +591,20 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
     if(useSWmodel | useMOmodel | useNMmodel){
       ssbswmoi<-function(k){
         if(useSWmodel){    
-          thisy <- which(as.integer(rownames(odat$stockMeanWeight))==y)
-          thissw <-matrix(exp(simLogSw[k,]),nrow=nrow(odat$stockMeanWeight))[thisy,]
+          thisy <- which(rnSW==y)
+          thissw <-matrix(exp(simLogSw[k,]),nrow=nrow(opar$logSW))[thisy,]
         }else{
           thissw <-sw
         }
         if(useMOmodel){    
-          thisy <- which(as.integer(rownames(odat$propMat))==y)
-          thismo <-matrix(plogis(simLogitMO[k,]),nrow=nrow(odat$propMat))[thisy,]
+          thisy <- which(rnMO==y)
+          thismo <-matrix(plogis(simLogitMO[k,]),nrow=nrow(opar$logitMO))[thisy,]
         }else{
           thismo <-mo
         }
         if(useNMmodel){    
-          thisy <- which(as.integer(rownames(odat$natMor))==y)
-          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(odat$natMor))[thisy,]
+          thisy <- which(rnNM==y)
+          thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,]
         }else{
           thisnm <-nm
         }

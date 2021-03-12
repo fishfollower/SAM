@@ -1,10 +1,11 @@
 ##' Setup initial values for all model parameters and random effects.
 ##' @param dat sam data object as returned from the function \code{setup.sam.data}
-##' @param conf sam configuration list, which could be read from a configuration file via the \code{loadConf} function. A default/dummy configuration can be generated via the \code{defcon} function.   
+##' @param conf sam configuration list, which could be read from a configuration file via the \code{loadConf} function. A default/dummy configuration can be generated via the \code{defcon} function.
+##' @param spinoutyear Technical setting only used for biological parameter process models to insure equilibrium distribution in final edge year 
 ##' @details The model parameters and random effects are not initialized in any clever way - most are simply set to zero. If convergence problems occour different initial values can be tested, but it is more likely a problem with the model configuration. 
 ##' @return a list containing initial values for all model parameters and random effects in the model.
 ##' @export
-defpar <- function(dat,conf){
+defpar <- function(dat,conf,spinoutyear=10){
   ret<-list()
   ret$logFpar=numeric(max(conf$keyLogFpar)+1)-5 
   ret$logQpow=numeric(max(conf$keyQpow)+1)
@@ -74,10 +75,10 @@ defpar <- function(dat,conf){
   
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
-  ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$stockMeanWeight), nrow=nrow(dat$stockMeanWeight))}
-  ret$logCW=if(conf$catchWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$catchMeanWeight), nrow=nrow(dat$catchMeanWeight))}  
-  ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat))}
-  ret$logNM=if(conf$mortalityModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$natMor), nrow=nrow(dat$natMor))}
+  ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$stockMeanWeight), nrow=nrow(dat$stockMeanWeight)+spinoutyear)}
+  ret$logCW=if(conf$catchWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$catchMeanWeight), nrow=nrow(dat$catchMeanWeight)+spinoutyear)}  
+  ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat)+spinoutyear)}
+  ret$logNM=if(conf$mortalityModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$natMor), nrow=nrow(dat$natMor)+spinoutyear)}
 
   return(ret)
 }

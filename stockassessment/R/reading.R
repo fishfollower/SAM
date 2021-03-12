@@ -230,14 +230,13 @@ read.ices<-function(filen){
 ##' @param prop.m ...
 ##' @param land.frac ...
 ##' @param recapture ...
-##' @param spinoutyear Technical setting only used when stockWeightModel=1 configuration to insure equilibrium distribution in final edge year 
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, spinoutyear=10){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -374,19 +373,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
-  prop.mature<-do.call(function(...)rbind(prop.mature,...), as.list(rep(NA,spinoutyear)))
-  rownames(prop.mature)<-1:nrow(prop.mature)+as.integer(rownames(prop.mature)[1])-1
   attr(dat,'prop.mature')<-prop.mature
-  stock.mean.weight<-do.call(function(...)rbind(stock.mean.weight,...), as.list(rep(NA,spinoutyear)))
-  rownames(stock.mean.weight)<-1:nrow(stock.mean.weight)+as.integer(rownames(stock.mean.weight)[1])-1
   attr(dat,'stock.mean.weight')<-stock.mean.weight
-  catch.mean.weight<-do.call(function(...)rbind(catch.mean.weight,...), as.list(rep(NA,spinoutyear)))
-  rownames(catch.mean.weight)<-1:nrow(catch.mean.weight)+as.integer(rownames(catch.mean.weight)[1])-1
   attr(dat,'catch.mean.weight')<-catch.mean.weight
   attr(dat,'dis.mean.weight')<-cutY(dis.mean.weight)
   attr(dat,'land.mean.weight')<-cutY(land.mean.weight)
-  natural.mortality<-do.call(function(...)rbind(natural.mortality,...), as.list(rep(NA,spinoutyear)))
-  rownames(natural.mortality)<-1:nrow(natural.mortality)+as.integer(rownames(natural.mortality)[1])-1
   attr(dat,'natural.mortality')<-natural.mortality
   attr(dat,'prop.f')<-cutY(prop.f)
   attr(dat,'prop.m')<-cutY(prop.m)
