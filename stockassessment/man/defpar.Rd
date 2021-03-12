@@ -4,12 +4,14 @@
 \alias{defpar}
 \title{Setup initial values for all model parameters and random effects.}
 \usage{
-defpar(dat, conf)
+defpar(dat, conf, spinoutyear = 10)
 }
 \arguments{
 \item{dat}{sam data object as returned from the function \code{setup.sam.data}}
 
 \item{conf}{sam configuration list, which could be read from a configuration file via the \code{loadConf} function. A default/dummy configuration can be generated via the \code{defcon} function.}
+
+\item{spinoutyear}{Technical setting only used for biological parameter process models to insure equilibrium distribution in final edge year}
 }
 \value{
 a list containing initial values for all model parameters and random effects in the model.
