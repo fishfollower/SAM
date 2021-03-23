@@ -127,20 +127,6 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
   PARAMETER_VECTOR(predVarObs); paraset.predVarObs=predVarObs;
-
-  // Forecast FMSY
-  PARAMETER(logFScaleMSY); paraset.logFScaleMSY = logFScaleMSY;
-  PARAMETER(implicitFunctionDelta); paraset.implicitFunctionDelta = implicitFunctionDelta;
-
-  // YPR reference points
-  PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
-  PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
-  PARAMETER(logScaleF01); paraset.logScaleF01 = logScaleF01;
-  PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
-  PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
-  PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
-  PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
-  PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
   PARAMETER_VECTOR(logPhiSW); paraset.logPhiSW=logPhiSW;
   PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
   PARAMETER_VECTOR(meanLogSW); paraset.meanLogSW=meanLogSW;
@@ -158,6 +144,20 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(meanLogNM); paraset.meanLogNM=meanLogNM;
   PARAMETER_VECTOR(logSdLogNM); paraset.logSdLogNM=logSdLogNM;
   PARAMETER_VECTOR(logXtraSd); paraset.logXtraSd=logXtraSd;
+
+  // Forecast FMSY
+  PARAMETER(logFScaleMSY); paraset.logFScaleMSY = logFScaleMSY;
+  PARAMETER(implicitFunctionDelta); paraset.implicitFunctionDelta = implicitFunctionDelta;
+
+  // YPR reference points
+  PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
+  PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
+  PARAMETER(logScaleF01); paraset.logScaleF01 = logScaleF01;
+  PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
+  PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
+  PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
+  PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
+  PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
