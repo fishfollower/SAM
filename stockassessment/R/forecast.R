@@ -94,6 +94,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   odat<-fit$obj$env$data
   opar<-fit$obj$env$parameters
   omap<-fit$obj$env$map
+  omap[names(which(lapply(opar,length)==0))]<-NULL
   if(useSWmodel & (fit$conf$stockWeightModel==0)){
     stop("stockWeightModel cannot be used for forecast when it was not part of the fitted model")
   }
