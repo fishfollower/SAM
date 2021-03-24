@@ -157,11 +157,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
  
   vector<Type> recapturePhi(par.logitRecapturePhi.size());
   vector<Type> recapturePhiVec(dat.nobs);
+  vector<Type> logitRecapturePhiVec(dat.nobs);
   if(par.logitRecapturePhi.size()>0){
     recapturePhi=invlogit(par.logitRecapturePhi);
     for(int j=0; j<dat.nobs; ++j){
       if(!isNAINT(dat.aux(j,7))){
         recapturePhiVec(j)=recapturePhi(dat.aux(j,7)-1);
+	logitRecapturePhiVec(j) = par.logitRecapturePhi(dat.aux(j,7)-1);
       }
     }
   }
@@ -312,7 +314,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
         if(dat.fleetTypes(f)==5){
           if(!isNAINT(dat.idx1(f,y))){    
             for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
-              nll += -keep(i)*dnbinom(dat.logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
+              //nll += -keep(i)*dnbinom(dat.logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
+	      Type log_mu = log(predObs(i));
+	      Type log_var_minus_mu = log_mu - logitRecapturePhiVec;	      
+	      nll += -keep(i)*dnbinom_robust(dat.logobs(i),log_mu,log_var_minus_mu,true);
               SIMULATE_F(of){
 	              dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
               }
