@@ -92,7 +92,7 @@ forecast <- function(fit, fscale=NULL, catchval=NULL, catchval.exact=NULL, fval=
   }
 
   odat<-fit$obj$env$data
-  opar<-fit$obj$env$parameters
+  opar<-fit$obj$env$parList(par = fit$obj$env$last.par.best)
   omap<-fit$obj$env$map
   omap[names(which(lapply(opar,length)==0))]<-NULL
   if(useSWmodel & (fit$conf$stockWeightModel==0)){

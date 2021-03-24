@@ -34,8 +34,8 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   for(int i = 1; i < timeSteps; ++i){ 
     vector<Type> predN = predNFun(dat,conf,par,logN,logF,i);
     if(dat.forecast.nYears > 0 &&
-       dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(i))-1) != dat.forecast.asRecModel &&
-       dat.forecast.forecastYear(i) > 0){
+       dat.forecast.forecastYear(i) > 0 &&
+       dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(i))-1) != dat.forecast.asRecModel){
       // Forecast
       vector<Type> Nscale(logN.rows());
       Nscale.setZero();
