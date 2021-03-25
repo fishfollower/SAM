@@ -316,7 +316,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
             for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
               //nll += -keep(i)*dnbinom(dat.logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
 	      Type log_mu = log(predObs(i));
-	      Type log_var_minus_mu = log_mu - logitRecapturePhiVec;	      
+	      Type log_var_minus_mu = log_mu - logitRecapturePhiVec(i);	      
 	      nll += -keep(i)*dnbinom_robust(dat.logobs(i),log_mu,log_var_minus_mu,true);
               SIMULATE_F(of){
 	              dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
