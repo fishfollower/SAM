@@ -76,6 +76,8 @@ forecast(
 
 \item{addTSB}{if TRUE the total stock biomass (TSB) is added}
 
+\item{useSWmodel}{if TRUE the catch mean weight predicted from the assessment model is used (can only be used for configurations supporting this)}
+
 \item{useCWmodel}{if TRUE the catch mean weight predicted from the assessment model is used (can only be used for configurations supporting this)}
 
 \item{useMOmodel}{if TRUE the proportion mature predicted from the assessment model is used (can only be used for configurations supporting this)}
