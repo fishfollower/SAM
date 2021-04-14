@@ -266,7 +266,8 @@ referencepoints.sam <- function(fit,
                                 MSYreduction = c(0.05),
                                 newtonSteps = 3,
                                 optN = 20,
-                                jacobianHScale = 0.5,                               
+                                jacobianHScale = 0.5,
+                                fixRP = c(),
                                 ...){
     if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
         stop("Values of Fsequence must be positive and increasing.")
@@ -391,6 +392,9 @@ referencepoints.sam <- function(fit,
                 "logScaleFmsyRange"
                 )
     }
+
+    rp <- setdiff(rp, fixRP)
+    
     ## Referencepoints to estimate
     args$map <- args$map[-which(names(args$map) %in% rp)]
 
