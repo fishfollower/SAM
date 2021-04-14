@@ -32,6 +32,7 @@ referencepoints(
   newtonSteps = 3,
   optN = 20,
   jacobianHScale = 0.5,
+  fixRP = c(),
   ...
 )
 }
