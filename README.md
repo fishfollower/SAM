@@ -7,6 +7,13 @@ Can be installed by typing:
 devtools::install_github("fishfollower/SAM/stockassessment")
 ```
 
+(To ensure only installing in 64-bit some windows users may need to add the install options 
+
+```R
+devtools::install_github("fishfollower/SAM/stockassessment", INSTALL_opts=c("--no-multiarch"))
+```
+)
+
 ## A quick example: 
 
 We start by downloading a few needed files. Here the files are taken from one of the test cases (North Sea Herring). We use a temporary folder to make sure we are not overwriting existing files. 
