@@ -42,7 +42,6 @@ defpar <- function(dat,conf,spinoutyear=10){
   }else{ # The rest
       ret$rec_pars <- numeric(2)
   }
-
   
   ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
   ret$logScale=if(conf$noScaledYears==0){numeric(0)}else{numeric(max(conf$keyParScaledYA)+1)}
