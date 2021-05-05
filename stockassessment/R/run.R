@@ -45,7 +45,7 @@
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, ...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, ...){
   if(length(conf$maxAgePlusGroup)==1){
     tmp <- conf$maxAgePlusGroup    
     conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
@@ -168,14 +168,17 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
 ##' Bounds
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
 ##' @return a named list
-getLowerBounds<-function(parameters){
-    list(sigmaObsParUS=rep(-10,length(parameters$sigmaObsParUS)))
+getLowerBounds<-function(parameters, conf){    
+    r <- list(sigmaObsParUS=rep(-10,length(parameters$sigmaObsParUS)))
+    if(!missing(conf) && conf$stockRecruitmentModelCode %in% c(90,91,92))
+        r$rec_pars <- c(-20, rep(-10, length(parameters$rec_pars)-1))
+    r
 }
 
 ##' Bounds
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
 ##' @return a named list
-getUpperBounds<-function(parameters){
+getUpperBounds<-function(parameters, conf){
     list(sigmaObsParUS=rep(10,length(parameters$sigmaObsParUS)))
 }
     

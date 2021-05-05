@@ -4,7 +4,7 @@
 \alias{getLowerBounds}
 \title{Bounds}
 \usage{
-getLowerBounds(parameters)
+getLowerBounds(parameters, conf)
 }
 \arguments{
 \item{parameters}{initial values for the model in a format similar to what is returned from the defpar function}
