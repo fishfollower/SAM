@@ -49,7 +49,6 @@ getSplineRecBreaks <- function(dat,
     findknot[[kk]]$kn
 }
 
-
 fitPenalizedSpline <- function(dat,
                                conf,
                                par = defpar(dat,conf),
