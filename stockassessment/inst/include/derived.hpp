@@ -1,111 +1,106 @@
 #ifndef SAM_DERIVED_HPP
 #define SAM_DERIVED_HPP
 
-namespace rec_atomic {
-
-  
-  template<class T>
-  T logspace_add2_raw (const T &logx, const T &logy) {
-    // Was:
-    //  fmax2 (logx, logy) + log1p (exp (-fabs (logx - logy)));
-    if(logx == R_NegInf)
-      return(logy);
-    if(logy == R_NegInf)
-      return(logx);
-    return ( logx < logy ?
-             logy + log1p (exp (logx - logy)) :
-             logx + log1p (exp (logy - logx)) );
-  }
-
-  
-  TMB_BIND_ATOMIC(logspace_add2,
-		  11,
-		  logspace_add2_raw(x[0], x[1]) )
-
-}
-
-
-template<class Type>
-Type logspace_add2(Type logx, Type logy) {
-  if ( !CppAD::Variable(logx) && logx == Type(-INFINITY) )
-    return logy;
-  if ( !CppAD::Variable(logy) && logy == Type(-INFINITY) )
-    return logx;
-  CppAD::vector<Type> tx(3);
-  tx[0] = logx;
-  tx[1] = logy;
-  tx[2] = 0; // order
-  return rec_atomic::logspace_add2(tx)[0];
-}
-
-
-template <class Type>
-Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i){
-  int stateDimN=logN.dim[0];
-  Type ssb=0;
-  for(int j=0; j<stateDimN; ++j){
-    if(conf.keyLogFsta(0,j)>(-1)){
-      ssb += exp(logN(j,i))*exp(-exp(logF(conf.keyLogFsta(0,j),i))*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
-    }else{
-      ssb += exp(logN(j,i))*exp(-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
-    }
-  }
-  return ssb;
-}
 // template <class Type>
-// Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i, bool give_log = false){
+// Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i){
 //   int stateDimN=logN.dim[0];
-//   Type logssb = R_NegInf;
+//   Type ssb=0;
 //   for(int j=0; j<stateDimN; ++j){
-//     if(dat.propMat(i,j) > 0){
-//       Type lssbNew = R_NegInf;
-//       if(conf.keyLogFsta(0,j)>(-1)){
-//         lssbNew = logN(j,i) - exp(logF(conf.keyLogFsta(0,j),i)) * (dat.propF(i,j)) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));	
-//       }else{
-//         lssbNew = logN(j,i) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));
-//       }
-//       logssb = logspace_add2(logssb, lssbNew);
+//     if(conf.keyLogFsta(0,j)>(-1)){
+//       ssb += exp(logN(j,i))*exp(-exp(logF(conf.keyLogFsta(0,j),i))*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
+//     }else{
+//       ssb += exp(logN(j,i))*exp(-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
 //     }
 //   }
-//   if(give_log)
-//     return logssb;
-//   return exp(logssb);
+//   return ssb;
 // }
+template <class Type>
+Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i, bool give_log = false){
+  int stateDimN=logN.dim[0];
+  Type logssb = R_NegInf;
+  for(int j=0; j<stateDimN; ++j){
+    if(dat.propMat(i,j) > 0){
+      Type lssbNew = R_NegInf;
+      if(conf.keyLogFsta(0,j)>(-1)){
+        lssbNew = logN(j,i) - exp(logF(conf.keyLogFsta(0,j),i)) * (dat.propF(i,j)) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));	
+      }else{
+        lssbNew = logN(j,i) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));
+      }
+      logssb = logspace_add2(logssb, lssbNew);
+    }
+  }
+  if(give_log)
+    return logssb;
+  return exp(logssb);
+}
 
 
 template <class Type>
-vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
   int timeSteps=logF.dim[1];
   vector<Type> ssb(timeSteps);
-  ssb.setZero();
+  ssb.setConstant(R_NegInf);
   for(int i=0;i<timeSteps;i++){
-    ssb(i)=ssbi(dat,conf,logN,logF,i);
+    ssb(i)=ssbi(dat,conf,logN,logF,i, give_log);
   }
   return ssb;
 }
 
+// template <class Type>
+// matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+//   int len=dat.catchMeanWeight.dim(0);
+//   matrix<Type> cat(conf.maxAge - conf.minAge + 1, len);
+//   cat.setZero();
+//   for(int y=0;y<len;y++){
+//     for(int a=conf.minAge;a<=conf.maxAge;a++){  
+//       Type z=dat.natMor(y,a-conf.minAge);
+//       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
+//         z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+//         cat(a-conf.minAge, y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge);
+//       }
+//     }
+//   }
+//   return cat;
+// }
+
 template <class Type>
-matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
-  int len=dat.landFrac.dim(0);
+matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
+  int len=dat.catchMeanWeight.dim(0);
   matrix<Type> cat(conf.maxAge - conf.minAge + 1, len);
-  cat.setZero();
+  cat.setConstant(R_NegInf);
   for(int y=0;y<len;y++){
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
-      Type z=dat.natMor(y,a-conf.minAge);
+      Type logz=log(dat.natMor(y,a-conf.minAge) + 1e-12);
       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-        z+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-        cat(a-conf.minAge, y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y))/z*exp(logN(a-conf.minAge,y))*(Type(1.0)-exp(-z))*dat.catchMeanWeight(y,a-conf.minAge);
+        logz = logspace_add2(logz, logF(conf.keyLogFsta(0,a-conf.minAge),y));
+	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + logspace_sub2(Type(0.0),-exp(logz)) + log(dat.catchMeanWeight(y,a-conf.minAge));
+	cat(a-conf.minAge, y) = logspace_add2(cat(a-conf.minAge, y), tmp);
       }
     }
   }
-  return cat;
+  if(give_log)
+    return cat;
+  return cat.array().exp().matrix();
 }
 
 
+// template <class Type>
+// vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
+//   matrix<Type> cat = catchFunAge(dat,conf,logN,logF);  
+//   return (vector<Type>)cat.colwise().sum();
+// }
+
 template <class Type>
-vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF){
-  matrix<Type> cat = catchFunAge(dat,conf,logN,logF);  
-  return (vector<Type>)cat.colwise().sum();
+vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
+  matrix<Type> cat = catchFunAge(dat,conf,logN,logF, true);
+  vector<Type> catY(cat.cols());
+  catY.setConstant(R_NegInf);
+  for(int i = 0; i < cat.cols(); ++i)
+    for(int j = 0; j < cat.rows(); ++j)
+      catY(i) = logspace_add2(catY(i), cat(j,i));
+  if(give_log)
+    return catY;
+  return exp(catY);
 }
 
 
@@ -265,18 +260,35 @@ vector<Type> rFun(array<Type> &logN){
   return R;
 }
 
+// template <class Type>
+// vector<Type> fbarFun(confSet &conf, array<Type> &logF){
+//   int timeSteps=logF.dim[1];
+//   vector<Type> fbar(timeSteps);
+//   fbar.setZero();
+//   for(int y=0;y<timeSteps;y++){  
+//     for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
+//       fbar(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+//     }
+//     fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
+//   }
+//   return fbar;
+// }
+
+
 template <class Type>
-vector<Type> fbarFun(confSet &conf, array<Type> &logF){
+vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
   int timeSteps=logF.dim[1];
   vector<Type> fbar(timeSteps);
-  fbar.setZero();
+  fbar.setConstant(R_NegInf);
   for(int y=0;y<timeSteps;y++){  
-    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
-      fbar(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){
+      fbar(y) = logspace_add(fbar(y), logF(conf.keyLogFsta(0,a-conf.minAge),y));
     }
-    fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
+    fbar(y) -= log(Type(conf.fbarRange(1)-conf.fbarRange(0)+1));
   }
-  return fbar;
+  if(give_log)
+    return fbar;
+  return exp(fbar);
 }
 
 
