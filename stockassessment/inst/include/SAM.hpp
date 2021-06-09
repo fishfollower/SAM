@@ -2,6 +2,7 @@
 #define SAM_HPP
 
 #include "tiny_adflex.hpp"
+#include "rec_atomic.hpp"
 #include "zeroin.hpp"
 #include "pnorm.hpp"
 #include "spline.hpp"

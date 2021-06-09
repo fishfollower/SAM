@@ -431,7 +431,7 @@ referencepoints.sam <- function(fit,
     }
 
     ## FCrash
-    if(any(rp %in% "logScaleFcrash") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
+    if(any(rp %in% "logScaleFcrash") && min(rep$logSe[!is.na(rep$logSe)], na.rm = TRUE) > -4){
         warning("The stock does not appear to have a well-defined Fcrash. Fcrash will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFcrash")]
         args$map$logScaleFcrash <- factor(NA)
@@ -439,7 +439,7 @@ referencepoints.sam <- function(fit,
     }
 
         ## FCrash
-    if(any(rp %in% "logScaleFext") && min(rep$logSe[is.finite(rep$logSe)], na.rm = TRUE) > -4){
+    if(any(rp %in% "logScaleFext") && min(rep$logSe[!is.na(rep$logSe)], na.rm = TRUE) > -4){
         warning("The stock does not appear to have a well-defined Fext. Fext will not be estimated. Increase the upper bound of Fsequence to try again.")
         rp <- rp[-which(rp %in% "logScaleFext")]
         args$map$logScaleFext <- factor(NA)
@@ -508,7 +508,7 @@ referencepoints.sam <- function(fit,
     for(ii in names(pStart))
         p0[names(p0) %in% ii] <- pStart[[match(ii,names(pStart))]]
 
-    opt <- nlminb(p0, objOptim$fn, objOptim$gr, objOptim$he)    
+    opt <- nlminb(p0, objOptim$fn, objOptim$gr, objOptim$he)
     for(ii in seq_len(newtonSteps)){
         g <- as.numeric( objOptim$gr(opt$par) )
         h <- objOptim$he(opt$par)
