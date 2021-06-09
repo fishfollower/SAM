@@ -1,11 +1,12 @@
 #ifndef SAM_SPLINE_HPP
 #define SAM_SPLINE_HPP
 
+
 namespace spline_helper {
   
   template<class Type>
   Type softmax(Type x, Type y, Type k = 1.0){
-    return logspace_add(k * x, k * y) / k;
+    return logspace_add2(k * x, k * y) / k;
   }
 
   
@@ -16,7 +17,7 @@ namespace spline_helper {
     Type b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
     Type lpv = pnorm5(x,mu,sig,Type(1.0), Type(1.0));
     Type lGa = a * lpv;
-    Type log_res = log(a) + log(b) + dnorm(x,mu,sig, true) + (a-1.0) * lpv + (b-1.0) * logspace_sub(Type(0.0),(Type)lGa);
+    Type log_res = log(a) + log(b) + dnorm(x,mu,sig, true) + (a-1.0) * lpv + (b-1.0) * logspace_sub2(Type(0.0),(Type)lGa);
      if(give_log)
       return log_res;
     return exp(log_res);
@@ -30,7 +31,7 @@ namespace spline_helper {
     Type lpv = pnorm5(x,mu,sig,Type(1.0), Type(1.0));
     Type lGa = a * lpv;
     // Type lr = logspace_sub(Type(0.0), (Type)(b * logspace_sub(Type(0.0),lGa)));
-    return 1.0 - exp(b * logspace_sub(Type(0.0),lGa));
+    return 1.0 - exp(b * logspace_sub2(Type(0.0),lGa));
   }
   
   template<class Type>

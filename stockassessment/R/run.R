@@ -114,18 +114,20 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     safemap <- obj$env$parList(gr)
     safemap <- safemap[!names(safemap)%in%ran]
     safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
-    ddd<-list(...)
+    ddd<-args # list(...)
     if(!is.null(ddd$map)){
-      safemap <- c(ddd$map,safemap)
-      ddd$map <- safemap
-      ddd$data <- tmball
-      ddd$parameters <- parameters
-      ddd$random <- ran
-      ddd$DLL <- "stockassessment"
-      obj <- do.call(MakeADFun,ddd)
+      ddd$map <- c(ddd$map,safemap)
     }else{
-      obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
+        ddd$map <- safemap
     }
+      ## ddd$data <- tmball
+      ## ddd$parameters <- parameters
+      ## ddd$random <- ran
+      ## ddd$DLL <- "stockassessment"
+    obj <- do.call(MakeADFun,ddd)
+    ## }else{
+    ##   obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
+    ## }
   }
   
   lower2<-rep(-Inf,length(obj$par))

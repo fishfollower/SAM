@@ -188,7 +188,7 @@ struct SSB2F_QUICK {
   }
 
   Type softmax(Type x, Type y, Type k = 1.0){
-    return logspace_add(k * x, k * y) / k;
+    return logspace_add2(k * x, k * y) / k;
   }
   Type sign0(Type x){
     return x / (fabs(x) + 1e-8);
