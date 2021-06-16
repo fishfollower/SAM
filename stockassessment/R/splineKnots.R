@@ -27,7 +27,7 @@ getSplineRecBreaks <- function(dat,
         ## Rule of
         ## Stone, C. (1986). [Generalized Additive Models]: Comment. Statistical Science, 1(3), 312-314
         prb <- tail(head(plogis(seq(logit(1 / (n+1)), logit(n / (n+1)), len = i)),-1),-1)
-        kn <- c(quantile(log(ssb),probs = c(0,prb,1))) ##c(0+5 * alph,prb,1 - 5 * alph)))
+        kn <- c(quantile(log(ssb),probs = c(0+2/n,prb,1-2/n))) ##c(0+5 * alph,prb,1 - 5 * alph)))
         cnfF0$constRecBreaks <- kn
         dp0 <- defpar(fitRW$data,cnfF0)
         for(nn in names(dp0))
