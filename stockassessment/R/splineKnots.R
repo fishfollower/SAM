@@ -23,18 +23,22 @@ getSplineRecBreaks <- function(dat,
         cnfF0$stockRecruitmentModelCode <- srmc
         ssb <- ssbtable(fitRW)[,1]
         n <- length(ssb)
-        alph <- 1/(n+1) * .5
+        alph <- 0
         ## Rule of
         ## Stone, C. (1986). [Generalized Additive Models]: Comment. Statistical Science, 1(3), 312-314
         prb <- tail(head(plogis(seq(logit(1 / (n+1)), logit(n / (n+1)), len = i)),-1),-1)
-        kn <- c(quantile(log(ssb),probs = c(0+2/n,prb,1-2/n))) ##c(0+5 * alph,prb,1 - 5 * alph)))
-        cnfF0$constRecBreaks <- kn
-        dp0 <- defpar(fitRW$data,cnfF0)
-        for(nn in names(dp0))
-            if(class(dp0[[nn]]) == class(fitRW$pl[[nn]]) &&
-               length(dp0[[nn]]) == length(fitRW$pl[[nn]]))
-                dp0[[nn]][] <- fitRW$pl[[nn]][]          
-        F0 <- try({sam.fit(fitRW$data, cnfF0, dp0, map = map, ...)})
+        F0 <- local({xx <- list(); class(xx) <- "try-error";xx})
+        while(alph < 0.25*n && is(F0, "try-error")){
+            kn <- c(quantile(log(ssb),probs = c(0+alph/n,prb,1-alph/n))) ##c(0+5 * alph,prb,1 - 5 * alph)))
+            cnfF0$constRecBreaks <- kn
+            dp0 <- defpar(fitRW$data,cnfF0)
+            for(nn in names(dp0))
+                if(class(dp0[[nn]]) == class(fitRW$pl[[nn]]) &&
+                   length(dp0[[nn]]) == length(fitRW$pl[[nn]]))
+                    dp0[[nn]][] <- fitRW$pl[[nn]][]          
+            F0 <- try({sam.fit(fitRW$data, cnfF0, dp0, map = map, ...)})
+            alph <- alph+1
+        }
         list(AIC = ifelse(is(F0, "try-error"),NA,AIC(F0)),
              kn = kn,
              fit = F0)
