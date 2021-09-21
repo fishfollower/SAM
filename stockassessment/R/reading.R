@@ -244,6 +244,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   time<-NULL
   name<-NULL
   corList <- list()
+  ageConfusion <- list()  
   idxCor <- matrix(NA, nrow=length(fleets)+length(surveys)+1, ncol=nrow(natural.mortality))
   colnames(idxCor)<-rownames(natural.mortality)
   dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
@@ -284,6 +285,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       corList <<- c(corList,thisCorList)
       nextIdx <- if(all(is.na(idxCor))){0}else{max(idxCor,na.rm=TRUE)}
       idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
+    }
+    if("ageConfusion"%in%names(attributes(m))){
+      ageConfusion[[length(ageConfusion)+1]] <<- attr(m,"ageConfusion")
+    }else{
+      ageConfusion[[length(ageConfusion)+1]] <<- diag(ncol(m))
     }
   }
   if(!is.null(residual.fleet)){
@@ -406,7 +412,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     landMeanWeight=attr(dat,'land.mean.weight'),
     propF=attr(dat,'prop.f'),
     propM=attr(dat,'prop.m'),
-    corList=corList
+    corList=corList,
+    ageConfusion=ageConfusion
   )
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)

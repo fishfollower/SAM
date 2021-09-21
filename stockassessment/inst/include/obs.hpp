@@ -234,7 +234,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
           vector<Type> currentVar=nllVec(f).cov().diagonal();
           vector<Type> sqrtW(currentVar.size());
-
+	  vector<Type> currentPred(currentVar.size()); 
+          vector<Type> vv(currentVar.size());
+	  matrix<Type> mm(currentVar.size(),currentVar.size());
+	  
   	      switch(conf.obsLikelihoodFlag(f)){
     	      case 0: // (LN) log-Normal distribution
               
@@ -263,11 +266,19 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                   }
                 }
               }
+	      
+	      //std::cout<<predObs.segment(idxfrom,idxlength)<<std::endl;
+	      //std::cout<<dat.ageConfusion(f)<<std::endl;
+	      //std::cout<<std::endl;
+	      vv=exp(predObs.segment(idxfrom,idxlength));
+	      mm=dat.ageConfusion(f).transpose();
+	      currentPred=log(mm*vv);
+	      //currentPred=predObs.segment(idxfrom,idxlength);
               if(isNAINT(dat.idxCor(f,y))){
-      	        nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
+      	        nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-currentPred)/sqrtW,keep.segment(idxfrom,idxlength));
                 nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
       	        SIMULATE_F(of){
-    	            dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+    	            dat.logobs.segment(idxfrom,idxlength) = currentPred + (nllVec(f).simulate()*sqrtW);
   	            }
   	          }else{
   	            int thisdim=currentVar.size();
@@ -279,10 +290,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   	              }
 	      } 
 	      MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
-	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
+	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-currentPred)/sqrtW, keep.segment(idxfrom,idxlength));              
 	      nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 	      SIMULATE_F(of){
-	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
+	        dat.logobs.segment(idxfrom,idxlength) = currentPred + thisnll.simulate()*sqrtW;
 	      }
             }
 	    break;

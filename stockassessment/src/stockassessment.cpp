@@ -64,6 +64,7 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
+  DATA_STRUCT(ageConfusion,listMatrixFromR); dataset.ageConfusion=ageConfusion; 
   DATA_STRUCT(forecast, forecastSet); dataset.forecast = forecast;
   DATA_STRUCT(referencepoint, referencepointSet); dataset.referencepoint = referencepoint;
     

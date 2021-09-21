@@ -324,6 +324,7 @@ struct dataSet{
   array<Type> propF;
   array<Type> propM;
   listMatrixFromR<Type> corList;
+  listMatrixFromR<Type> ageConfusion;  
   forecastSet<Type> forecast;
   referencepointSet<Type> referencepoint;
 
@@ -355,6 +356,7 @@ struct dataSet{
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
     corList = listMatrixFromR<Type>(getListElement(x,"corList"));
+    ageConfusion = listMatrixFromR<Type>(getListElement(x,"ageConfusion"));    
     forecast = forecastSet<Type>(getListElement(x,"forecast"));
     referencepoint = referencepointSet<Type>(getListElement(x,"referencepoint"));
   };
@@ -385,6 +387,7 @@ struct dataSet{
     propF = rhs.propF;
     propM = rhs.propM;
     corList = rhs.corList;
+    ageConfusion = rhs.AgeConfusion; 
     forecast = rhs.forecast;
     referencepoint = rhs.referencepoint;
     return *this;
@@ -428,6 +431,7 @@ struct dataSet{
     d.propM.initZeroArray(propM.dim);
     d.propM = propM.template cast<T>();
     d.corList = corList.template cast<T>();
+    d.ageConfusion = ageConfusion.template cast<T>();    
     d.forecast = forecast.template cast<T>();
     d.referencepoint = referencepoint.template cast<T>();
     return d;    
