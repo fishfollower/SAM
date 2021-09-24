@@ -40,8 +40,8 @@
 #define SAM_NegInf -50.0
 #define SAM_NIZero -50.0
 #else
-#define SAM_NegInf -50.0
-#define SAM_NIZero -50.0
+#define SAM_NegInf -20.0
+#define SAM_NIZero -10.0
 #endif
 
 #define SAM_Zero exp(SAM_NIZero)
@@ -959,27 +959,46 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
 
  
   // Calculate yield
-  vector<T> logcat(nYears);
-  logcat.setConstant(R_NegInf);
+  // vector<T> logcat(nYears);
+  // logcat.setConstant(R_NegInf);
+  // switch(newDat.referencepoint.catchType){
+  // case referencepointSet<T>::totalCatch:
+  //   logcat = catchFun(newDat, newConf, logN, logF, true);
+  //   break;
+  // case referencepointSet<T>::landings:
+  //   logcat = log(landFun(newDat, newConf, logN, logF));
+  //   break;
+  // case referencepointSet<T>::discard:
+  //   logcat = log(disFun(newDat, newConf, logN, logF));
+  //   break;
+  // default:
+  //   Rf_error("Unknown reference point catch type.");
+  //   break;
+  // }
+  //T logYPR = logspace_sum(logcat); //log(sum(cat) + (T)exp(-12.0));//
+  vector<T> cat(nYears);
+  cat.setConstant(R_NegInf);
   switch(newDat.referencepoint.catchType){
   case referencepointSet<T>::totalCatch:
-    logcat = catchFun(newDat, newConf, logN, logF, true);
+    cat = catchFun(newDat, newConf, logN, logF);
     break;
   case referencepointSet<T>::landings:
-    logcat = log(landFun(newDat, newConf, logN, logF));
+    cat = landFun(newDat, newConf, logN, logF);
     break;
   case referencepointSet<T>::discard:
-    logcat = log(disFun(newDat, newConf, logN, logF));
+    cat = disFun(newDat, newConf, logN, logF);
     break;
   default:
     Rf_error("Unknown reference point catch type.");
-      break;
+    break;
   }
-  T logYPR = logspace_sum(logcat); //log(sum(cat) + (T)exp(-12.0));//
+  T logYPR = log(sum(cat) + (T)exp(-12.0));//
+  
   // Calculate spawners
-  vector<T> logssb = ssbFun(newDat, newConf, logN, logF, true);
-  //T logSPR = log(softmax(sum(ssb),(T)SAM_Zero,(T)1000.0)); //log(sum(ssb)); log(sum(ssb) + (T)exp(-12.0));
-  T logSPR = logspace_sum(logssb);
+  //vector<T> logssb = ssbFun(newDat, newConf, logN, logF, true);
+  vector<T> ssb = ssbFun(newDat, newConf, logN, logF);
+  T logSPR = log(softmax(sum(ssb),(T)SAM_Zero,(T)1000.0)); //log(sum(ssb)); log(sum(ssb) + (T)exp(-12.0));
+  //T logSPR = logspace_sum(logssb);
   T lambda = exp(logSPR); // sum(ssb);
 
   if(conf.stockRecruitmentModelCode == 0){//  ||
@@ -1921,8 +1940,10 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logSPRlim,of);
 
   // Fbar relative to (last year) reference points
-  vector<Type> logfbar = fbarFun(conf, logF, true);
-  vector<Type> fbar = exp(logfbar);
+  // vector<Type> logfbar = fbarFun(conf, logF, true);
+  // vector<Type> fbar = exp(logfbar);
+  vector<Type> fbar = fbarFun(conf, logF);
+  vector<Type> logfbar = log(fbar);
 
   vector<Type> relref_logfbar_fmsy = logfbar - referencepoint.logFmsy;
   ADREPORT_F(relref_logfbar_fmsy,of);
@@ -1934,8 +1955,10 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   // ADREPORT_F(relref_logfbar_f35,of);
 
   // SSB relative to (last year) reference points
-  vector<Type> logssb = ssbFun(dat, conf, logN, logF, true);
-  vector<Type> ssb = exp(logssb);
+  // vector<Type> logssb = ssbFun(dat, conf, logN, logF, true);
+  // vector<Type> ssb = exp(logssb);
+  vector<Type> ssb = ssbFun(dat, conf, logN, logF);
+  vector<Type> logssb = log(ssb);
 
   vector<Type> relref_logssb_bmsy = logssb - referencepoint.logBmsy;
   ADREPORT_F(relref_logssb_bmsy,of);
