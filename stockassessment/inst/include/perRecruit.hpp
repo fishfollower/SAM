@@ -966,13 +966,13 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   logcat.setConstant(R_NegInf);
   switch(newDat.referencepoint.catchType){
   case referencepointSet<T>::totalCatch:
-    logcat = catchFun(newDat, newConf, logN, logF, true);
+    logcat = catchFun(newDat, newConf, logN, logF);
     break;
   case referencepointSet<T>::landings:
-    logcat = log(landFun(newDat, newConf, logN, logF));
+    logcat = landFun(newDat, newConf, logN, logF);
     break;
   case referencepointSet<T>::discard:
-    logcat = log(disFun(newDat, newConf, logN, logF));
+    logcat = disFun(newDat, newConf, logN, logF);
     break;
   default:
     Rf_error("Unknown reference point catch type.");
