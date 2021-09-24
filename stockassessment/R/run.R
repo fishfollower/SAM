@@ -45,7 +45,7 @@
 ##' data(nscodConf)
 ##' data(nscodParameters)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, ...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, penalizeSpline = FALSE, ...){
   if(length(conf$maxAgePlusGroup)==1){
     tmp <- conf$maxAgePlusGroup    
     conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
@@ -71,6 +71,8 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
   ran <- c("logN", "logF", "missing")
+  if(penalizeSpline)
+      ran <- c(ran, "rec_pars")
 
   
   args <- c(list(data = tmball,
@@ -87,7 +89,8 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                 logScaleFcrash = factor(NA),
                 logScaleFext = factor(NA),
                 logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
-                logScaleFlim = factor(NA)
+                logScaleFlim = factor(NA),
+                splinePenalty = factor(ifelse(penalizeSpline,1,NA))
                 )
   if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
       args$map <- mapRP
@@ -155,6 +158,10 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   sdrep$estYm1 <- sdrep$value[idx]
   sdrep$covYm1 <- sdrep$cov[idx,idx]
 
+  ## rec_pars
+  idx <- which(names(sdrep$value)=="rec_pars")
+  sdrep$covRecPars <- sdrep$cov[idx,idx, drop = FALSE]
+  
   pl <- as.list(sdrep,"Est")
   plsd <- as.list(sdrep,"Std")
 
@@ -189,6 +196,8 @@ getUpperBounds<-function(parameters, conf){
 ##' @param conf model configuration which can be set up using the \code{\link{defcon}} function and then modified
 ##' @return an updated dataset without the catches where F is fixed to zero
 clean.void.catches<-function(dat, conf){
+    if(!any(dat$fleetTypes == 0))
+        return(dat)       
   rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
   dat$aux <- dat$aux[!rmidx,]
   dat$logobs <- dat$logobs[!rmidx]

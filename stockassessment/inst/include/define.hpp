@@ -236,6 +236,12 @@ struct referencepointSet {
 		  landings,
 		  discard
   };
+
+  enum RecCorrectionType {
+		  RecMean,
+		  RecMedian,
+		  RecMode
+  };
   
   int nYears;
   vector<int> aveYears;
@@ -244,6 +250,7 @@ struct referencepointSet {
   vector<Type> xPercent;
   vector<Type> MSYRange;
   CatchType catchType;
+  RecCorrectionType RecCorrection;
   int optN;
 
   referencepointSet() : nYears(0) {};
@@ -261,8 +268,9 @@ struct referencepointSet {
       selYears = asVector<int>(getListElement(x,"selYears"));
       Fsequence = asVector<Type>(getListElement(x,"Fsequence"));
       xPercent = asVector<Type>(getListElement(x,"xPercent"));
-      catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
       MSYRange = asVector<Type>(getListElement(x,"MSYRange"));
+      catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
+      RecCorrection = static_cast<RecCorrectionType>((int)*REAL(getListElement(x,"RecCorrection")));
       optN = (int)*REAL(getListElement(x,"optN"));	    
     }
   }
@@ -276,8 +284,9 @@ struct referencepointSet {
     selYears = rhs.selYears;
     Fsequence = rhs.Fsequence;
     xPercent = rhs.xPercent;
-    catchType = rhs.catchType;
     MSYRange = rhs.MSYRange;
+    catchType = rhs.catchType;
+    RecCorrection = rhs.RecCorrection;    
     return *this;
   }
 
@@ -292,8 +301,9 @@ struct referencepointSet {
     d.selYears = selYears;
     d.Fsequence = Fsequence.template cast<T>();
     d.xPercent = xPercent.template cast<T>();
-    d.catchType = static_cast<typename referencepointSet<T>::CatchType>((int)catchType);
     d.MSYRange = MSYRange.template cast<T>();
+    d.catchType = static_cast<typename referencepointSet<T>::CatchType>((int)catchType);
+    d.RecCorrection = static_cast<typename referencepointSet<T>::RecCorrectionType>((int)RecCorrection);
     return d;    
   }
   
@@ -606,6 +616,7 @@ struct paraSet{
   vector<Type> logScaleFxPercent;
   Type logScaleFlim;
   matrix<Type> logScaleFmsyRange;
+  Type splinePenalty;
 
   paraSet() {};
   
@@ -636,6 +647,7 @@ struct paraSet{
     logScaleFxPercent = asVector<Type>(getListElement(x,"logScaleFxPercent"));
     logScaleFlim = (Type)Rf_asReal(getListElement(x,"logScaleFlim"));
     logScaleFmsyRange = asMatrix<Type>(getListElement(x,"logScaleFmsyRange"));
+    splinePenalty = (Type)Rf_asReal(getListElement(x,"splinePenalty"));
   }
 
   paraSet<Type>& operator=(const paraSet<Type>& rhs) {
@@ -665,6 +677,7 @@ struct paraSet{
     logScaleFxPercent = rhs.logScaleFxPercent;
     logScaleFlim = rhs.logScaleFlim;
     logScaleFmsyRange = rhs.logScaleFmsyRange;
+    splinePenalty = rhs.splinePenalty;
     return *this;
 
   }
@@ -698,6 +711,7 @@ struct paraSet{
     d.logScaleFxPercent = logScaleFxPercent.template cast<T>();
     d.logScaleFlim = T(logScaleFlim);
     d.logScaleFmsyRange = logScaleFmsyRange.template cast<T>();
+    d.splinePenalty = T(splinePenalty);
     return d;    
   }
 

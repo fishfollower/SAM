@@ -33,6 +33,8 @@ referencepoints(
   optN = 20,
   jacobianHScale = 0.5,
   fixRP = c(),
+  RecCorrection = "median",
+  biasCorrect = FALSE,
   ...
 )
 }

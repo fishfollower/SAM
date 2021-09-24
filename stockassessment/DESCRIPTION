@@ -1,7 +1,7 @@
 Package: stockassessment
 Title: State-Space Assessment Model
-Version: 0.11.0
-Date: 2021-01-28
+Version: 0.11.1
+Date: 2021-06-18
 Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.dk"),
 	    person("Casper","Berg",role="aut"),
             person(c("Christoffer","Moesgaard"), "Albertsen", role="aut"),
@@ -24,10 +24,10 @@ RemoteHost: https://api.github.com
 RemoteRepo: SAM
 RemoteUsername: fishfollower
 RemoteRef: master
-RemoteSha: f7e632de20151ce38c3cb6be0ccaccdf359cd563
+RemoteSha: e21275d2227fe995a77a16d9b028616b4523af8e
 RemoteSubdir: stockassessment
 GithubRepo: SAM
 GithubUsername: fishfollower
 GithubRef: master
-GithubSHA1: f7e632de20151ce38c3cb6be0ccaccdf359cd563
+GithubSHA1: e21275d2227fe995a77a16d9b028616b4523af8e
 GithubSubdir: stockassessment

@@ -282,7 +282,7 @@ vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
   fbar.setConstant(R_NegInf);
   for(int y=0;y<timeSteps;y++){  
     for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){
-      fbar(y) = logspace_add(fbar(y), logF(conf.keyLogFsta(0,a-conf.minAge),y));
+      fbar(y) = logspace_add2(fbar(y), logF(conf.keyLogFsta(0,a-conf.minAge),y));
     }
     fbar(y) -= log(Type(conf.fbarRange(1)-conf.fbarRange(0)+1));
   }

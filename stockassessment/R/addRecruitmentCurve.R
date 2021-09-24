@@ -41,8 +41,9 @@ addRecruitmentCurve.sam <- function(fit,
        X <- summary(fit)
        R <- X[, 1]
        S <- X[, 4]
-       cf <- fit$sdrep$cov.fixed
-       covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
+       ## cf <- fit$sdrep$cov.fixed
+       ## covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
+       covEst <- fit$sdrep$covRecPars
        m <- fit$obj$env$map$rec_pars
        if(is.null(m)){
            covar <- covEst

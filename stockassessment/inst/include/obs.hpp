@@ -34,10 +34,86 @@ matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxA
   return ret;
 }
 
+
+
 template <class Type> 
 density::UNSTRUCTURED_CORR_t<Type> getCorrObj(vector<Type> params){
   density::UNSTRUCTURED_CORR_t<Type> ret(params);
   return ret;
+}
+
+
+template <class Type>
+vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par,
+				  objective_function<Type> *of){
+    // setup obs likelihoods
+  vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
+  vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
+  vector< vector<Type> > obsCovScaleVec(dat.noFleets);
+  vector<Type> varLogObs=exp(par.logSdLogObs*Type(2.0));
+  vector<Type> IRARdist(par.transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
+  if(par.transfIRARdist.size()>0) IRARdist=exp(par.transfIRARdist);
+  vector< vector<Type> > sigmaObsParVec(dat.noFleets);
+  int aidx;
+  vector< matrix<Type> > obsCov(dat.noFleets); // for reporting
+
+ int nfleet = dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
+  int dn=nfleet*(nfleet-1)/2;
+  int from=-dn, to=-1; 
+  for(int f=0; f<dat.noFleets; f++){
+    if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
+    nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+    if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
+    dn = nfleet*(nfleet-1)/2;
+    from=to+1;
+    to=to+dn;
+    vector<Type> tmp(dn);
+    for(int i=from; i<=to; i++) tmp(i-from) = par.sigmaObsParUS(i);
+    sigmaObsParVec(f) = tmp; 
+  }
+
+  for(int f=0; f<dat.noFleets; ++f){
+    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
+      int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+      if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
+      matrix<Type> cov(thisdim,thisdim);
+      cov.setZero();
+      if(conf.obsCorStruct(f)==0){//ID (independent)  
+        for(int i=0; i<thisdim; ++i){
+          aidx = i+dat.minAgePerFleet(f)-conf.minAge;
+  	  cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
+        }
+      } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
+        cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
+	if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
+	  cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
+	}
+
+      } else if(conf.obsCorStruct(f)==2){//(US) unstructured
+        neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
+        matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
+  
+        tmp.setZero();
+        int offset = dat.minAgePerFleet(f)-conf.minAge;
+        obsCovScaleVec(f).resize(tmp.rows());
+        for(int i=0; i<tmp.rows(); i++) {
+	  tmp(i,i) = sqrt(varLogObs(conf.keyVarObs(f,i+offset)));
+	  obsCovScaleVec(f)(i) = tmp(i,i);
+        }
+        cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+      } else { 
+        Rf_error("Unkown obsCorStruct code"); 
+      }
+      nllVec(f).setSigma(cov, conf.fracMixObs(f));
+      obsCov(f) = cov;
+    }else{
+      matrix<Type> dummy(1,1);
+      dummy(0,0) = R_NaReal;
+      obsCov(f) = dummy;
+    }
+  }
+  REPORT_F(obsCov,of);
+  return nllVec;
 }
 
 template <class Type>
@@ -114,17 +190,17 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   Type nll=0;
 
   // Calculate values to report
-  vector<Type> ssb = ssbFun(dat, conf, logN, logF);
-  vector<Type> logssb = log(ssb);
+  vector<Type> logssb = ssbFun(dat, conf, logN, logF, true);
+  vector<Type> ssb = exp(logssb);
 
   vector<Type> fsb = fsbFun(dat, conf, logN, logF);
   vector<Type> logfsb = log(fsb);
 
-  vector<Type> cat = catchFun(dat, conf, logN, logF);
-  vector<Type> logCatch = log(cat);
+  vector<Type> logCatch = catchFun(dat, conf, logN, logF, true);
+  vector<Type> cat = exp(logCatch);
 
-  matrix<Type> catAge = catchFunAge(dat, conf, logN, logF);
-  matrix<Type> logCatchAge = catAge.array().log().matrix();
+  matrix<Type> logCatchAge = catchFunAge(dat, conf, logN, logF, true);
+  matrix<Type> catAge = logCatchAge.array().exp().matrix();
 
   vector<Type> land = landFun(dat, conf, logN, logF);
   vector<Type> logLand = log(land);
@@ -146,18 +222,20 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> logfbarL = log(fbarL);
 
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logtsb, logfsb, logCatch, logLand);
+
+  vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
   
-  // setup obs likelihoods
-  vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
-  vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
-  vector< vector<Type> > obsCovScaleVec(dat.noFleets);
-  vector<Type> varLogObs=exp(par.logSdLogObs*Type(2.0));
-  vector<Type> IRARdist(par.transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
-  if(par.transfIRARdist.size()>0) IRARdist=exp(par.transfIRARdist);
-  vector< vector<Type> > sigmaObsParVec(dat.noFleets);
-  int aidx;
-  vector< matrix<Type> > obsCov(dat.noFleets); // for reporting
- 
+  // // setup obs likelihoods
+  // vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
+  // vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
+  // vector< vector<Type> > obsCovScaleVec(dat.noFleets);
+  // vector<Type> varLogObs=exp(par.logSdLogObs*Type(2.0));
+  // vector<Type> IRARdist(par.transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
+  // if(par.transfIRARdist.size()>0) IRARdist=exp(par.transfIRARdist);
+  // vector< vector<Type> > sigmaObsParVec(dat.noFleets);
+  // int aidx;
+  // vector< matrix<Type> > obsCov(dat.noFleets); // for reporting
+  
   vector<Type> recapturePhi(par.logitRecapturePhi.size());
   vector<Type> recapturePhiVec(dat.nobs);
   if(par.logitRecapturePhi.size()>0){
@@ -169,61 +247,61 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
     }
   }
 
-  int nfleet = dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
-  int dn=nfleet*(nfleet-1)/2;
-  int from=-dn, to=-1; 
-  for(int f=0; f<dat.noFleets; f++){
-    if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
-    nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
-    if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
-    dn = nfleet*(nfleet-1)/2;
-    from=to+1;
-    to=to+dn;
-    vector<Type> tmp(dn);
-    for(int i=from; i<=to; i++) tmp(i-from) = par.sigmaObsParUS(i);
-    sigmaObsParVec(f) = tmp; 
-  }
+  // int nfleet = dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
+  // int dn=nfleet*(nfleet-1)/2;
+  // int from=-dn, to=-1; 
+  // for(int f=0; f<dat.noFleets; f++){
+  //   if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
+  //   nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+  //   if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
+  //   dn = nfleet*(nfleet-1)/2;
+  //   from=to+1;
+  //   to=to+dn;
+  //   vector<Type> tmp(dn);
+  //   for(int i=from; i<=to; i++) tmp(i-from) = par.sigmaObsParUS(i);
+  //   sigmaObsParVec(f) = tmp; 
+  // }
 
-  for(int f=0; f<dat.noFleets; ++f){
-    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
-      int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
-      if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
-      matrix<Type> cov(thisdim,thisdim);
-      cov.setZero();
-      if(conf.obsCorStruct(f)==0){//ID (independent)  
-        for(int i=0; i<thisdim; ++i){
-          aidx = i+dat.minAgePerFleet(f)-conf.minAge;
-  	  cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
-        }
-      } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
-        cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
-	if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
-	  cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
-	}
+  // for(int f=0; f<dat.noFleets; ++f){
+  //   if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
+  //     int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+  //     if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
+  //     matrix<Type> cov(thisdim,thisdim);
+  //     cov.setZero();
+  //     if(conf.obsCorStruct(f)==0){//ID (independent)  
+  //       for(int i=0; i<thisdim; ++i){
+  //         aidx = i+dat.minAgePerFleet(f)-conf.minAge;
+  // 	  cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
+  //       }
+  //     } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
+  //       cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
+  // 	if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
+  // 	  cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
+  // 	}
 
-      } else if(conf.obsCorStruct(f)==2){//(US) unstructured
-        neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
-        matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
+  //     } else if(conf.obsCorStruct(f)==2){//(US) unstructured
+  //       neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
+  //       matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
   
-        tmp.setZero();
-        int offset = dat.minAgePerFleet(f)-conf.minAge;
-        obsCovScaleVec(f).resize(tmp.rows());
-        for(int i=0; i<tmp.rows(); i++) {
-	  tmp(i,i) = sqrt(varLogObs(conf.keyVarObs(f,i+offset)));
-	  obsCovScaleVec(f)(i) = tmp(i,i);
-        }
-        cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
-      } else { 
-        Rf_error("Unkown obsCorStruct code"); 
-      }
-      nllVec(f).setSigma(cov, conf.fracMixObs(f));
-      obsCov(f) = cov;
-    }else{
-      matrix<Type> dummy(1,1);
-      dummy(0,0) = R_NaReal;
-      obsCov(f) = dummy;
-    }
-  }
+  //       tmp.setZero();
+  //       int offset = dat.minAgePerFleet(f)-conf.minAge;
+  //       obsCovScaleVec(f).resize(tmp.rows());
+  //       for(int i=0; i<tmp.rows(); i++) {
+  // 	  tmp(i,i) = sqrt(varLogObs(conf.keyVarObs(f,i+offset)));
+  // 	  obsCovScaleVec(f)(i) = tmp(i,i);
+  //       }
+  //       cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+  //     } else { 
+  //       Rf_error("Unkown obsCorStruct code"); 
+  //     }
+  //     nllVec(f).setSigma(cov, conf.fracMixObs(f));
+  //     obsCov(f) = cov;
+  //   }else{
+  //     matrix<Type> dummy(1,1);
+  //     dummy(0,0) = R_NaReal;
+  //     obsCov(f) = dummy;
+  //   }
+  // }
   //eval likelihood 
   for(int y=0;y<dat.noYears;y++){
     int totalParKey = 0;
@@ -344,7 +422,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
     REPORT_F(logobs,of);
   }
 
-  REPORT_F(obsCov,of);
+  // REPORT_F(obsCov,of);
   REPORT_F(predObs,of);
   ADREPORT_F(logssb,of);
   ADREPORT_F(logfbar,of);

@@ -16,5 +16,6 @@
 #include "obs.hpp"
 #include "perRecruit.hpp"
 #include "hcr.hpp"
+#include "splinePenalty.hpp"
 
 #endif

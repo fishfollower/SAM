@@ -236,7 +236,8 @@ read.ices<-function(filen){
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL,
+                           keep.all.ages = FALSE){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -246,13 +247,15 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   corList <- list()
   idxCor <- matrix(NA, nrow=length(fleets)+length(surveys)+1, ncol=nrow(natural.mortality))
   colnames(idxCor)<-rownames(natural.mortality)
-  dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
+    dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
+    fleetAges <- list()
   weight<-NULL
   doone<-function(m){
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
     fleet<-rep(fleet.idx,length(year))
     age<-as.integer(colnames(m)[col(m)])
+    fleetAges[[fleet.idx]] <<- as.integer(colnames(m))
     aux<-as.vector(m)
     dat<<-rbind(dat,data.frame(year,fleet,age,aux))
     if("weight"%in%names(attributes(m))){
@@ -367,9 +370,18 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   idx1<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=min)
   idx2<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=max)
   attr(dat,'idx1')<-idx1
-  attr(dat,'idx2')<-idx2    
-  attr(dat,"minAgePerFleet")<-tapply(as.integer(dat[,"age"]), INDEX=dat[,"fleet"], FUN=min)
-  attr(dat,"maxAgePerFleet")<-tapply(as.integer(dat[,"age"]), INDEX=dat[,"fleet"], FUN=max)
+    attr(dat,'idx2')<-idx2
+    if(keep.all.ages){
+        attr(dat,"minAgePerFleet") <- sapply(fleetAges, min)
+        attr(dat,"maxAgePerFleet") <- sapply(fleetAges, max)
+    }else{
+        attr(dat,"minAgePerFleet")<-tapply(as.integer(dat[,"age"]),
+                                           INDEX=factor(dat[,"fleet"],seq_len(fleet.idx)),
+                                           FUN=min)
+        attr(dat,"maxAgePerFleet")<-tapply(as.integer(dat[,"age"]),
+                                           INDEX=factor(dat[,"fleet"],seq_len(fleet.idx)),
+                                           FUN=max)
+    }
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
