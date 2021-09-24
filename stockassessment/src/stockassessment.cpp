@@ -31,6 +31,7 @@
 
 // R_init_stockassessment is now defined in main.cpp
 //#define TMB_LIB_INIT R_init_stockassessment
+//#define TMB_SAFEBOUNDS
 #include <TMB.hpp>
 #include "../inst/include/SAM.hpp"
 
@@ -167,6 +168,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
   PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
   PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
+
+  PARAMETER(splinePenalty); paraset.splinePenalty = splinePenalty;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
@@ -189,10 +192,14 @@ Type objective_function<Type>::operator() ()
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
-  } 
+  }
 
+
+  ans += nllSplinePenalty(dataset, confset, paraset, this);
+         
   prepareForForecast(dataset, confset, paraset, logF, logN);
   dataset.forecast.calculateForecast(logF,logN, dataset, confset, paraset);    
+
   ans += nllF(dataset, confset, paraset, logF, keep, this);
   ans += nllSW(logSW, dataset, confset, paraset, this);
   ans += nllCW(logCW, dataset, confset, paraset, this);
@@ -202,8 +209,7 @@ Type objective_function<Type>::operator() ()
   forecastSimulation(dataset, confset, paraset, logN, logF, this);
 
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
-
   ans += nllReferencepoints(dataset, confset, paraset, logN, logF, this);
-        
+  
   return ans;
 }

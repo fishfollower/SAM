@@ -942,6 +942,17 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   for(int i = 1; i < nYears; ++i){
     // predN
     logN.col(i) = predNFun(newDat, newConf, newPar, logN, logF, i);
+    for(int j = 1; j < logN.rows(); ++j){
+      if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMean){
+	logN(j,i) += 0.5 * exp(2.0 * newPar.logSdLogN(conf.keyVarLogN(j)));
+      }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMedian){
+	
+      }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMode){
+	logN(j,i) += -exp(newPar.logSdLogN(conf.keyVarLogN(j)));
+      }else{
+	Rf_error("Recruitment correction type not implemented");
+      }
+    }
     // remove recruitment
     logN(0,i) = SAM_NegInf;
   }
@@ -1016,6 +1027,18 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
 		     newPar.rec_pars,
 		     conf.stockRecruitmentModelCode);
   }
+
+  T logRecCorrection = 0.0;
+  if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMean){
+    logRecCorrection = 0.5 * exp(2.0 * newPar.logSdLogN(conf.keyVarLogN(0)));
+  }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMedian){
+    logRecCorrection = 0.0;
+  }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMode){
+    logRecCorrection = -exp(newPar.logSdLogN(conf.keyVarLogN(0)));
+  }else{
+    Rf_error("Recruitment correction type not implemented");
+  }
+    
   switch(conf.stockRecruitmentModelCode){
   case 0: // straight RW 
     Rf_error("Equilibrium SSB not implemented");
@@ -1024,52 +1047,52 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
     //Se = lambda * newPar.logN(0,newPar.logN.cols());
     break;
   case 1: //ricker
-    Se = exp(-newPar.rec_pars(1)) * (newPar.rec_pars(0) + log(lambda)); //log((exp(newPar.rec_pars(0)) * lambda));
+    Se = exp(-newPar.rec_pars(1)) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)); //log((exp(newPar.rec_pars(0)) * lambda));
     break;
   case 2:  //BH
     // Handle negative values below!
-    Se = (exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1));
+    Se = (exp(newPar.rec_pars(0) + logRecCorrection) * lambda - 1.0) * exp(-newPar.rec_pars(1));
       // CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
       // 			   fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
       // 			   T(SAM_Zero));
     break;
   case 3: //Constant mean
     // Constant recruitment - last year of assessment
-    Se = lambda * exp(newPar.rec_pars(newPar.rec_pars.size() - 1));
+    Se = lambda * exp(newPar.rec_pars(newPar.rec_pars.size() - 1) + logRecCorrection);
     break;
   case 61: // Hockey stick
-    Se = lambda * exp(newPar.rec_pars(0));
+    Se = lambda * exp(newPar.rec_pars(0) + logRecCorrection);
     break;
   case 62: // AR1 (on log-scale)
-    Se = lambda * exp(newPar.rec_pars(0));
+    Se = lambda * exp(newPar.rec_pars(0) + logRecCorrection);
     break;
   case 63: //Bent hyperbola / Hockey-stick-like
-    Se = (2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0) / (lambda * exp(newPar.rec_pars(1))) - 2.0 * exp(newPar.rec_pars(0)) - 2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0)) / ( 1.0 / ((lambda * lambda * exp(2.0 * newPar.rec_pars(1)))) - 2.0 / (lambda * exp(newPar.rec_pars(1)))  );  
+    Se = (2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0) / (lambda * exp(newPar.rec_pars(1) + logRecCorrection)) - 2.0 * exp(newPar.rec_pars(0)) - 2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0)) / ( 1.0 / ((lambda * lambda * exp(2.0 * (newPar.rec_pars(1) + logRecCorrection)))) - 2.0 / (lambda * exp(newPar.rec_pars(1) + logRecCorrection))  );  
     break;
   case 64: // Power CMP
-    Se = exp(1.0 / (1.0 - invlogit(newPar.rec_pars(1))) * (newPar.rec_pars(0) + log(lambda)));
+    Se = exp(1.0 / (1.0 - invlogit(newPar.rec_pars(1))) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)));
     break;
   case 65: // Power Non-CMP
-    Se = exp(1.0 / (1.0 - (exp(newPar.rec_pars(1)) + 1.0001)) * (newPar.rec_pars(0) + log(lambda)));
+    Se = exp(1.0 / (1.0 - (exp(newPar.rec_pars(1)) + 1.0001)) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)));
     break;
   case 66: // Shepherd
     // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
     // 			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
     // 			  T(SAM_Zero));
-    Se = exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(softmax(exp(newPar.rec_pars(0)) * lambda - 1.0,(T)SAM_Zero, (T)100.0)) );
+    Se = exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(softmax(exp(newPar.rec_pars(0) + logRecCorrection) * lambda - 1.0,(T)SAM_Zero, (T)100.0)) );
     break;
   case 67: // Deriso
     // Handle negative values below!
     // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
     // 			  fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
     // 			   T(SAM_Zero));
-    Se = (exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1) - newPar.rec_pars(2));
+    Se = (exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logRecCorrection + logSPR)) - 1.0) * exp(-newPar.rec_pars(1) - newPar.rec_pars(2));
     break;
   case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1)
-    Se = Se_sl(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+    Se = Se_sl(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
   case 69: // Sigmoidal Beverton-Holt (cases: gamma < 1; gamma >= 1)
-    Se = Se_sbh(lambda, exp(newPar.rec_pars(0)), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+    Se = Se_sbh(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
   case 90: // Non-increasing spline on log R/S
     Se = Se_ibcd_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars, dat.referencepoint.optN);
