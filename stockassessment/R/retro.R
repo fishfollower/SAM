@@ -78,7 +78,13 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 ##' @param ... extra arguments to sam.fit
 ##' @details ...
 ##' @export
-runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
+runwithout <- function(fit, year, fleet, ...){
+    UseMethod("runwithout")
+}
+
+##' @method runwithout sam
+##' @export
+runwithout.sam <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
   fakefile <- file()

@@ -24,13 +24,14 @@ setS<-function(x){
 ##' @details The configuration returned by defcon is intended as a help to set up a syntactically correct configuration for the sam model. The dimensions are set from the data (years, age-classes, and fleet types available). The configuration is intended to be fairly simplistic in the hope that the model configured will at least converge (not guaranteed). Most importantly: No model validation has been performed, so it should not be assumed that the returned model configuration will result in a sensible assessment of the stock. The actual model configuration is the responsibility of the user.     
 ##' @export
 defcon<-function(dat){
-  fleetTypes <- dat$fleetTypes
-  ages <- do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
-  ages[fleetTypes%in%c(3,5),] <- NA
-  minAge <- min(ages, na.rm=TRUE)
-  maxAge <- max(ages, na.rm=TRUE)
-  ages[is.na(ages)] <- minAge
-  nAges <- maxAge-minAge+1
+    fleetTypes <- dat$fleetTypes    
+    ##ages <- do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
+    ages <- cbind(dat$minAgePerFleet, dat$maxAgePerFleet)    
+    ages[fleetTypes%in%c(3,5),] <- NA
+    minAge <- min(ages, na.rm=TRUE)
+    maxAge <- max(ages, na.rm=TRUE)
+    ages[is.na(ages)] <- minAge
+    nAges <- maxAge-minAge+1
   nFleets <- nrow(ages)
   ret <- list()
   ret$minAge <- minAge
@@ -97,6 +98,7 @@ defcon<-function(dat){
   tc <- tc*cs[names(cs)%in%names(tc)]
   pp <- tc/sum(tc)
   ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
+  ret$fbarRange <- ifelse(is.finite(ret$fbarRange), ret$fbarRange, c(ret$minAge,ret$maxAge))
   ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
   ret$fixVarToWeight <- 0

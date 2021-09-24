@@ -17,7 +17,8 @@ setup.sam.data(
   prop.f = NULL,
   prop.m = NULL,
   land.frac = NULL,
-  recapture = NULL
+  recapture = NULL,
+  keep.all.ages = FALSE
 )
 }
 \arguments{

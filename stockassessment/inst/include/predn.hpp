@@ -93,36 +93,36 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 
   int ii, usepar;
   switch(conf.stockRecruitmentModelCode){
-    case 0: // straight RW 
-      predN(0)=logN(0,i-1);
+  case 0: // straight RW 
+    predN(0)=logN(0,i-1);
     break;
-    case 3: //Constant mean
-      usepar=0;
-      for(ii=0; ii<conf.constRecBreaks.size(); ++ii){
-        if(dat.years(i)>conf.constRecBreaks(ii)){usepar++;}
-      }
-      predN(0)=par.rec_pars(usepar);
+  case 3: //Constant mean
+    usepar=0;
+    for(ii=0; ii<conf.constRecBreaks.size(); ++ii){
+      if(dat.years(i)>conf.constRecBreaks(ii)){usepar++;}
+    }
+    predN(0)=par.rec_pars(usepar);
     break;
   case 62: // AR1 (on log-scale)
     predN(0) = par.rec_pars(0) + (2.0 / (1.0 + exp(-par.rec_pars(1))) - 1.0) * (logN(0,i-1) - par.rec_pars(0));
     break;
   case 90: // Non-increasing spline on log R/S
     predN(0) = log(thisSSB) + ibcdspline(log(thisSSB),
-				     (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
-				     par.rec_pars);
+					 (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+					 par.rec_pars);
     break;
   case 91: // integrated spline on log R/S
     predN(0) = log(thisSSB) + ibcspline(log(thisSSB),
-				      (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
-				      par.rec_pars);
+					(vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+					par.rec_pars);
     break;
-   case 92: // spline on log R/S
-     predN(0) = log(thisSSB) + bcspline(log(thisSSB),
-				     (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
-				     par.rec_pars);
+  case 92: // spline on log R/S
+    predN(0) = log(thisSSB) + bcspline(log(thisSSB),
+				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+				       par.rec_pars);
     break;
-   default:
-      predN(0)=functionalStockRecruitment(thisSSB, par.rec_pars, conf.stockRecruitmentModelCode);
+  default:
+    predN(0)=functionalStockRecruitment(thisSSB, par.rec_pars, conf.stockRecruitmentModelCode);
     break;
   }
   

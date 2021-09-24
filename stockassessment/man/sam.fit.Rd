@@ -16,6 +16,7 @@ sam.fit(
   sim.condRE = TRUE,
   ignore.parm.uncertainty = FALSE,
   rel.tol = 1e-10,
+  penalizeSpline = FALSE,
   ...
 )
 }

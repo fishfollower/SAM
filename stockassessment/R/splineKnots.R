@@ -48,3 +48,37 @@ getSplineRecBreaks <- function(dat,
         return(findknot[[kk]]$fit)
     findknot[[kk]]$kn
 }
+
+
+fitPenalizedSpline <- function(dat,
+                               conf,
+                               par = defpar(dat,conf),
+                               srmc = 90,
+                               map = list(),
+                               maxKnots = 20,
+                               ...){
+    constRecBreaks <- numeric(0)
+    conf$stockRecruitmentModelCode <- 0
+    if(!is.null(attr(par,"what")) && attr(par,"what") == "Estimate"){
+        par$missing <- NULL
+        attr(par,"what") <- NULL
+    }
+    fitRW <- sam.fit(dat,conf,par, map = map, silent = TRUE)
+    cnfF0 <- fitRW$conf
+    cnfF0$stockRecruitmentModelCode <- srmc
+    ssb <- ssbtable(fitRW)[,1]
+    F0 <- local({xx <- list(); class(xx) <- "try-error";xx})
+    nKnots <- maxKnots
+    while(nKnots >= 3 && is(F0, "try-error")){
+        kn <- log(seq(min(ssb), max(ssb), len = nKnots))
+        cnfF0$constRecBreaks <- kn
+        dp0 <- defpar(fitRW$data,cnfF0)
+        for(nn in names(dp0))
+            if(class(dp0[[nn]]) == class(fitRW$pl[[nn]]) &&
+               length(dp0[[nn]]) == length(fitRW$pl[[nn]]))
+                dp0[[nn]][] <- fitRW$pl[[nn]][]          
+        F0 <- try({sam.fit(fitRW$data, cnfF0, dp0, map = map, penalizeSpline = TRUE, ...)})
+        nKnots <- nKnots - 1
+    }
+    return(F0)
+}
