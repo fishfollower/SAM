@@ -94,8 +94,11 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$meanLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityMean,na.rm=TRUE)+1)}
   ret$logSdLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityObsVar,na.rm=TRUE)+1)}
   ret$logXtraSd=if(nrow(conf$keyXtraSd)==0){numeric(0)}else{numeric(length(unique(conf$keyXtraSd[,4])))}
-  
 
+  ret$logAlphaASD<-numeric(length(unique(conf$keyAgeSampleData[!is.na(conf$keyAgeSampleData)])))+(-3)
+  ret$logBetaASD<-numeric(length(ret$logAlphaASD))
+  ret$logAgeASD<-if(length(ret$logAlphaASD)>0){as.numeric(log(tapply(dat$agesampledata[,"age"]+.5, INDEX=dat$agesampledata[,"sample"], mean)))}else{numeric(0)}
+  
   ## Reference points
   ret$logFScaleMSY <- 0
   ret$implicitFunctionDelta <- 0

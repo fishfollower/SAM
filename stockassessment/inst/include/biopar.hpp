@@ -149,3 +149,101 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
   }
   return Type(0);
 }
+
+template <class Type>
+Type nllASD(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
+  if(par.logAlphaASD.size()>0){
+    vector<Type> alpha=exp(par.logAlphaASD);
+    vector<Type> beta=exp(par.logBetaASD);
+    vector<Type> logAge=par.logAgeASD;
+    Type nll=0, m, sd;
+    matrix<int> obs=dat.agesampledata.matrix();
+    int mg=0, pg=conf.maxAge;//mg=obs(0,0), pg=obs(0,0);
+    //for(int i=1; i<obs.rows(); ++i){
+    //  if(obs(i,0)<mg){mg=obs(i,0);}
+    //  if(obs(i,0)>pg){pg=obs(i,0);}
+    //}
+    int aa,ss,dd;
+    for(int i=0; i<obs.rows(); ++i){
+      aa=obs(i,0);
+      ss=obs(i,1);
+      dd=obs(i,2);
+      m=logAge(ss);
+      sd=sqrt(log(alpha(0)*exp(m*(beta(0)-2))+1)); // corresponds to v=alpha*mu^beta on natural scale ()
+      std::cout<<sd<<" "<<i<<" "<<aa<<"  "<<alpha(0)<<" "<<beta(0)<<" "<<m<<" ";
+      if(pg==aa){
+        nll+= -log(Type(1)-pnorm(log(Type(aa)),m,sd));
+      }else{
+        if(mg==aa){
+          nll+= -log(pnorm(log(Type(aa)+Type(1.0)),m,sd));
+        }else{
+          nll+= -log(pnorm(log(Type(aa)+Type(1.0)),m,sd)-pnorm(log(Type(aa)) ,m,sd));
+        }
+      }
+      std::cout<<nll<<std::endl;
+    }
+  
+    for(int f=0; f<dat.noFleets; ++f){
+      if(!isNAINT(conf.keyAgeSampleData(f))){
+        matrix<Type> confusion=dat.ageConfusion(f); confusion.setZero();
+	if(conf.offsetAgeSampleData(f)>0){
+          for(int i=0; i<confusion.rows(); ++i){
+            for(int j=0; j<confusion.cols(); ++j){ 
+      	      m=log(Type(i)+dat.minAgePerFleet(f)+conf.offsetAgeSampleData(f));
+              sd=sqrt(log(alpha(0)*exp(m*(beta(0)-2))+1));
+  	      if(pg==(j+dat.minAgePerFleet(f))){
+                confusion(i,j)=1-pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd); 
+  	      }else{
+                if(mg==(j+dat.minAgePerFleet(f))){
+  	          confusion(i,j)=pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd);
+  	        }else{
+                  confusion(i,j)=pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd)-
+  	                       pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd);
+  	        }
+  	      }
+            }
+  	    Type rs=(confusion.row(i)).sum();
+  	    for(int j=0; j<confusion.cols(); ++j){
+              confusion(i,j)=confusion(i,j)/rs; 
+  	    }
+          }
+	}else{
+          int nsteps=12;
+	  Type dt=Type(1)/Type(nsteps);
+	  for(int k=0; k<nsteps; ++k){
+            for(int i=0; i<confusion.rows(); ++i){
+              for(int j=0; j<confusion.cols(); ++j){ 
+      	        m=log(Type(i)+dat.minAgePerFleet(f)+dt*k+0.5*dt);
+                sd=sqrt(log(alpha(0)*exp(m*(beta(0)-2))+1));
+  	        if(pg==(j+dat.minAgePerFleet(f))){
+                  confusion(i,j)+=dt*(1-pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd)); 
+  	        }else{
+                  if(mg==(j+dat.minAgePerFleet(f))){
+  	            confusion(i,j)+=dt*(pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd));
+  	          }else{
+                    confusion(i,j)+=dt*(pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd)-
+				       pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd));
+  	          }
+  	        }
+              }
+	    }
+	  }
+	}
+	for(int i=0; i<confusion.rows(); ++i){
+          for(int j=0; j<confusion.cols(); ++j){
+	    Type rs=(confusion.row(i)).sum();
+  	    for(int j=0; j<confusion.cols(); ++j){
+              confusion(i,j)=confusion(i,j)/rs; 
+  	    }
+	  }
+	}
+	std::cout<<confusion<<std::endl;
+        dat.ageConfusion(f)=confusion;
+      }
+    }
+    //ADREPORT_F(logNM,of);
+    return nll;
+  }else{
+    return Type(0);
+  }
+}

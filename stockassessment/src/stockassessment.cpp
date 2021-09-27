@@ -64,7 +64,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
-  DATA_STRUCT(ageConfusion,listMatrixFromR); dataset.ageConfusion=ageConfusion; 
+  DATA_STRUCT(ageConfusion,listMatrixFromR); dataset.ageConfusion=ageConfusion;
+  DATA_IARRAY(agesampledata); dataset.agesampledata=agesampledata;   
   DATA_STRUCT(forecast, forecastSet); dataset.forecast = forecast;
   DATA_STRUCT(referencepoint, referencepointSet); dataset.referencepoint = referencepoint;
     
@@ -108,6 +109,8 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
+  DATA_IVECTOR(keyAgeSampleData); confset.keyAgeSampleData=keyAgeSampleData; 
+  DATA_VECTOR(offsetAgeSampleData); vector<double> offsetAgeSampleDataDouble(offsetAgeSampleData.size()); for(int i=0; i<offsetAgeSampleData.size(); ++i){offsetAgeSampleDataDouble(i)=asDouble(offsetAgeSampleData(i));} confset.offsetAgeSampleData=offsetAgeSampleDataDouble; 
   
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
@@ -145,6 +148,9 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(meanLogNM); paraset.meanLogNM=meanLogNM;
   PARAMETER_VECTOR(logSdLogNM); paraset.logSdLogNM=logSdLogNM;
   PARAMETER_VECTOR(logXtraSd); paraset.logXtraSd=logXtraSd;
+  PARAMETER_VECTOR(logAlphaASD); paraset.logAlphaASD=logAlphaASD;
+  PARAMETER_VECTOR(logBetaASD); paraset.logBetaASD=logBetaASD;
+  PARAMETER_VECTOR(logAgeASD); paraset.logAgeASD=logAgeASD;  
 
   // Forecast FMSY
   PARAMETER(logFScaleMSY); paraset.logFScaleMSY = logFScaleMSY;
@@ -191,11 +197,14 @@ Type objective_function<Type>::operator() ()
   ans += nllMO(logitMO, dataset, confset, paraset, this);
   ans += nllNM(logNM, dataset, confset, paraset, this);      
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
+  std::cout<<ans<<std::endl;  
+  ans += nllASD(dataset, confset, paraset, this);
+  std::cout<<ans<<std::endl;
   forecastSimulation(dataset, confset, paraset, logN, logF, this);
-
+  std::cout<<ans<<std::endl;
   ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
-
+  std::cout<<ans<<std::endl;
   ans += nllReferencepoints(dataset, confset, paraset, logN, logF, this);
-        
+  std::cout<<ans<<std::endl;        
   return ans;
 }

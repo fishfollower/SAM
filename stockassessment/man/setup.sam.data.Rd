@@ -17,7 +17,8 @@ setup.sam.data(
   prop.f = NULL,
   prop.m = NULL,
   land.frac = NULL,
-  recapture = NULL
+  recapture = NULL,
+  agesampledata = NULL
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ setup.sam.data(
 \item{land.frac}{...}
 
 \item{recapture}{...}
+
+\item{agesampledata}{A data frame with 3 columns age, sample, and data corresponding to an age reading study where an age was determined for a sample within a data set. If only one dataset is available, then the data coulmn can just be the same integer in all rows.}
 }
 \description{
 Combine the data sources to SAM readable object

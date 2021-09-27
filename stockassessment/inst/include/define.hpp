@@ -324,7 +324,8 @@ struct dataSet{
   array<Type> propF;
   array<Type> propM;
   listMatrixFromR<Type> corList;
-  listMatrixFromR<Type> ageConfusion;  
+  listMatrixFromR<Type> ageConfusion;
+  array<int> agesampledata;
   forecastSet<Type> forecast;
   referencepointSet<Type> referencepoint;
 
@@ -356,7 +357,8 @@ struct dataSet{
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
     corList = listMatrixFromR<Type>(getListElement(x,"corList"));
-    ageConfusion = listMatrixFromR<Type>(getListElement(x,"ageConfusion"));    
+    ageConfusion = listMatrixFromR<Type>(getListElement(x,"ageConfusion"));
+    agesampledata = asArray<int>(getListElement(x,"agesampledata"));
     forecast = forecastSet<Type>(getListElement(x,"forecast"));
     referencepoint = referencepointSet<Type>(getListElement(x,"referencepoint"));
   };
@@ -387,7 +389,8 @@ struct dataSet{
     propF = rhs.propF;
     propM = rhs.propM;
     corList = rhs.corList;
-    ageConfusion = rhs.AgeConfusion; 
+    ageConfusion = rhs.AgeConfusion;
+    agesampledata = rhs.agesampledata;
     forecast = rhs.forecast;
     referencepoint = rhs.referencepoint;
     return *this;
@@ -431,7 +434,8 @@ struct dataSet{
     d.propM.initZeroArray(propM.dim);
     d.propM = propM.template cast<T>();
     d.corList = corList.template cast<T>();
-    d.ageConfusion = ageConfusion.template cast<T>();    
+    d.ageConfusion = ageConfusion.template cast<T>();
+    d.agesampledata=agesampledata;//<int>
     d.forecast = forecast.template cast<T>();
     d.referencepoint = referencepoint.template cast<T>();
     return d;    
@@ -524,6 +528,8 @@ struct confSet{
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
   matrix<int> keyXtraSd;
+  vector<int> keyAgeSampleData;
+  vector<double> offsetAgeSampleData;
   confSet() {};
 
   confSet(SEXP x){
@@ -567,7 +573,8 @@ struct confSet{
     keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean"));
     keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
     keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
-
+    keyAgeSampleData = asVector<int>(getListElement(x,"keyAgeSampleData"));
+    offsetAgeSampleData = asVector<double>(getListElement(x,"offsetAgeSampleData"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -610,7 +617,8 @@ struct confSet{
     keyMortalityMean = rhs.keyMortalityMean;
     keyMortalityObsVar = rhs.keyMortalityObsVar;
     keyXtraSd = rhs.keyXtraSd;
-
+    keyAgeSampleData = rhs.keyAgeSampleData;
+    offsetAgeSampleData = rhs.offsetAgeSampleData;
     return *this;
   };
 };
@@ -661,6 +669,9 @@ struct paraSet{
   vector<Type> meanLogNM; 
   vector<Type> logSdLogNM;
   vector<Type> logXtraSd;
+  vector<Type> logAlphaASD;
+  vector<Type> logBetaASD;
+  vector<Type> logAgeASD;
 
   paraSet() {};
   
@@ -708,6 +719,9 @@ struct paraSet{
     meanLogNM  = asVector<Type>(getListElement(x,"meanLogNM")); 
     logSdLogNM = asVector<Type>(getListElement(x,"logSdLogNM"));
     logXtraSd = asVector<Type>(getListElement(x,"logXtraSd"));
+    logAlphaASD = asVector<Type>(getListElement(x,"logAlphaASD"));
+    logBetaASD = asVector<Type>(getListElement(x,"logBetaASD"));
+    logAgeASD = asVector<Type>(getListElement(x,"logAgeASD"));    
   }
 
   paraSet<Type>& operator=(const paraSet<Type>& rhs) {
@@ -754,6 +768,9 @@ struct paraSet{
     meanLogNM = rhs.meanLogNM;
     logSdLogNM = rhs.logSdLogNM;
     logXtraSd = rhs.logXtraSd;
+    logAlphaASD = rhs.logAlphaASD;
+    logBetaASD = rhs.logBetaASD;
+    logAgeASD = rhs.logAgeASD;
     return *this;
 
   }
@@ -803,7 +820,10 @@ struct paraSet{
     d.logSdProcLogNM = logSdProcLogNM.template cast<T>();
     d.meanLogNM = meanLogNM.template cast<T>();
     d.logSdLogNM = logSdLogNM.template cast<T>(); 
-    d.logXtraSd = logXtraSd.template cast<T>(); 
+    d.logXtraSd = logXtraSd.template cast<T>();
+    d.logAlphaASD = logAlphaASD.template cast<T>();
+    d.logBetaASD = logBetaASD.template cast<T>();
+    d.logAgeASD = logAgeASD.template cast<T>(); 
     return d;    
   }  
 };

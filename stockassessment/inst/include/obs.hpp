@@ -267,13 +267,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }
               }
 	      
-	      //std::cout<<predObs.segment(idxfrom,idxlength)<<std::endl;
-	      //std::cout<<dat.ageConfusion(f)<<std::endl;
-	      //std::cout<<std::endl;
 	      vv=exp(predObs.segment(idxfrom,idxlength));
 	      mm=dat.ageConfusion(f).transpose();
 	      currentPred=log(mm*vv);
-	      //currentPred=predObs.segment(idxfrom,idxlength);
+	      //std::cout<<"--------------------------------------"<<std::endl;
+	      //std::cout<<"M:\n"<<mm<<std::endl;
+	      //std::cout<<"v:\n"<<vv<<std::endl;
+	      //std::cout<<"log(Mv):\n"<<currentPred<<std::endl;
+	      //std::cout<<"--------------------------------------"<<std::endl;
+
               if(isNAINT(dat.idxCor(f,y))){
       	        nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-currentPred)/sqrtW,keep.segment(idxfrom,idxlength));
                 nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();

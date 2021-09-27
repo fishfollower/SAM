@@ -230,13 +230,14 @@ read.ices<-function(filen){
 ##' @param prop.m ...
 ##' @param land.frac ...
 ##' @param recapture ...
+##' @param agesampledata A data frame with 3 columns age, sample, and data corresponding to an age reading study where an age was determined for a sample within a data set. If only one dataset is available, then the data coulmn can just be the same integer in all rows.      
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, agesampledata=NULL){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -357,6 +358,20 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     time<-c(time,0)
     name<-c(name,"Recaptures")
   }
+
+  if(!is.null(agesampledata)){
+    agesampledata<-as.data.frame(agesampledata)      
+    if(!isTRUE(all.equal(colnames(agesampledata), c("age", "sample", "data")))){
+      stop('agesampledata must have exactly 3 columns: "age", "sample", and "data"')
+    }
+    if(isTRUE(all.equal(agesampledata$age, as.integer(agesampledata$age))) & isTRUE(all.equal(agesampledata$data, as.integer(agesampledata$data)))){
+      agesampledata$age<-as.integer(agesampledata$age)
+      agesampledata$sample<-as.integer(as.factor(agesampledata$sample))-1
+      agesampledata$data<-as.integer(agesampledata$data)
+    }else{
+      stop('"age" and "data" must be coded with integer values in "agesampledata"')
+    }
+  }      
   dat<-dat[complete.cases(dat[,1:3]),]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
@@ -413,7 +428,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     propF=attr(dat,'prop.f'),
     propM=attr(dat,'prop.m'),
     corList=corList,
-    ageConfusion=ageConfusion
+    ageConfusion=ageConfusion,
+    agesampledata=as.matrix(agesampledata)
   )
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)
