@@ -13,16 +13,19 @@ write.ices <- function(x, fileout, ...){
     write(t(x),fileout,ncolumns=ncol(x),append=TRUE,sep="  \t",...)
 }
 
-##' Extract a fleet from a fitted object 
+##' Extract a fleet observed or predicted value from a fitted object 
 ##' @param fit A fitted object as returned from sam.fit
-##' @param fleet The number of the fleet 
+##' @param fleet The fleet number
+##' @param pred Should it be predicted value, default is observed
+##' @details Extract for example the observed or predicted catch at age of fleet "fleet"
+##' @return A matrix of observed or predicted values for fleet "fleet"
 ##' @export
-getFleet <- function(fit, fleet){
+getFleet <- function(fit, fleet, pred="FALSE"){
   fidx <- fit$data$aux[,"fleet"]==fleet
   aux <- fit$data$aux[fidx,]
-  logobs <- fit$data$logobs[fidx ]
+  if(pred) logout <- fit$rep$predObs[fidx] else logout <-fit$data$logobs[fidx]
   .goget <- function(y, a) {
-    ret <- exp(logobs[aux[, "year"] == y & aux[, "age"] == a])
+    ret <- exp(logout[aux[, "year"] == y & aux[, "age"] == a])
     ifelse(length(ret) == 0, 0, ret)
   }
   yr <- min(aux[,"year"]):max(aux[,"year"])
