@@ -851,7 +851,7 @@ srplot<-function(fit, ...){
 ##' @param textcol color of years on plot
 ##' @param add false if a new plot should be created
 ##' @export
-srplot.sam <- function(fit,textcol="red",add=FALSE, ...){
+srplot.sam <- function(fit, textcol="red", years=TRUE, linetype="l", linecol="black", xlim, ylim, add=FALSE, ...){
   X <- summary(fit)
   n<-nrow(X)
   lag <- fit$conf$minAge
@@ -863,11 +863,13 @@ srplot.sam <- function(fit,textcol="red",add=FALSE, ...){
   Snam<-colnames(X)[4]
   y<-rownames(X)
   if(add){
-      lines(S,R)
+    lines(S,R)
   }else{
-      plot(S,R, xlab=Snam, ylab=Rnam, type="l", xlim=range(0,S), ylim=range(0,R), ...)
+    if (missing(xlim)) xlim=range(0,S)
+    if (missing(ylim)) ylim=range(0,R)
+    plot(S,R, xlab=Snam, ylab=Rnam, type=linetype, col=linecol, xlim=xlim, ylim=ylim, ...)
   }
-  text(S,R, labels=y[idxR], cex=.7, col=textcol )
+  if (years) text(S,R, labels=y[idxR], cex=.7, col=textcol )
 }
 
 ##' Plots fit to data 
