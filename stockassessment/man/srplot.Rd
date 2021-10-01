@@ -7,7 +7,17 @@
 \usage{
 srplot(fit, ...)
 
-\method{srplot}{sam}(fit, textcol = "red", add = FALSE, ...)
+\method{srplot}{sam}(
+  fit,
+  textcol = "red",
+  years = TRUE,
+  linetype = "l",
+  linecol = "black",
+  xlim,
+  ylim,
+  add = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
@@ -15,6 +25,16 @@ srplot(fit, ...)
 \item{...}{extra arguments to plot}
 
 \item{textcol}{color of years on plot}
+
+\item{years}{the plotting symbols are the years}
+
+\item{linetype}{type for the plot (default line)}
+
+\item{linecol}{color of lines between points}
+
+\item{xlim}{bounds for x-axis}
+
+\item{ylim}{bounds for y-axis}
 
 \item{add}{false if a new plot should be created}
 }

@@ -851,7 +851,7 @@ srplot<-function(fit, ...){
 ##' @param textcol color of years on plot
 ##' @param years the plotting symbols are the years
 ##' @param linetype type for the plot (default line)
-##' @param linecolor color of lines between points
+##' @param linecol color of lines between points
 ##' @param xlim bounds for x-axis
 ##' @param ylim bounds for y-axis
 ##' @param add false if a new plot should be created

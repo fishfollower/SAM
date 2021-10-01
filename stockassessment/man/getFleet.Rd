@@ -2,15 +2,23 @@
 % Please edit documentation in R/writing.R
 \name{getFleet}
 \alias{getFleet}
-\title{Extract a fleet from a fitted object}
+\title{Extract a fleet observed or predicted value from a fitted object}
 \usage{
-getFleet(fit, fleet)
+getFleet(fit, fleet, pred = "FALSE")
 }
 \arguments{
 \item{fit}{A fitted object as returned from sam.fit}
 
-\item{fleet}{The number of the fleet}
+\item{fleet}{The fleet number}
+
+\item{pred}{Should it be predicted value, default is observed}
+}
+\value{
+A matrix of observed or predicted values for fleet "fleet"
 }
 \description{
-Extract a fleet from a fitted object
+Extract a fleet observed or predicted value from a fitted object
+}
+\details{
+Extract for example the observed or predicted catch at age of fleet "fleet"
 }
