@@ -38,3 +38,25 @@ bibentry(bibtype = "Article",
         "ICES Journal of Marine Science 73, 1788-1797.",
         "doi:10.1093/icesjms/fsw046")
 )
+
+
+bibentry(bibtype = "Article",
+  title        = "Model-based estimates of reference points in an age-based state-space stock assessment model",
+  author       = c(person(given = c("Christoffer","Moesgaard"),
+                          family = "Albertsen",
+                          email = "cmoe@aqua.dtu.dk"),
+                   person(given = c("Vanessa"),
+                          family = "Trijoulet")),
+  journal      = "Fisheries Research",
+  year         = "2020",
+  volume       = "230",
+  pages        = "105618",
+  doi          = "10.1016/j.fishres.2020.105618",
+
+  header       = "To cite the reference point estimation method use:",
+  textVersion  =
+  paste("Albertsen, C. M. and Trijoulet, V. (2020).",
+        "Model-based estimates of reference points in an age-based state-space stock assessment model.",
+        "Fisheries Research, 230, 105618.",
+        "doi:10.1016/j.fishres.2020.105618")
+)
