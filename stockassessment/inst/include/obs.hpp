@@ -221,6 +221,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> fbarL = landFbarFun(dat, conf, logF);
   vector<Type> logfbarL = log(fbarL);
 
+  vector<Type> logLifeExpectancy = lifeexpectancy(dat, conf, logF, true);
+
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logtsb, logfsb, logCatch, logLand);
 
   vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
@@ -429,6 +431,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logCatch,of);
   ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
+  ADREPORT_F(logLifeExpectancy,of);
 
   // Additional forecast quantities
   if(dat.forecast.nYears > 0){

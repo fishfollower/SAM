@@ -21,6 +21,24 @@ tableit.sam <- function (fit, what, x=fit$data$years, trans=function(x)x,...){
    return(ret)
 }
 
+
+##' SSB table 
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+lifeexpectancytable <- function(fit, ...){
+    UseMethod("lifeexpectancytable")
+}
+
+##' @rdname lifeexpectancytable
+##' @method lifeexpectancytable default
+##' @export
+lifeexpectancytable.default <- function(fit, ...){
+    ret<-tableit(fit, "logLifeExpectancy", trans=exp,...)
+    return(ret)
+}
+
 ##' SSB table 
 ##' @param  fit ...
 ##' @param ... extra arguments not currently used

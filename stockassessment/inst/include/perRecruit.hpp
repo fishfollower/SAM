@@ -883,6 +883,8 @@ struct PERREC_t {
   Type logRe;
   Type logYe;
   Type dSR0;
+  Type logLifeExpectancy;
+  Type logYearsLost;
 };
 
 
@@ -959,23 +961,25 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
 
  
   // Calculate yield
-  // vector<T> logcat(nYears);
-  // logcat.setConstant(R_NegInf);
-  // switch(newDat.referencepoint.catchType){
-  // case referencepointSet<T>::totalCatch:
-  //   logcat = catchFun(newDat, newConf, logN, logF, true);
-  //   break;
-  // case referencepointSet<T>::landings:
-  //   logcat = log(landFun(newDat, newConf, logN, logF));
-  //   break;
-  // case referencepointSet<T>::discard:
-  //   logcat = log(disFun(newDat, newConf, logN, logF));
-  //   break;
-  // default:
-  //   Rf_error("Unknown reference point catch type.");
-  //   break;
-  // }
-  //T logYPR = logspace_sum(logcat); //log(sum(cat) + (T)exp(-12.0));//
+ #ifdef TMBAD_FRAMEWORK
+ vector<T> logcat(nYears);
+  logcat.setConstant(R_NegInf);
+  switch(newDat.referencepoint.catchType){
+  case referencepointSet<T>::totalCatch:
+    logcat = catchFun(newDat, newConf, logN, logF, true);
+    break;
+  case referencepointSet<T>::landings:
+    logcat = log(landFun(newDat, newConf, logN, logF));
+    break;
+  case referencepointSet<T>::discard:
+    logcat = log(disFun(newDat, newConf, logN, logF));
+    break;
+  default:
+    Rf_error("Unknown reference point catch type.");
+    break;
+  }
+  T logYPR = logspace_sum(logcat); //log(sum(cat) + (T)exp(-12.0));//
+#else
   vector<T> cat(nYears);
   cat.setConstant(R_NegInf);
   switch(newDat.referencepoint.catchType){
@@ -993,14 +997,18 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
     break;
   }
   T logYPR = log(sum(cat) + (T)exp(-12.0));//
-  
+#endif
+
+  T logLifeExpectancy0 = lifeexpectancyi(newDat, newConf, logF, 0, true, false);
+  T logLifeExpectancy = lifeexpectancyi(newDat, newConf, logF, 0, true);
+   
   // Calculate spawners
   //vector<T> logssb = ssbFun(newDat, newConf, logN, logF, true);
   vector<T> ssb = ssbFun(newDat, newConf, logN, logF);
   T logSPR = log(softmax(sum(ssb),(T)SAM_Zero,(T)1000.0)); //log(sum(ssb)); log(sum(ssb) + (T)exp(-12.0));
   //T logSPR = logspace_sum(logssb);
   T lambda = exp(logSPR); // sum(ssb);
-
+  
   if(conf.stockRecruitmentModelCode == 0){//  ||
      // conf.stockRecruitmentModelCode == 3){
     PERREC_t<T> res = {logFbar, // logFbar
@@ -1009,7 +1017,10 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
 		       R_NaReal,	   // logSe
 		       R_NaReal,		 // logRe
 		       R_NaReal,// logYe
-		       R_NaReal}; // dSR0
+		       R_NaReal,// dSR0
+		       logLifeExpectancy, // logLifeExpectancy
+		       log(softmax(exp(logLifeExpectancy0) - exp(logLifeExpectancy), (T)exp(SAM_NegInf), (T)1000.0)) // logYearsLost
+    }; 
     return res;
   }
   
@@ -1152,7 +1163,10 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
 		     logSe,	// logSe
 		     logRe,	// logRe
 		     logYe,	// logYe
-		     dsr0};	// DSR0
+		     dsr0,
+		     logLifeExpectancy, // logLifeExpectancy
+		     log(softmax(exp(logLifeExpectancy0) - exp(logLifeExpectancy), (T)exp(SAM_NegInf), (T)1000.0)) // logYearsLost
+  };	// DSR0
 
   return res;
 }
@@ -1224,6 +1238,7 @@ struct REFERENCE_POINTS {
   Type logFsq;			// Status quo
   Type logF0;			// "No" fishing
   Type logFmsy; 		// Maximizes yield
+  Type logFmypyl;		// Maximizes yield per year lost
   Type logFmax;			// Maximizes yield per recruit
   Type logF01;			// F such that YPR'(0) = 0.1 * YPR'(F)
   Type logFcrash;		// F such that 1/SPR(f) = SR'(0) (i.e. stock crashes [with compensatory recruitment] if slope of spawner-per-recruit in origin is less than slope of stock-recruitment model in origin)
@@ -1238,6 +1253,7 @@ struct REFERENCE_POINTS {
   Type logBsq;
   Type logB0;
   Type logBmsy;
+  Type logBmypyl;
   Type logBmax;
   Type logB01;
   Type logBcrash;
@@ -1251,6 +1267,7 @@ struct REFERENCE_POINTS {
   Type logRsq;
   Type logR0;
   Type logRmsy;
+  Type logRmypyl;
   Type logRmax;
   Type logR01;
   Type logRcrash;
@@ -1264,6 +1281,7 @@ struct REFERENCE_POINTS {
   Type logYsq;
   Type logY0;
   Type logYmsy;
+  Type logYmypyl;
   Type logYmax;
   Type logY01;
   Type logYcrash;
@@ -1275,6 +1293,7 @@ struct REFERENCE_POINTS {
   Type logYPRsq;
   Type logYPR0;
   Type logYPRmsy;
+  Type logYPRmypyl;
   Type logYPRmax;
   Type logYPR01;
   Type logYPRcrash;
@@ -1286,6 +1305,7 @@ struct REFERENCE_POINTS {
   Type logSPRsq;
   Type logSPR0;
   Type logSPRmsy;
+  Type logSPRmypyl;
   Type logSPRmax;
   Type logSPR01;
   Type logSPRcrash;
@@ -1357,6 +1377,24 @@ struct REFERENCE_POINTS {
     logYPR0 = log(YPR(exp(logF0)));
     logSPR0 = log(SPR(exp(logF0)));
 
+ // Calculate actual F values
+    if(CppAD::Variable(par.logScaleFmypyl)){
+      logFmypyl = par.logScaleFmypyl + logFsq; // logFsq + par.logScaleFmsy;
+      logBmypyl = log(Se(exp(logFmypyl)));
+      logRmypyl = log(Re(exp(logFmypyl)));
+      logYmypyl = log(yield(exp(logFmypyl)));
+      logYPRmypyl = log(YPR(exp(logFmypyl)));
+      logSPRmypyl = log(SPR(exp(logFmypyl)));
+    }else{
+      logFmypyl = R_NaReal;// R_NaReal;
+      logBmypyl = R_NaReal;
+      logRmypyl = R_NaReal;
+      logYmypyl = R_NaReal;
+      logYPRmypyl = R_NaReal;
+      logSPRmypyl = R_NaReal;
+    }
+  
+    
     // Calculate actual F values
     if(CppAD::Variable(par.logScaleFmsy)){
       logFmsy = par.logScaleFmsy + logFsq; // logFsq + par.logScaleFmsy;
@@ -1373,7 +1411,7 @@ struct REFERENCE_POINTS {
       logYPRmsy = R_NaReal;
       logSPRmsy = R_NaReal;
     }
-  
+    
     // MSY range lower
     logFmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
     logBmsyRange = matrix<Type>(par.logScaleFmsyRange.rows(),par.logScaleFmsyRange.cols());
@@ -1677,6 +1715,22 @@ struct REFERENCE_POINTS {
     PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
     return exp(r.logYe);
   }
+  
+  Type yearsLost(Type Fbar){
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    return exp(r.logYearsLost);
+  }
+
+  Type logYearsLost(Type Fbar){
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    return r.logYearsLost;
+  }
+
+  Type lifeexpectancy(Type Fbar){
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    return exp(r.logLifeExpectancy);
+  }
+
 
   template<class T>
   T SR(T ssb){
@@ -1771,6 +1825,12 @@ struct REFERENCE_POINTS {
       }
     }
 
+    if(CppAD::Variable(par.logScaleFmypyl)){
+      Type tmp = log(yield(exp(logFmypyl))) - logYearsLost(exp(logFmypyl));
+      nll -= log(tmp);
+    }
+ 
+    
     if(CppAD::Variable(par.logScaleFmax)){
       nll -= logYPR(logFmax);
     }
@@ -1789,7 +1849,7 @@ struct REFERENCE_POINTS {
       // Type tmp1 = Se(exp(logFext));
       // Type tmp2 = exp(logFext);
       // nll += tmp1 * tmp1 + tmp2 * tmp2;
-      Type tmp = Se(exp(logFext)) - Se(exp(logFext - 0.001));
+      Type tmp = Se(exp(logFext)) - Se(exp(logFext - 0.01));
       nll += tmp;
     }
     
@@ -1823,18 +1883,24 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 
   if(dat.referencepoint.Fsequence.size() > 0){
     vector<Type> Fseq = dat.referencepoint.Fsequence;
-    vector<Type> logYPR(Fseq.size());
-    logYPR.setZero();
-    vector<Type> logSPR(Fseq.size());
-    logSPR.setZero();
-    vector<Type> logSe(Fseq.size());
-    logSe.setZero();
-    vector<Type> logYe(Fseq.size());
-    logYe.setZero();
-    vector<Type> logRe(Fseq.size());
-    logRe.setZero();
-    Type dSR0 = 0.0;
+    vector<Type> refpointseq_logYPR(Fseq.size());
+    refpointseq_logYPR.setZero();
+    vector<Type> refpointseq_logSPR(Fseq.size());
+    refpointseq_logSPR.setZero();
+    vector<Type> refpointseq_logSe(Fseq.size());
+    refpointseq_logSe.setZero();
+    vector<Type> refpointseq_logYe(Fseq.size());
+    refpointseq_logYe.setZero();
+    vector<Type> refpointseq_logRe(Fseq.size());
+    refpointseq_logRe.setZero();
+    Type refpointseq_dSR0 = 0.0;
 
+    vector<Type> refpointseq_logYearsLost(Fseq.size());
+    refpointseq_logYearsLost.setZero();
+    vector<Type> refpointseq_logLifeExpectancy(Fseq.size());
+    refpointseq_logLifeExpectancy.setZero();
+
+    
     for(int i = 0; i < Fseq.size(); ++i){
       PERREC_t<Type> v = perRecruit<Type, Type>(log(Fseq(i)),
 						referencepoint.dat,
@@ -1843,28 +1909,34 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 						referencepoint.logSel,
 						referencepoint.aveYears,
 						referencepoint.nYears);
-      logYPR(i) = v.logYPR;
-      logSPR(i) = v.logSPR;
-      logSe(i) = v.logSe;
-      logYe(i) = v.logYe;
-      logRe(i) = v.logRe;
+      refpointseq_logYPR(i) = v.logYPR;
+      refpointseq_logSPR(i) = v.logSPR;
+      refpointseq_logSe(i) = v.logSe;
+      refpointseq_logYe(i) = v.logYe;
+      refpointseq_logRe(i) = v.logRe;
+      refpointseq_logYearsLost(i) = v.logYearsLost;
+      refpointseq_logLifeExpectancy(i) = v.logLifeExpectancy;
       if(i == 0)
-	dSR0 = v.dSR0;
+	refpointseq_dSR0 = v.dSR0;
 	
     }
 
-    REPORT_F(logYPR, of);
-    REPORT_F(logSPR, of);
-    REPORT_F(logSe, of);
-    REPORT_F(logYe, of);
-    REPORT_F(logRe, of);
-    REPORT_F(dSR0, of);
-    ADREPORT_F(logYPR, of);
-    ADREPORT_F(logSPR, of);
-    ADREPORT_F(logSe, of);
-    ADREPORT_F(logYe, of);
-    ADREPORT_F(logRe, of);
-    ADREPORT_F(dSR0, of);
+    REPORT_F(refpointseq_logYPR, of);
+    REPORT_F(refpointseq_logSPR, of);
+    REPORT_F(refpointseq_logSe, of);
+    REPORT_F(refpointseq_logYe, of);
+    REPORT_F(refpointseq_logRe, of);
+    REPORT_F(refpointseq_dSR0, of);
+    REPORT_F(refpointseq_logYearsLost, of);
+    REPORT_F(refpointseq_logLifeExpectancy, of);
+    ADREPORT_F(refpointseq_logYPR, of);
+    ADREPORT_F(refpointseq_logSPR, of);
+    ADREPORT_F(refpointseq_logSe, of);
+    ADREPORT_F(refpointseq_logYe, of);
+    ADREPORT_F(refpointseq_logRe, of);
+    ADREPORT_F(refpointseq_dSR0, of);
+    ADREPORT_F(refpointseq_logYearsLost, of);
+    ADREPORT_F(refpointseq_logLifeExpectancy, of);
   }
 
   
@@ -1881,7 +1953,7 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logY0,of);
   ADREPORT_F(referencepoint.logYPR0,of);
   ADREPORT_F(referencepoint.logSPR0,of);
-  
+
   ADREPORT_F(referencepoint.logFmsy,of);
   ADREPORT_F(referencepoint.logBmsy,of);
   ADREPORT_F(referencepoint.logRmsy,of);
@@ -1889,6 +1961,7 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logYPRmsy,of);
   ADREPORT_F(referencepoint.logSPRmsy,of);
 
+  
   ADREPORT_F(referencepoint.logFmsyRange,of);
   ADREPORT_F(referencepoint.logBmsyRange,of);
   ADREPORT_F(referencepoint.logRmsyRange,of);
@@ -1938,6 +2011,14 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logYlim,of);
   ADREPORT_F(referencepoint.logYPRlim,of);
   ADREPORT_F(referencepoint.logSPRlim,of);
+
+  ADREPORT_F(referencepoint.logFmypyl,of);
+  ADREPORT_F(referencepoint.logBmypyl,of);
+  ADREPORT_F(referencepoint.logRmypyl,of);
+  ADREPORT_F(referencepoint.logYmypyl,of);
+  ADREPORT_F(referencepoint.logYPRmypyl,of);
+  ADREPORT_F(referencepoint.logSPRmypyl,of);
+
 
   // Fbar relative to (last year) reference points
   // vector<Type> logfbar = fbarFun(conf, logF, true);

@@ -9,8 +9,9 @@ Type nllSplinePenalty(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, obj
     if(conf.stockRecruitmentModelCode == 90 ||
        conf.stockRecruitmentModelCode == 91 ||
        conf.stockRecruitmentModelCode == 92){
-      for(int i = 0; i < par.rec_pars.size() - 1; ++i)
-	ans -= dnorm(par.rec_pars(i), Type(0.0), exp(par.splinePenalty), true);
+      ans -= dnorm(par.rec_pars(0), Type(0.0), exp(par.splinePenalty), true);
+      for(int i = 1; i < par.rec_pars.size() - 1; ++i)
+	ans -= dnorm(par.rec_pars(i), par.rec_pars(i-1), exp(par.splinePenalty), true);
       ans -= dnorm(par.rec_pars(par.rec_pars.size()-1), Type(0.0), Type(10.0), true);
     }
   }

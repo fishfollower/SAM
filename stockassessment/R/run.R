@@ -84,6 +84,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   mapRP <- list(logFScaleMSY = factor(NA),
                 implicitFunctionDelta = factor(NA),
                 logScaleFmsy = factor(NA),
+                logScaleFmypyl = factor(NA),
                 logScaleFmax = factor(NA),
                 logScaleF01 = factor(NA),
                 logScaleFcrash = factor(NA),
