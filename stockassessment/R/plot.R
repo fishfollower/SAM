@@ -464,6 +464,42 @@ ssbplot.hcr <- function(fit,...){
     addforecast(fit,"ssb")
 }
 
+
+##' SAM life expectancy plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of life expectancy 
+##' @export
+lifeexpectancyplot<-function(fit, ...){
+    UseMethod("lifeexpectancyplot")
+}
+##' @rdname lifeexpectancyplot
+##' @method lifeexpectancyplot default
+##' @export
+lifeexpectancyplot.default <- function(fit,...){
+    plotit(fit, "logLifeExpectancy", ylab="Life expectancy", xlab="Cohort", trans=exp,...)
+}
+##' @rdname lifeexpectancyplot
+##' @method lifeexpectancyplot samforecast
+##' @export
+lifeexpectancyplot.samforecast <- function(fit,...){
+    plotit(fit, "logLifeExpectancy", ylab="Life expectancy", xlab="Cohort", trans=exp,...)
+    addforecast(fit,"logLifeExpectancy")
+}
+
+##' @rdname lifeexpectancyplot
+##' @method lifeexpectancyplot hcr
+##' @export
+lifeexpectancyplot.hcr <- function(fit,...){
+    plotit(fit, "logLifeExpectancy", ylab="Life expectancy", xlab="Cohort", trans=exp,...)
+    addforecast(fit,"logLifeExpectancy")
+}
+
+
+
 ##' SAM TSB plot 
 ##' @param fit the object returned from sam.fit
 ##' @param ... extra arguments transferred to plot including the following: \cr
