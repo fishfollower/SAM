@@ -99,6 +99,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logFScaleMSY <- 0
   ret$implicitFunctionDelta <- 0
   ret$logScaleFmsy <- 0
+  ret$logScaleFmypyl <- 0
   ret$logScaleFmax <- 0
   ret$logScaleF01 <- 0
   ret$logScaleFcrash <- 0
