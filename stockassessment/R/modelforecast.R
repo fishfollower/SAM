@@ -269,7 +269,7 @@ modelforecast.sam <- function(fit,
         attr(simlist, "fit")<-fit
         ## Similar to stockassessment::forecast
         collect <- function(x){
-            quan <- quantile(x, c(.50,.025,.975, na.rm = TRUE))
+            quan <- quantile(x, c(.50,.025,.975), na.rm = TRUE)
             c(median=quan[1], low=quan[2], high=quan[3])
         }
 
