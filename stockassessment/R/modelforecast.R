@@ -226,10 +226,20 @@ modelforecast.sam <- function(fit,
         }
         names(est) <- gsub("(^.*[lL]ast)(Log[NF]$)","\\2",names(est))
         i0 <- which(fit$data$year == year.base)
-        doSim <- function(){            
-            sim0 <- rmvnorm(1, mu=est, Sigma=cov * as.numeric(resampleFirst))
+        plMap <- pl
+        map <- fit$obj$env$map
+        with.map <- intersect(names(plMap), names(map))
+        applyMap <- function(par.name) {
+            tapply(plMap[[par.name]], map[[par.name]], mean)
+        }
+        plMap[with.map] <- sapply(with.map, applyMap, simplify = FALSE)         
+        doSim <- function(){
+            sim0 <- est 
+            if(resampleFirst)
+                sim0 <- rmvnorm(1, mu=est, Sigma=cov)
             estList0 <- split(as.vector(sim0), names(est))
-            p <- obj$env$last.par.best
+            p <- unlist(plMap)
+            names(p) <- rep(names(plMap), times = sapply(plMap,length))
             ## Only works when year.base is last assessment year
             indxN <- matrix(which(names(p) %in% "logN"),nrow=length(estList0$LogN))[,i0]
             indxF <- matrix(which(names(p) %in% "logF"),nrow=length(estList0$LogF))[,i0]

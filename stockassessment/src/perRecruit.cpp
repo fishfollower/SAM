@@ -16,7 +16,7 @@ extern "C" {
   }
 
 
-  SEXP perRecruitR(SEXP Fbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears){
+  SEXP perRecruitR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears){
     dataSet<double> d0(dat);
     confSet c0(conf);
     paraSet<double> p0(pl);
@@ -25,11 +25,10 @@ extern "C" {
     for(int i = 0; i < ls0.size(); ++i)
       ls0 = log(s0);
     vector<int> a0 = asVector<int>(aveYears);
-    double Fbar0 = Rf_asReal(Fbar);
+    double logFbar0 = Rf_asReal(logFbar);
     int nY0 = Rf_asInteger(nYears);
- 
-    PERREC_t<double> y = perRecruit<double, double>(Fbar0, d0, c0, p0, s0, a0, nY0);
-    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", ""}; // Must end with ""
+    PERREC_t<double> y = perRecruit<double, double>(logFbar0, d0, c0, p0, ls0, a0, nY0);
+    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
     SET_VECTOR_ELT(res, 0, asSEXP(y.logFbar));
@@ -38,6 +37,8 @@ extern "C" {
     SET_VECTOR_ELT(res, 3, asSEXP(y.logSe));
     SET_VECTOR_ELT(res, 4, asSEXP(y.logRe));
     SET_VECTOR_ELT(res, 5, asSEXP(y.logYe));
+    SET_VECTOR_ELT(res, 6, asSEXP(y.logLifeExpectancy));
+    SET_VECTOR_ELT(res, 7, asSEXP(y.logYearsLost));
 
     UNPROTECT(1);    
     return res;
