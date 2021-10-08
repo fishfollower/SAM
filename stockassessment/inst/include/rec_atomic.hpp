@@ -39,6 +39,7 @@ namespace rec_atomic {
 }
 
 
+
 template<class Type>
 Type logspace_add2(Type logx, Type logy) {
   if ( !CppAD::Variable(logx) && logx == Type(-INFINITY) )

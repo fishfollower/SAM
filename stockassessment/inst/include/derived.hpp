@@ -5,17 +5,21 @@
 template <class Type>
 Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, int i, bool give_log = false){
   int stateDimN=logN.dim[0];
-  Type ssb=0;
+  Type logssb = R_NegInf;
   for(int j=0; j<stateDimN; ++j){
-    if(conf.keyLogFsta(0,j)>(-1)){
-      ssb += exp(logN(j,i))*exp(-exp(logF(conf.keyLogFsta(0,j),i))*dat.propF(i,j)-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
-    }else{
-      ssb += exp(logN(j,i))*exp(-dat.natMor(i,j)*dat.propM(i,j))*dat.propMat(i,j)*dat.stockMeanWeight(i,j);
+    if(dat.propMat(i,j) > 0){
+      Type lssbNew = R_NegInf;
+      if(conf.keyLogFsta(0,j)>(-1)){
+        lssbNew = logN(j,i) - exp(logF(conf.keyLogFsta(0,j),i)) * (dat.propF(i,j)) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));	
+      }else{
+        lssbNew = logN(j,i) - dat.natMor(i,j)*dat.propM(i,j) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));
+      }
+      logssb = logspace_add2(logssb, lssbNew);
     }
   }
   if(give_log)
-    return(log(ssb));
-  return ssb;
+    return logssb;
+  return exp(logssb);
 }
 #else
 template <class Type>
@@ -51,20 +55,20 @@ template <class Type>
 matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
   int len=dat.catchMeanWeight.dim(0);
   matrix<Type> cat(conf.maxAge - conf.minAge + 1, len);
-  cat.setZero();
+  cat.setConstant(R_NegInf);
   for(int y=0;y<len;y++){
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
-      Type z=dat.natMor(y,a-conf.minAge);
+      Type logz=log(dat.natMor(y,a-conf.minAge) + 1e-12);
       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
         logz = logspace_add2(logz, logF(conf.keyLogFsta(0,a-conf.minAge),y));
-	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + log(1.0 - exp(-exp(logz))) + log(dat.catchMeanWeight(y,a-conf.minAge) + 1e-12);
+	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + logspace_sub2(Type(0.0),-exp(logz)) + log(dat.catchMeanWeight(y,a-conf.minAge));
 	cat(a-conf.minAge, y) = logspace_add2(cat(a-conf.minAge, y), tmp);
       }
     }
   }
   if(give_log)
-    return cat.array().log().matrix();
-  return cat;
+    return cat;
+  return cat.array().exp().matrix();
 }
 #else
 template <class Type>
@@ -88,19 +92,19 @@ matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, a
 }
 #endif
 
+
 #ifdef TMBAD_FRAMEWORK
 template <class Type>
 vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
-  matrix<Type> cat = catchFunAge(dat,conf,logN,logF);
-  if(give_log){
+  matrix<Type> cat = catchFunAge(dat,conf,logN,logF, true);
   vector<Type> catY(cat.cols());
   catY.setConstant(R_NegInf);
   for(int i = 0; i < cat.cols(); ++i)
     for(int j = 0; j < cat.rows(); ++j)
       catY(i) = logspace_add2(catY(i), cat(j,i));
-  return catY;
-  }
-  return (vector<Type>)cat.colwise().sum();
+  if(give_log)
+    return catY;
+  return exp(catY);
 }
 #else
 template <class Type>
@@ -117,19 +121,6 @@ vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, arra
   return (vector<Type>)cat.colwise().sum();
 }
 #endif
-
-// template <class Type>
-// vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
-//   matrix<Type> cat = catchFunAge(dat,conf,logN,logF, true);
-//   vector<Type> catY(cat.cols());
-//   catY.setConstant(R_NegInf);
-//   for(int i = 0; i < cat.cols(); ++i)
-//     for(int j = 0; j < cat.rows(); ++j)
-//       catY(i) = logspace_add2(catY(i), cat(j,i));
-//   if(give_log)
-//     return catY;
-//   return exp(catY);
-// }
 
 
 template <class Type>
@@ -293,22 +284,6 @@ template <class Type>
 vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
   int timeSteps=logF.dim[1];
   vector<Type> fbar(timeSteps);
-  fbar.setZero();
-  for(int y=0;y<timeSteps;y++){  
-    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
-      fbar(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
-    }
-    fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
-  }
-  if(give_log)
-    return log(fbar);
-  return fbar;
-}
-#else
-template <class Type>
-vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
-  int timeSteps=logF.dim[1];
-  vector<Type> fbar(timeSteps);
   fbar.setConstant(R_NegInf);
   for(int y=0;y<timeSteps;y++){  
     for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){
@@ -320,25 +295,24 @@ vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
     return log(fbar);
   return fbar;
 }
+#else
+template <class Type>
+vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
+  int timeSteps=logF.dim[1];
+  vector<Type> fbar(timeSteps);
+  fbar.setZero();
+  for(int y=0;y<timeSteps;y++){  
+    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
+      fbar(y)+=exp(logF(conf.keyLogFsta(0,a-conf.minAge),y));
+    }
+    fbar(y)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1);
+  }
+  if(give_log)
+    return log(fbar);
+  return fbar;
+}
 #endif
 
-
-
-// template <class Type>
-// vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
-//   int timeSteps=logF.dim[1];
-//   vector<Type> fbar(timeSteps);
-//   fbar.setConstant(R_NegInf);
-//   for(int y=0;y<timeSteps;y++){  
-//     for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){
-//       fbar(y) = logspace_add2(fbar(y), logF(conf.keyLogFsta(0,a-conf.minAge),y));
-//     }
-//     fbar(y) -= log(Type(conf.fbarRange(1)-conf.fbarRange(0)+1));
-//   }
-//   if(give_log)
-//     return fbar;
-//   return exp(fbar);
-// }
 
 
 template <class Type>
