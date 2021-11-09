@@ -24,7 +24,7 @@ plotit <-function (fit, what,...){
 ##' @method plotit sam
 ##' @export
 plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
-                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,ylim=NULL,...){
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
     lowhig <- y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -40,7 +40,12 @@ plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=
     if(add){
       lines(x, trans(y), lwd=3,...)
     }else{
-      plot(x, trans(y), xlab=xlab, ylab=ylab, type="n", lwd=3, xlim=xr, ylim=range(c(trans(lowhig),0,ex)), las=1,...)
+        if(missing(ylim)){
+            yr <- range(c(trans(lowhig),0,ex))
+        }else{
+            yr <- ylim
+        }
+        plot(x, trans(y), xlab=xlab, ylab=ylab, type="n", lwd=3, xlim=xr, ylim=yr, las=1,...)
       grid(col="black")
       lines(x, trans(y), lwd=3, ...)
     }
@@ -84,11 +89,16 @@ plotit.samset <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", 
 ##' @method plotit samforecast
 ##' @export
 plotit.samforecast <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
-                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,ylim=NULL,...){
     xy <- unlist(lapply(fit, function(xx) xx$year))
     thisfit<-attr(fit,"fit")
     xr <- range(thisfit$data$years, xy)
-    plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
+    if(missing(ylim)){
+        v1 <- tableit(fit, what = what, trans = trans)
+        v2 <- tableit(thisfit, what = what, trans = trans)
+        ylim <- range(v1,v2)
+    }
+    plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,ylim=ylim,...)
 }
 
 ##' @rdname plotit
