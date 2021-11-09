@@ -25,6 +25,7 @@ plotit(fit, what, ...)
   drop = 0,
   unnamed.basename = "current",
   xlim = NULL,
+  ylim = NULL,
   ...
 )
 
@@ -61,6 +62,7 @@ plotit(fit, what, ...)
   drop = 0,
   unnamed.basename = "current",
   xlim = NULL,
+  ylim = NULL,
   ...
 )
 

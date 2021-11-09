@@ -3,11 +3,14 @@
 \name{tableit}
 \alias{tableit}
 \alias{tableit.sam}
+\alias{tableit.samforecast}
 \title{Table helper}
 \usage{
 tableit(fit, what, x = fit$data$years, trans = function(x) x, ...)
 
 \method{tableit}{sam}(fit, what, x = fit$data$years, trans = function(x) x, ...)
+
+\method{tableit}{samforecast}(fit, what, x = fit$data$years, trans = function(x) x, ...)
 }
 \arguments{
 \item{fit}{returned object from sam.fit}
