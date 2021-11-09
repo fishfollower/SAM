@@ -18,7 +18,7 @@ hcr(fit, ...)
   Blow = 0,
   nosim = 10000,
   ave.years = max(fit$data$years) + (-4:0),
-  rec.years = c(),
+  rec.years = numeric(0),
   preForecast = list(),
   ...
 )

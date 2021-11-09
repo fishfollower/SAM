@@ -218,6 +218,8 @@ forecastMSY.sam <- function(fit,
 }
 
 
+na2 <- function(x,a=0) ifelse(is.na(x) | is.nan(x),a,x)
+
 ##' Estimate reference points
 ##'
 ##' @param fit an object to calculate reference points for
@@ -255,7 +257,7 @@ referencepoints <- function(fit,
 
 ##' @rdname referencepoints
 ##' @method referencepoints sam
-#' @export
+##' @export
 referencepoints.sam <- function(fit,
                                 nYears = 100,
                                 Fsequence = seq(0,4, len = 200),
@@ -280,12 +282,7 @@ referencepoints.sam <- function(fit,
         stop("MSYreduction must be between 0 and 1.")
     MSYfraction <- 1 - MSYreduction
     
-    ## Get joint precision
-    jointPrecision <- TMB::sdreport(fit$obj,
-                               fit$opt$par,
-                               svd_solve(fit$sdrep$cov.fixed),
-                               getJointPrecision = TRUE)$jointPrecision
-
+ 
     ## Prepare arguments to calculate reference points (fix parameters and latent variables, delta = 1)
     obj0 <- fit$obj
     argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
@@ -601,16 +598,22 @@ referencepoints.sam <- function(fit,
     colnames(dCdTheta2)[colnames(dCdTheta2) == "logN"] <- paste0("logN_","A",aa[row(objDelta$env$parameters$logN)],"Y",yy[col(objDelta$env$parameters$logN)])
     ## Gradient
     gradient <- dCdTheta2[,apply(dCdTheta2,2,function(x)sum(abs(x))) > 0]
-    
+
+    ## Get joint precision
+    jointPrecision <- TMB::sdreport(fit$obj,
+                                    fit$opt$par,
+                                    svd_solve(fit$sdrep$cov.fixed),
+                                    getJointPrecision = TRUE)$jointPrecision
+
     ## Do delta method
     xtra <- diag(1,length(fit$obj$env$last.par.best))
     diag(xtra)[fit$obj$env$random] <- 0
     dG <- rbind(xtra[diag(xtra) != 0,,drop = FALSE],dCdTheta)
     covAll <- dG %*% svd_solve(jointPrecision) %*% t(dG)
     covAllOld <- covAll
-    i <- 21
+    i <- 21    
 
-    if(any(abs(covAll[lower.tri(covAll)]) > 1-1e-8)){
+    if(any(na2(abs(covAll[lower.tri(covAll)]) > 1-1e-8,FALSE))){
         warning("Some estimates are highly correlated. The covariance matrix was modified slighly to be invertible.")
         ii <- unique(as.vector(which(abs(covAll) > 1-1e-8 & row(covAll) < col(covAll), arr.ind = TRUE)))
         CX <- local({x <- diag(0, nrow(covAll)); diag(x)[ii] <- 1e-5; x})
