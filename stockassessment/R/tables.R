@@ -21,6 +21,27 @@ tableit.sam <- function (fit, what, x=fit$data$years, trans=function(x)x,...){
    return(ret)
 }
 
+##' @rdname tableit
+##' @method tableit samforecast
+##' @export
+tableit.samforecast <- function (fit, what, x=fit$data$years, trans=function(x)x,...){
+    tab <- attr(fit,"tab")
+    if(what == "logssb"){
+        ret <- tab[,7:9,drop=FALSE]
+    }else if(what == "logfbar"){
+        ret <- tab[,1:3,drop=FALSE]
+    }else if(what == "logCatch"){
+        ret <- tab[,10:12,drop=FALSE]
+    }else if(what == "logR"){
+        ret <- tab[,4:6,drop=FALSE]
+    }else{
+        stop("what not implemented for samforecast")
+    }
+    ret <- trans(log(ret))
+    colnames(ret)<-c("Estimate","Low","High")
+    return(ret)
+}
+
 
 ##' SSB table 
 ##' @param  fit ...

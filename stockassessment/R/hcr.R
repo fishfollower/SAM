@@ -1,5 +1,5 @@
 ##' Harvest control rule forecast
-##' @rdname hcr 
+##'
 ##' @param fit A SAM fit
 ##' @param ... other variables used by the methods
 ##' @seealso modelforecast
@@ -48,7 +48,7 @@ hcr.sam <- function(fit,
                 Blow = 0,
                 nosim = 10000,
                 ave.years = max(fit$data$years)+(-4:0),
-                rec.years = c(), #max(fit$data$years)+(-9:0),
+                rec.years = numeric(0), #max(fit$data$years)+(-9:0),
                 preForecast = list(),
                 ...
                 ){
@@ -72,8 +72,7 @@ hcr.sam <- function(fit,
               preForecast,
               list(...)
               )
-    f <- do.call("modelforecast", args)
-    
+    f <- do.call(modelforecast, args)
     r <- list(Ftarget = Ftarget,
               Flim = Flim,
               Flow = Flow,
@@ -85,5 +84,4 @@ hcr.sam <- function(fit,
     attr(r,"fit") <- fit
     class(r) <- "hcr"
     r
-
 }
