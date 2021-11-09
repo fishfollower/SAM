@@ -1,5 +1,5 @@
 ##' Harvest control rule forecast
-##' @rdname hcr 
+##'
 ##' @param fit A SAM fit
 ##' @param ... other variables used by the methods
 ##' @seealso modelforecast
