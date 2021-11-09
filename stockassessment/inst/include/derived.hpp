@@ -385,7 +385,6 @@ Type lifeexpectancyi(dataSet<Type> &dat, confSet &conf, array<Type> &logF, int y
     // int_{a}^{a+1} exp(-Z*t) dt = frac{(e^Z - 1) e^(-(a + 1) Z)}{Z}
     v += (exp(Z) - 1) * exp(-Type(a+1) * Z) / Z;
   }
-  le(y) = v;
 }
 if(give_log)
   return log(v);
