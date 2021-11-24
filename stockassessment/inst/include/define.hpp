@@ -1046,7 +1046,7 @@ VECTORIZE2_tt(logdrobust)
 template <class Type>
 class MVMIX_t{
   Type halfLogDetS;         
-  Type p1;                  /*fraction t3*/
+  vector<Type> p1;                  /*fraction t3*/
   matrix<Type> Sigma;       
   vector<Type> sd;
   matrix<Type> L_Sigma;
@@ -1055,11 +1055,18 @@ public:
   MVMIX_t(){}
   MVMIX_t(matrix<Type> Sigma_, Type p1_){
     setSigma(Sigma_);
+    p1=vector<Type>(Sigma_.rows());
+    p1.setConstant(p1_);
+  }
+  MVMIX_t(matrix<Type> Sigma_, vector<Type> p1_){
+    setSigma(Sigma_);
     p1=p1_;
   }
   matrix<Type> cov(){return Sigma;}
   void setSigma(matrix<Type> Sigma_){
     Sigma = Sigma_;
+    p1 = vector<Type>(Sigma_.rows());
+    p1.setZero();
     sd = sqrt(vector<Type>(Sigma.diagonal()));
     Eigen::LLT<Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> > llt(Sigma);
     L_Sigma = llt.matrixL();
@@ -1069,7 +1076,7 @@ public:
   }
   void setSigma(matrix<Type> Sigma_, Type p1_){
     setSigma(Sigma_);
-    p1=p1_;
+    p1.setConstant(p1_);
   }
   /** \brief Evaluate the negative log density */
   Type operator()(vector<Type> x){
@@ -1078,15 +1085,15 @@ public:
   }
   Type operator()(vector<Type> x, vector<Type> keep){
     matrix<Type> S = Sigma;
+    vector<Type> p = p1; 
     vector<Type> not_keep = Type(1.0) - keep;
     for(int i = 0; i < S.rows(); i++){
       for(int j = 0; j < S.cols(); j++){
 	S(i,j) = S(i,j) * keep(i) * keep(j);
       }
-      //S(i,i) += not_keep(i) * pow((Type(1)-p1)*sqrt(Type(0.5)/M_PI)+p1*(Type(1)/M_PI),2); //(t(1))
-      S(i,i) += not_keep(i) * pow((Type(1)-p1)*sqrt(Type(0.5)/M_PI)+p1*(Type(2)/(M_PI*sqrt(Type(3)))),2);
+      S(i,i) += not_keep(i) * pow((Type(1)-p(i))*sqrt(Type(0.5)/M_PI)+p(i)*(Type(2)/(M_PI*sqrt(Type(3)))),2);
     }
-    return MVMIX_t<Type>(S,p1)(x * keep);
+    return MVMIX_t<Type>(S,p)(x * keep);
   }
 
   vector<Type> simulate() {
@@ -1094,7 +1101,7 @@ public:
     vector<Type> x(siz);
     for(int i=0; i<siz; ++i){
       Type u = runif(0.0,1.0);
-      if(u<p1){
+      if(u<p1(i)){
         x(i) = rt(3.0);
       }else{
         x(i) = rnorm(0.0,1.0);

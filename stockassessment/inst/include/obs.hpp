@@ -215,7 +215,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
       } else { 
         Rf_error("Unkown obsCorStruct code"); 
       }
-      nllVec(f).setSigma(cov, conf.fracMixObs(f));
+      nllVec(f).setSigma(cov, Type(conf.fracMixObs(f)));
       obsCov(f) = cov;
     }else{
       matrix<Type> dummy(1,1);
@@ -278,7 +278,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   	                thiscov(r,c)=thiscor(r,c)*sqrt(currentVar(r)*currentVar(c));
   	              }
 	      } 
-	      MVMIX_t<Type> thisnll(thiscov,conf.fracMixObs(f));
+	      MVMIX_t<Type> thisnll(thiscov,Type(conf.fracMixObs(f)));
 	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
 	      nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 	      SIMULATE_F(of){
