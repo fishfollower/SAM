@@ -61,7 +61,7 @@ matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, a
       Type logz=log(dat.natMor(y,a-conf.minAge) + 1e-12);
       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
         logz = logspace_add2(logz, logF(conf.keyLogFsta(0,a-conf.minAge),y));
-	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + logspace_sub2(Type(0.0),-exp(logz)) + log(dat.catchMeanWeight(y,a-conf.minAge));
+	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + log(1.0 - exp(-exp(logz))) + log(dat.catchMeanWeight(y,a-conf.minAge) + 1e-12);
 	cat(a-conf.minAge, y) = logspace_add2(cat(a-conf.minAge, y), tmp);
       }
     }
@@ -107,14 +107,14 @@ vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, arra
 #else
 template <class Type>
 vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
-  matrix<Type> cat = catchFunAge(dat,conf,logN,logF);
+  matrix<Type> cat = catchFunAge(dat,conf,logN,logF, give_log);
   if(give_log){
-  vector<Type> catY(cat.cols());
-  catY.setConstant(R_NegInf);
-  for(int i = 0; i < cat.cols(); ++i)
-    for(int j = 0; j < cat.rows(); ++j)
-      catY(i) = logspace_add2(catY(i), cat(j,i));
-  return catY;
+    vector<Type> catY(cat.cols());
+    catY.setConstant(R_NegInf);
+    for(int i = 0; i < cat.cols(); ++i)
+      for(int j = 0; j < cat.rows(); ++j)
+	catY(i) = logspace_add2(catY(i), cat(j,i));
+    return catY;
   }
   return (vector<Type>)cat.colwise().sum();
 }
