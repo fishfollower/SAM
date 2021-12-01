@@ -61,7 +61,7 @@ matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, a
       Type logz=log(dat.natMor(y,a-conf.minAge) + 1e-12);
       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
         logz = logspace_add2(logz, logF(conf.keyLogFsta(0,a-conf.minAge),y));
-	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + logspace_sub2(Type(0.0),-exp(logz)) + log(dat.catchMeanWeight(y,a-conf.minAge));
+	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + log(1.0 - exp(-exp(logz))) + log(dat.catchMeanWeight(y,a-conf.minAge) + 1e-12);
 	cat(a-conf.minAge, y) = logspace_add2(cat(a-conf.minAge, y), tmp);
       }
     }
