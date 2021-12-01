@@ -45,6 +45,7 @@ conf$fbarRange <- c(2,4)
 par<-defpar(dat,conf)
 fit<-sam.fit(dat,conf,par)
 
+catchtable(fit)
 
 tol <- 1e-6
 ## Test fscale
