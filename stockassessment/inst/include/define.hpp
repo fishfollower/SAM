@@ -116,6 +116,7 @@ struct forecastSet {
   vector<int> simFlag;
   int uniroot;
   vector<Type> hcrConf;
+  int hcrCurrentSSB;
 
   matrix<Type> forecastCalculatedMedian;
   vector<Type> forecastCalculatedLogSdCorrection;
@@ -160,6 +161,7 @@ struct forecastSet {
       simFlag = asVector<int>(getListElement(x,"simFlag"));
       uniroot = (int)*REAL(getListElement(x,"uniroot"));
       hcrConf = asVector<Type>(getListElement(x,"hcrConf"));
+      hcrCurrentSSB = Rf_asInteger(getListElement(x,"hcrCurrentSSB"));
     }
   };
 
@@ -180,6 +182,7 @@ struct forecastSet {
     simFlag = rhs.simFlag;
     uniroot = rhs.uniroot;
     hcrConf = rhs.hcrConf;
+    hcrCurrentSSB = rhs.hcrCurrentSSB;
     forecastCalculatedMedian = rhs.forecastCalculatedMedian;
     forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
     sel = rhs.sel;
@@ -218,6 +221,7 @@ struct forecastSet {
     d.simFlag = simFlag; // <int>
     d.uniroot = uniroot;
     d.hcrConf = hcrConf.template cast<T>();
+    d.hcrCurrentSSB = hcrCurrentSSB;
     d.forecastCalculatedMedian = forecastCalculatedMedian.template cast<T>();
     d.forecastCalculatedLogSdCorrection = forecastCalculatedLogSdCorrection.template cast<T>();
     d.sel = sel.template cast<T>();
@@ -963,6 +967,8 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
     int indx = forecastYear.size() - nYears + i;    
     Type y = forecastYear(indx);    
     Type lastSSB = ssbi(dat, conf, logN, logF, indx-1);
+    // Assuming F before spawning is zero
+    Type thisSSB = ssbi(dat, conf, logN, logF, indx);
     Type calcF = 0.0;
 
     vector<Type> lastShortLogF(logF.rows());
@@ -1082,7 +1088,13 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
       forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel); // 
       break;
     case HCR:
-      forecastCalculatedMedian.col(i) = hcr(lastSSB, hcrConf) + log(sel); // 
+      if(hcrCurrentSSB){
+	if(sum((vector<Type>)dat.propF.matrix().row(indx)) > 0)
+	  Rf_error("currentSSB in HCR can only be used when propF is zero.");
+	forecastCalculatedMedian.col(i) = hcr(thisSSB, hcrConf) + log(sel); //      
+      }else{
+	forecastCalculatedMedian.col(i) = hcr(lastSSB, hcrConf) + log(sel); //
+      }
       break;
     case customHCR:
       Rf_error("Forecast type not implemented");

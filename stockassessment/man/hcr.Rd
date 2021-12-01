@@ -20,6 +20,7 @@ hcr(fit, ...)
   ave.years = max(fit$data$years) + (-4:0),
   rec.years = numeric(0),
   preForecast = list(),
+  currentSSB = FALSE,
   ...
 )
 }
@@ -48,7 +49,10 @@ hcr(fit, ...)
 
 \item{preForecast}{list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR}
 
+\item{currentSSB}{if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.}
+
 \item{...}{additional arguments passed to \link{modelforecast}}
+
 }
 \value{
 hcr object
