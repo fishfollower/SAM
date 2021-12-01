@@ -20,6 +20,7 @@ hcr(fit, ...)
   ave.years = max(fit$data$years) + (-4:0),
   rec.years = numeric(0),
   preForecast = list(),
+  currentSSB = FALSE,
   ...
 )
 }
@@ -49,6 +50,8 @@ hcr(fit, ...)
 \item{rec.years}{vector of years to use to resample recruitment from. If an empty vector is given, recruitment is based on the fitted model.}
 
 \item{preForecast}{list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR}
+
+\item{currentSSB}{if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.}
 }
 \value{
 hcr object

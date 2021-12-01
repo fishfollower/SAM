@@ -35,6 +35,7 @@ modelforecast(fit, ...)
   nCatchAverageYears = 1,
   returnObj = FALSE,
   hcrConf = numeric(0),
+  hcrCurrentSSB = 0,
   ...
 )
 }
@@ -94,6 +95,8 @@ modelforecast(fit, ...)
 \item{returnObj}{Only return TMB object?}
 
 \item{hcrConf}{Should not be used. See \link{hcr}.}
+
+\item{hcrCurrentSSB}{Should not be used. See \link{hcr}.}
 }
 \value{
 an object of type samforecast
