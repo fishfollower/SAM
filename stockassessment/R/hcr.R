@@ -32,6 +32,7 @@ hcr <- function(fit, ...){
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
 ##' @param rec.years vector of years to use to resample recruitment from. If an empty vector is given, recruitment is based on the fitted model.
 ##' @param preForecast list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR
+##' @param currentSSB if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.
 ##' @param ... additional arguments passed to \link{modelforecast}
 ##' @return hcr object 
 ##' @author Christoffer Moesgaard Albertsen
@@ -50,6 +51,7 @@ hcr.sam <- function(fit,
                 ave.years = max(fit$data$years)+(-4:0),
                 rec.years = numeric(0), #max(fit$data$years)+(-9:0),
                 preForecast = list(),
+                currentSSB = FALSE,
                 ...
                 ){
 
@@ -66,6 +68,7 @@ hcr.sam <- function(fit,
     args <- c(list(fit = fit,
                  hcr = rep(c(NA,1),c(preYears,nYears)),
                  hcrConf = c(Ftarget[1], Flim[1], Flow[1], Blim[1], Blow[1], Btrigger[1]),
+                 hcrCurrentSSB = as.integer(currentSSB),
                  nosim = nosim,
                  ave.years = ave.years,
                  rec.years = rec.years),

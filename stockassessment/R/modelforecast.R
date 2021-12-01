@@ -34,6 +34,7 @@ modelforecast <- function(fit, ...){
 ##' @param nCatchAverageYears Should not be used. See \link{forecastMSY}.
 ##' @param returnObj Only return TMB object?
 ##' @param hcrConf Should not be used. See \link{hcr}.
+##' @param hcrCurrentSSB Should not be used. See \link{hcr}.
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @seealso forecast
@@ -70,6 +71,7 @@ modelforecast.sam <- function(fit,
                      nCatchAverageYears = 1,
                      returnObj = FALSE,
                      hcrConf = numeric(0),
+                     hcrCurrentSSB = 0,
                      ...
                      ){
     
@@ -201,7 +203,8 @@ modelforecast.sam <- function(fit,
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
                                simFlag = c(0,0),
                                uniroot = as.numeric(useUniroot),
-                               hcrConf = hcrConf)
+                               hcrConf = hcrConf,
+                               hcrCurrentSSB = hcrCurrentSSB)
 
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
