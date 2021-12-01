@@ -198,11 +198,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 
   vector<Type> logCatch = catchFun(dat, conf, logN, logF, true);
   vector<Type> cat = exp(logCatch);
-  Rprintf("logCatch(0) = %f\n",logCatch(0));
   
   matrix<Type> logCatchAge = catchFunAge(dat, conf, logN, logF, true);
   matrix<Type> catAge = logCatchAge.array().exp().matrix();
-  Rprintf("logCatchAge(0,0) = %f\n",logCatchAge(0,0));
 
   
   vector<Type> land = landFun(dat, conf, logN, logF);
