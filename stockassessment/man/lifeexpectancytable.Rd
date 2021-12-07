@@ -3,19 +3,21 @@
 \name{lifeexpectancytable}
 \alias{lifeexpectancytable}
 \alias{lifeexpectancytable.default}
-\title{SSB table}
+\title{Life expectancy table}
 \usage{
-lifeexpectancytable(fit, ...)
+lifeexpectancytable(fit, atRecruit = TRUE, ...)
 
-\method{lifeexpectancytable}{default}(fit, ...)
+\method{lifeexpectancytable}{default}(fit, atRecruit = TRUE, ...)
 }
 \arguments{
 \item{fit}{...}
 
+\item{atRecruit}{If true, show life expectancy given survival until minAge, otherwise show life expectancy at birth}
+
 \item{...}{extra arguments not currently used}
 }
 \description{
-SSB table
+Life expectancy table
 }
 \details{
 ...

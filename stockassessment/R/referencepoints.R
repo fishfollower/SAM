@@ -336,6 +336,7 @@ referencepoints.sam <- function(fit,
     }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){ # Hockey-sticks
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
@@ -346,6 +347,7 @@ referencepoints.sam <- function(fit,
     }else if(fit$conf$stockRecruitmentModelCode %in% c(3,62)){ # constant mean, AR
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFxPercent",
@@ -353,6 +355,7 @@ referencepoints.sam <- function(fit,
     }else if(fit$conf$stockRecruitmentModelCode %in% c(64)){ # Pow CMP
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFxPercent",
@@ -361,6 +364,7 @@ referencepoints.sam <- function(fit,
     }else if(fit$conf$stockRecruitmentModelCode %in% c(65)){ # Pow Non-CMP
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFxPercent",
@@ -369,6 +373,7 @@ referencepoints.sam <- function(fit,
     }else if(fit$conf$stockRecruitmentModelCode %in% c(68,69) && fit$pl$rec_par[3] > 0){ ## depensatory recruitment; Fcrash does not work.
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFext",
@@ -378,6 +383,7 @@ referencepoints.sam <- function(fit,
     }else if(fit$conf$stockRecruitmentModelCode %in% c(90)){
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
@@ -388,6 +394,7 @@ referencepoints.sam <- function(fit,
        }else if(fit$conf$stockRecruitmentModelCode %in% c(91,92)){
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 ##"logScaleFcrash",
@@ -398,6 +405,7 @@ referencepoints.sam <- function(fit,
     }else{
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
+                "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleF01",
                 "logScaleFcrash",
@@ -414,6 +422,7 @@ referencepoints.sam <- function(fit,
 
     args$parameters$logScaleFmsy <- -1
     args$parameters$logScaleFmypyl <- -1
+    args$parameters$logScaleFmdy <- -1
     args$parameters$logScaleF01 <- -1
     args$parameters$logScaleFmax <- -1
     args$parameters$logScaleFcrash <- -1
@@ -478,7 +487,7 @@ referencepoints.sam <- function(fit,
         tryAgain <- TRUE
     }else if(any(rp %in% "logScaleFext")){
         indx <- which(!is.na(rep$refpointseq_logSe))
-        vi <- rep$refpointseq_logSe[indx]
+        vi <- rep$refpointseq_logSe[indx]^2 + 10 * Fsequence[indx]
         ff <- Fsequence[indx]
         pStart$logScaleFext <- log(ff[which.min(vi)]) - log(tail(fbartable(fit)[,"Estimate"],1))
     }
@@ -528,6 +537,16 @@ referencepoints.sam <- function(fit,
         ff <- Fsequence[indx]
         pStart$logScaleFmypyl <- log(ff[which.max(vi)]) - log(tail(fbartable(fit)[,"Estimate"],1))
     }
+
+    ## Fmdy
+    if(any(rp %in% "logScaleFmdy")){
+        v <- rep$refpointseq_logDiscYe
+        indx <- which(is.finite(v) & Fsequence > 0)
+        vi <- v[indx]
+        ff <- Fsequence[indx]
+        pStart$logScaleFmdy <- log(ff[which.max(vi)]) - log(tail(fbartable(fit)[,"Estimate"],1))
+    }
+
     
     ## F01
     if(any(rp %in% "logScaleF01")){
@@ -675,6 +694,7 @@ referencepoints.sam <- function(fit,
                "xPercent"="xP",
                "lim"="lim",
                "mypyl"="Max Yield per Year Lost",
+               "mdy"="Max Discounted Yield per Year Lost",
                x
         )               
     })

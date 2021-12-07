@@ -7,6 +7,7 @@
 #include "pnorm.hpp"
 #include "spline.hpp"
 #include "define.hpp"
+#include "survival.hpp"
 #include "biopar.hpp"
 #include "toF.hpp"
 #include "derived.hpp"

@@ -162,6 +162,7 @@ Type objective_function<Type>::operator() ()
   // YPR reference points
   PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
   PARAMETER(logScaleFmypyl); paraset.logScaleFmypyl = logScaleFmypyl;
+  PARAMETER(logScaleFmdy); paraset.logScaleFmdy = logScaleFmdy;
   PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
   PARAMETER(logScaleF01); paraset.logScaleF01 = logScaleF01;
   PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;

@@ -26,6 +26,7 @@ plotit(fit, what, ...)
   unnamed.basename = "current",
   xlim = NULL,
   ylim = NULL,
+  ylimAdd = NA,
   ...
 )
 

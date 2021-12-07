@@ -221,8 +221,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> fbarL = landFbarFun(dat, conf, logF);
   vector<Type> logfbarL = log(fbarL);
 
-  vector<Type> logLifeExpectancy = lifeexpectancy(dat, conf, logF, true);
+  vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
+  matrix<Type> logLifeExpectancyAge = lifeexpectancyAge(dat, conf, logF).array().log().matrix();
+  vector<Type> logLifeExpectancyRec = log(lifeexpectancyRec(dat, conf, logF));
 
+  vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
+  vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
+  vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
+
+  
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logtsb, logfsb, logCatch, logLand);
 
   vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
@@ -447,6 +454,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
   ADREPORT_F(logLifeExpectancy,of);
+  ADREPORT_F(logLifeExpectancyRec,of);
+  ADREPORT_F(logLifeExpectancyAge,of);
+  ADREPORT_F(logYLTF, of);
+  ADREPORT_F(logYLTM, of);
+  ADREPORT_F(logYNL, of);
 
   // Additional forecast quantities
   if(dat.forecast.nYears > 0){
