@@ -7,16 +7,18 @@
 \alias{lifeexpectancyplot.hcr}
 \title{SAM life expectancy plot}
 \usage{
-lifeexpectancyplot(fit, ...)
+lifeexpectancyplot(fit, atRecruit = TRUE, ...)
 
-\method{lifeexpectancyplot}{default}(fit, ...)
+\method{lifeexpectancyplot}{default}(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge, ...)
 
-\method{lifeexpectancyplot}{samforecast}(fit, ...)
+\method{lifeexpectancyplot}{samforecast}(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge, ...)
 
-\method{lifeexpectancyplot}{hcr}(fit, ...)
+\method{lifeexpectancyplot}{hcr}(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
+
+\item{atRecruit}{If true, show life expectancy given survival until minAge, otherwise show life expectancy at birth}
 
 \item{...}{extra arguments transferred to plot including the following: \cr
 \code{add} logical, plotting is to be added on existing plot \cr

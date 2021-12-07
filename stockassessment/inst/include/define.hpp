@@ -652,6 +652,7 @@ struct paraSet{
   Type implicitFunctionDelta;
   Type logScaleFmsy;
   Type logScaleFmypyl;
+  Type logScaleFmdy;
   Type logScaleFmax;
   Type logScaleF01;
   Type logScaleFcrash;
@@ -703,6 +704,7 @@ struct paraSet{
     implicitFunctionDelta = (Type)Rf_asReal(getListElement(x,"implicitFunctionDelta"));
     logScaleFmsy = (Type)Rf_asReal(getListElement(x,"logScaleFmsy"));
     logScaleFmypyl = (Type)Rf_asReal(getListElement(x,"logScaleFmypyl"));
+    logScaleFmdy = (Type)Rf_asReal(getListElement(x,"logScaleFmdy"));
     logScaleFmax = (Type)Rf_asReal(getListElement(x,"logScaleFmax"));
     logScaleF01 = (Type)Rf_asReal(getListElement(x,"logScaleF01"));
     logScaleFcrash = (Type)Rf_asReal(getListElement(x,"logScaleFcrash"));
@@ -753,6 +755,7 @@ struct paraSet{
     implicitFunctionDelta = rhs.implicitFunctionDelta;
     logScaleFmsy = rhs.logScaleFmsy;
     logScaleFmypyl = rhs.logScaleFmypyl;
+    logScaleFmdy = rhs.logScaleFmdy;
     logScaleFmax = rhs.logScaleFmax;
     logScaleF01 = rhs.logScaleF01;
     logScaleFcrash = rhs.logScaleFcrash;
@@ -808,6 +811,7 @@ struct paraSet{
     d.implicitFunctionDelta = T(implicitFunctionDelta);
     d.logScaleFmsy = T(logScaleFmsy);
     d.logScaleFmypyl = T(logScaleFmypyl);
+    d.logScaleFmdy = T(logScaleFmdy);
     d.logScaleFmax = T(logScaleFmax);
     d.logScaleF01 = T(logScaleF01);
     d.logScaleFcrash = T(logScaleFcrash);

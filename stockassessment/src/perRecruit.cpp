@@ -28,7 +28,7 @@ extern "C" {
     double logFbar0 = Rf_asReal(logFbar);
     int nY0 = Rf_asInteger(nYears);
     PERREC_t<double> y = perRecruit<double, double>(logFbar0, d0, c0, p0, ls0, a0, nY0);
-    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost", ""}; // Must end with ""
+    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
     SET_VECTOR_ELT(res, 0, asSEXP(y.logFbar));
@@ -39,6 +39,8 @@ extern "C" {
     SET_VECTOR_ELT(res, 5, asSEXP(y.logYe));
     SET_VECTOR_ELT(res, 6, asSEXP(y.logLifeExpectancy));
     SET_VECTOR_ELT(res, 7, asSEXP(y.logYearsLost));
+    SET_VECTOR_ELT(res, 8, asSEXP(y.logDiscYe));
+    SET_VECTOR_ELT(res, 9, asSEXP(y.logDiscYPR));
 
     UNPROTECT(1);    
     return res;

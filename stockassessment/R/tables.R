@@ -34,6 +34,12 @@ tableit.samforecast <- function (fit, what, x=fit$data$years, trans=function(x)x
         ret <- tab[,10:12,drop=FALSE]
     }else if(what == "logR"){
         ret <- tab[,4:6,drop=FALSE]
+    }else if(what == "logtsb"){
+        if(any(grepl("^tsb:",rownames(tab)))){
+            ret <- tab[,grepl("^tsb:",rownames(tab)), drop=FALSE]
+        }else{
+            stop("The forecast was not made with addTSB=TRUE")
+        }
     }else{
         stop("what not implemented for samforecast")
     }
@@ -43,20 +49,44 @@ tableit.samforecast <- function (fit, what, x=fit$data$years, trans=function(x)x
 }
 
 
-##' SSB table 
+##' Life expectancy table 
 ##' @param  fit ...
+##' @param atRecruit If true, show life expectancy given survival until minAge, otherwise show life expectancy at birth
 ##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-lifeexpectancytable <- function(fit, ...){
+lifeexpectancytable <- function(fit, atRecruit=TRUE, ...){
     UseMethod("lifeexpectancytable")
 }
 
 ##' @rdname lifeexpectancytable
 ##' @method lifeexpectancytable default
 ##' @export
-lifeexpectancytable.default <- function(fit, ...){
-    ret<-tableit(fit, "logLifeExpectancy", trans=exp,...)
+lifeexpectancytable.default <- function(fit,atRecruit=TRUE, ...){
+    ret<-tableit(fit, ifelse(atRecruit,"logLifeExpectancyRec","logLifeExpectancy"), trans=exp,...)
+    return(ret)
+}
+
+##' Years Lost table 
+##' @param  fit ...
+##' @param cause Fisning, Other, or LifeExpectancy
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+yearslosttable <- function(fit, cause, ...){
+    UseMethod("yearslosttable")
+}
+
+##' @rdname yearslosttable
+##' @method yearslosttable default
+##' @export
+yearslosttable.default <- function(fit,cause = c("Fishing","Other","LifeExpectancy"), ...){
+      cv <- match.arg(cause)
+      what <- switch(cv,
+                     "Fishing"="logYLTF",
+                     "Other"="logYLTM",
+                     "logYNL")
+    ret<-tableit(fit, what=what, trans=exp,...)
     return(ret)
 }
 

@@ -24,7 +24,7 @@ plotit <-function (fit, what,...){
 ##' @method plotit sam
 ##' @export
 plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
-                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,ylim=NULL,...){
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,ylim=NULL,ylimAdd=NA,...){
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
     lowhig <- y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -41,7 +41,7 @@ plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=
       lines(x, trans(y), lwd=3,...)
     }else{
         if(missing(ylim)){
-            yr <- range(c(trans(lowhig),0,ex))
+            yr <- range(c(trans(lowhig),0,ex,ylimAdd), na.rm = TRUE)
         }else{
             yr <- ylim
         }
@@ -435,6 +435,7 @@ fselectivityplot<-function(fit, cexAge = 1,...){
 ##' @export
 fselectivityplot.sam <- function(fit, cexAge = 1,...){
     fmat<- faytable(fit)
+    fmat[is.na(fmat)] <- 0
     barplot(t(fmat/rowSums(fmat)),border=NA,space=c(0),xlab="Year", main = "Selectivity in F", ...)
     text(1,cumsum(t(fmat/rowSums(fmat))[,1]) - 0.5*t(fmat/rowSums(fmat))[,1] ,label=as.character(1:ncol(fmat)),adj=c(0.0,0.2), cex = cexAge)
 }
@@ -477,37 +478,122 @@ ssbplot.hcr <- function(fit,...){
 
 ##' SAM life expectancy plot 
 ##' @param fit the object returned from sam.fit
+##' @param atRecruit If true, show life expectancy given survival until minAge, otherwise show life expectancy at birth
 ##' @param ... extra arguments transferred to plot including the following: \cr
 ##' \code{add} logical, plotting is to be added on existing plot \cr
 ##' \code{ci} logical, confidence intervals should be plotted \cr
 ##' \code{cicol} color to plot the confidence polygon
 ##' @details Plot of life expectancy 
 ##' @export
-lifeexpectancyplot<-function(fit, ...){
+lifeexpectancyplot<-function(fit, atRecruit = TRUE, ...){
     UseMethod("lifeexpectancyplot")
 }
 ##' @rdname lifeexpectancyplot
 ##' @method lifeexpectancyplot default
 ##' @export
-lifeexpectancyplot.default <- function(fit,...){
-    plotit(fit, "logLifeExpectancy", ylab="Life expectancy", xlab="Cohort", trans=exp,...)
+lifeexpectancyplot.default <- function(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge, ...){
+    if(atRecruit){
+        plotit(fit, "logLifeExpectancyRec", ylab="Life expectancy at recruitment", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
+    }else{
+        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Cohort", trans=exp, ylimAdd = ylimAdd, ...)
+    }
+    abline(h = c(fit$conf$maxAge, fit$conf$minAge), col = "darkgrey",lwd=3, lty = 4)
 }
 ##' @rdname lifeexpectancyplot
 ##' @method lifeexpectancyplot samforecast
 ##' @export
-lifeexpectancyplot.samforecast <- function(fit,...){
-    plotit(fit, "logLifeExpectancy", ylab="Life expectancy", xlab="Cohort", trans=exp,...)
-    addforecast(fit,"logLifeExpectancy")
+lifeexpectancyplot.samforecast <- function(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge,...){
+    if(atRecruit){
+        plotit(fit, "logLifeExpectancyRec", ylab="Life expectancy at recruitment", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancyRec")
+    }else{
+        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Cohort", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancy")
+    }
+    abline(h = c(fit$conf$maxAge, fit$conf$minAge), col = "darkgrey",lwd=3, lty = 4)
 }
 
 ##' @rdname lifeexpectancyplot
 ##' @method lifeexpectancyplot hcr
 ##' @export
-lifeexpectancyplot.hcr <- function(fit,...){
-    plotit(fit, "logLifeExpectancy", ylab="Life expectancy", xlab="Cohort", trans=exp,...)
-    addforecast(fit,"logLifeExpectancy")
+lifeexpectancyplot.hcr <- function(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge, ...){
+    if(atRecruit){
+        plotit(fit, "logLifeExpectancyRec", ylab="Life expectancy at recruitment", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancyRec")
+    }else{
+        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Cohort", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancy")
+    }
+    abline(h = c(fit$conf$maxAge, fit$conf$minAge), col = "darkgrey",lwd=3, lty = 4)
 }
 
+
+##' SAM years lost to fishing plot 
+##' @param fit the object returned from sam.fit
+##' @param cause Fisning, Other, or LifeExpectancy
+##' ##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of years lost to fishing
+##' @export
+yearslostplot<-function(fit,cause, ...){
+    UseMethod("yearslostplot")
+}
+##' @rdname yearslostplot
+##' @method yearslostplot default
+##' @export
+yearslostplot.default<-function(fit, cause=c("Fishing","Other","LifeExpectancy"), ...){
+    cv <- match.arg(cause)
+    if(cv == "Fishing"){
+        what <- "logYLTF"
+        lab <- sprintf("Life years lost to fishing between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else if(cv == "Other"){
+        what <- "logYLTM"
+        lab <- sprintf("Life years lost to other causes between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else{
+        what <- "logYNL"
+        lab <- sprintf("Temporary life expectancy between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }
+    plotit(fit, what, ylab=lab, xlab="Year", trans=exp,...)
+}
+##' @rdname yearslostplot
+##' @method yearslostplot samforecast
+##' @export
+yearslostplot.samforecast <- function(fit,cause=c("Fishing","Other","LifeExpectancy"), ...){
+   cause <- match.arg(cause)
+    if(case == "Fishing"){
+        what <- "logYLTF"
+        lab <- sprintf("Life years lost to fishing between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else if(case == "Other"){
+        what <- "logYLTM"
+        lab <- sprintf("Life years lost to other causes between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else{
+        what <- "logYNL"
+        lab <- sprintf("Temporary life expectancy between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }
+    plotit(fit, what, ylab=lab, xlab="Year", trans=exp,...)
+    addforecast(fit,what)
+}
+
+##' @rdname yearslostplot
+##' @method yearslostplot hcr
+##' @export
+yearslostplot.hcr <- function(fit,cause=c("Fishing","Other","LifeExpectancy"), ...){
+   cause <- match.arg(cause)
+    if(case == "Fishing"){
+        what <- "logYLTF"
+        lab <- sprintf("Life years lost to fishing between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else if(case == "Other"){
+        what <- "logYLTM"
+        lab <- sprintf("Life years lost to other causes between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else{
+        what <- "logYNL"
+        lab <- sprintf("Temporary life expectancy between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }
+    plotit(fit, what, ylab=lab, xlab="Year", trans=exp,...)
+    addforecast(fit,what)
+}
 
 
 ##' SAM TSB plot 

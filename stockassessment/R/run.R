@@ -88,6 +88,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                 implicitFunctionDelta = factor(NA),
                 logScaleFmsy = factor(NA),
                 logScaleFmypyl = factor(NA),
+                logScaleFmdy = factor(NA),
                 logScaleFmax = factor(NA),
                 logScaleF01 = factor(NA),
                 logScaleFcrash = factor(NA),

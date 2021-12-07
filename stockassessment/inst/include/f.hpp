@@ -137,6 +137,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   if(conf.resFlag==1){
     ADREPORT_F(resF,of);
   }
+  REPORT_F(fvar,of);
   return nll;
 }
 
