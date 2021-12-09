@@ -495,7 +495,7 @@ lifeexpectancyplot.default <- function(fit, atRecruit = TRUE, ylimAdd = fit$conf
     if(atRecruit){
         plotit(fit, "logLifeExpectancyRec", ylab="Life expectancy at recruitment", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
     }else{
-        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Cohort", trans=exp, ylimAdd = ylimAdd, ...)
+        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
     }
     abline(h = c(fit$conf$maxAge, fit$conf$minAge), col = "darkgrey",lwd=3, lty = 4)
 }
