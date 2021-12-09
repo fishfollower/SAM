@@ -1891,7 +1891,7 @@ struct REFERENCE_POINTS {
     }
 
     if(CppAD::Variable(par.logScaleFmypyl)){
-      Type tmp = log(yield(exp(logFmypyl))) - logspace_add((Type)0.0,logYearsLost(exp(logFmypyl)));
+      Type tmp = log(yield(exp(logFmypyl))) - logspace_add((Type)0.0,logYearsLost(exp(logFmypyl)) - log((Type)conf.maxAge - (Type)conf.minAge + (Type)1.0));
       nll -= log(tmp);
     }
 
