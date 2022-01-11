@@ -39,8 +39,12 @@ addRecruitmentCurve.sam <- function(fit,
                     pilty = 2,
                     ...){
        X <- summary(fit)
-       R <- X[, 1]
-       S <- X[, 4]
+       n<-nrow(X)
+       lag <- fit$conf$minAge
+       idxR <- (lag+1):n
+       idxS <- 1:(n-lag)
+       R<-X[idxR,1]
+       S<-X[idxS,4]
        cf <- fit$sdrep$cov.fixed
        covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
        m <- fit$obj$env$map$rec_pars
