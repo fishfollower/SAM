@@ -930,7 +930,7 @@ qtableplot.samqtable<-function(qt,exp=FALSE){
     op<-par(mfrow=n2mfrow(nrow(qt)))
     on.exit(par(op))
     for(f in 1:nrow(qt)){
-        yl <- range(rbind(lo[f,]-0.15*lo[f,],hi[f,]+0.15*hi[f,]),na.rm=TRUE)
+        yl <- range(rbind(lo[f,]-0.15*abs(lo[f,]),hi[f,]+0.15*abs(hi[f,])),na.rm=TRUE)
         plot(as.numeric(colnames(qt)),qt[f,],main=rownames(qt)[f],type="b",ylim=yl,ylab=ylabel,xlab="Age")
         arrows(as.numeric(colnames(qt)),lo[f,],y1=hi[f,],angle=90,code=3,length=0.1)
     }
