@@ -505,7 +505,7 @@ struct confSet{
   vector<int> obsLikelihoodFlag;
   int fixVarToWeight;
   double fracMixF;
-  double fracMixN;
+  vector<double> fracMixN;
   vector<double> fracMixObs;
   array<int> predVarObsLink;
   int stockWeightModel;
@@ -548,7 +548,7 @@ struct confSet{
     obsLikelihoodFlag = asVector<int>(getListElement(x,"obsLikelihoodFlag"));
     fixVarToWeight = (int)*REAL(getListElement(x,"fixVarToWeight"));
     fracMixF = (double)*REAL(getListElement(x,"fracMixF"));
-    fracMixN = (double)*REAL(getListElement(x,"fracMixN"));
+    fracMixN = asVector<double>(getListElement(x,"fracMixN"));
     fracMixObs = asVector<double>(getListElement(x,"fracMixObs"));
     predVarObsLink = asArray<int>(getListElement(x,"predVarObsLink"));
     stockWeightModel = (int)*REAL(getListElement(x,"stockWeightModel"));

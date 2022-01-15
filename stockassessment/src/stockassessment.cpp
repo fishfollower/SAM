@@ -92,7 +92,16 @@ Type objective_function<Type>::operator() ()
   DATA_FACTOR(obsLikelihoodFlag); confset.obsLikelihoodFlag=obsLikelihoodFlag; 
   DATA_INTEGER(fixVarToWeight); confset.fixVarToWeight=fixVarToWeight; 
   DATA_SCALAR(fracMixF); confset.fracMixF=asDouble(fracMixF); 
-  DATA_SCALAR(fracMixN); confset.fracMixN=asDouble(fracMixN); 
+  DATA_VECTOR(fracMixN);
+  vector<double> fracMixNDouble(maxAge-minAge+1);
+  for(int i=0; i<fracMixNDouble.size(); ++i){
+    if(fracMixN.size()==1){
+      fracMixNDouble(i)=asDouble(fracMixN(0));
+    }else{
+      fracMixNDouble(i)=asDouble(fracMixN(i));
+    }
+  }
+  confset.fracMixN=fracMixNDouble;   
   DATA_VECTOR(fracMixObs); vector<double> fracMixObsDouble(fracMixObs.size()); for(int i=0; i<fracMixObs.size(); ++i){fracMixObsDouble(i)=asDouble(fracMixObs(i));} confset.fracMixObs=fracMixObsDouble; 
   DATA_IARRAY(predVarObsLink); confset.predVarObsLink=predVarObsLink;
   DATA_INTEGER(stockWeightModel); confset.stockWeightModel=stockWeightModel;

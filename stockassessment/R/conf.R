@@ -101,7 +101,7 @@ defcon<-function(dat){
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
   ret$fixVarToWeight <- 0
   ret$fracMixF <- 0
-  ret$fracMixN <- 0
+  ret$fracMixN <- rep(0,nAges)
   ret$fracMixObs <- rep(0,nFleets)
   ret$constRecBreaks <- numeric(0)
 
@@ -197,7 +197,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$obsLikelihoodFlag <- "Option for observational likelihood"
     txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
     txt$fracMixF <- "The fraction of t(3) distribution used in logF increment distribution" 
-    txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution"
+    txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution (for each age group)"
     txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet"
     txt$constRecBreaks <- "Vector of break years between which recruitment is at constant level. The break year is included in the left interval. (This option is only used in combination with stock-recruitment code 3)"
     txt$predVarObsLink <- "Coupling of parameters used in a prediction-variance link for observations."

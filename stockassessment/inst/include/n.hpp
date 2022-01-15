@@ -26,7 +26,9 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   //   }
   // }
   matrix<Type> nvar = get_nvar(dat, conf, par, logN, logF);
-  MVMIX_t<Type> neg_log_densityN(nvar,Type(conf.fracMixN));
+  vector<Type> fracMixN(conf.fracMixN.size());
+  for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
+  MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovN(nvar);
   matrix<Type> LN = lltCovN.matrixL();
   matrix<Type> LinvN = LN.inverse();

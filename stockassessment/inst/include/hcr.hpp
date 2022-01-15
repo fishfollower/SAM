@@ -54,7 +54,9 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
 
   // Setup for N
   matrix<Type> nvar = get_nvar(dat, conf, par, logN, logF);
-  MVMIX_t<Type> neg_log_densityN(nvar,Type(conf.fracMixN));
+  vector<Type> fracMixN(conf.fracMixN.size());
+  for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
+  MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
 
 
   int nYears = dat.forecast.nYears;
