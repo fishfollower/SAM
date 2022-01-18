@@ -435,6 +435,44 @@ namespace rec_atomic {
   TMB_BIND_ATOMIC(Se_sl0, 1111, Se_sl_raw(x[0],x[1],x[2],x[3]))
 
 
+  /*
+   * Specialization for the Type 2 depensatory Ricker
+   */
+
+  template<class Float>
+  struct T2DR {
+    Float a;
+    Float b;
+    Float g;
+    
+    template<class F>
+    F operator()(F logs){
+      return log((F)a) + logs - (F)b * exp(logs) + logs - log(exp(logs)+(F)g);
+    }
+  };
+  
+  template<class Float>
+  Float Se_t2dr_raw(Float l, Float a, Float b, Float g){
+    T2DR<Float> f;
+    f.a = a; f.b = b; f.g = g;
+    NEWTON_RESULT<Float> r = newton<Float, T2DR<Float> >(f, l, -log(b));
+    if(r.par > log(SAM_Zero) &&
+       r.objective < 1.0e-6 &&
+       fabs(r.grSR) < 1){ // Found stable equilibrium
+      return exp(r.par);
+    }else if(r.par > log(SAM_Zero) &&
+	     r.objective < 1.0e-6 &&
+	     fabs(r.grSR) >= 1){ // Found unstable equilibrium
+      Rf_warning("Found unstable equilibrium");
+      return exp(r.par);
+    }else{
+      return SAM_Zero * l;
+    }
+    return SAM_Zero * l;
+  }
+
+  TMB_BIND_ATOMIC(Se_t2dr0, 1111, Se_t2dr_raw(x[0],x[1],x[2],x[3]))
+
 
 
   /*
@@ -594,6 +632,19 @@ Type Se_sl(Type l, Type a, Type b, Type g){
   args[4] = 0;
   return rec_atomic::Se_sl0(CppAD::vector<Type>(args))[0];
 }
+
+
+template<class Type>
+Type Se_t2dr(Type l, Type a, Type b, Type g){
+  vector<Type> args(5); // Last index reserved for derivative order
+  args[0] = l;
+  args[1] = a;
+  args[2] = b;
+  args[3] = g;
+  args[4] = 0;
+  return rec_atomic::Se_t2dr0(CppAD::vector<Type>(args))[0];
+}
+
 
 template<class Type>
 Type Se_ibcd(Type l, vector<Type> knots, vector<Type> pars){
@@ -874,6 +925,8 @@ Type dSplineSR(Type ssb, vector<Type> knots, vector<Type> rp, int srmc){
  * Per-recruit calculations
  */
 
+
+
 template<class Type>
 struct PERREC_t {
   Type logFbar;
@@ -889,6 +942,15 @@ struct PERREC_t {
   Type logDiscYe;
 };
 
+
+template<class T>
+T Se_SR52(T SPR, T a, T b, T d){
+  T v0 = sqrt(SPR*SPR*a*a - 2.0 * SPR * a * b * d + b*b*d*d - 2 * a * SPR - 2.0 * b * d + 1.0);
+  T v1 = (a * SPR - b*d - 1.0 + v0);
+  T v2 = (a * SPR - b*d - 1.0 - v0);
+  // v1 must be larger
+  return v1 / (2.0 * b);
+}
 
 template<class Type, class T>
 PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int> aveYears, int nYears = 300){
@@ -1093,6 +1155,18 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
     // Constant recruitment - last year of assessment
     Se = lambda * exp(newPar.rec_pars(newPar.rec_pars.size() - 1) + logRecCorrection);
     break;
+  case 50:			// Type 2 depensatory logistic hockey stick
+    Rf_error("Equilibrium not implemented yet");
+    break;
+  case 51:			// Type 2 depensatory Ricker
+    Se = Se_t2dr(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+    break;
+  case 52:			// Type 2 depensatory BH
+    Se = Se_SR52(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+    break;
+  case 60:			// logistic hockey stick
+    Rf_error("Equilibrium not implemented yet");
+    break;    
   case 61: // Hockey stick
     Se = lambda * exp(newPar.rec_pars(0) + logRecCorrection);
     break;
@@ -1277,7 +1351,7 @@ struct REFERENCE_POINTS {
   Type logFmypyl;		// Maximizes yield per year lost
   Type logFmdy;		        // Maximizes discounted yield per year lost
   Type logFmax;			// Maximizes yield per recruit
-  Type logF01;			// F such that YPR'(0) = 0.1 * YPR'(F)
+  vector<Type> logFxdYPR;			// F such that YPR'(0) = 0.1 * YPR'(F)
   Type logFcrash;		// F such that 1/SPR(f) = SR'(0) (i.e. stock crashes [with compensatory recruitment] if slope of spawner-per-recruit in origin is less than slope of stock-recruitment model in origin)
   Type logFext;			// F such that stock dies out - SSB(F) < epsilon and F smallest possible
   vector<Type> logFxPercent;	// F such that SSB is reduced to x% of unfished stock (Se(F) = x/100 * Se(0) )
@@ -1285,7 +1359,8 @@ struct REFERENCE_POINTS {
   Type logFlim;			// F such that Se(F) = Blim (for hockey-stick-like stock recruitment only)
   //Type logFpa;		// F that corresponds to logBpa
   matrix<Type> logFmsyRange;		// F that corresponds to yield of x% of MSY
-
+  vector<Type> logFxB0;
+  
   // Corresponding SSB??
   Type logBsq;
   Type logB0;
@@ -1293,13 +1368,14 @@ struct REFERENCE_POINTS {
   Type logBmypyl;
   Type logBmdy;
   Type logBmax;
-  Type logB01;
+  vector<Type> logBxdYPR;
   Type logBcrash;
   Type logBext;
   vector<Type> logBxPercent;
   Type logBlim;			// Known from model parameters (for hockey-stick-like stock recruitment only)
   //Type logBpa;			// Ba = Blim * exp(1.645 * sigma) where sigma is the standard deviation of log(SSB) at the start of the year following the terminal year of the assessment if sigma is unknown, 0.2 can be used as default.
   matrix<Type> logBmsyRange;
+  vector<Type> logBxB0;
 
   // Corresponding Recruitment
   Type logRsq;
@@ -1308,14 +1384,15 @@ struct REFERENCE_POINTS {
   Type logRmypyl;
   Type logRmdy;
   Type logRmax;
-  Type logR01;
+  vector<Type> logRxdYPR;
   Type logRcrash;
   Type logRext;
   vector<Type> logRxPercent;
   Type logRlim;			// Known from model parameters (for hockey-stick-like stock recruitment only)
   //Type logBpa;			// Ba = Blim * exp(1.645 * sigma) where sigma is the standard deviation of log(SSB) at the start of the year following the terminal year of the assessment if sigma is unknown, 0.2 can be used as default.
   matrix<Type> logRmsyRange;
-  
+  vector<Type> logRxB0;
+
   // Corresponding Yield??
   Type logYsq;
   Type logY0;
@@ -1323,12 +1400,13 @@ struct REFERENCE_POINTS {
   Type logYmypyl;
   Type logYmdy;
   Type logYmax;
-  Type logY01;
+  vector<Type> logYxdYPR;
   Type logYcrash;
   Type logYext;
   vector<Type> logYxPercent;
   Type logYlim;			// Known from model parameters (for hockey-stick-like stock recruit
   matrix<Type> logYmsyRange;
+  vector<Type> logYxB0;
 
   Type logYPRsq;
   Type logYPR0;
@@ -1336,12 +1414,13 @@ struct REFERENCE_POINTS {
   Type logYPRmypyl;
   Type logYPRmdy;
   Type logYPRmax;
-  Type logYPR01;
+  vector<Type> logYPRxdYPR;
   Type logYPRcrash;
   Type logYPRext;
   vector<Type> logYPRxPercent;
   Type logYPRlim;
   matrix<Type> logYPRmsyRange;
+  vector<Type> logYPRxB0;
 
   Type logSPRsq;
   Type logSPR0;
@@ -1349,12 +1428,13 @@ struct REFERENCE_POINTS {
   Type logSPRmypyl;
   Type logSPRmdy;
   Type logSPRmax;
-  Type logSPR01;
+  vector<Type> logSPRxdYPR;
   Type logSPRcrash;
   Type logSPRext;
   vector<Type> logSPRxPercent;
   Type logSPRlim;
   matrix<Type> logSPRmsyRange;
+  vector<Type> logSPRxB0;
 
   
   // Derived values
@@ -1532,22 +1612,29 @@ struct REFERENCE_POINTS {
     }
 
 
-    if(CppAD::Variable(par.logScaleF01)){
-      logF01 = par.logScaleF01 + logFsq; //logFsq + par.logScaleF01;
-      logB01 = log(Se(exp(logF01)));
-      logR01 = log(Re(exp(logF01)));
-      logY01 = log(yield(exp(logF01)));
-      logYPR01 = log(YPR(exp(logF01)));
-      logSPR01 = log(SPR(exp(logF01)));
-    }else{
-      logF01 = R_NaReal;//R_NaReal;
-      logB01 = R_NaReal;
-      logR01 = R_NaReal;
-      logY01 = R_NaReal;
-      logYPR01 = R_NaReal;
-      logSPR01 = R_NaReal;
+    logFxdYPR = vector<Type>(par.logScaleFxdYPR.size());
+    logBxdYPR = vector<Type>(par.logScaleFxdYPR.size());
+    logRxdYPR = vector<Type>(par.logScaleFxdYPR.size());
+    logYxdYPR = vector<Type>(par.logScaleFxdYPR.size());
+    logYPRxdYPR = vector<Type>(par.logScaleFxdYPR.size());
+    logSPRxdYPR = vector<Type>(par.logScaleFxdYPR.size());
+    for(int i = 0; i < par.logScaleFxdYPR.size(); ++i){
+      if(CppAD::Variable(par.logScaleFxdYPR(i))){
+	logFxdYPR(i) = par.logScaleFxdYPR(i) + logFsq; //logFsq + par.logScaleF01;
+	logBxdYPR(i) = log(Se(exp(logFxdYPR(i))));
+	logRxdYPR(i) = log(Re(exp(logFxdYPR(i))));
+	logYxdYPR(i) = log(yield(exp(logFxdYPR(i))));
+	logYPRxdYPR(i) = log(YPR(exp(logFxdYPR(i))));
+	logSPRxdYPR(i) = log(SPR(exp(logFxdYPR(i))));
+      }else{
+	logFxdYPR(i) = R_NaReal;//R_NaReal;
+	logBxdYPR(i) = R_NaReal;
+	logRxdYPR(i) = R_NaReal;
+	logYxdYPR(i) = R_NaReal;
+	logYPRxdYPR(i) = R_NaReal;
+	logSPRxdYPR(i) = R_NaReal;
+      }
     }
-
 
     if(CppAD::Variable(par.logScaleFcrash)){
       logFcrash = par.logScaleFcrash + logFsq; //logFsq + par.logScaleFcrash;
@@ -1606,6 +1693,32 @@ struct REFERENCE_POINTS {
 	logSPRxPercent(i) = R_NaReal;
       }
     }
+    
+    logFxB0 = vector<Type>(par.logScaleFxB0.size());
+    logBxB0 = vector<Type>(par.logScaleFxB0.size());
+    logRxB0 = vector<Type>(par.logScaleFxB0.size());
+    logYxB0 = vector<Type>(par.logScaleFxB0.size());
+    logYPRxB0 = vector<Type>(par.logScaleFxB0.size());
+    logSPRxB0 = vector<Type>(par.logScaleFxB0.size());
+    for(int i = 0; i < par.logScaleFxB0.size(); ++i){
+      if(CppAD::Variable(par.logScaleFxB0(i))){
+	logFxB0(i) = par.logScaleFxB0(i) + logFsq; //logFsq + par.logScaleF01;
+	logBxB0(i) = log(Se(exp(logFxB0(i))));
+	logRxB0(i) = log(Re(exp(logFxB0(i))));
+	logYxB0(i) = log(yield(exp(logFxB0(i))));
+	logYPRxB0(i) = log(YPR(exp(logFxB0(i))));
+	logSPRxB0(i) = log(SPR(exp(logFxB0(i))));
+      }else{
+	logFxB0(i) = R_NaReal;//R_NaReal;
+	logBxB0(i) = R_NaReal;
+	logRxB0(i) = R_NaReal;
+	logYxB0(i) = R_NaReal;
+	logYPRxB0(i) = R_NaReal;
+	logSPRxB0(i) = R_NaReal;
+      }
+    }
+
+
     
     if(CppAD::Variable(par.logScaleFlim) &&
        (conf.stockRecruitmentModelCode == 61 ||
@@ -1904,9 +2017,11 @@ struct REFERENCE_POINTS {
       nll -= logYPR(logFmax);
     }
  
-    if(CppAD::Variable(par.logScaleF01)){
-     Type tmp = 0.1 * dYPR(Type(SAM_Zero)) - dYPR(exp(logF01));
-      nll += tmp * tmp;
+    for(int i = 0; i < par.logScaleFxdYPR.size(); ++i){
+      if(CppAD::Variable(par.logScaleFxdYPR(i))){
+	Type tmp = dat.referencepoint.xdYPR(i) * dYPR(Type(SAM_Zero)) - dYPR(exp(logFxdYPR(i)));
+	nll += tmp * tmp;
+      }
     }
  
     if(CppAD::Variable(par.logScaleFcrash)){
@@ -1930,6 +2045,13 @@ struct REFERENCE_POINTS {
     }
  
 
+    for(int i = 0; i < par.logScaleFxB0.size(); ++i){
+      if(CppAD::Variable(par.logScaleFxB0(i))){
+	Type tmp = dat.referencepoint.xB0(i) * exp(logB0) - Se(exp(logFxB0(i)));
+	nll += tmp * tmp;
+      }
+    }
+ 
     if(!isNA(logBlim) && CppAD::Variable(par.logScaleFlim)){
       Type tmp = logBlim - log(Se(exp(logFlim)));
       nll += tmp * tmp;
@@ -2053,12 +2175,12 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logYPRmax,of);
   ADREPORT_F(referencepoint.logSPRmax,of);
  
-  ADREPORT_F(referencepoint.logF01,of);
-  ADREPORT_F(referencepoint.logB01,of);
-  ADREPORT_F(referencepoint.logR01,of);
-  ADREPORT_F(referencepoint.logY01,of);
-  ADREPORT_F(referencepoint.logYPR01,of);
-  ADREPORT_F(referencepoint.logSPR01,of);
+  ADREPORT_F(referencepoint.logFxdYPR,of);
+  ADREPORT_F(referencepoint.logBxdYPR,of);
+  ADREPORT_F(referencepoint.logRxdYPR,of);
+  ADREPORT_F(referencepoint.logYxdYPR,of);
+  ADREPORT_F(referencepoint.logYPRxdYPR,of);
+  ADREPORT_F(referencepoint.logSPRxdYPR,of);
 
   ADREPORT_F(referencepoint.logFcrash,of);
   ADREPORT_F(referencepoint.logBcrash,of);
@@ -2082,6 +2204,14 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   ADREPORT_F(referencepoint.logYPRxPercent,of);
   ADREPORT_F(referencepoint.logSPRxPercent,of);
 
+  ADREPORT_F(referencepoint.logFxB0,of);
+  ADREPORT_F(referencepoint.logBxB0,of);
+  ADREPORT_F(referencepoint.logRxB0,of);
+  ADREPORT_F(referencepoint.logYxB0,of);
+  ADREPORT_F(referencepoint.logYPRxB0,of);
+  ADREPORT_F(referencepoint.logSPRxB0,of);
+
+  
   ADREPORT_F(referencepoint.logFlim,of);
   ADREPORT_F(referencepoint.logBlim,of);
   ADREPORT_F(referencepoint.logRlim,of);
@@ -2112,10 +2242,10 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 
   vector<Type> relref_logfbar_fmsy = logfbar - referencepoint.logFmsy;
   ADREPORT_F(relref_logfbar_fmsy,of);
-  vector<Type> relref_logfbar_fmax = logfbar - referencepoint.logFmax;
-  ADREPORT_F(relref_logfbar_fmax,of);
-  vector<Type> relref_logfbar_f01 = logfbar - referencepoint.logF01;
-  ADREPORT_F(relref_logfbar_f01,of);
+  // vector<Type> relref_logfbar_fmax = logfbar - referencepoint.logFmax;
+  // ADREPORT_F(relref_logfbar_fmax,of);
+  // vector<Type> relref_logfbar_f01 = logfbar - referencepoint.logF01;
+  // ADREPORT_F(relref_logfbar_f01,of);
   // vector<Type> relref_logfbar_f35 = logfbar - referencepoint.logF35;
   // ADREPORT_F(relref_logfbar_f35,of);
 
@@ -2127,10 +2257,10 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 
   vector<Type> relref_logssb_bmsy = logssb - referencepoint.logBmsy;
   ADREPORT_F(relref_logssb_bmsy,of);
-  vector<Type> relref_logssb_bmax = logssb - referencepoint.logBmax;
-  ADREPORT_F(relref_logssb_bmax,of);
-  vector<Type> relref_logssb_b01 = logssb - referencepoint.logB01;
-  ADREPORT_F(relref_logssb_b01,of);
+  // vector<Type> relref_logssb_bmax = logssb - referencepoint.logBmax;
+  // ADREPORT_F(relref_logssb_bmax,of);
+  // vector<Type> relref_logssb_b01 = logssb - referencepoint.logB01;
+  // ADREPORT_F(relref_logssb_b01,of);
   // vector<Type> relref_logssb_b35 = logssb - referencepoint.logB35;
   // ADREPORT_F(relref_logssb_b35,of);
 

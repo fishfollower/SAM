@@ -136,7 +136,7 @@ addRecruitmentCurve.sam <- function(fit,
 
 
        if(plot){
-           ssbMax <- max(c(max(S), par("usr")[2]))
+           ssbMax <- par("usr")[2]
        }else{
            ssbMax <- max(S)
        }

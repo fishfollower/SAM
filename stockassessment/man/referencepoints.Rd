@@ -27,6 +27,8 @@ referencepoints(
   aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years),
   SPRpercent = c(0.35),
+  dYPRpercent = c(0.1),
+  B0percent = c(0.2),
   catchType = "catch",
   MSYreduction = c(0.05),
   newtonSteps = 3,

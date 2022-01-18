@@ -17,19 +17,30 @@ defpar <- function(dat,conf,spinoutyear=10){
   nbyfleet = (conf$obsCorStruct=="US")*(dat$maxAgePerFleet-dat$minAgePerFleet+1-(conf$obsLikelihoodFlag=="ALN"))
   ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2))
 
+
+
+  M <- max(dat$natMor)
+  F <- M
+  C <- unname(quantile(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)],0.95, na.rm = TRUE))
   if(conf$stockRecruitmentModelCode==0){ # Random walk
       ret$rec_pars <- numeric(0)
   }else if(conf$stockRecruitmentModelCode==3){ # Constant mean
-      ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)
+      ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)      
+  }else if(conf$stockRecruitmentModelCode==50){ # depensatory logistic Hockey stick
+      ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0,0)
+      if(!is.na(conf$hockeyStickCurve))
+          ret$rec_pars[3] <- log(conf$hockeyStickCurve)   
+      ret$rec_pars[4] <- C
+  }else if(conf$stockRecruitmentModelCode %in% c(51,52)){ # Shepherd, Deriso
+      ret$rec_pars <- numeric(3)
+      ret$rec_pars[3] <- C
+  }else if(conf$stockRecruitmentModelCode==60){ # logistic Hockey stick
+      ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0)
+      if(!is.na(conf$hockeyStickCurve))
+          ret$rec_pars[3] <- log(conf$hockeyStickCurve)
   }else if(conf$stockRecruitmentModelCode==61){ # Hockey stick
-      M <- max(dat$natMor)
-      F <- M
-      C <- unname(quantile(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)],0.95, na.rm = TRUE))
       ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M))  + log(2),C + log(F+M) - log(F) -log(1 - exp(-F -M)))
   }else if(conf$stockRecruitmentModelCode==63){ # Bent hypoerbola / Hockey-stick-like
-      M <- max(dat$natMor)
-      F <- M
-      C <- unname(quantile(dat$logobs[dat$aux[,"fleet"] %in% which(dat$fleetTypes == 0)],0.95, na.rm = TRUE))
       ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M)) ,log(0.5),3)
       if(!is.na(conf$hockeyStickCurve))
           ret$rec_pars[3] <- log(conf$hockeyStickCurve)
@@ -102,10 +113,11 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logScaleFmypyl <- 0
   ret$logScaleFmdy <- 0
   ret$logScaleFmax <- 0
-  ret$logScaleF01 <- 0
+  ret$logScaleFxdYPR <- numeric(0)
+  ret$logScaleFxB0 <- numeric(0)
   ret$logScaleFcrash <- 0
   ret$logScaleFext <- 0
-  ret$logScaleFxPercent <- numeric()
+  ret$logScaleFxPercent <- numeric(0)
   ret$logScaleFlim <- 0
   ret$logScaleFmsyRange <- matrix(0,2,0)
   ret$splinePenalty <- 0

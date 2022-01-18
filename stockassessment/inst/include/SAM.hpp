@@ -13,6 +13,7 @@
 #include "derived.hpp"
 #include "f.hpp"
 #include "predn.hpp"
+#include "reproductive.hpp"
 #include "n.hpp"
 #include "predobs.hpp"
 #include "obs.hpp"
