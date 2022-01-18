@@ -336,13 +336,26 @@ referencepoints.sam <- function(fit,
         rp <- c("logScaleFmax",
                 "logScaleFxdYPR",
                 "logScaleFxPercent")
+        B0percent <- c()
         MSYfraction <- MSYreduction <- c()
+    }else if(fit$conf$stockRecruitmentModelCode %in% c(50,51,52)){ ## depensatory recruitment; Fcrash does not work.
+        rp <- c("logScaleFmsy",
+                "logScaleFmypyl",
+                "logScaleFmdy",
+                "logScaleFmax",
+                "logScaleFxdYPR",
+                "logScaleFxB0",
+                "logScaleFext",
+                "logScaleFxPercent",
+                "logScaleFmsyRange"
+                )
     }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){ # Hockey-sticks
         rp <- c("logScaleFmsy",
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 "logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -354,6 +367,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 "logScaleFxPercent",
                 "logScaleFmsyRange")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(64)){ # Pow CMP
@@ -362,6 +376,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
@@ -371,6 +386,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
@@ -380,6 +396,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
@@ -390,6 +407,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 "logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -401,6 +419,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 ##"logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -412,6 +431,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmdy",
                 "logScaleFmax",
                 "logScaleFxdYPR",
+                "logScaleFxB0",
                 "logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -568,7 +588,7 @@ referencepoints.sam <- function(fit,
         indx <- which(is.finite(rep$refpointseq_logSe))
         Se <- rep$refpointseq_logSe[indx]
         ff <- Fsequence[indx]
-        pStart$logScaleFxdYPR <- sapply(B0percent,function(x){
+        pStart$logScaleFxB0 <- sapply(B0percent,function(x){
             log(ff[which.min((Se - x * Se[1])^2)]) - log(tail(fbartable(fit)[,"Estimate"],1))
         })
     }
@@ -588,7 +608,8 @@ referencepoints.sam <- function(fit,
 
     p0 <- objOptim$par
     for(ii in names(pStart))
-        p0[names(p0) %in% ii] <- pStart[[match(ii,names(pStart))]]
+        if(!is.na(match(ii,names(pStart))))
+            p0[names(p0) %in% ii] <- pStart[[match(ii,names(pStart))]]
 
     opt <- nlminb(p0, objOptim$fn, objOptim$gr, objOptim$he)
     h0 <- objOptim$he(opt$par)
@@ -709,6 +730,8 @@ referencepoints.sam <- function(fit,
                "crash"="Crash",
                "ext"="Ext",
                "xPercent"="xP",
+               "xdYPR"="xdYPR",
+               "xB0"="xB0",
                "lim"="lim",
                "mypyl"="Max Yield per Year Lost",
                "mdy"="Max Discounted Yield per Year Lost",
@@ -716,9 +739,9 @@ referencepoints.sam <- function(fit,
         )               
     })
     rn <- toRowNames(rownames(Ftab))
-    rn[which(rn == "xP")] <- sapply(SPRpercent,function(x)sprintf("%s%%",x * 100))
-    rn[which(rn == "xdYPR")] <- sapply(dYPRpercent,function(x)sprintf("%s%%",x * 100))
-    rn[which(rn == "xB0")] <- sapply(B0percent,function(x)sprintf("%s%%",x * 100))
+    rn[which(rn == "xP")] <- sapply(SPRpercent,function(x)sprintf("%s%%SPR",x * 100))
+    rn[which(rn == "xdYPR")] <- sapply(dYPRpercent,function(x)sprintf("%0.f%%",x))
+    rn[which(rn == "xB0")] <- sapply(B0percent,function(x)sprintf("%s%%B0",x * 100))
     rn[which(rn == "xMR")] <- sapply(MSYreduction,function(x){
         c(sprintf("MSY %s%% reduction range (Lower)",x * 100),
           sprintf("MSY %s%% reduction range (Upper)",x * 100))

@@ -2047,7 +2047,7 @@ struct REFERENCE_POINTS {
 
     for(int i = 0; i < par.logScaleFxB0.size(); ++i){
       if(CppAD::Variable(par.logScaleFxB0(i))){
-	Type tmp = dat.referencepoint.xB0(i) * exp(logB0) - Se(exp(logFxB0(i)));
+	Type tmp = log(dat.referencepoint.xB0(i)) + logB0 - log(Se(exp(logFxB0(i))));
 	nll += tmp * tmp;
       }
     }
