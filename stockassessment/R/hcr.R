@@ -67,7 +67,7 @@ hcr.sam <- function(fit,
 
     args <- c(list(fit = fit,
                  hcr = rep(c(NA,1),c(preYears,nYears)),
-                 hcrConf = c(Ftarget[1], Flim[1], Flow[1], Blim[1], Blow[1], Btrigger[1]),
+                 hcrConf = c(Ftarget[1], Forigin[1], Fcap[1], Borigin[1], Bcap[1], Btrigger[1]),
                  hcrCurrentSSB = as.integer(currentSSB),
                  nosim = nosim,
                  ave.years = ave.years,
