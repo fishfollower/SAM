@@ -422,3 +422,42 @@ ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$
   class(ret)<-"samypr"
   return(ret)
 }
+
+
+
+
+
+
+##' rmax table 
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+rmaxtable<-function(fit,...){
+    UseMethod("rmaxtable")
+}
+##' @rdname rmaxtable
+##' @method rmaxtable default
+##' @export
+rmaxtable.default <- function(fit,...){
+   ret<-tableit(fit, "logrmax", trans=exp,...)
+   return(ret)
+}
+
+
+
+##' Generation length table 
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+generationlengthtable<-function(fit,...){
+    UseMethod("generationlengthtable")
+}
+##' @rdname generationlengthtable
+##' @method generationlengthtable default
+##' @export
+generationlengthtable.default <- function(fit,...){
+   ret<-tableit(fit, "logGenerationLength", trans=exp,...)
+   return(ret)
+}

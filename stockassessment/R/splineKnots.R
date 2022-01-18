@@ -81,3 +81,48 @@ fitPenalizedSpline <- function(dat,
     }
     return(F0)
 }
+
+
+functionalSR_startingvalue <- function(fit, stockRecruitmentModelCode){
+    srAll <- c(1,2,50,51,52,60,61,63,64,66,67,68,69)
+    if(missing(stockRecruitmentModelCode)){
+        srUse <- srAll
+    }else{
+        ii <- match(stockRecruitmentModelCode,srAll)
+        if(any(is.na(ii))){
+            if(all(is.na(ii)))
+                stop("Wrong model codes")
+            warning("Unused stockRecruitmentModelCodes")
+            ii <- na.omit(ii)
+        }
+        srUse <- srAll[ii]
+    }
+    X <- summary(fit)
+    n <- nrow(X)
+    lag <- fit$conf$minAge
+    idxR <- (lag + 1):n
+    idxS <- 1:(n - lag)
+    R <- X[idxR, 1]
+    S <- X[idxS, 4]
+    fn <- function(p, sr){
+        v <- .Call("logSRR",
+                   log(S),
+                   head(p,-1),
+                   sr)
+        -sum(dnorm(log(R), v, exp(tail(p,1)),log=TRUE))
+    }
+    p0 <- lapply(srUse, function(sr){
+        c0 <- fit$conf
+        c0$stockRecruitmentModelCode <- sr
+        defpar(fit$data,c0)$rec_pars
+    })
+    doOne <- function(sr){
+        pp <- p0[[match(sr,srUse)]]
+        r <- nlminb(c(pp,0),fn,sr=sr, control = list(iter.max = 10000, eval.max = 10000))
+        r$AIC <- 2 * length(r$par) + 2 * r$objective
+        r
+    }
+    res <- lapply(srUse, doOne)
+    names(res) <- srUse
+    res
+}

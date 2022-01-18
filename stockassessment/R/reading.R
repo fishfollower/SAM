@@ -454,7 +454,7 @@ fitfromweb <- function(stockname, character.only=FALSE, return.all = FALSE){
 ##' @param newConf list changes to the configuration
 ##' @param ... Arguments passed to sam.fit
 ##' @return A new sam fit
-refit <- function(fit, newConf, ...){
+refit <- function(fit, newConf, startingValues, ...){
     if(is(fit,"character")){
         fit2 <- fitfromweb(fit, TRUE)
     }else if(is(fit,"sam")){
@@ -476,7 +476,15 @@ refit <- function(fit, newConf, ...){
     for(i in intersect(names(dp),names(fit2$pl)))
         if(length(dp[[i]]) == length(fit2$pl[[i]]))
             dp[[i]] <- fit2$pl[[i]]
-    fit2$pl <- dp
+    if(!missing(startingValues)){
+        for(i in intersect(names(dp),names(startingValues)))
+            if(length(dp[[i]]) == length(startingValues[[i]])){
+                dp[[i]] <- startingValues[[i]]
+            }else{
+                warning(sprintf("Starting value for %s does not match defpar.",i))
+            }
+    }
+    
     ##runwithout(fit2, ...)
     sam.fit(fit2$data, fit2$conf, dp, ...)
 }

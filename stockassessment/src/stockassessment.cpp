@@ -164,7 +164,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER(logScaleFmypyl); paraset.logScaleFmypyl = logScaleFmypyl;
   PARAMETER(logScaleFmdy); paraset.logScaleFmdy = logScaleFmdy;
   PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
-  PARAMETER(logScaleF01); paraset.logScaleF01 = logScaleF01;
+  PARAMETER_VECTOR(logScaleFxdYPR); paraset.logScaleFxdYPR = logScaleFxdYPR;
+  PARAMETER_VECTOR(logScaleFxB0); paraset.logScaleFxB0 = logScaleFxB0;
   PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
   PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
   PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;

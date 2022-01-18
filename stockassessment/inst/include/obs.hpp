@@ -229,6 +229,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
   vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
 
+  vector<Type> logrmax = log(rmax(dat,conf,par));
+  vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
   
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logtsb, logfsb, logCatch, logLand);
 
@@ -459,7 +461,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logYLTF, of);
   ADREPORT_F(logYLTM, of);
   ADREPORT_F(logYNL, of);
-
+  ADREPORT_F(logrmax, of);
+  ADREPORT_F(logGenerationLength, of);
+  
   // Additional forecast quantities
   if(dat.forecast.nYears > 0){
     vector<Type> dis = disFun(dat, conf, logN, logF);

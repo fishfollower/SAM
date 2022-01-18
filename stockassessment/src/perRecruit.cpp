@@ -47,6 +47,20 @@ extern "C" {
 
   }
 
+  SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code){
+    double b = Rf_asReal(logssb);
+    vector<double> rp = asVector<double>(rec_pars);
+    int srmc = Rf_asInteger(code);
+    int n = Rf_length(logssb);
+    SEXP v = PROTECT(Rf_allocVector(REALSXP, n));
+    double* LS = REAL(logssb);
+    double* LR = REAL(v);
+    for(int i = 0; i < n; ++i)
+      LR[i] = functionalStockRecruitment(exp(LS[i]), rp, srmc);
+    UNPROTECT(1);
+    return v;
+  }
+  
 
   SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code){
     double b = Rf_asReal(ssb);

@@ -1190,3 +1190,73 @@ sdplot.sam <- function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
   par(mar=marg)
   barplot(res$sd, names.arg=res$name,las=2, col=barcol, ylab="SD", ylim=ylim); box()
 }
+
+
+
+
+##' SAM rmax plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of life expectancy 
+##' @export
+rmaxplot<-function(fit, ...){
+    UseMethod("rmaxplot")
+}
+##' @rdname rmaxplot
+##' @method rmaxplot default
+##' @export
+rmaxplot.default <- function(fit, ...){
+         plotit(fit, "logrmax", ylab=expression(r[max]), xlab="Year", trans=exp, ...)  
+}
+##' @rdname rmaxplot
+##' @method rmaxplot samforecast
+##' @export
+rmaxplot.samforecast <- function(fit, ...){
+    plotit(fit, "logrmax", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logrmax")
+}
+
+##' @rdname rmaxplot
+##' @method rmaxplot hcr
+##' @export
+rmaxplot.hcr <- function(fit, ...){
+    plotit(fit, "logrmax", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logrmax")
+}
+
+
+##' SAM generation length plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of life expectancy 
+##' @export
+generationlengthplot<-function(fit, ...){
+    UseMethod("generationlengthplot")
+}
+##' @rdname generationlengthplot
+##' @method generationlengthplot default
+##' @export
+generationlengthplot.default <- function(fit, ...){
+         plotit(fit, "logGenerationLength", ylab="G", xlab="Year", trans=exp, ...)  
+}
+##' @rdname generationlengthplot
+##' @method generationlengthplot samforecast
+##' @export
+generationlengthplot.samforecast <- function(fit, ...){
+    plotit(fit, "logGenerationLength", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logGenerationLength")
+}
+
+##' @rdname generationlengthplot
+##' @method generationlengthplot hcr
+##' @export
+generationlengthplot.hcr <- function(fit, ...){
+    plotit(fit, "logGenerationLength", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logGenerationLength")
+}

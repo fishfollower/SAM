@@ -264,6 +264,8 @@ referencepoints.sam <- function(fit,
                                 aveYears = max(fit$data$years)+(-9:0),
                                 selYears = max(fit$data$years),
                                 SPRpercent = c(0.35),
+                                dYPRpercent = c(0.1),
+                                B0percent = c(0.2),
                                 catchType = "catch",
                                 MSYreduction = c(0.05),
                                 newtonSteps = 3,
@@ -314,6 +316,8 @@ referencepoints.sam <- function(fit,
                                        selYears = selYears,
                                        Fsequence = Fsequence,
                                        xPercent = SPRpercent,
+                                       xB0 = B0percent,
+                                       xdYPR = dYPRpercent,
                                        MSYRange = MSYfraction,
                                        catchType = catchType-1,
                                        RecCorrection = RecCorrection-1,
@@ -330,7 +334,7 @@ referencepoints.sam <- function(fit,
 
     if(fit$conf$stockRecruitmentModelCode %in% c(0)){ # RW
         rp <- c("logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFxPercent")
         MSYfraction <- MSYreduction <- c()
     }else if(fit$conf$stockRecruitmentModelCode %in% c(61,63)){ # Hockey-sticks
@@ -338,7 +342,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -349,7 +353,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFxPercent",
                 "logScaleFmsyRange")
     }else if(fit$conf$stockRecruitmentModelCode %in% c(64)){ # Pow CMP
@@ -357,7 +361,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
@@ -366,7 +370,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
                 )
@@ -375,7 +379,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFext",
                 "logScaleFxPercent",
                 "logScaleFmsyRange"
@@ -385,7 +389,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -396,7 +400,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 ##"logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -407,7 +411,7 @@ referencepoints.sam <- function(fit,
                 "logScaleFmypyl",
                 "logScaleFmdy",
                 "logScaleFmax",
-                "logScaleF01",
+                "logScaleFxdYPR",
                 "logScaleFcrash",
                 "logScaleFext",
                 "logScaleFxPercent",
@@ -423,7 +427,8 @@ referencepoints.sam <- function(fit,
     args$parameters$logScaleFmsy <- -1
     args$parameters$logScaleFmypyl <- -1
     args$parameters$logScaleFmdy <- -1
-    args$parameters$logScaleF01 <- -1
+    args$parameters$logScaleFxdYPR <- rep(-1, length(dYPRpercent))
+    args$parameters$logScaleFxB0 <- rep(-1, length(B0percent))
     args$parameters$logScaleFmax <- -1
     args$parameters$logScaleFcrash <- -1
     args$parameters$logScaleFext <- -1
@@ -548,14 +553,26 @@ referencepoints.sam <- function(fit,
     }
 
     
-    ## F01
-    if(any(rp %in% "logScaleF01")){
+    ## FxdYPR
+    if(any(rp %in% "logScaleFxdYPR")){
         indx <- which(is.finite(rep$refpointseq_logYPR) & Fsequence > 0)
         ypr <- rep$refpointseq_logYPR[indx]
         ff <- Fsequence[indx]
-        pStart$logScaleF01 <- log(ff[which.min((diff(ypr)/diff(ff) - 0.1 * diff(ypr)[1] / diff(ff)[1])^2)]) - log(tail(fbartable(fit)[,"Estimate"],1))
+        pStart$logScaleFxdYPR <- sapply(dYPRpercent,function(x){
+            log(ff[which.min((diff(ypr)/diff(ff) - x * diff(ypr)[1] / diff(ff)[1])^2)]) - log(tail(fbartable(fit)[,"Estimate"],1))
+        })
     }
-    
+
+    ## FxB0
+    if(any(rp %in% "logScaleFxB0")){
+        indx <- which(is.finite(rep$refpointseq_logSe))
+        Se <- rep$refpointseq_logSe[indx]
+        ff <- Fsequence[indx]
+        pStart$logScaleFxdYPR <- sapply(B0percent,function(x){
+            log(ff[which.min((Se - x * Se[1])^2)]) - log(tail(fbartable(fit)[,"Estimate"],1))
+        })
+    }
+
     ## Fx%
     if(any(rp %in% "logScaleFxPercent")){
         indx <- which(is.finite(rep$refpointseq_logSPR) & Fsequence > 0)
@@ -700,6 +717,8 @@ referencepoints.sam <- function(fit,
     })
     rn <- toRowNames(rownames(Ftab))
     rn[which(rn == "xP")] <- sapply(SPRpercent,function(x)sprintf("%s%%",x * 100))
+    rn[which(rn == "xdYPR")] <- sapply(dYPRpercent,function(x)sprintf("%s%%",x * 100))
+    rn[which(rn == "xB0")] <- sapply(B0percent,function(x)sprintf("%s%%",x * 100))
     rn[which(rn == "xMR")] <- sapply(MSYreduction,function(x){
         c(sprintf("MSY %s%% reduction range (Lower)",x * 100),
           sprintf("MSY %s%% reduction range (Upper)",x * 100))

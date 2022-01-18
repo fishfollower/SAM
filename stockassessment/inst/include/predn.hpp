@@ -7,6 +7,7 @@ template<class Type>
 Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRecruitmentModelCode){
   Type predN = R_NegInf;
   switch(stockRecruitmentModelCode){
+    // Old recruitment models
     case 0: // straight RW 
       Rf_error("Not a functional recruitment");
     break;
@@ -18,6 +19,31 @@ Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRe
     break;
     case 3: //Constant mean
       Rf_error("Not a functional recruitment");
+    break;
+    // Type 2 depensatory
+    // Parameterization 1: S/(S+d) => log(thisSSB) - logspace_add(log(thisSSB),d)
+    // Parameterization 2: (S/d)/((S/d)+1) => log(thisSSB) - log(d) - logspace_add(log(thisSSB)-log(d),0.0)
+    // Parameterization 3:
+  case 50: // Type 2 depensatory logistic hockey stick (R(S) * S/(S+d))
+    predN = rec_pars(0) + rec_pars(1) + rec_pars(2) + log(1.0 + exp(-exp(-rec_pars(2)))) + log(exp(log(thisSSB)-rec_pars(1) - rec_pars(2)) - log(1.0 + exp((thisSSB-exp(rec_pars(1)))/exp(rec_pars(1) + rec_pars(2)))) + log(1.0 + exp(-exp(-rec_pars(2))))) +
+      log(thisSSB) - logspace_add2(log(thisSSB),rec_pars(3));
+      //log(thisSSB) - log(rec_pars(3)) - logspace_add2(log(thisSSB) - rec_pars(3), (Type)0.0);
+    break;
+  case 51:			// Type 2 depensatory Ricker (R(S) * S/(S+d))
+    predN = rec_pars(0)+log(thisSSB)-exp(rec_pars(1))*thisSSB +
+      log(thisSSB) - logspace_add2(log(thisSSB),rec_pars(2));
+      //log(thisSSB) - log(rec_pars(2)) - logspace_add2(log(thisSSB) - rec_pars(2), (Type)0.0);
+    break;
+  case 52:			// Type 2 depensatory Beverton-Holt (BH * S/(S+d))
+    predN = rec_pars(0)+log(thisSSB)-log(1.0+exp(rec_pars(1))*thisSSB) + 
+      log(thisSSB) - logspace_add2(log(thisSSB),rec_pars(2));
+      // log(thisSSB) - log(rec_pars(2)) - logspace_add2(log(thisSSB) - rec_pars(2), (Type)0.0);
+    break;
+  case 60:	// logistic Hockey stick
+    // 0: alpha
+    // 1: mu
+    // 2: theta
+    predN = rec_pars(0) + rec_pars(1) + rec_pars(2) + log(1.0 + exp(-exp(-rec_pars(2)))) + log(exp(log(thisSSB)-rec_pars(1) - rec_pars(2)) - log(1.0 + exp((thisSSB-exp(rec_pars(1)))/exp(rec_pars(1) + rec_pars(2)))) + log(1.0 + exp(-exp(-rec_pars(2)))));
     break;
   case 61: // Hockey stick
     // Type log_level = rec_pars(0);

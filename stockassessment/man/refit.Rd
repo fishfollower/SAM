@@ -4,7 +4,7 @@
 \alias{refit}
 \title{Re-fit a model from stockassessment.org}
 \usage{
-refit(fit, newConf, ...)
+refit(fit, newConf, startingValues, ...)
 }
 \arguments{
 \item{fit}{a sam fit or the name of a fit from stockassessment.org}

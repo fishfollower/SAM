@@ -252,6 +252,8 @@ struct referencepointSet {
   vector<int> selYears;
   vector<Type> Fsequence;
   vector<Type> xPercent;
+  vector<Type> xdYPR;
+  vector<Type> xB0;
   vector<Type> MSYRange;
   CatchType catchType;
   RecCorrectionType RecCorrection;
@@ -272,6 +274,8 @@ struct referencepointSet {
       selYears = asVector<int>(getListElement(x,"selYears"));
       Fsequence = asVector<Type>(getListElement(x,"Fsequence"));
       xPercent = asVector<Type>(getListElement(x,"xPercent"));
+      xdYPR = asVector<Type>(getListElement(x,"xdYPR"));
+      xB0 = asVector<Type>(getListElement(x,"xB0"));
       MSYRange = asVector<Type>(getListElement(x,"MSYRange"));
       catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
       RecCorrection = static_cast<RecCorrectionType>((int)*REAL(getListElement(x,"RecCorrection")));
@@ -288,6 +292,8 @@ struct referencepointSet {
     selYears = rhs.selYears;
     Fsequence = rhs.Fsequence;
     xPercent = rhs.xPercent;
+    xdYPR = rhs.xdYPR;
+    xB0 = rhs.xB0;
     MSYRange = rhs.MSYRange;
     catchType = rhs.catchType;
     RecCorrection = rhs.RecCorrection;    
@@ -305,6 +311,8 @@ struct referencepointSet {
     d.selYears = selYears;
     d.Fsequence = Fsequence.template cast<T>();
     d.xPercent = xPercent.template cast<T>();
+    d.xdYPR = xdYPR.template cast<T>();
+    d.xB0 = xB0.template cast<T>();
     d.MSYRange = MSYRange.template cast<T>();
     d.catchType = static_cast<typename referencepointSet<T>::CatchType>((int)catchType);
     d.RecCorrection = static_cast<typename referencepointSet<T>::RecCorrectionType>((int)RecCorrection);
@@ -654,7 +662,8 @@ struct paraSet{
   Type logScaleFmypyl;
   Type logScaleFmdy;
   Type logScaleFmax;
-  Type logScaleF01;
+  vector<Type> logScaleFxdYPR;
+  vector<Type> logScaleFxB0;
   Type logScaleFcrash;
   Type logScaleFext;
   vector<Type> logScaleFxPercent;
@@ -706,7 +715,8 @@ struct paraSet{
     logScaleFmypyl = (Type)Rf_asReal(getListElement(x,"logScaleFmypyl"));
     logScaleFmdy = (Type)Rf_asReal(getListElement(x,"logScaleFmdy"));
     logScaleFmax = (Type)Rf_asReal(getListElement(x,"logScaleFmax"));
-    logScaleF01 = (Type)Rf_asReal(getListElement(x,"logScaleF01"));
+    logScaleFxdYPR = asVector<Type>(getListElement(x,"logScaleFxdYPR"));
+    logScaleFxB0 = asVector<Type>(getListElement(x,"logScaleFxB0"));
     logScaleFcrash = (Type)Rf_asReal(getListElement(x,"logScaleFcrash"));
     logScaleFext = (Type)Rf_asReal(getListElement(x,"logScaleFext"));
     logScaleFxPercent = asVector<Type>(getListElement(x,"logScaleFxPercent"));
@@ -757,7 +767,8 @@ struct paraSet{
     logScaleFmypyl = rhs.logScaleFmypyl;
     logScaleFmdy = rhs.logScaleFmdy;
     logScaleFmax = rhs.logScaleFmax;
-    logScaleF01 = rhs.logScaleF01;
+    logScaleFxdYPR = rhs.logScaleFxdYPR;
+    logScaleFxB0 = rhs.logScaleFxB0;
     logScaleFcrash = rhs.logScaleFcrash;
     logScaleFext = rhs.logScaleFext;
     logScaleFxPercent = rhs.logScaleFxPercent;
@@ -813,7 +824,8 @@ struct paraSet{
     d.logScaleFmypyl = T(logScaleFmypyl);
     d.logScaleFmdy = T(logScaleFmdy);
     d.logScaleFmax = T(logScaleFmax);
-    d.logScaleF01 = T(logScaleF01);
+    d.logScaleFxdYPR = logScaleFxdYPR.template cast<T>();
+    d.logScaleFxB0 = logScaleFxB0.template cast<T>();
     d.logScaleFcrash = T(logScaleFcrash);
     d.logScaleFext = T(logScaleFext);
     d.logScaleFxPercent = logScaleFxPercent.template cast<T>();
