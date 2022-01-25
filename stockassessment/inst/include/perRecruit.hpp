@@ -455,7 +455,8 @@ namespace rec_atomic {
   Float Se_t2dr_raw(Float l, Float a, Float b, Float g){
     T2DR<Float> f;
     f.a = a; f.b = b; f.g = g;
-    NEWTON_RESULT<Float> r = newton<Float, T2DR<Float> >(f, l, -log(b));
+    Float logSe0 = -log(b) + log(a + log(l));
+    NEWTON_RESULT<Float> r = newton<Float, T2DR<Float> >(f, l, logSe0);
     if(r.par > log(SAM_Zero) &&
        r.objective < 1.0e-6 &&
        fabs(r.grSR) < 1){ // Found stable equilibrium
