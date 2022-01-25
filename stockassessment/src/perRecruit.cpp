@@ -16,7 +16,7 @@ extern "C" {
   }
 
 
-  SEXP perRecruitR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears){
+  SEXP perRecruitR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP RC, SEXP CT){
     dataSet<double> d0(dat);
     confSet c0(conf);
     paraSet<double> p0(pl);
@@ -27,7 +27,9 @@ extern "C" {
     vector<int> a0 = asVector<int>(aveYears);
     double logFbar0 = Rf_asReal(logFbar);
     int nY0 = Rf_asInteger(nYears);
-    PERREC_t<double> y = perRecruit<double, double>(logFbar0, d0, c0, p0, ls0, a0, nY0);
+    int RC0 = Rf_asInteger(RC);
+    int CT0 = Rf_asInteger(CT);
+    PERREC_t<double> y = perRecruit<double, double>(logFbar0, d0, c0, p0, ls0, a0, nY0, RC0, CT0);
     const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));

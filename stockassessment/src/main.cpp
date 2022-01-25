@@ -45,7 +45,7 @@ extern "C" {
     CALLDEF(TMBconfig, 2),
     #endif
     
-    CALLDEF(perRecruitR,7),
+    CALLDEF(perRecruitR,9),
     CALLDEF(stockRecruitmentModelR,3),
     CALLDEF(logSRR,3),
     CALLDEF(hcrR,2),
