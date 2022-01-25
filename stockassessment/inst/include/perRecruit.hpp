@@ -953,7 +953,7 @@ T Se_SR52(T SPR, T a, T b, T d){
 }
 
 template<class Type, class T>
-PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int> aveYears, int nYears = 300){
+PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int> aveYears, int nYears = 300, int RC = 0, int CT = 0){
 
 
 #ifdef CPPAD_FRAMEWORK
@@ -1005,15 +1005,16 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   logN(0,0) = 0.0;
 
   // Run loop over years
+  typename referencepointSet<T>::RecCorrectionType RecCorrection = static_cast<typename referencepointSet<T>::RecCorrectionType>(RC);
   for(int i = 1; i < nYears; ++i){
     // predN
     logN.col(i) = predNFun(newDat, newConf, newPar, logN, logF, i);
     for(int j = 1; j < logN.rows(); ++j){
-      if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMean){
+      if(RecCorrection == referencepointSet<T>::RecMean){
 	logN(j,i) += 0.5 * exp(2.0 * newPar.logSdLogN(conf.keyVarLogN(j)));
-      }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMedian){
+      }else if(RecCorrection == referencepointSet<T>::RecMedian){
 	
-      }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMode){
+      }else if(RecCorrection == referencepointSet<T>::RecMode){
 	logN(j,i) += -exp(newPar.logSdLogN(conf.keyVarLogN(j)));
       }else{
 	Rf_error("Recruitment correction type not implemented");
@@ -1046,7 +1047,8 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
 // #else
   vector<T> cat(nYears);
   cat.setZero();
-  switch(newDat.referencepoint.catchType){
+  typename referencepointSet<T>::CatchType catchType = static_cast<typename referencepointSet<T>::CatchType>(CT);
+  switch(catchType){
   case referencepointSet<T>::totalCatch:
     logcat = catchFun(newDat, newConf, logN, logF, true);
     break;
@@ -1124,11 +1126,11 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   }
 
   T logRecCorrection = 0.0;
-  if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMean){
+  if(RecCorrection == referencepointSet<T>::RecMean){
     logRecCorrection = 0.5 * exp(2.0 * newPar.logSdLogN(conf.keyVarLogN(0)));
-  }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMedian){
+  }else if(RecCorrection == referencepointSet<T>::RecMedian){
     logRecCorrection = 0.0;
-  }else if(newDat.referencepoint.RecCorrection == referencepointSet<T>::RecMode){
+  }else if(RecCorrection == referencepointSet<T>::RecMode){
     logRecCorrection = -exp(newPar.logSdLogN(conf.keyVarLogN(0)));
   }else{
     Rf_error("Recruitment correction type not implemented");
@@ -1818,13 +1820,13 @@ struct REFERENCE_POINTS {
 
   template<class T>
   T logDiscYield(T logFbar){
-    PERREC_t<T> r = perRecruit<Type, T>(logFbar, dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<T> r = perRecruit<Type, T>(logFbar, dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return r.logDiscYe;
   }
   
   template<class T>
   T logYPR(T logFbar){
-    PERREC_t<T> r = perRecruit<Type, T>(logFbar, dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<T> r = perRecruit<Type, T>(logFbar, dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return r.logYPR;
   }
 
@@ -1834,7 +1836,7 @@ struct REFERENCE_POINTS {
   }
 
   AD<Type> YPR(CppAD::vector<AD<Type> > Fbar){
-    PERREC_t<AD<Type> > r = perRecruit<Type, AD<Type> >(log(Fbar[0]), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<AD<Type> > r = perRecruit<Type, AD<Type> >(log(Fbar[0]), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logYPR);
   }
   
@@ -1855,12 +1857,12 @@ struct REFERENCE_POINTS {
 
   template<class T>
   T SPR(T Fbar){
-    PERREC_t<T> r = perRecruit<Type, T>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<T> r = perRecruit<Type, T>(log(Fbar), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logSPR);
   }
 
   AD<Type> SPR(CppAD::vector<AD<Type> > Fbar){
-    PERREC_t<AD<Type> > r = perRecruit<Type, AD<Type> >(log(Fbar[0]), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<AD<Type> > r = perRecruit<Type, AD<Type> >(log(Fbar[0]), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logSPR);
   }
 
@@ -1880,32 +1882,32 @@ struct REFERENCE_POINTS {
   }
 
   Type Se(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logSe);
   }
 
   Type Re(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logRe);
   }
 
   Type yield(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logYe);
   }
   
   Type yearsLost(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logYearsLost);
   }
 
   Type logYearsLost(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return r.logYearsLost;
   }
 
   Type lifeexpectancy(Type Fbar){
-    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears);
+    PERREC_t<Type> r = perRecruit<Type, Type>(log(Fbar), dat, conf, par, logSel, aveYears, nYears, dat.referencepoint.RecCorrection, dat.referencepoint.catchType);
     return exp(r.logLifeExpectancy);
   }
 
@@ -2103,7 +2105,9 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 						referencepoint.par,
 						referencepoint.logSel,
 						referencepoint.aveYears,
-						referencepoint.nYears);
+						referencepoint.nYears,
+						dat.referencepoint.RecCorrection,
+						dat.referencepoint.catchType);
       refpointseq_logYPR(i) = v.logYPR;
       refpointseq_logSPR(i) = v.logSPR;
       refpointseq_logSe(i) = v.logSe;
