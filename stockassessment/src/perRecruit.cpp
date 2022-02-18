@@ -16,9 +16,9 @@ extern "C" {
   }
 
 
-  SEXP perRecruitR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP RC, SEXP CT){
-    dataSet<double> d0(dat);
-    confSet c0(conf);
+  SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT){
+    dataSet<double> d0(tmbdat);
+    confSet c0(tmbdat);
     paraSet<double> p0(pl);
     vector<double> s0 = asVector<double>(sel);
     vector<double> ls0(s0.size());
@@ -27,9 +27,9 @@ extern "C" {
     vector<int> a0 = asVector<int>(aveYears);
     double logFbar0 = Rf_asReal(logFbar);
     int nY0 = Rf_asInteger(nYears);
-    int RC0 = Rf_asInteger(RC);
+    // int RC0 = Rf_asInteger(RC);
     int CT0 = Rf_asInteger(CT);
-    PERREC_t<double> y = perRecruit<double, double>(logFbar0, d0, c0, p0, ls0, a0, nY0, RC0, CT0);
+    PERREC_t<double> y = perRecruit<double, double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0);
     const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
@@ -49,8 +49,46 @@ extern "C" {
 
   }
 
+  SEXP stochPerRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
+    dataSet<double> d0(tmbdat);
+    confSet c0(tmbdat);
+    paraSet<double> p0(pl);
+    vector<double> s0 = asVector<double>(sel);
+    vector<double> ls0(s0.size());
+    for(int i = 0; i < ls0.size(); ++i)
+      ls0 = log(s0);
+    vector<int> a0 = asVector<int>(aveYears);
+    double logFbar0 = Rf_asReal(logFbar);
+    int nY0 = Rf_asInteger(nYears);
+    // int RC0 = Rf_asInteger(RC);
+    int CT0 = Rf_asInteger(CT);
+    vector<double> logNinit0 = asVector<double>(logNinit);
+    GetRNGstate();
+    PERREC_t<double> y = stochPerRecruit<double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0, logNinit0);
+    PutRNGstate();
+    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
+    SEXP res;
+    PROTECT(res = Rf_mkNamed(VECSXP, resNms));
+    SET_VECTOR_ELT(res, 0, asSEXP(y.logFbar));
+    SET_VECTOR_ELT(res, 1, asSEXP(y.logYPR));
+    SET_VECTOR_ELT(res, 2, asSEXP(y.logSPR));
+    SET_VECTOR_ELT(res, 3, asSEXP(y.logSe));
+    SET_VECTOR_ELT(res, 4, asSEXP(y.logRe));
+    SET_VECTOR_ELT(res, 5, asSEXP(y.logYe));
+    SET_VECTOR_ELT(res, 6, asSEXP(y.logLifeExpectancy));
+    SET_VECTOR_ELT(res, 7, asSEXP(y.logYearsLost));
+    SET_VECTOR_ELT(res, 8, asSEXP(y.logDiscYe));
+    SET_VECTOR_ELT(res, 9, asSEXP(y.logDiscYPR));
+
+    UNPROTECT(1);    
+    return res;
+
+  }
+
+
+
+  
   SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code){
-    double b = Rf_asReal(logssb);
     vector<double> rp = asVector<double>(rec_pars);
     int srmc = Rf_asInteger(code);
     int n = Rf_length(logssb);

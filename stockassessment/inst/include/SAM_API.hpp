@@ -10,6 +10,7 @@
   {"sam_hcr",                   (DL_FUNC) &sam_hcr,                   2}, \
   {"sam_jacobian",              (DL_FUNC) &sam_jacobian,              6}, \
   {"sam_perRecruit",            (DL_FUNC) &sam_perRecruit,            7}, \
+  {"sam_stochPerRecruit",       (DL_FUNC) &sam_stockPerRecruit,       8}, \
   {"sam_stockRecruitmentModel", (DL_FUNC) &sam_stockRecruitmentModel, 3}, \
   {"sam_Se_sbh",                (DL_FUNC) &sam_Se_sbh,                3}, \
   {"sam_Se_sl",                 (DL_FUNC) &sam_Se_sl,                 3}, \
@@ -39,15 +40,25 @@ extern "C" {
     return fp(fn, par, rho, maxit, h, tolerance);
   }
 
-  SEXP sam_perRecruit(SEXP Fbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears){
+  SEXP sam_perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT){
     static SEXP(*fp)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP) = (SEXP(*)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP)) R_GetCCallable("stockassessment", "perRecruitR");
     if (fp==NULL){
       Rf_error("perRecruit not found");
       return R_NilValue;
     }
-    return fp(Fbar, dat, conf, pl, sel, aveYears, nYears);
+    return fp(logFbar, tmbdat, pl, sel, aveYears, nYears, CT);
   }
 
+
+  SEXP sam_stochPerRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
+    static SEXP(*fp)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP) = (SEXP(*)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP)) R_GetCCallable("stockassessment", "stochPerRecruitR");
+    if (fp==NULL){
+      Rf_error("stochPerRecruit not found");
+      return R_NilValue;
+    }
+    return fp(logFbar, tmbdat, pl, sel, aveYears, nYears, CT, logNinit);
+  }
+  
   SEXP sam_stockRecruitmentModel(SEXP ssb, SEXP rec_pars, SEXP code){
     static SEXP(*fp)(SEXP, SEXP, SEXP) = (SEXP(*)(SEXP, SEXP, SEXP)) R_GetCCallable("stockassessment", "stockRecruitmentModelR");
     if (fp==NULL){

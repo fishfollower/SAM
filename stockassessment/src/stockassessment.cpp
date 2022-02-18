@@ -117,6 +117,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
+  DATA_IVECTOR(logNMeanCorrection); confset.logNMeanCorrection=logNMeanCorrection; 
   
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  

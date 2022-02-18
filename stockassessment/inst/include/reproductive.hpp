@@ -26,8 +26,7 @@ struct MDSR_NEWT {
   }
   Type numnewt(Type logs){
     // Minimizing
-    Type h = 0.0001 * softmax(fabs(logs),Type(0.0001), Type(100.0));
-    Type fnv = fn(logs);
+    // Type fnv = fn(logs);
     Type grv = gr(logs);
     Type hev = he(logs);
     // Type g = (f(logs + h) - f(logs - h)) / (2.0 * h);
@@ -285,7 +284,7 @@ Eigen::SparseMatrix<Type> Leslie_i(dataSet<Type> &dat, confSet &conf, paraSet<Ty
   Eigen::SparseMatrix<Type> m(nAges,nAges);
   m.setFromTriplets(tripletList.begin(), tripletList.end());
   return m;
-};
+}
 
 template<class Type>
 Type norm2(vector<Type> x){

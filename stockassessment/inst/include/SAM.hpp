@@ -18,6 +18,7 @@
 #include "predobs.hpp"
 #include "obs.hpp"
 #include "perRecruit.hpp"
+#include "perRecruit_stochastic.hpp"
 #include "hcr.hpp"
 #include "splinePenalty.hpp"
 
