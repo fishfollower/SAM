@@ -151,6 +151,18 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     predN(0)=functionalStockRecruitment(thisSSB, par.rec_pars, conf.stockRecruitmentModelCode);
     break;
   }
+
+  switch(conf.logNMeanCorrection(0)){
+  case 1:			// Mean on natural scale
+    predN(0) -= 0.5 * exp(2.0 * par.logSdLogN(conf.keyVarLogN(0)));
+    break;
+  case 2:			// Mode on natural scale
+    predN(0) += exp(2.0 * par.logSdLogN(conf.keyVarLogN(0)));
+    break;
+  default:			// Median on natural scale
+    predN(0) += 0.0;
+    break;    
+  }
   
   for(int j=1; j<stateDimN; ++j){
     if(conf.keyLogFsta(0,j-1)>(-1)){
@@ -162,6 +174,20 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   if(conf.maxAgePlusGroup(0)==1){// plusgroup adjustment if catches need them 
     predN(stateDimN-1)=log(exp(logN(stateDimN-2,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-2),i-1))-dat.natMor(i-1,stateDimN-2))+
                            exp(logN(stateDimN-1,i-1)-exp(logF(conf.keyLogFsta(0,stateDimN-1),i-1))-dat.natMor(i-1,stateDimN-1)));
+  }
+
+  for(int j=1; j<stateDimN; ++j){
+    switch(conf.logNMeanCorrection(1)){
+    case 1:			// Mean on natural scale
+      predN(j) -= 0.5 * exp(2.0 * par.logSdLogN(conf.keyVarLogN(j)));
+      break;
+    case 2:			// Mode on natural scale
+      predN(j) += exp(2.0 * par.logSdLogN(conf.keyVarLogN(j)));
+      break;
+    default:			// Median on natural scale
+      predN(j) += 0.0;
+      break;    
+    }
   }
   
   return predN;  

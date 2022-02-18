@@ -10,7 +10,8 @@
 extern "C" {
 #include <R_ext/Rdynload.h>
 
-  SEXP perRecruitR(SEXP Fbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears);
+  SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT);
+  SEXP stochPerRecruitR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit);
   SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code);
   SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code);
   SEXP hcrR(SEXP ssb, SEXP hcrConf);
@@ -45,7 +46,8 @@ extern "C" {
     CALLDEF(TMBconfig, 2),
     #endif
     
-    CALLDEF(perRecruitR,9),
+    CALLDEF(perRecruitR,7),
+    CALLDEF(stochPerRecruitR,8),
     CALLDEF(stockRecruitmentModelR,3),
     CALLDEF(logSRR,3),
     CALLDEF(hcrR,2),
@@ -74,6 +76,7 @@ extern "C" {
     CALLABLE(hcrR);
     CALLABLE(jacobian);
     CALLABLE(perRecruitR);
+    CALLABLE(stochPerRecruitR);
     CALLABLE(stockRecruitmentModelR);
     CALLABLE(logSRR);
     CALLABLE(Se_sbhR);

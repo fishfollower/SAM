@@ -1,6 +1,13 @@
 #ifndef SAM_DEFINE_HPP
 #define SAM_DEFINE_HPP
 
+#ifndef TMBAD_FRAMEWORK
+#ifndef CPPAD_FRAMEWORK
+#define CPPAD_FRAMEWORK
+#endif
+#endif
+
+
 template <class Type>
 struct forecastSet;
 
@@ -241,11 +248,11 @@ struct referencepointSet {
 		  discard
   };
 
-  enum RecCorrectionType {
-		  RecMean,
-		  RecMedian,
-		  RecMode
-  };
+  // enum RecCorrectionType {
+  // 		  RecMean,
+  // 		  RecMedian,
+  // 		  RecMode
+  // };
   
   int nYears;
   vector<int> aveYears;
@@ -256,7 +263,7 @@ struct referencepointSet {
   vector<Type> xB0;
   vector<Type> MSYRange;
   CatchType catchType;
-  RecCorrectionType RecCorrection;
+  // RecCorrectionType RecCorrection;
   int optN;
 
   referencepointSet() : nYears(0) {};
@@ -278,7 +285,7 @@ struct referencepointSet {
       xB0 = asVector<Type>(getListElement(x,"xB0"));
       MSYRange = asVector<Type>(getListElement(x,"MSYRange"));
       catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
-      RecCorrection = static_cast<RecCorrectionType>((int)*REAL(getListElement(x,"RecCorrection")));
+      // RecCorrection = static_cast<RecCorrectionType>((int)*REAL(getListElement(x,"RecCorrection")));
       optN = (int)*REAL(getListElement(x,"optN"));	    
     }
   }
@@ -296,7 +303,7 @@ struct referencepointSet {
     xB0 = rhs.xB0;
     MSYRange = rhs.MSYRange;
     catchType = rhs.catchType;
-    RecCorrection = rhs.RecCorrection;    
+    // RecCorrection = rhs.RecCorrection;    
     return *this;
   }
 
@@ -315,7 +322,7 @@ struct referencepointSet {
     d.xB0 = xB0.template cast<T>();
     d.MSYRange = MSYRange.template cast<T>();
     d.catchType = static_cast<typename referencepointSet<T>::CatchType>((int)catchType);
-    d.RecCorrection = static_cast<typename referencepointSet<T>::RecCorrectionType>((int)RecCorrection);
+    // d.RecCorrection = static_cast<typename referencepointSet<T>::RecCorrectionType>((int)RecCorrection);
     return d;    
   }
   
@@ -546,6 +553,7 @@ struct confSet{
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
   matrix<int> keyXtraSd;
+  vector<int> logNMeanCorrection;
   confSet() {};
 
   confSet(SEXP x){
@@ -589,7 +597,7 @@ struct confSet{
     keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean"));
     keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
     keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
-
+    logNMeanCorrection = asVector<int>(getListElement(x,"logNMeanCorrection"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -632,7 +640,7 @@ struct confSet{
     keyMortalityMean = rhs.keyMortalityMean;
     keyMortalityObsVar = rhs.keyMortalityObsVar;
     keyXtraSd = rhs.keyXtraSd;
-
+    logNMeanCorrection = rhs.logNMeanCorrection;
     return *this;
   };
 };
@@ -1157,18 +1165,26 @@ public:
     setSigma(Sigma_);
     p1=p1_;
   }
+  MVMIX_t(matrix<Type> Sigma_, Type p1_, bool useAtomic){
+    setSigma(Sigma_, useAtomic);
+    p1=p1_;
+  }
   matrix<Type> cov(){return Sigma;}
-  void setSigma(matrix<Type> Sigma_){
+  void setSigma(matrix<Type> Sigma_, bool useAtomic = true){
     Sigma = Sigma_;
     sd = sqrt(vector<Type>(Sigma.diagonal()));
     Eigen::LLT<Eigen::Matrix<Type,Eigen::Dynamic,Eigen::Dynamic> > llt(Sigma);
     L_Sigma = llt.matrixL();
     vector<Type> D=L_Sigma.diagonal();
     halfLogDetS = sum(log(D));
-    inv_L_Sigma = atomic::matinv(L_Sigma);
+    // if(useAtomic){
+      //inv_L_Sigma = atomic::matinv(L_Sigma);
+    // }else{
+      inv_L_Sigma = L_Sigma.inverse();
+    // }
   }
-  void setSigma(matrix<Type> Sigma_, Type p1_){
-    setSigma(Sigma_);
+  void setSigma(matrix<Type> Sigma_, Type p1_, bool useAtomic = true){
+    setSigma(Sigma_, useAtomic);
     p1=p1_;
   }
   /** \brief Evaluate the negative log density */
