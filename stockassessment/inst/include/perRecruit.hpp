@@ -474,6 +474,48 @@ namespace rec_atomic {
   TMB_BIND_ATOMIC(Se_t2dr0, 1111, Se_t2dr_raw(x[0],x[1],x[2],x[3]))
 
 
+  /*
+   * Specialization for the Type 2 depensatory Hockey stick
+   */
+
+  template<class Float>
+  struct T2DHS {
+    Float a;
+    Float b;
+    Float g;
+    
+    template<class F>
+    F operator()(F logs){
+      return log((F)a) - log((F)b) + log(exp(logs) - 0.5*(exp(logs) - (F)b + fabs(exp(logs) - (F)b)))  +
+	logs - log(exp(logs)+(F)g);
+    }
+  };
+  
+  template<class Float>
+  Float Se_t2dhs_raw(Float l, Float a, Float b, Float g){
+    T2DHS<Float> f;
+    f.a = a; f.b = b; f.g = g;
+    Float logSe0 = log(a) + log(l);
+    NEWTON_RESULT<Float> r = newton<Float, T2DHS<Float> >(f, l, logSe0);
+    if(r.par > log(SAM_Zero) &&
+       r.objective < 1.0e-6 &&
+       fabs(r.grSR) < 1){ // Found stable equilibrium
+      return exp(r.par);
+    }else if(r.par > log(SAM_Zero) &&
+	     r.objective < 1.0e-6 &&
+	     fabs(r.grSR) >= 1){ // Found unstable equilibrium
+      Rf_warning("Found unstable equilibrium");
+      return exp(r.par);
+    }else{
+      return SAM_Zero * l;
+    }
+    return SAM_Zero * l;
+  }
+
+  TMB_BIND_ATOMIC(Se_t2dhs0, 1111, Se_t2dhs_raw(x[0],x[1],x[2],x[3]))
+
+
+  
 
   /*
    * Specialization for the non-increasing spline on R/S recruitment model
@@ -643,6 +685,17 @@ Type Se_t2dr(Type l, Type a, Type b, Type g){
   args[3] = g;
   args[4] = 0;
   return rec_atomic::Se_t2dr0(CppAD::vector<Type>(args))[0];
+}
+
+  template<class Type>
+  Type Se_t2dhs(Type l, Type a, Type b, Type g){
+  vector<Type> args(5); // Last index reserved for derivative order
+  args[0] = l;
+  args[1] = a;
+  args[2] = b;
+  args[3] = g;
+  args[4] = 0;
+  return rec_atomic::Se_t2dhs0(CppAD::vector<Type>(args))[0];
 }
 
 
@@ -1071,9 +1124,42 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   //vector<T> logssb = ssbFun(newDat, newConf, logN, logF, true);
   vector<T> ssb = ssbFun(newDat, newConf, logN, logF);
   T logSPR = log(softmax(sum(ssb),(T)SAM_Zero,(T)1000.0)); //log(sum(ssb)); log(sum(ssb) + (T)exp(-12.0));
+
+ ////////////////////////////////////////////////////////////////////////////////
+  // Survival calculations                                                      //
+  ////////////////////////////////////////////////////////////////////////////////
+  T discYPR = 0.0;
+  // T discYe = 0.0;
+  // Custom recursive calculation inspired by survival.hpp
+  T yl_logp = 0.0;
+  T yl_q = 0.0;
+  T yl = 0.0;
+  // vector<T> catYe = cat * exp(logRe);
+  for(int aa = 0; aa < cat.size(); ++aa){
+    int j = std::min(std::max(aa-newConf.minAge,0), newDat.natMor.cols()-1);		// Cohort age index
+    int i = std::min(aa, newDat.natMor.rows()-1);
+    T M = newDat.natMor(i,j);
+    T F = 0.0;    
+    if(newConf.keyLogFsta(0,j)>(-1) && aa >= newConf.minAge)
+      F += exp(logF(newConf.keyLogFsta(0,j),i));
+    T Z = M + F;
+    yl += yl_q + exp(yl_logp) * F / Z * (1.0 - 1.0 / Z * (1.0 - exp(-Z)));
+    discYPR += cat(aa) * exp(-yl);
+    // discYe += catYe(aa) * exp(-yl);
+    yl_q += exp(yl_logp) * F / Z * (1.0 - exp(-Z));
+    yl_logp += -Z;
+  }
+  T logDiscYPR = log(discYPR + (T)exp(SAM_NegInf));
+  // T logDiscYe = log(discYe + (T)exp(SAM_NegInf));
+  ////////////////////////////////////////////////////////////////////////////////
+  // End survival calculations                                                  //
+  ////////////////////////////////////////////////////////////////////////////////
+
+  
+
   //T logSPR = logspace_sum(logssb);
   T lambda = exp(logSPR); // sum(ssb);
-  
+
   if(conf.stockRecruitmentModelCode == 0){//  ||
      // conf.stockRecruitmentModelCode == 3){
     PERREC_t<T> res = {logFbar, // logFbar
@@ -1085,7 +1171,7 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
 		       R_NaReal,// dSR0
 		       logLifeExpectancy, // logLifeExpectancy
 		       logYLTF, // logYearsLost
-		       R_NaReal, // logDiscYPR
+		       logDiscYPR, // logDiscYPR
 		       R_NaReal	 // logDiscYe
     }; 
     return res;
@@ -1166,6 +1252,9 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   case 52:			// Type 2 depensatory BH
     Se = Se_SR52(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
     break;
+  case 53:			// Type 2 depensatory BH
+    Se = Se_t2dhs(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+    break;
   case 60:			// logistic hockey stick
     Rf_error("Equilibrium not implemented yet");
     break;    
@@ -1212,6 +1301,9 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   case 92: // spline on log R/S
     Rf_error("Not implemented yet");
     break;
+  case 93:
+    Rf_error("Not implemented yet");
+    break;
     default:
       Rf_error("SR model code not recognized");
     break;   
@@ -1234,37 +1326,8 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   //log(softmax(exp(logSe - logSPR + logYPR), (T)SAM_Zero, (T)1.0));
   T logRe = logSe - logSPR;
   //log(softmax(exp(logSe - logSPR), (T)SAM_NegInf, (T)1.0));
-
-  ////////////////////////////////////////////////////////////////////////////////
-  // Survival calculations                                                      //
-  ////////////////////////////////////////////////////////////////////////////////
-  T discYPR = 0.0;
-  T discYe = 0.0;
-  // Custom recursive calculation inspired by survival.hpp
-  T yl_logp = 0.0;
-  T yl_q = 0.0;
-  T yl = 0.0;
-  vector<T> catYe = cat * exp(logRe);
-  for(int aa = 0; aa < cat.size(); ++aa){
-    int j = std::min(std::max(aa-newConf.minAge,0), newDat.natMor.cols()-1);		// Cohort age index
-    int i = std::min(aa, newDat.natMor.rows()-1);
-    T M = newDat.natMor(i,j);
-    T F = 0.0;    
-    if(newConf.keyLogFsta(0,j)>(-1) && aa >= newConf.minAge)
-      F += exp(logF(newConf.keyLogFsta(0,j),i));
-    T Z = M + F;
-    yl += yl_q + exp(yl_logp) * F / Z * (1.0 - 1.0 / Z * (1.0 - exp(-Z)));
-    discYPR += cat(aa) * exp(-yl);
-    discYe += catYe(aa) * exp(-yl);
-    yl_q += exp(yl_logp) * F / Z * (1.0 - exp(-Z));
-    yl_logp += -Z;
-  }
-  T logDiscYPR = log(discYPR + (T)exp(SAM_NegInf));
-  T logDiscYe = log(discYe + (T)exp(SAM_NegInf));
-  ////////////////////////////////////////////////////////////////////////////////
-  // End survival calculations                                                  //
-  ////////////////////////////////////////////////////////////////////////////////
-
+  T logDiscYe = logDiscYPR + logRe;
+ 
   
   // Return
   PERREC_t<T> res = {logFbar, // logFbar

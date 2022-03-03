@@ -39,6 +39,11 @@ Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRe
       log(thisSSB) - logspace_add2(log(thisSSB),rec_pars(2));
       // log(thisSSB) - log(rec_pars(2)) - logspace_add2(log(thisSSB) - rec_pars(2), (Type)0.0);
     break;
+  case 53:			// Type 2 depensatory hockey stick
+     predN = rec_pars(0) - rec_pars(1) +
+      log(thisSSB - (0.5 * ((thisSSB - exp(rec_pars(1)))+Type(0.0)+CppAD::abs((thisSSB - exp(rec_pars(1)))-Type(0.0))))) +
+       log(thisSSB) - logspace_add2(log(thisSSB),rec_pars(2));
+     break;
   case 60:	// logistic Hockey stick
     // 0: alpha
     // 1: mu
@@ -95,6 +100,9 @@ Type functionalStockRecruitment(Type thisSSB, vector<Type> rec_pars, int stockRe
   case 92: // Spline on log(R/S)
     Rf_error("Needs more info");
     break;
+  case 93: // Type 2 depensatory Non-increasing spline on log(R/S)
+    Rf_error("Needs more info");
+    break;
   default:    
       Rf_error("SR model code not recognized");
     break;
@@ -146,6 +154,12 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     predN(0) = log(thisSSB) + bcspline(log(thisSSB),
 				       (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
 				       par.rec_pars);
+    break;
+  case 93: 			// Type 2 depensatory Non-increasing spline on log R/S
+     predN(0) = log(thisSSB) + ibcdspline(log(thisSSB),
+					 (vector<Type>)(conf.constRecBreaks.template cast<Type>()),
+					  (vector<Type>)par.rec_pars.segment(0,par.rec_pars.size()-1)) +
+       log(thisSSB) - logspace_add2(log(thisSSB),par.rec_pars(par.rec_pars.size()-1));
     break;
   default:
     predN(0)=functionalStockRecruitment(thisSSB, par.rec_pars, conf.stockRecruitmentModelCode);
