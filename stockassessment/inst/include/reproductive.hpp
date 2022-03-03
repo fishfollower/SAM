@@ -136,6 +136,36 @@ Type mdsr_52(Type loga, Type logb, Type logd){
   return exp(-f.fn(sv));
 }
 
+//
+
+// 
+
+template<class Type>
+struct MDSR_53 : MDSR_NEWT<Type> {
+  Type loga;
+  Type logb;
+  Type logd;
+
+  MDSR_53(Type la, Type lb, Type ld) : MDSR_NEWT<Type>(), loga(la), logb(lb), logd(ld) {};
+  
+  Type fn (Type logs) override{
+    // Case S <= b
+    // S*a*(2.*d + S)/((d + S)^2*b)
+    Type v1 = logs + loga + logspace_add(log(2.0) + logd, logs) - 2.0 * logspace_add(logd,logs) - logb;
+    // Case S > b
+    // 1.*a*d/(d + S)^2
+    Type v2 = loga + logd - 2.0 * logspace_add(logd,logs);
+    return CppAD::CondExpGt(logs,logb,v2,v1);
+  }
+};
+
+template<class Type>
+Type mdsr_53(Type loga, Type logb, Type logd){
+  MDSR_53<Type> f(loga, logb, logd);
+  Type sv = f.minimize(logd);
+  return exp(-f.fn(sv));
+}
+
 // 
 
 template<class Type>
@@ -191,6 +221,9 @@ Type maxDiffSR(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, int y){
     mdsr = mdsr_51(par.rec_pars(0),par.rec_pars(1),par.rec_pars(2));
     break;
   case 52:
+    mdsr = mdsr_52(par.rec_pars(0),par.rec_pars(1),par.rec_pars(2));
+    break;
+  case 53:
     mdsr = mdsr_52(par.rec_pars(0),par.rec_pars(1),par.rec_pars(2));
     break;
   case 60:

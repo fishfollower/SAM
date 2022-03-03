@@ -31,9 +31,11 @@ defpar <- function(dat,conf,spinoutyear=10){
       if(!is.na(conf$hockeyStickCurve))
           ret$rec_pars[3] <- log(conf$hockeyStickCurve)   
       ret$rec_pars[4] <- C
-  }else if(conf$stockRecruitmentModelCode %in% c(51,52)){ # Shepherd, Deriso
+  }else if(conf$stockRecruitmentModelCode %in% c(51,52)){ # Depensatory Ricker, BevHolt
       ret$rec_pars <- numeric(3)
       ret$rec_pars[3] <- C
+  }else if(conf$stockRecruitmentModelCode==53){ # Depensatory Hockey stick
+      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M))  + log(2),C + log(F+M) - log(F) -log(1 - exp(-F -M)), C)
   }else if(conf$stockRecruitmentModelCode==60){ # logistic Hockey stick
       ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0)
       if(!is.na(conf$hockeyStickCurve))
@@ -50,6 +52,10 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- numeric(length(conf$constRecBreaks) + as.integer(conf$stockRecruitmentModelCode==90))
       if(conf$stockRecruitmentModelCode==90)
           ret$rec_pars[length(ret$rec_pars)] <- 5
+ }else if(conf$stockRecruitmentModelCode %in% c(93)){
+      ret$rec_pars <- numeric(length(conf$constRecBreaks) + 2)
+      ret$rec_pars[length(ret$rec_pars) - 1] <- 5
+      ret$rec_pars[length(ret$rec_pars)] <- C
   }else{ # The rest
       ret$rec_pars <- numeric(2)
   }

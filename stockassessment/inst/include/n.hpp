@@ -61,11 +61,20 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
     	   dat.forecast.forecastYear(i) > 0){
     	  // In forecast
     	  if(dat.forecast.simFlag(1)==0){
-    	    logN.col(i) = predN + neg_log_densityN.simulate();
+    	    vector<Type> noiseN = neg_log_densityN.simulate();
+    	    logN.col(i) = predN + noiseN;
+	    if(conf.minAge == 0){
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,i)(0) + noiseN(0);
+	    }
     	  }
     	}else{
     	  if(conf.simFlag(1)==0){
-    	    logN.col(i) = predN + neg_log_densityN.simulate();
+	    vector<Type> noiseN = neg_log_densityN.simulate();
+    	    logN.col(i) = predN + noiseN;
+	    // Handle recruitment if minAge == 0, assuming propMat(-,0)=0
+	    if(conf.minAge == 0){
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,i)(0) + noiseN(0);
+	    }
     	  }
     	}
       }
