@@ -265,6 +265,7 @@ struct referencepointSet {
   CatchType catchType;
   // RecCorrectionType RecCorrection;
   int optN;
+  int fromSQ;
 
   referencepointSet() : nYears(0) {};
   
@@ -286,7 +287,8 @@ struct referencepointSet {
       MSYRange = asVector<Type>(getListElement(x,"MSYRange"));
       catchType = static_cast<CatchType>((int)*REAL(getListElement(x,"catchType")));
       // RecCorrection = static_cast<RecCorrectionType>((int)*REAL(getListElement(x,"RecCorrection")));
-      optN = (int)*REAL(getListElement(x,"optN"));	    
+      optN = (int)*REAL(getListElement(x,"optN"));
+      fromSQ = (int)*REAL(getListElement(x,"fromSQ"));	    
     }
   }
   
@@ -303,6 +305,7 @@ struct referencepointSet {
     xB0 = rhs.xB0;
     MSYRange = rhs.MSYRange;
     catchType = rhs.catchType;
+    fromSQ = rhs.fromSQ;
     // RecCorrection = rhs.RecCorrection;    
     return *this;
   }
@@ -322,6 +325,7 @@ struct referencepointSet {
     d.xB0 = xB0.template cast<T>();
     d.MSYRange = MSYRange.template cast<T>();
     d.catchType = static_cast<typename referencepointSet<T>::CatchType>((int)catchType);
+    d.fromSQ = fromSQ;
     // d.RecCorrection = static_cast<typename referencepointSet<T>::RecCorrectionType>((int)RecCorrection);
     return d;    
   }

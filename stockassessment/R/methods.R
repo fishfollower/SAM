@@ -221,8 +221,16 @@ print.hcr<-function(x, ...){
 ##' @param  ... extra arguments
 ##' @details prints the F reference point table
 ##' @export
-print.sam_referencepoints<-function(x, ...){
-  print(x$tables$F)
+print.sam_referencepoints<-function(x, digits = 4, format = "f"){
+    t0 <- x$tables$F
+    t1 <- matrix(formatC(t0,digits = digits, format = format),nrow(t0), ncol(t0))
+    rownames(t1) <- rownames(t0)
+    colnames(t1) <- colnames(t0)   
+    tab <- as.table(t1)
+    dn <- attr(tab,"dimnames")
+    names(dn) <- c("Fishing mortality rate","")
+    attr(tab,"dimnames") <- dn
+    print(tab, justify = "right", right = TRUE)
 }
 
 
