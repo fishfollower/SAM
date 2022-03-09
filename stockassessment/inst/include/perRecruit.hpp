@@ -1522,7 +1522,8 @@ struct REFERENCE_POINTS {
 		   confSet& conf_,
 		   paraSet<Type>& par_,
 		   array<Type>& logN_,
-		   array<Type>& logF_	        
+		   array<Type>& logF_,
+		   int fromSQ
 		   ): dat(dat_), conf(conf_), par(par_),
 		      logN(logN_),
 		      logF(logF_)
@@ -1583,7 +1584,7 @@ struct REFERENCE_POINTS {
 
         // Calculate actual F values
     if(CppAD::Variable(par.logScaleFmdy)){
-      logFmdy = par.logScaleFmdy + logFsq; // logFsq + par.logScaleFmsy;
+      logFmdy = par.logScaleFmdy + logFsq * Type(fromSQ); // logFsq + par.logScaleFmsy;
       logBmdy = log(Se(exp(logFmdy)));
       logRmdy = log(Re(exp(logFmdy)));
       logYmdy = log(yield(exp(logFmdy)));
@@ -1601,7 +1602,7 @@ struct REFERENCE_POINTS {
     
     // Calculate actual F values
     if(CppAD::Variable(par.logScaleFmsy)){
-      logFmsy = par.logScaleFmsy + logFsq; // logFsq + par.logScaleFmsy;
+      logFmsy = par.logScaleFmsy + logFsq * Type(fromSQ); // logFsq + par.logScaleFmsy;
       logBmsy = log(Se(exp(logFmsy)));
       logRmsy = log(Re(exp(logFmsy)));
       logYmsy = log(yield(exp(logFmsy)));
@@ -1661,7 +1662,7 @@ struct REFERENCE_POINTS {
 
     
     if(CppAD::Variable(par.logScaleFmax)){
-      logFmax = par.logScaleFmax + logFsq; //logFsq + par.logScaleFmax;
+      logFmax = par.logScaleFmax + logFsq * Type(fromSQ); //logFsq + par.logScaleFmax;
       logBmax = log(Se(exp(logFmax)));
       logRmax = log(Re(exp(logFmax)));
       logYmax = log(yield(exp(logFmax)));
@@ -1685,7 +1686,7 @@ struct REFERENCE_POINTS {
     logSPRxdYPR = vector<Type>(par.logScaleFxdYPR.size());
     for(int i = 0; i < par.logScaleFxdYPR.size(); ++i){
       if(CppAD::Variable(par.logScaleFxdYPR(i))){
-	logFxdYPR(i) = par.logScaleFxdYPR(i) + logFsq; //logFsq + par.logScaleF01;
+	logFxdYPR(i) = par.logScaleFxdYPR(i) + logFsq * Type(fromSQ); //logFsq + par.logScaleF01;
 	logBxdYPR(i) = log(Se(exp(logFxdYPR(i))));
 	logRxdYPR(i) = log(Re(exp(logFxdYPR(i))));
 	logYxdYPR(i) = log(yield(exp(logFxdYPR(i))));
@@ -1702,7 +1703,7 @@ struct REFERENCE_POINTS {
     }
 
     if(CppAD::Variable(par.logScaleFcrash)){
-      logFcrash = par.logScaleFcrash + logFsq; //logFsq + par.logScaleFcrash;
+      logFcrash = par.logScaleFcrash + logFsq * Type(fromSQ); //logFsq + par.logScaleFcrash;
       logBcrash = log(Se(exp(logFcrash)));
       logRcrash = log(Re(exp(logFcrash)));
       logYcrash = log(yield(exp(logFcrash)));
@@ -1719,7 +1720,7 @@ struct REFERENCE_POINTS {
 
     
     if(CppAD::Variable(par.logScaleFext)){
-      logFext = par.logScaleFext + logFsq; //logFsq + par.logScaleFcrash;
+      logFext = par.logScaleFext + logFsq * Type(fromSQ); //logFsq + par.logScaleFcrash;
       logBext = log(Se(exp(logFext)));
       logRext = log(Re(exp(logFext)));
       logYext = log(yield(exp(logFext)));
@@ -1767,7 +1768,7 @@ struct REFERENCE_POINTS {
     logSPRxB0 = vector<Type>(par.logScaleFxB0.size());
     for(int i = 0; i < par.logScaleFxB0.size(); ++i){
       if(CppAD::Variable(par.logScaleFxB0(i))){
-	logFxB0(i) = par.logScaleFxB0(i) + logFsq; //logFsq + par.logScaleF01;
+	logFxB0(i) = par.logScaleFxB0(i) + logFsq * Type(fromSQ); //logFsq + par.logScaleF01;
 	logBxB0(i) = log(Se(exp(logFxB0(i))));
 	logRxB0(i) = log(Re(exp(logFxB0(i))));
 	logYxB0(i) = log(yield(exp(logFxB0(i))));
@@ -1801,7 +1802,7 @@ struct REFERENCE_POINTS {
     }else if(CppAD::Variable(par.logScaleFcrash) &&
 			     !(conf.stockRecruitmentModelCode == 61 ||
 			       conf.stockRecruitmentModelCode == 63)){
-      logFlim = par.logScaleFcrash + logFsq + log(0.99); //logFsq + par.logScaleFcrash;
+      logFlim = par.logScaleFcrash + logFsq * Type(fromSQ) + log(0.95); //logFsq + par.logScaleFcrash;
       logBlim = log(Se(exp(logFlim)));
       logRcrash = log(Re(exp(logFlim)));
       logYcrash = log(yield(exp(logFlim)));
@@ -1810,7 +1811,7 @@ struct REFERENCE_POINTS {
     }else if(CppAD::Variable(par.logScaleFext) &&
 	     (conf.stockRecruitmentModelCode == 61 ||
 	      conf.stockRecruitmentModelCode == 63)){
-      logFlim = par.logScaleFext + logFsq + log(0.99); //logFsq + par.logScaleFcrash;
+      logFlim = par.logScaleFext + logFsq * Type(fromSQ) + log(0.95); //logFsq + par.logScaleFcrash;
       logBlim = log(Se(exp(logFlim)));
       logRcrash = log(Re(exp(logFlim)));
       logYcrash = log(yield(exp(logFlim)));
@@ -2155,7 +2156,7 @@ Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   if(dat.referencepoint.nYears == 0)
     return 0.0;
 
-  REFERENCE_POINTS<Type> referencepoint(dat, conf, par, logN, logF);
+  REFERENCE_POINTS<Type> referencepoint(dat, conf, par, logN, logF, dat.referencepoint.fromSQ);
 
 
 

@@ -20,12 +20,14 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
   data$noFleets <- length(suf)
   data$fleetTypes <- data$fleetTypes[suf]
   data$sampleTimes <- data$sampleTimes[suf]
+  oldYears <- data$years
   data$years <- min(as.numeric(data$aux[,"year"])):max(as.numeric(data$aux[,"year"]))
   ages <- min(as.numeric(data$aux[,"age"])):max(as.numeric(data$aux[,"age"]))
   data$noYears <- length(data$years)
   mmfun<-function(f,y, ff){idx<-which(data$aux[,"year"]==y & data$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
   data$idx1 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=min)
   data$idx2 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=max)
+  data$idxCor <- data$idxCor[suf,match(data$years,oldYears)]
   data$nobs <- length(data$logobs[idx])  
   data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages]
   data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, colnames(data$stockMeanWeight)%in%ages]

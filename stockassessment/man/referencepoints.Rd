@@ -37,6 +37,8 @@ referencepoints(
   fixRP = c(),
   RecCorrection = "median",
   biasCorrect = FALSE,
+  fromSQ = FALSE,
+  nlminb.control = list(eval.max = 1000, iter.max = 1000),
   ...
 )
 }
