@@ -10,7 +10,7 @@
   {"sam_hcr",                   (DL_FUNC) &sam_hcr,                   2}, \
   {"sam_jacobian",              (DL_FUNC) &sam_jacobian,              6}, \
   {"sam_perRecruit",            (DL_FUNC) &sam_perRecruitR,            7}, \
-  {"sam_stochPerRecruit",       (DL_FUNC) &sam_stockPerRecruit,       8}, \
+  {"sam_stochPerRecruit",       (DL_FUNC) &sam_stockPerRecruitR,       8}, \
   {"sam_stockRecruitmentModel", (DL_FUNC) &sam_stockRecruitmentModel, 3}, \
   {"sam_Se_sbh",                (DL_FUNC) &sam_Se_sbh,                3}, \
   {"sam_Se_sl",                 (DL_FUNC) &sam_Se_sl,                 3}, \
