@@ -904,3 +904,36 @@ dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
   mtext(text = "Available data", side=3, line=0.5, at=3/8, outer = TRUE)
   mtext(text = "Data type", side=3, line=0.5, at=7/8, outer = TRUE)
 }
+
+
+##' Plots the sd of the log observations as estimated in SAM in increasing order
+##' @param fit the object returned from sam.fit
+##' @param barcol color for each fleet and age
+##' @param marg margin for plot (mar in par())
+##' @param ylim bounds for y-axis
+##' @param ... extra arguments to plot
+##' @importFrom graphics barplot
+##' @export
+sdplot<-function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
+  UseMethod("sdplot")
+}
+##' @rdname sdplot
+##' @method sdplot sam
+##' @export
+sdplot.sam <- function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
+  cf <- fit$conf$keyVarObs
+  fn <- attr(fit$data, "fleetNames")
+  ages <- fit$conf$minAge:fit$conf$maxAge
+  pt <- partable(fit)
+  sd <- unname(exp(pt[grep("logSdLogObs",rownames(pt)),1]))
+  v<-cf
+  v[] <- c(NA,sd)[cf+2]
+  res<-data.frame(fleet=fn[as.vector(row(v))],name=paste0(fn[as.vector(row(v))]," age ",ages[as.vector(col(v))]), sd=as.vector(v))
+  res<-res[complete.cases(res),]
+  o<-order(res$sd)
+  res<-res[o,]
+  if (missing(barcol)) barcol <- colors()[as.integer(as.factor(res$fleet))*10]
+  if (missing(marg)) marg <- c(max(nchar(fn))*0.8,4,2,1)
+  par(mar=marg)
+  barplot(res$sd, names.arg=res$name,las=2, col=barcol, ylab="SD", ylim=ylim); box()
+}
