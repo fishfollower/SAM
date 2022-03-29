@@ -84,7 +84,7 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 }
 
 template <class Type>
-Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   Type nll=0; 
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
@@ -94,7 +94,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
 
   
   if(conf.corFlag==3){
-    return(nllFseparable(dat, conf, par, logF, keep ,of));
+    return(nllFseparable(dat, conf, par, forecast, logF, keep ,of));
   }
  
   //density::MVNORM_t<Type> neg_log_densityF(fvar);
@@ -107,16 +107,16 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   for(int i=1;i<timeSteps;i++){
     resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
 
-    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+    if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
       // Forecast
-      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
-      Type timeScale = dat.forecast.forecastCalculatedLogSdCorrection(forecastIndex);
+      int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+      Type timeScale = forecast.forecastCalculatedLogSdCorrection(forecastIndex);
 
-      nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
+      nll += neg_log_densityF((logF.col(i) - (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
 
       SIMULATE_F(of){
-    	if(dat.forecast.simFlag(0) == 0){
-    	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
+    	if(forecast.simFlag(0) == 0){
+    	  logF.col(i) = (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
     	}
       }
     }else{
@@ -144,7 +144,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
 
 
 template <class Type>
-Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
@@ -168,10 +168,10 @@ Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<
   vector<Type> logV(timeSteps);
   logV.setZero();
   for(int i=0; i<timeSteps; ++i){
-    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+    if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
       Rf_warning("Forecast with separable F is experimental");
-      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
-      vector<Type> logFtmp = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex);
+      int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+      vector<Type> logFtmp = (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex);
       logV(i)=(logFtmp).mean();
       for(int j=0; j<stateDimF-1; ++j){
 	logU(i,j)=logFtmp(j)-logV(i);

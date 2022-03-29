@@ -191,21 +191,21 @@ modelforecast.sam <- function(fit,
     args$parameters <- pl
     args$random <- unique(names(obj0$env$par[obj0$env$random]))
     args$data$forecast <- list(nYears = as.numeric(nYears),
-                               nCatchAverageYears = as.numeric(nCatchAverageYears),
-                               aveYears = as.numeric(ave.years),
-                               forecastYear = as.numeric(c(rep(0,fit$data$noYears),seq(1,nYears,length=nYears))),
-                               FModel = as.numeric(FModel),
-                               target = as.numeric(target),
-                               selectivity = as.numeric(customSel),
-                               recModel = as.numeric(recModel),
-                               logRecruitmentMedian = as.numeric(logRecruitmentMedian),
-                               logRecruitmentVar = as.numeric(logRecruitmentVar),
-                               fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
-                               simFlag = c(0,0),
-                               uniroot = as.numeric(useUniroot),
-                               hcrConf = hcrConf,
-                               hcrCurrentSSB = hcrCurrentSSB)
-
+                          nCatchAverageYears = as.numeric(nCatchAverageYears),
+                          aveYears = as.numeric(ave.years),
+                          forecastYear = as.numeric(c(rep(0,fit$data$noYears),seq(1,nYears,length=nYears))),
+                          FModel = as.numeric(FModel),
+                          target = as.numeric(target),
+                          selectivity = as.numeric(customSel),
+                          recModel = as.numeric(recModel),
+                          logRecruitmentMedian = as.numeric(logRecruitmentMedian),
+                          logRecruitmentVar = as.numeric(logRecruitmentVar),
+                          fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
+                          simFlag = c(0,0),
+                          uniroot = as.numeric(useUniroot),
+                          hcrConf = hcrConf,
+                          hcrCurrentSSB = hcrCurrentSSB)
+    
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
         return(args)

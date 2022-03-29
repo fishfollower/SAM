@@ -70,7 +70,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     }
   }
   
-  tmball <- c(data, conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
+  tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
@@ -81,21 +81,22 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   args <- c(list(data = tmball,
                  parameters = parameters,
                  random = ran,
+                 ## intern = intern,
                  DLL = "stockassessment"),
             list(...))
 
   mapRP <- list(logFScaleMSY = factor(NA),
                 implicitFunctionDelta = factor(NA),
-                logScaleFmsy = factor(NA),
-                logScaleFmypyl = factor(NA),
-                logScaleFmdy = factor(NA),
-                logScaleFmax = factor(NA),
-                logScaleFxdYPR = factor(rep(NA,length(args$parameters$logScaleFxdYPR))),
-                logScaleFxB0 = factor(rep(NA,length(args$parameters$logScaleFxB0))),
-                logScaleFcrash = factor(NA),
-                logScaleFext = factor(NA),
-                logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
-                logScaleFlim = factor(NA),
+  ##               logScaleFmsy = factor(NA),
+  ##               logScaleFmypyl = factor(NA),
+  ##               logScaleFmdy = factor(NA),
+  ##               logScaleFmax = factor(NA),
+  ##               logScaleFxdYPR = factor(rep(NA,length(args$parameters$logScaleFxdYPR))),
+  ##               logScaleFxB0 = factor(rep(NA,length(args$parameters$logScaleFxB0))),
+  ##               logScaleFcrash = factor(NA),
+  ##               logScaleFext = factor(NA),
+  ##               logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
+  ##               logScaleFlim = factor(NA),
                 splinePenalty = factor(ifelse(penalizeSpline,1,NA))
                 )
   if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
@@ -128,7 +129,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
       ## ddd$data <- tmball
       ## ddd$parameters <- parameters
       ## ddd$random <- ran
-      ## ddd$DLL <- "stockassessment"
+    ## ddd$DLL <- "stockassessment"    
     obj <- do.call(MakeADFun,ddd)
     ## }else{
     ##   obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
@@ -141,11 +142,18 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   for(nn in names(upper)) upper2[names(obj$par)==nn]=upper[[nn]]
 
   if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
-  
+
+  ## intern = TRUE,
+  ## if(intern){
+  ##     opt <- nlminb(obj$par, obj$fn,obj$gr, obj$he, control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
+  ##     he <- obj$he
+  ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
+  he <- function(par){ optimHess(par, obj$fn, obj$gr) }
+  ## }
   for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
     g <- as.numeric( obj$gr(opt$par) )
-    h <- optimHess(opt$par, obj$fn, obj$gr)
+    h <- he(opt$par)
     opt$par <- opt$par - solve(h, g)
     opt$objective <- obj$fn(opt$par)
   }

@@ -9,6 +9,8 @@ namespace rec_atomic {
   T logspace_add2_raw (const T &logx, const T &logy) {
     // Was:
     //  fmax2 (logx, logy) + log1p (exp (-fabs (logx - logy)));
+    if(logx == logy)
+      return 2.0 + logx;
     if(logx == R_NegInf)
       return(logy);
     if(logy == R_NegInf)
@@ -20,13 +22,17 @@ namespace rec_atomic {
 
   
   TMB_BIND_ATOMIC(logspace_add2,
-		  11,
-		  logspace_add2_raw(x[0], x[1]) )
+  		  11,
+  		  logspace_add2_raw(x[0], x[1]) )
 
   template<class T>
   T logspace_sub2_raw (const T &logx, const T &logy) {
+    if(logx == logy)
+      return R_NegInf;
     if(logy == R_NegInf)
       return(logx);
+    if(logx < logy)
+      Rf_error("logx < logy in logspace_sub2");
     return logx + atomic::robust_utils::R_Log1_Exp(logy - logx);
   }
 
@@ -41,7 +47,7 @@ namespace rec_atomic {
 
 
 template<class Type>
-Type logspace_add2(Type logx, Type logy) {
+Type logspace_add2(Type logx, Type logy) {  
   if ( !CppAD::Variable(logx) && logx == Type(-INFINITY) )
     return logy;
   if ( !CppAD::Variable(logy) && logy == Type(-INFINITY) )
@@ -64,5 +70,13 @@ Type logspace_sub2(Type logx, Type logy) {
   return rec_atomic::logspace_sub2(tx)[0];
 }
 
+
+template<class Type>
+Type logspace_sum(vector<Type> logx){
+  Type r = R_NegInf;
+  for(int i = 0; i < logx.size(); ++i)
+    r = logspace_add2(r, logx);
+  return r;
+}
 
 #endif

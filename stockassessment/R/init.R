@@ -115,17 +115,17 @@ defpar <- function(dat,conf,spinoutyear=10){
   ## Reference points
   ret$logFScaleMSY <- 0
   ret$implicitFunctionDelta <- 0
-  ret$logScaleFmsy <- 0
-  ret$logScaleFmypyl <- 0
-  ret$logScaleFmdy <- 0
-  ret$logScaleFmax <- 0
-  ret$logScaleFxdYPR <- numeric(0)
-  ret$logScaleFxB0 <- numeric(0)
-  ret$logScaleFcrash <- 0
-  ret$logScaleFext <- 0
-  ret$logScaleFxPercent <- numeric(0)
-  ret$logScaleFlim <- 0
-  ret$logScaleFmsyRange <- matrix(0,2,0)
+  ## ret$logScaleFmsy <- 0
+  ## ret$logScaleFmypyl <- 0
+  ## ret$logScaleFmdy <- 0
+  ## ret$logScaleFmax <- 0
+  ## ret$logScaleFxdYPR <- numeric(0)
+  ## ret$logScaleFxB0 <- numeric(0)
+  ## ret$logScaleFcrash <- 0
+  ## ret$logScaleFext <- 0
+  ## ret$logScaleFxPercent <- numeric(0)
+  ## ret$logScaleFlim <- 0
+  ## ret$logScaleFmsyRange <- matrix(0,2,0)
   ret$splinePenalty <- 0
   
   ## Latent variables

@@ -16,7 +16,7 @@ matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 }
 
 template <class Type>
-Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){ 
+Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   Type nll=0;
   int stateDimN=logN.dim[0];
   int timeSteps=logN.dim[1];
@@ -36,22 +36,22 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   matrix<Type> LN = lltCovN.matrixL();
   matrix<Type> LinvN = LN.inverse();
 
-  for(int i = 1; i < timeSteps; ++i){ 
-    vector<Type> predN = predNFun(dat,conf,par,logN,logF,i);
-    if(dat.forecast.nYears > 0 &&
-       dat.forecast.forecastYear(i) > 0 &&
-       dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(i))-1) != dat.forecast.asRecModel){
+  for(int i = 1; i < timeSteps; ++i){
+    vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,i);
+    if(forecast.nYears > 0 &&
+       forecast.forecastYear(i) > 0 &&
+       forecast.recModel(CppAD::Integer(forecast.forecastYear(i))-1) != forecast.asRecModel){
       // Forecast
       vector<Type> Nscale(logN.rows());
       Nscale.setZero();
       Nscale += 1.0;
-      Nscale(0) = sqrt(dat.forecast.logRecruitmentVar) / sqrt(nvar(0,0));
+      Nscale(0) = sqrt(forecast.logRecruitmentVar) / sqrt(nvar(0,0));
       vector<Type> predNTmp = predN;
-      predNTmp(0) = dat.forecast.logRecruitmentMedian;
+      predNTmp(0) = forecast.logRecruitmentMedian;
       // MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
       nll+=neg_log_densityN((logN.col(i)-predNTmp) / Nscale) + (log(Nscale)).sum();
       SIMULATE_F(of){
-    	if(dat.forecast.simFlag(1) == 0){
+    	if(forecast.simFlag(1) == 0){
     	  logN.col(i) = predNTmp + neg_log_densityN.simulate() * Nscale;
     	}
       }
@@ -59,14 +59,14 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
       nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
       SIMULATE_F(of){
-    	if(dat.forecast.nYears > 0 &&
-    	   dat.forecast.forecastYear(i) > 0){
+    	if(forecast.nYears > 0 &&
+    	   forecast.forecastYear(i) > 0){
     	  // In forecast
-    	  if(dat.forecast.simFlag(1)==0){
+    	  if(forecast.simFlag(1)==0){
     	    vector<Type> noiseN = neg_log_densityN.simulate();
     	    logN.col(i) = predN + noiseN;
 	    if(conf.minAge == 0){
-	      logN(0,i) = predNFun(dat,conf,par,logN,logF,i)(0) + noiseN(0);
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,i)(0) + noiseN(0);
 	    }
     	  }
     	}else{
@@ -75,7 +75,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
     	    logN.col(i) = predN + noiseN;
 	    // Handle recruitment if minAge == 0, assuming propMat(-,0)=0
 	    if(conf.minAge == 0){
-	      logN(0,i) = predNFun(dat,conf,par,logN,logF,i)(0) + noiseN(0);
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,i)(0) + noiseN(0);
 	    }
     	  }
     	}

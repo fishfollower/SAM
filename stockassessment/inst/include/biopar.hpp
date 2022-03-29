@@ -1,3 +1,6 @@
+#ifndef SAM_BIOPAR_HPP
+#define SAM_BIOPAR_HPP
+
 template <class Type>
 Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, vector<Type> logPhi, Type logSdP){
     int nrow=P.dim[0];
@@ -101,7 +104,7 @@ Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type
     Type nll=0;
     array<Type> mo=dat.propMat;
     nll += nllBioProcess(logitMO, par.meanLogitMO, conf.keyMatureMean, par.logPhiMO, par.logSdProcLogitMO(0));
-    Type m,a,b,v, prec;
+    Type m,a,b, prec;
     for(int i=0; i<mo.dim[0]; ++i){
       for(int j=0; j<mo.dim[1]; ++j){
 	m = invlogit(logitMO(i,j));
@@ -149,3 +152,5 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
   }
   return Type(0);
 }
+
+#endif

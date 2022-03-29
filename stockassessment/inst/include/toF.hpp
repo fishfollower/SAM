@@ -163,10 +163,11 @@ struct SSB2F_QUICK {
   Type rec_mean;
 
   Type f(Type logFScale){
+    Recruitment<Type> recruit = Recruitment<Type>(new Rec_None<Type>());
     array<Type> lN = logN;
     array<Type> lF = logF;
     lF += logFScale;
-    vector<Type> nextN = predNFun(ds, cf, ps, lN, lF, i);
+    vector<Type> nextN = predNFun(ds, cf, ps, lN, lF, recruit, i);
     if(!isNA(rec_mean))
       nextN(0) = rec_mean;
     int jj = i;

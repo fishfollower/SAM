@@ -255,10 +255,84 @@ referencepoints <- function(fit,
     UseMethod("referencepoints")
 }
 
+
 ##' @rdname referencepoints
 ##' @method referencepoints sam
 ##' @export
 referencepoints.sam <- function(fit,
+                                nYears = 100,
+                                Fsequence = seq(0,4, len = 200),
+                                aveYears = max(fit$data$years)+(-9:0),
+                                selYears = max(fit$data$years),
+                                SPRpercent = c(0.35),
+                                dYPRpercent = c(0.1),
+                                B0percent = c(0.2),
+                                catchType = "catch",
+                                MSYreduction = c(0.05),
+                                newtonSteps = 3,
+                                optN = 20,
+                                jacobianHScale = 0.5,
+                                fixRP = c(),
+                                RecCorrection = "median",
+                                biasCorrect = FALSE,
+                                nlminb.control = list(eval.max = 1000, iter.max = 1000),
+                                ...){
+    if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
+        stop("Values of Fsequence must be positive and increasing.")
+    if(!isTRUE(all.equal(Fsequence[1],0, check.attributes = FALSE, use.names = FALSE)))
+        warning("The first value of Fsequence should be 0.")
+
+    if(!(all(MSYreduction > 0) && all(MSYreduction < 1)))
+        stop("MSYreduction must be between 0 and 1.")
+    MSYfraction <- 1 - MSYreduction
+
+   obj0 <- fit$obj
+    argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
+    argsIn$silent <- fit$obj$env$silent
+    argsIn$parameters <- fit$pl
+    argsIn$random <- unique(names(obj0$env$par[obj0$env$random]))
+    ## Add referencepointSet
+    catchType <- pmatch(catchType,c("catch","landing","discard"))
+    if(is.na(catchType))
+        stop("Invalid catch type")
+
+    RecCorrection <- pmatch(RecCorrection,c("mean","median","mode"))
+    if(is.na(RecCorrection))
+        stop("Invalid recruitment correction")
+
+
+    aveYearsIn <- aveYears
+    aveYears <- match(aveYears, fit$data$years) - 1
+    if(any(is.na(aveYears)))
+        stop("aveYears has years without data.")
+
+    selYearsIn <- selYears
+    selYears <- match(selYears, fit$data$years) - 1
+    if(any(is.na(selYears)))
+        stop("selYears has years without data.")
+
+    
+    argsIn$data$referencepoints <- list(list(nYears = nYears,
+                                        rpType = 1,
+                                        aveYears = aveYears,
+                                        selYears = selYears,
+                                        logCustomSel = numeric(0),
+                                        xVal = numeric(0),
+                                        catchType = catchType-1,
+                                        logF0 = log(0.1)
+                                        ))
+    args <- argsIn
+    
+    objOptim <- do.call(TMB::MakeADFun, args)
+    objOptim$fn(fit$opt$par)
+    sdreport(objOptim)
+}
+
+
+##' @rdname referencepoints
+##' @method referencepoints Oldsam
+##' @export
+referencepoints.Oldsam <- function(fit,
                                 nYears = 100,
                                 Fsequence = seq(0,4, len = 200),
                                 aveYears = max(fit$data$years)+(-9:0),
@@ -617,6 +691,9 @@ referencepoints.sam <- function(fit,
         })
     }
 
+    if(length(rp) == 0)
+        stop("No reference points left to estimate.")
+    
     if(tryAgain)                        
         objOptim <- do.call(TMB::MakeADFun, args)
 

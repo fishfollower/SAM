@@ -48,13 +48,13 @@
 // exp(SAM_NegInf)
 
 
-template<class Type>
-Type logspace_sum(vector<Type> x){
-  Type r = R_NegInf;
-  for(int i = 0; i < x.size(); ++i)
-    r = logspace_add2(r, x(i));
-  return r;
-}
+// template<class Type>
+// Type logspace_sum(vector<Type> x){
+//   Type r = R_NegInf;
+//   for(int i = 0; i < x.size(); ++i)
+//     r = logspace_add2(r, x(i));
+//   return r;
+// }
 
 
 namespace rec_atomic {
@@ -877,7 +877,7 @@ struct F_dFunctionalSR {
   template<class T>
   T operator()(vector<T> x){  // Evaluate function
     vector<T> rp2 = rp.template cast<T>();
-    return exp(functionalStockRecruitment(x[0], rp2, srmc));
+    return 0.0; //exp(functionalStockRecruitment(x[0], rp2, srmc));
   }    
 };
 #endif
@@ -892,7 +892,7 @@ Type dFunctionalSR(Type ssb, vector<Type> rp, int srmc){
   x[0] = ssb;
   CppAD::Independent(x);
   CppAD::vector<AD<Type> > y( 1 );
-  y[0] = exp(functionalStockRecruitment(x[0], rp2, srmc));
+  y[0] = 0.0; //exp(functionalStockRecruitment(x[0], rp2, srmc));
   CppAD::ADFun<Type> F(x, y);
   CppAD::vector<Type> x_eval( 1 );
   x_eval[0] = ssb;
@@ -1044,6 +1044,8 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   // Prepare parameters
   paraSet<T> newPar = par.template cast<T>();
 
+  Recruitment<T> recruit = makeRecruitmentFunction(newDat, newConf, newPar);
+  
   vector<T> logSelT = logSel.template cast<T>();
   // Make logF array
   array<T> logF(logSelT.size(), nYears);
@@ -1061,7 +1063,7 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   // typename referencepointSet<T>::RecCorrectionType RecCorrection = static_cast<typename referencepointSet<T>::RecCorrectionType>(RC);
   for(int i = 1; i < nYears; ++i){
     // predN
-    logN.col(i) = predNFun(newDat, newConf, newPar, logN, logF, i);
+    logN.col(i) = predNFun(newDat, newConf, newPar, logN, logF, recruit, i);
     // for(int j = 1; j < logN.rows(); ++j){
       // if(RecCorrection == referencepointSet<T>::RecMean){
       // 	logN(j,i) += 0.5 * exp(2.0 * newPar.logSdLogN(conf.keyVarLogN(j)));
@@ -1180,38 +1182,39 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   // Calculate Se
   T Se = SAM_Zero; //R_NegInf;
   
-  T dsr0 = 10000.0;
-  if(conf.stockRecruitmentModelCode != 0 &&
-     conf.stockRecruitmentModelCode != 3 &&
-     conf.stockRecruitmentModelCode != 62 &&
-     conf.stockRecruitmentModelCode != 65 &&
-     (conf.stockRecruitmentModelCode != 68) && // || newPar.rec_pars[2] < 0) &&
-     (conf.stockRecruitmentModelCode != 69) &&
-     conf.stockRecruitmentModelCode != 90 &&
-     conf.stockRecruitmentModelCode != 91 &&
-     conf.stockRecruitmentModelCode != 92){ // || newPar.rec_pars[2] < 0 ))
-    dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
-  }
-  if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69){
-    dsr0 = CppAD::CondExpLt(newPar.rec_pars[2],
-			    (T)0.0,
-			    dFunctionalSR(T(SAM_Zero),
-					  newPar.rec_pars,
-					  conf.stockRecruitmentModelCode),
-			    dsr0);
-  }
+  // T dsr0 = 10000.0;
+  // if(conf.stockRecruitmentModelCode != 0 &&
+  //    conf.stockRecruitmentModelCode != 3 &&
+  //    conf.stockRecruitmentModelCode != 62 &&
+  //    conf.stockRecruitmentModelCode != 65 &&
+  //    (conf.stockRecruitmentModelCode != 68) && // || newPar.rec_pars[2] < 0) &&
+  //    (conf.stockRecruitmentModelCode != 69) &&
+  //    conf.stockRecruitmentModelCode != 90 &&
+  //    conf.stockRecruitmentModelCode != 91 &&
+  //    conf.stockRecruitmentModelCode != 92){ // || newPar.rec_pars[2] < 0 ))
+  //   dsr0 = dFunctionalSR(T(SAM_Zero), newPar.rec_pars, conf.stockRecruitmentModelCode);
+  // }
+  // if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69){
+  //   dsr0 = CppAD::CondExpLt(newPar.rec_pars[2],
+  // 			    (T)0.0,
+  // 			    dFunctionalSR(T(SAM_Zero),
+  // 					  newPar.rec_pars,
+  // 					  conf.stockRecruitmentModelCode),
+  // 			    dsr0);
+  // }
 
-  if(conf.stockRecruitmentModelCode == 90 ||
-     conf.stockRecruitmentModelCode == 91 ||
-     conf.stockRecruitmentModelCode == 92){
-    // dSplineSR uses logssb
-    dsr0 = dSplineSR((T)SAM_Zero,
-		     (vector<T>)newConf.constRecBreaks.template cast<T>(),
-		     newPar.rec_pars,
-		     conf.stockRecruitmentModelCode);
-  }
+  // if(conf.stockRecruitmentModelCode == 90 ||
+  //    conf.stockRecruitmentModelCode == 91 ||
+  //    conf.stockRecruitmentModelCode == 92){
+  //   // dSplineSR uses logssb
+  //   dsr0 = dSplineSR((T)SAM_Zero,
+  // 		     (vector<T>)newConf.constRecBreaks.template cast<T>(),
+  // 		     newPar.rec_pars,
+  // 		     conf.stockRecruitmentModelCode);
+  // }
+  T dsr0 = recruit.dSR(-30.0);
 
-  T logRecCorrection = 0.0;
+  // T logRecCorrection = 0.0;
   // if(RecCorrection == referencepointSet<T>::RecMean){
   //   logRecCorrection = 0.5 * exp(2.0 * newPar.logSdLogN(conf.keyVarLogN(0)));
   // }else if(RecCorrection == referencepointSet<T>::RecMedian){
@@ -1222,102 +1225,103 @@ PERREC_t<T> perRecruit(T logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Typ
   //   Rf_error("Recruitment correction type not implemented");
   // }
     
-  switch(conf.stockRecruitmentModelCode){
-  case 0: // straight RW 
-    Rf_error("Equilibrium SSB not implemented");
-    // Projecting forward, the mean on log-scale will always be last years recruitment
-    // Not sure it is a good idea to implement
-    //Se = lambda * newPar.logN(0,newPar.logN.cols());
-    break;
-  case 1: //ricker
-    Se = exp(-newPar.rec_pars(1)) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)); //log((exp(newPar.rec_pars(0)) * lambda));
-    break;
-  case 2:  //BH
-    // Handle negative values below!
-    Se = (exp(newPar.rec_pars(0) + logRecCorrection) * lambda - 1.0) * exp(-newPar.rec_pars(1));
-      // CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-      // 			   fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
-      // 			   T(SAM_Zero));
-    break;
-  case 3: //Constant mean
-    // Constant recruitment - last year of assessment
-    Se = lambda * exp(newPar.rec_pars(newPar.rec_pars.size() - 1) + logRecCorrection);
-    break;
-  case 50:			// Type 2 depensatory logistic hockey stick
-    Rf_error("Equilibrium not implemented yet");
-    break;
-  case 51:			// Type 2 depensatory Ricker
-    Se = Se_t2dr(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
-    break;
-  case 52:			// Type 2 depensatory BH
-    Se = Se_SR52(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
-    break;
-  case 53:			// Type 2 depensatory BH
-    Se = Se_t2dhs(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
-    break;
-  case 60:			// logistic hockey stick
-    Rf_error("Equilibrium not implemented yet");
-    break;    
-  case 61: // Hockey stick
-    Se = lambda * exp(newPar.rec_pars(0) + logRecCorrection);
-    break;
-  case 62: // AR1 (on log-scale)
-    Se = lambda * exp(newPar.rec_pars(0) + logRecCorrection);
-    break;
-  case 63: //Bent hyperbola / Hockey-stick-like
-    Se = (2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0) / (lambda * exp(newPar.rec_pars(1) + logRecCorrection)) - 2.0 * exp(newPar.rec_pars(0)) - 2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0)) / ( 1.0 / ((lambda * lambda * exp(2.0 * (newPar.rec_pars(1) + logRecCorrection)))) - 2.0 / (lambda * exp(newPar.rec_pars(1) + logRecCorrection))  );  
-    break;
-  case 64: // Power CMP
-    Se = exp(1.0 / (1.0 - invlogit(newPar.rec_pars(1))) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)));
-    break;
-  case 65: // Power Non-CMP
-    Se = exp(1.0 / (1.0 - (exp(newPar.rec_pars(1)) + 1.0001)) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)));
-    break;
-  case 66: // Shepherd
-    // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-    // 			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
-    // 			  T(SAM_Zero));
-    Se = exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(softmax(exp(newPar.rec_pars(0) + logRecCorrection) * lambda - 1.0,(T)SAM_Zero, (T)100.0)) );
-    break;
-  case 67: // Deriso
-    // Handle negative values below!
-    // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
-    // 			  fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
-    // 			   T(SAM_Zero));
-    Se = (exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logRecCorrection + logSPR)) - 1.0) * exp(-newPar.rec_pars(1) - newPar.rec_pars(2));
-    break;
-  case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1)
-    Se = Se_sl(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
-    break;
-  case 69: // Sigmoidal Beverton-Holt (cases: gamma < 1; gamma >= 1)
-    Se = Se_sbh(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
-    break;
-  case 90: // Non-increasing spline on log R/S
-    Se = Se_ibcd_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars, dat.referencepoint.optN);
-    break;
-  case 91: // integrated spline on log R/S
-    Se = Se_ibc_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars, dat.referencepoint.optN);
-    break;
-  case 92: // spline on log R/S
-    Rf_error("Not implemented yet");
-    break;
-  case 93:
-    Rf_error("Not implemented yet");
-    break;
-    default:
-      Rf_error("SR model code not recognized");
-    break;   
-  }
-  //T logSe = log(Se);
-  if(conf.stockRecruitmentModelCode == 63 ||
-     conf.stockRecruitmentModelCode == 66 ||
-     conf.stockRecruitmentModelCode == 90)
-    Se = CppAD::CondExpGt(-logSPR, log(dsr0), (T)SAM_NegInf, Se);
+  // switch(conf.stockRecruitmentModelCode){
+  // case 0: // straight RW 
+  //   Rf_error("Equilibrium SSB not implemented");
+  //   // Projecting forward, the mean on log-scale will always be last years recruitment
+  //   // Not sure it is a good idea to implement
+  //   //Se = lambda * newPar.logN(0,newPar.logN.cols());
+  //   break;
+  // case 1: //ricker
+  //   Se = exp(-newPar.rec_pars(1)) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)); //log((exp(newPar.rec_pars(0)) * lambda));
+  //   break;
+  // case 2:  //BH
+  //   // Handle negative values below!
+  //   Se = (exp(newPar.rec_pars(0) + logRecCorrection) * lambda - 1.0) * exp(-newPar.rec_pars(1));
+  //     // CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+  //     // 			   fabs(exp(newPar.rec_pars(0)) * lambda - 1.0) * exp(-newPar.rec_pars(1)),
+  //     // 			   T(SAM_Zero));
+  //   break;
+  // case 3: //Constant mean
+  //   // Constant recruitment - last year of assessment
+  //   Se = lambda * exp(newPar.rec_pars(newPar.rec_pars.size() - 1) + logRecCorrection);
+  //   break;
+  // case 50:			// Type 2 depensatory logistic hockey stick
+  //   Rf_error("Equilibrium not implemented yet");
+  //   break;
+  // case 51:			// Type 2 depensatory Ricker
+  //   Se = Se_t2dr(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+  //   break;
+  // case 52:			// Type 2 depensatory BH
+  //   Se = Se_SR52(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+  //   break;
+  // case 53:			// Type 2 depensatory BH
+  //   Se = Se_t2dhs(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+  //   break;
+  // case 60:			// logistic hockey stick
+  //   Rf_error("Equilibrium not implemented yet");
+  //   break;    
+  // case 61: // Hockey stick
+  //   Se = lambda * exp(newPar.rec_pars(0) + logRecCorrection);
+  //   break;
+  // case 62: // AR1 (on log-scale)
+  //   Se = lambda * exp(newPar.rec_pars(0) + logRecCorrection);
+  //   break;
+  // case 63: //Bent hyperbola / Hockey-stick-like
+  //   Se = (2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0) / (lambda * exp(newPar.rec_pars(1) + logRecCorrection)) - 2.0 * exp(newPar.rec_pars(0)) - 2.0 * sqrt(exp(2.0 * newPar.rec_pars(0)) + exp(2.0 * newPar.rec_pars(2)) / 4.0)) / ( 1.0 / ((lambda * lambda * exp(2.0 * (newPar.rec_pars(1) + logRecCorrection)))) - 2.0 / (lambda * exp(newPar.rec_pars(1) + logRecCorrection))  );  
+  //   break;
+  // case 64: // Power CMP
+  //   Se = exp(1.0 / (1.0 - invlogit(newPar.rec_pars(1))) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)));
+  //   break;
+  // case 65: // Power Non-CMP
+  //   Se = exp(1.0 / (1.0 - (exp(newPar.rec_pars(1)) + 1.0001)) * (newPar.rec_pars(0) + logRecCorrection + log(lambda)));
+  //   break;
+  // case 66: // Shepherd
+  //   // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+  //   // 			  exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(fabs(exp(newPar.rec_pars(0)) * lambda - 1.0))),
+  //   // 			  T(SAM_Zero));
+  //   Se = exp( newPar.rec_pars(1) + 1.0 / exp(newPar.rec_pars(2)) * log(softmax(exp(newPar.rec_pars(0) + logRecCorrection) * lambda - 1.0,(T)SAM_Zero, (T)100.0)) );
+  //   break;
+  // case 67: // Deriso
+  //   // Handle negative values below!
+  //   // Se = CppAD::CondExpGt((newPar.rec_pars(0) + logSPR), T(SAM_Zero),
+  //   // 			  fabs(exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logSPR)) - 1.0) * exp(-newPar.rec_pars(1)),
+  //   // 			   T(SAM_Zero));
+  //   Se = (exp(exp(-newPar.rec_pars(2)) * (newPar.rec_pars(0) + logRecCorrection + logSPR)) - 1.0) * exp(-newPar.rec_pars(1) - newPar.rec_pars(2));
+  //   break;
+  // case 68: // Saila-Lorda (cases: gamma > 1; gamma = 1; gamma < 1)
+  //   Se = Se_sl(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+  //   break;
+  // case 69: // Sigmoidal Beverton-Holt (cases: gamma < 1; gamma >= 1)
+  //   Se = Se_sbh(lambda, exp(newPar.rec_pars(0) + logRecCorrection), exp(newPar.rec_pars(1)), exp(newPar.rec_pars(2)));
+  //   break;
+  // case 90: // Non-increasing spline on log R/S
+  //   Se = Se_ibcd_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars, dat.referencepoint.optN);
+  //   break;
+  // case 91: // integrated spline on log R/S
+  //   Se = Se_ibc_quick(lambda,(vector<T>)newConf.constRecBreaks.template cast<T>(), newPar.rec_pars, dat.referencepoint.optN);
+  //   break;
+  // case 92: // spline on log R/S
+  //   Rf_error("Not implemented yet");
+  //   break;
+  // case 93:
+  //   Rf_error("Not implemented yet");
+  //   break;
+  //   default:
+  //     Rf_error("SR model code not recognized");
+  //   break;   
+  // }
+  // //T logSe = log(Se);
+  // if(conf.stockRecruitmentModelCode == 63 ||
+  //    conf.stockRecruitmentModelCode == 66 ||
+  //    conf.stockRecruitmentModelCode == 90)
+  //   Se = CppAD::CondExpGt(-logSPR, log(dsr0), (T)SAM_NegInf, Se);
   
   // T logSe = CppAD::CondExpGt(exp(-logSPR), dsr0 - (T)1e-3,
   // 			     log(fabs(Se)) - 3.0 * (exp(-logSPR) - dsr0),
   // 			     log(fabs(Se)));
-  T logSe = log(softmax(Se, (T)exp(SAM_NegInf), (T)1000.0));
+  // T logSe = log(softmax(Se, (T)exp(SAM_NegInf), (T)1000.0));
+  T logSe = recruit.logSe(log(lambda));
   
   // T logYe = CppAD::CondExpGt(exp(-logSPR), dsr0,
   // 			     logSe - logSPR + logYPR - 3.0 * (exp(-logSPR) - dsr0),
@@ -2020,7 +2024,7 @@ struct REFERENCE_POINTS {
 				     (vector<T>)(conf.constRecBreaks.template cast<T>()),
 				     rp2));
     }else{
-      return exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
+      return 0.0; //exp(functionalStockRecruitment(ssb, rp2, conf.stockRecruitmentModelCode));
     }
   }
 
@@ -2047,7 +2051,7 @@ struct REFERENCE_POINTS {
 				 (vector<AD<Type> >)(conf.constRecBreaks.template cast<AD<Type> >()),
 				    rp));
     }else{
-      return exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
+      return 0.0; //exp(functionalStockRecruitment(s0, rp, conf.stockRecruitmentModelCode));
     }
   }
 
@@ -2151,7 +2155,7 @@ struct REFERENCE_POINTS {
 };
 
 template<class Type>
-Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, objective_function<Type> *of){
+Type nllReferencepoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, objective_function<Type> *of){
 
   if(dat.referencepoint.nYears == 0)
     return 0.0;
@@ -2372,7 +2376,7 @@ struct F_dFunctionalSR2 {
     for(int i = 0; i < nrp; ++i)
       rp2(i) = x(i);
     T ssb = x(nrp);
-    return exp(functionalStockRecruitment(ssb, rp2, srmc));
+    return 0.0; //exp(functionalStockRecruitment(ssb, rp2, srmc));
   }
 };
 #endif

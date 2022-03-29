@@ -29,7 +29,7 @@ extern "C" {
     int nY0 = Rf_asInteger(nYears);
     // int RC0 = Rf_asInteger(RC);
     int CT0 = Rf_asInteger(CT);
-    PERREC_t<double> y = perRecruit<double, double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0);
+    PERREC_t<double> y = perRecruit_D<double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0);
     const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
@@ -96,7 +96,7 @@ extern "C" {
     double* LS = REAL(logssb);
     double* LR = REAL(v);
     for(int i = 0; i < n; ++i)
-      LR[i] = functionalStockRecruitment(exp(LS[i]), rp, srmc);
+      LR[i] = 0.0; //functionalStockRecruitment(exp(LS[i]), rp, srmc);
     UNPROTECT(1);
     return v;
   }
@@ -107,7 +107,7 @@ extern "C" {
     vector<double> rp = asVector<double>(rec_pars);
     int srmc = Rf_asInteger(code);
 	
-    double v = exp(functionalStockRecruitment(b, rp, srmc));
+    double v = 0.0; //exp(functionalStockRecruitment(b, rp, srmc));
 
 #ifdef CPPAD_FRAMEWORK
     vector<AD<double> > rp2(rp.size() + 1);
@@ -119,7 +119,7 @@ extern "C" {
     // x[0] = b;
     // CppAD::Independent(x);
     vector<AD<double> > y( 1 );
-    y[0] = exp(functionalStockRecruitment(rp2(rp.size()), (vector<AD<double> >)rp2.head(rp.size()), srmc));
+    y[0] = 0.0; //exp(functionalStockRecruitment(rp2(rp.size()), (vector<AD<double> >)rp2.head(rp.size()), srmc));
     CppAD::ADFun<double> F(rp2, y);
     vector<double> x_eval( rp.size() + 1 );
     for(int i = 0; i < rp.size(); ++i)
@@ -129,15 +129,16 @@ extern "C" {
 #endif
 #ifdef TMBAD_FRAMEWORK
    
-    F_dFunctionalSR2 Fd = {rp.size(),srmc};
-    vector<double> x(rp.size() + 1);
-    for(int i = 0; i < rp.size(); ++i)
-      x(i) = rp(i);
-    x(rp.size()) = b;
-    TMBad::ADFun<> G(TMBad::StdWrap<F_dFunctionalSR2,vector<TMBad::ad_aug> >(Fd), x);
-    // TMBad::ADFun<> G(Fd,x);
-    G = G.JacFun();
-    vector<double> r = G(x);
+    // F_dFunctionalSR2 Fd = {rp.size(),srmc};
+    // vector<double> x(rp.size() + 1);
+    // for(int i = 0; i < rp.size(); ++i)
+    //   x(i) = rp(i);
+    // x(rp.size()) = b;
+    // TMBad::ADFun<> G(TMBad::StdWrap<F_dFunctionalSR2,vector<TMBad::ad_aug> >(Fd), x);
+    // // TMBad::ADFun<> G(Fd,x);
+    // G = G.JacFun();
+    // vector<double> r = G(x);
+    vector<double> r(2); r.setZero();
 #endif
 
     const char *resNms[] = {"Recruits", "Gradient", ""}; // Must end with ""
@@ -152,12 +153,12 @@ extern "C" {
   }
 
   SEXP Se_sbhR(SEXP lambda, SEXP a, SEXP b, SEXP g){
-    double r = Se_sbh(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
+    double r = 0.0; //Se_sbh(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
     return asSEXP(r);
   }
 
   SEXP Se_slR(SEXP lambda, SEXP a, SEXP b, SEXP g){
-    double r = Se_sl(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
+    double r = 0.0; // Se_sl(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
     return asSEXP(r);
   }
 

@@ -65,9 +65,9 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
-  DATA_STRUCT(forecast, forecastSet); dataset.forecast = forecast;
-  DATA_STRUCT(referencepoint, referencepointSet); dataset.referencepoint = referencepoint;
-    
+  DATA_STRUCT(forecast, forecastSet);
+  DATA_STRUCT(referencepoints, referencepointList);
+  
   confSet confset;
   DATA_INTEGER(minAge); confset.minAge=minAge; 
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
@@ -161,17 +161,17 @@ Type objective_function<Type>::operator() ()
   PARAMETER(implicitFunctionDelta); paraset.implicitFunctionDelta = implicitFunctionDelta;
 
   // YPR reference points
-  PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
-  PARAMETER(logScaleFmypyl); paraset.logScaleFmypyl = logScaleFmypyl;
-  PARAMETER(logScaleFmdy); paraset.logScaleFmdy = logScaleFmdy;
-  PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
-  PARAMETER_VECTOR(logScaleFxdYPR); paraset.logScaleFxdYPR = logScaleFxdYPR;
-  PARAMETER_VECTOR(logScaleFxB0); paraset.logScaleFxB0 = logScaleFxB0;
-  PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
-  PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
-  PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
-  PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
-  PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
+  // PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
+  // PARAMETER(logScaleFmypyl); paraset.logScaleFmypyl = logScaleFmypyl;
+  // PARAMETER(logScaleFmdy); paraset.logScaleFmdy = logScaleFmdy;
+  // PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
+  // PARAMETER_VECTOR(logScaleFxdYPR); paraset.logScaleFxdYPR = logScaleFxdYPR;
+  // PARAMETER_VECTOR(logScaleFxB0); paraset.logScaleFxB0 = logScaleFxB0;
+  // PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
+  // PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
+  // PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
+  // PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
+  // PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
 
   PARAMETER(splinePenalty); paraset.splinePenalty = splinePenalty;
   
@@ -190,6 +190,8 @@ Type objective_function<Type>::operator() ()
       dataset.logobs(i)=missing(idxmis++);
     }    
   }
+ 
+  Recruitment<Type> recruit = makeRecruitmentFunction(dataset, confset, paraset);
   
   Type ans=0; //negative log-likelihood
 
@@ -198,22 +200,25 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   }
 
-
   ans += nllSplinePenalty(dataset, confset, paraset, this);
          
-  prepareForForecast(dataset, confset, paraset, logF, logN);
-  dataset.forecast.calculateForecast(logF,logN, dataset, confset, paraset);    
+  prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
+  forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit);    
 
-  ans += nllF(dataset, confset, paraset, logF, keep, this);
+  ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
+
   ans += nllSW(logSW, dataset, confset, paraset, this);
   ans += nllCW(logCW, dataset, confset, paraset, this);
   ans += nllMO(logitMO, dataset, confset, paraset, this);
-  ans += nllNM(logNM, dataset, confset, paraset, this);      
-  ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
-  forecastSimulation(dataset, confset, paraset, logN, logF, this);
+  ans += nllNM(logNM, dataset, confset, paraset, this);
 
-  ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
-  ans += nllReferencepoints(dataset, confset, paraset, logN, logF, this);
-  
+  ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, keep, this);
+  forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit, this);
+
+  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, keep, this);
+  //ans += nllReferencepoints(dataset, confset, paraset, logN, logF, recruit, this);
+
+  reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
+
   return ans;
 }

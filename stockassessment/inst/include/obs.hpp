@@ -183,7 +183,8 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
 }
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF,
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF,
+	    Recruitment<Type> &recruit,
 	    //vector<Type> &predObs, vector<Type> &varLogCatch,
 	    data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   using CppAD::abs;
@@ -229,9 +230,17 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
   vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
 
-  vector<Type> logrmax = log(rmax(dat,conf,par));
+  vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
   vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
-  
+
+ // B0, SPR, YPR, ...
+
+  vector<Type> logYPR = yieldPerRecruit(dat,conf,par,logF, true);
+  vector<Type> logSPR = spawnersPerRecruit(dat,conf,par,logF, true);
+  vector<Type> logSe = equilibriumBiomass(dat,conf,par,logF, true);
+  vector<Type> logB0 = B0(dat,conf,par,logF, true);
+
+ 
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logtsb, logfsb, logCatch, logLand);
 
   vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
@@ -463,9 +472,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   ADREPORT_F(logYNL, of);
   ADREPORT_F(logrmax, of);
   ADREPORT_F(logGenerationLength, of);
+  ADREPORT_F(logYPR, of);
+  ADREPORT_F(logSPR, of);
+  ADREPORT_F(logSe, of);
+  ADREPORT_F(logB0, of);
   
   // Additional forecast quantities
-  if(dat.forecast.nYears > 0){
+  if(forecast.nYears > 0){
     vector<Type> dis = disFun(dat, conf, logN, logF);
     vector<Type> logDis = log(dis);
     
@@ -510,18 +523,18 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> beforeLastLogF = logF.col(timeSteps-2);
   ADREPORT_F(beforeLastLogF,of);  
 
-  if(dat.forecast.nYears > 0 && dat.forecast.FModel(dat.forecast.FModel.size()-1) == dat.forecast.findMSY){
+  if(forecast.nYears > 0 && forecast.FModel(forecast.FModel.size()-1) == forecast.findMSY){
     
-    int catchYears = std::min((int)asDouble(dat.forecast.nYears),dat.forecast.nCatchAverageYears);
+    int catchYears = std::min((int)asDouble(forecast.nYears),forecast.nCatchAverageYears);
     Type catchSum = sum((vector<Type>)cat.tail(catchYears)) / (Type)catchYears;
     nll -= par.implicitFunctionDelta * log(catchSum);    
     // Calculate Fmsy
-    Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - dat.forecast.nYears - 1);
+    Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - forecast.nYears - 1);
     ADREPORT_F(logFMSY, of);
 
     // Output stock status - Positive is good for the stock
-    Type logFstatus = logFMSY - logfbar(timeSteps - dat.forecast.nYears - 1);
-    Type logSSBstatus = logssb(timeSteps - dat.forecast.nYears - 1) - logssb(timeSteps - 1);
+    Type logFstatus = logFMSY - logfbar(timeSteps - forecast.nYears - 1);
+    Type logSSBstatus = logssb(timeSteps - forecast.nYears - 1) - logssb(timeSteps - 1);
     ADREPORT_F(logFstatus, of);
     ADREPORT_F(logSSBstatus, of);    
   }

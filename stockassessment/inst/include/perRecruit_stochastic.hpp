@@ -51,6 +51,7 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
   newDat.noYears = nYears;
 
+  Recruitment<Type> recruit = makeRecruitmentFunction(newDat, conf, par);
 
   // Make logF array
   array<Type> logF(logSel.size(), nYears);
@@ -68,7 +69,7 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   matrix<Type> nvar = get_nvar(newDat, conf, par, logN, logF);
   MVMIX_t<Type> neg_log_densityN(nvar,Type(conf.fracMixN),false);
   for(int i = 1; i < nYears; ++i){
-    vector<Type> predN = predNFun(newDat, conf, par, logN, logF, i);
+    vector<Type> predN = predNFun(newDat, conf, par, logN, logF, recruit, i);
     logN.col(i) = predN + neg_log_densityN.simulate();
     // Remove recruitment
     logN(0,i) = R_NegInf;    
@@ -174,10 +175,10 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
       tmp.setZero();
       tmp.col(0) = logNinit2;
       // Try unfished equilibrium? Or adaptively reduce F if crashing?
-      vector<Type> lnitmp = predNFun(newDat, conf, par, tmp, logFInit, 1);
+      vector<Type> lnitmp = predNFun(newDat, conf, par, tmp, logFInit,recruit, 1);
       if(conf.minAge == 0){
 	tmp.col(1) = lnitmp;
-	lnitmp(0) = predNFun(newDat, conf, par, tmp, logFInit, 1)(0);
+	lnitmp(0) = predNFun(newDat, conf, par, tmp, logFInit,recruit, 1)(0);
       }
       if(lnitmp(0) < logNinit(0) + log(0.01)){ // Probably heading for crash
 	imp = 0.0;
@@ -199,13 +200,13 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   // int nYearsEq = 1;
   for(int i = 1; i < nYears; ++i){
     //Harvest control rule?
-    vector<Type> predN = predNFun(newDat, conf, par, logNeq, logF, i);
+    vector<Type> predN = predNFun(newDat, conf, par, logNeq, logF,recruit, i);
     vector<Type> noiseN = neg_log_densityNeq.simulate();
     logNeq.col(i) = predN + noiseN;
     if(conf.minAge == 0){
       // In this case, predicted recruitment was wrong since it depends on SSB the same year
       // Predict recruitment again with updated ssb (assuming maturity at age 0 is 0):
-      Type predRec = predNFun(newDat, conf, par, logNeq, logF, i)(0);
+      Type predRec = predNFun(newDat, conf, par, logNeq, logF,recruit, i)(0);
       // Overwrite recruitment, but keep simulated noise to retain correlation:
       logNeq(0,i) = predRec + noiseN(0);      
     }
@@ -235,37 +236,37 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   Type logDiscYe = logDiscYPR + logRe;
 
 
-  Type dsr0 = 10000.0;
-  if(conf.stockRecruitmentModelCode != 0 &&
-     conf.stockRecruitmentModelCode != 3 &&
-     conf.stockRecruitmentModelCode != 62 &&
-     conf.stockRecruitmentModelCode != 65 &&
-     (conf.stockRecruitmentModelCode != 68) && // || newPar.rec_pars[2] < 0) &&
-     (conf.stockRecruitmentModelCode != 69) &&
-     conf.stockRecruitmentModelCode != 90 &&
-     conf.stockRecruitmentModelCode != 91 &&
-     conf.stockRecruitmentModelCode != 92){ // || newPar.rec_pars[2] < 0 ))
-    dsr0 = dFunctionalSR(Type(SAM_Zero), par.rec_pars, conf.stockRecruitmentModelCode);
-  }
-  if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69){
-    dsr0 = CppAD::CondExpLt(par.rec_pars[2],
- 			    (Type)0.0,
- 			    dFunctionalSR(Type(SAM_Zero),
- 					  par.rec_pars,
- 					  conf.stockRecruitmentModelCode),
- 			    dsr0);
-  }
+  // Type dsr0 = 10000.0;
+  // if(conf.stockRecruitmentModelCode != 0 &&
+  //    conf.stockRecruitmentModelCode != 3 &&
+  //    conf.stockRecruitmentModelCode != 62 &&
+  //    conf.stockRecruitmentModelCode != 65 &&
+  //    (conf.stockRecruitmentModelCode != 68) && // || newPar.rec_pars[2] < 0) &&
+  //    (conf.stockRecruitmentModelCode != 69) &&
+  //    conf.stockRecruitmentModelCode != 90 &&
+  //    conf.stockRecruitmentModelCode != 91 &&
+  //    conf.stockRecruitmentModelCode != 92){ // || newPar.rec_pars[2] < 0 ))
+  //   dsr0 = dFunctionalSR(Type(SAM_Zero), par.rec_pars, conf.stockRecruitmentModelCode);
+  // }
+  // if(conf.stockRecruitmentModelCode == 68 || conf.stockRecruitmentModelCode == 69){
+  //   dsr0 = CppAD::CondExpLt(par.rec_pars[2],
+  // 			    (Type)0.0,
+  // 			    dFunctionalSR(Type(SAM_Zero),
+  // 					  par.rec_pars,
+  // 					  conf.stockRecruitmentModelCode),
+  // 			    dsr0);
+  // }
 
-  if(conf.stockRecruitmentModelCode == 90 ||
-     conf.stockRecruitmentModelCode == 91 ||
-     conf.stockRecruitmentModelCode == 92){
-    // dSplineSR uses logssb
-    dsr0 = dSplineSR((Type)SAM_Zero,
- 		     (vector<Type>)conf.constRecBreaks.template cast<Type>(),
- 		     par.rec_pars,
- 		     conf.stockRecruitmentModelCode);
-  }
-
+  // if(conf.stockRecruitmentModelCode == 90 ||
+  //    conf.stockRecruitmentModelCode == 91 ||
+  //    conf.stockRecruitmentModelCode == 92){
+  //   // dSplineSR uses logssb
+  //   dsr0 = dSplineSR((Type)SAM_Zero,
+  // 		     (vector<Type>)conf.constRecBreaks.template cast<Type>(),
+  // 		     par.rec_pars,
+  // 		     conf.stockRecruitmentModelCode);
+  // }
+  Type dsr0 = recruit.dSR(-30.0);
   
   // Return
   PERREC_t<Type> res = {logFbar, // logFbar

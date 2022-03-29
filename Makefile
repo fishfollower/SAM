@@ -51,9 +51,10 @@ build-package: $(TARBALL)
 $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
 	sed s/dummySHA/$(THISSHA)/g description-addon > description-addon-tmp
 	mv $(PACKAGE)/DESCRIPTION old-description
+	sed -i -E '/^(Remote|Github)/d' old-description
 	cat old-description description-addon-tmp > $(PACKAGE)/DESCRIPTION  
 	rm description-addon-tmp
-	$(R) CMD build --resave-data=no $(PACKAGE)
+	$(R) CMD build --no-manual --resave-data=no $(PACKAGE)
 	rm $(PACKAGE)/DESCRIPTION  
 	mv old-description $(PACKAGE)/DESCRIPTION  
 

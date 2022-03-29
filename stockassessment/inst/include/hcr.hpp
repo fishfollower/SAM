@@ -27,9 +27,9 @@ Type hcr(Type ssb, vector<Type> hcrConf){
 }
 
 template <class Type>
-void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, objective_function<Type> *of){
+void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, Recruitment<Type> recruit, objective_function<Type> *of){
   // Only for forecast simulation
-  if(dat.forecast.nYears == 0 || !(isDouble<Type>::value) || !(of->do_simulate))
+  if(forecast.nYears == 0 || !(isDouble<Type>::value) || !(of->do_simulate))
     return;
 
   // General setup
@@ -48,30 +48,34 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, a
   MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
 
 
-  int nYears = dat.forecast.nYears;
+  int nYears = forecast.nYears;
   for(int i = 0; i < nYears; ++i){
-    int indx = dat.forecast.forecastYear.size() - nYears + i;
+    int indx = forecast.forecastYear.size() - nYears + i;
     // Update forecast
-    dat.forecast.updateForecast(i, logF, logN, dat, conf, par);
+    forecast.updateForecast(i, logF, logN, dat, conf, par, recruit);
     // Simulate F
-    // int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
-    if(dat.forecast.simFlag(0) == 0){
-      Type timeScale = dat.forecast.forecastCalculatedLogSdCorrection(i);
-      logF.col(indx) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
+    // int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+    if(forecast.simFlag(0) == 0){
+      Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
+      logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
     }
     // Simulate N
-    if(dat.forecast.simFlag(1) == 0){
-      vector<Type> predN = predNFun(dat,conf,par,logN,logF,indx);
+    if(forecast.simFlag(1) == 0){
+      vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,indx);
       vector<Type> Nscale(logN.rows());
       Nscale.setConstant((Type)1.0);
-      if(dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(indx))-1) != dat.forecast.asRecModel){
-	Nscale(0) = sqrt(dat.forecast.logRecruitmentVar) / sqrt(nvar(0,0));
-	predN(0) = dat.forecast.logRecruitmentMedian;
+      if(forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) != forecast.asRecModel){
+	Nscale(0) = sqrt(forecast.logRecruitmentVar) / sqrt(nvar(0,0));
+	predN(0) = forecast.logRecruitmentMedian;
       }
-      logN.col(indx) = predN + neg_log_densityN.simulate();// * Nscale;
+      // logN.col(indx) = predN + neg_log_densityN.simulate();// * Nscale;
+      vector<Type> noiseN = neg_log_densityN.simulate();
+      logN.col(indx) = predN + noiseN;
+      if(conf.minAge == 0 &&
+	 forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.asRecModel)
+	logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,i)(0) + noiseN(0);
     }
   }
-
   return;
 }
 
