@@ -381,7 +381,9 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   
 
   matrix<Type> nvar = get_nvar(newDat, conf, par, logN, logF);
-  MVMIX_t<Type> neg_log_densityN(nvar,Type(conf.fracMixN),false);
+  vector<Type> fracMixN(conf.fracMixN.size());
+  for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
+  MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
   for(int i = 1; i < nYears; ++i){
     vector<Type> predN = predNFun(newDat, conf, par, logN, logF, recruit, i);
     logN.col(i) = predN + neg_log_densityN.simulate();
@@ -507,7 +509,7 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   }
    
   matrix<Type> nvareq = get_nvar(newDat, conf, par, logNeq, logF);
-  MVMIX_t<Type> neg_log_densityNeq(nvareq,Type(conf.fracMixN));
+  MVMIX_t<Type> neg_log_densityNeq(nvareq,fracMixN);
   
   // vector<Type> runMean = exp(logNeq0.col(0));
   // runMean.setZero();

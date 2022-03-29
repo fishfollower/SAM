@@ -29,6 +29,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 
   Type pred = 0.0;
   Type logzz = R_NegInf;
+  Type zz = 0.0;
 
    if(age==dat.maxAgePerFleet(f-1)){ma=1;}else{ma=0;}
     pg=conf.maxAgePlusGroup(f-1);
@@ -120,7 +121,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
             }
             N +=  exp(logN(aa,y)-zz*dat.sampleTimes(f-1));
           }
-          pred(i) = log(N) +par.logFpar(conf.keyLogFpar(f-1,a));
+          pred = log(N) +par.logFpar(conf.keyLogFpar(f-1,a));
         }
 	break;
   
