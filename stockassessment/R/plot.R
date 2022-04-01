@@ -1260,3 +1260,147 @@ generationlengthplot.hcr <- function(fit, ...){
     plotit(fit, "logGenerationLength", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
     addforecast(fit,"logGenerationLength")
 }
+
+
+
+
+
+##' SAM YPR plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium yield per recruit assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+yprplot<-function(fit, ...){
+    UseMethod("yprplot")
+}
+##' @rdname yprplot
+##' @method yprplot default
+##' @export
+yprplot.default <- function(fit, ...){
+         plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, ...)  
+}
+##' @rdname yprplot
+##' @method yprplot samforecast
+##' @export
+yprplot.samforecast <- function(fit, ...){
+    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, ...)
+    addforecast(fit,"logYPR")
+}
+
+##' @rdname yprplot
+##' @method yprplot hcr
+##' @export
+yprplot.hcr <- function(fit, ...){
+    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, ...)
+    addforecast(fit,"logYPR")
+}
+
+
+
+##' SAM SPR plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium spawners per recruit assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+sprplot<-function(fit, ...){
+    UseMethod("sprplot")
+}
+##' @rdname sprplot
+##' @method sprplot default
+##' @export
+sprplot.default <- function(fit, ...){
+         plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp, ...)  
+}
+##' @rdname sprplot
+##' @method sprplot samforecast
+##' @export
+sprplot.samforecast <- function(fit, ...){
+    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp, ...)
+    addforecast(fit,"logSPR")
+}
+
+##' @rdname sprplot
+##' @method sprplot hcr
+##' @export
+sprplot.hcr <- function(fit, ...){
+    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp, ...)
+    addforecast(fit,"logSPR")
+}
+
+
+
+##' SAM equilibrium biomass plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium spawners per recruit assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+equilibriumbiomassplot<-function(fit, ...){
+    UseMethod("equilibriumbiomassplot")
+}
+##' @rdname equilibriumbiomassplot
+##' @method equilibriumbiomassplot default
+##' @export
+equilibriumbiomassplot.default <- function(fit, ...){
+         plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp, ...)  
+}
+##' @rdname equilibriumbiomassplot
+##' @method equilibriumbiomassplot samforecast
+##' @export
+equilibriumbiomassplot.samforecast <- function(fit, ...){
+    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp, ...)
+    addforecast(fit,"logSe")
+}
+
+##' @rdname equilibriumbiomassplot
+##' @method equilibriumbiomassplot hcr
+##' @export
+equilibriumbiomassplot.hcr <- function(fit, ...){
+    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp, ...)
+    addforecast(fit,"logSe")
+}
+
+
+
+
+##' SAM equilibrium biomass in the absence of fishing plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium biomass in the absence of fishing assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+b0plot<-function(fit, ...){
+    UseMethod("b0plot")
+}
+##' @rdname b0plot
+##' @method b0plot default
+##' @export
+b0plot.default <- function(fit, ...){
+         plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp, ...)  
+}
+##' @rdname b0plot
+##' @method b0plot samforecast
+##' @export
+b0plot.samforecast <- function(fit, ...){
+    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logB0")
+}
+
+##' @rdname b0plot
+##' @method b0plot hcr
+##' @export
+b0plot.hcr <- function(fit, ...){
+    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logSe")
+}
+

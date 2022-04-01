@@ -7,6 +7,8 @@
 \usage{
 hcr(fit, ...)
 
+hcr(fit, ...)
+
 \method{hcr}{sam}(
   fit,
   nYears = 20,
@@ -66,6 +68,8 @@ The formula below is used to determine a new F based on the previous SSB.
 }
 }
 \seealso{
+modelforecast
+
 modelforecast
 }
 \author{

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_REC_ATOMIC_HPP
 #define SAM_REC_ATOMIC_HPP
 

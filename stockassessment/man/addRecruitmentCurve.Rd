@@ -26,6 +26,8 @@ addRecruitmentCurve(
   PI = FALSE,
   picol = rgb(0.6, 0, 0),
   pilty = 2,
+  year = NA_real_,
+  lastR = NA_real_,
   ...
 )
 }

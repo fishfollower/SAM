@@ -12,16 +12,15 @@ extern "C" {
 
   SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT);
   SEXP stochPerRecruitR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit);
-  SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code);
-  SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code);
+  SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
+  SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
   SEXP hcrR(SEXP ssb, SEXP hcrConf);
   SEXP jacobian(SEXP fn, SEXP par, SEXP rho, SEXP maxit, SEXP h, SEXP tolerance);
-  SEXP Se_sbhR(SEXP lambda, SEXP a, SEXP b, SEXP g);
-  SEXP Se_slR(SEXP lambda, SEXP a, SEXP b, SEXP g);
   SEXP bcsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcdsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcisplineR(SEXP x, SEXP knots, SEXP pars);
+  SEXP iibcisplineR(SEXP x, SEXP knots, SEXP pars);
 
 
   
@@ -48,16 +47,15 @@ extern "C" {
     
     CALLDEF(perRecruitR,7),
     CALLDEF(stochPerRecruitR,8),
-    CALLDEF(stockRecruitmentModelR,3),
-    CALLDEF(logSRR,3),
+    CALLDEF(stockRecruitmentModelR,6),
+    CALLDEF(logSRR,6),
     CALLDEF(hcrR,2),
     CALLDEF(jacobian,6),
-    CALLDEF(Se_sbhR,4),
-    CALLDEF(Se_slR,4),
     CALLDEF(bcsplineR,3),
     CALLDEF(ibcsplineR,3),
     CALLDEF(ibcdsplineR,3),
     CALLDEF(ibcisplineR,3),
+    CALLDEF(iibcisplineR,3),
     {NULL,NULL,0}
   };
 
@@ -79,12 +77,11 @@ extern "C" {
     CALLABLE(stochPerRecruitR);
     CALLABLE(stockRecruitmentModelR);
     CALLABLE(logSRR);
-    CALLABLE(Se_sbhR);
-    CALLABLE(Se_slR);
     CALLABLE(bcsplineR);
     CALLABLE(ibcsplineR);
     CALLABLE(ibcdsplineR);
     CALLABLE(ibcisplineR);
+    CALLABLE(iibcisplineR);
 
     R_useDynamicSymbols(info, (Rboolean)FALSE);
   }

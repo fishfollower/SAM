@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_EQUILIBRIUM_HPP
 #define SAM_EQUILIBRIUM_HPP
 
@@ -47,7 +48,7 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
   newDat.noYears = nYears;
   
-  Recruitment<Type> recruit = makeRecruitmentFunction(newDat, conf, par);
+  Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
   Recruitment<Type> rec0 = Recruitment<Type>(new Rec_None<Type>());
 
   // Make logF array
@@ -365,7 +366,7 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
   newDat.noYears = nYears;
 
-  Recruitment<Type> recruit = makeRecruitmentFunction(newDat, conf, par);
+  Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
 
   // Make logF array
   array<Type> logF(logSel.size(), nYears);

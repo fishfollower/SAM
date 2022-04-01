@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_REFERENCEPOINT_HPP
 #define SAM_REFERENCEPOINT_HPP
 
@@ -405,6 +406,173 @@ MAKE_REFPOINT_D(xSPR);
 
 
 
+//////// %B(0) Reference point (e.g., F~20%B0~) ////////
+
+
+template<class Type>
+struct RPD_xB0 : RPD_Base<Type> {
+
+  Type B0;
+
+  RPD_xB0() = default;
+  
+  RPD_xB0(const dataSet<Type>& dat_,
+	    const confSet& conf_,
+	    const paraSet<Type>& par_,
+	   const referencepointSet<Type>& rp_) : RPD_Base<Type>(dat_, conf_, par_, rp_), B0(B0_i(this->dat, this->conf, this->par, this->rp)) {};
+  
+  Type operator()(const vector<Type> &x) {
+    if(x.size() != this->rp.xVal.size())
+      Rf_error("In reference point xB0, length of F does not match length of fractions.");
+    Type kappa = 0.0;
+    for(int i = 0; i < x.size(); ++i){
+      Type logFbar = x(i);      
+      Type v = equilibriumBiomass_i(logFbar, this->dat,this->conf,this->par,this->rp);
+      Type tmp = v - this->rp.xVal(i) * B0;
+      kappa += tmp * tmp;
+    }
+    return kappa;
+  }
+};
+
+MAKE_REFPOINT_D(xB0);
+
+
+//////// Maximum yield per year lost (v1) ////////
+
+
+template<class Type>
+struct RPD_MYPYLdiv : RPD_Base<Type> {
+
+  Type logAgeRange;
+  RPD_MYPYLdiv() = default;
+  
+  RPD_MYPYLdiv(const dataSet<Type>& dat_,
+	       const confSet& conf_,
+	       const paraSet<Type>& par_,
+	       const referencepointSet<Type>& rp_) : RPD_Base<Type>(dat_, conf_, par_, rp_), logAgeRange(log((Type)conf_.maxAge - (Type)conf_.minAge + (Type)1.0)) {};
+
+  using RPD_Base<Type>::getPerRec;
+ 
+  Type operator()(const vector<Type> &x) {    
+    Type logFbar = x(0);
+    PERREC_t<Type> r = getPerRec(logFbar);
+    // Yield / (1 + YearsLost/AgeRange)
+    Type tmp = r.logYe - logspace_add2(Type(0.0), r.logYearsLost - logAgeRange);
+    return -tmp;
+  }
+};
+
+MAKE_REFPOINT_D(MYPYLdiv);
+
+//////// Maximum yield per year lost (v2) ////////
+
+
+template<class Type>
+struct RPD_MYPYLprod : RPD_Base<Type> {
+
+  Type logAgeRange;
+  RPD_MYPYLprod() = default;
+  
+  RPD_MYPYLprod(const dataSet<Type>& dat_,
+	       const confSet& conf_,
+	       const paraSet<Type>& par_,
+	       const referencepointSet<Type>& rp_) : RPD_Base<Type>(dat_, conf_, par_, rp_), logAgeRange(log((Type)conf_.maxAge - (Type)conf_.minAge + (Type)1.0)) {};
+
+  using RPD_Base<Type>::getPerRec;
+ 
+  Type operator()(const vector<Type> &x) {    
+    Type logFbar = x(0);
+    PERREC_t<Type> r = getPerRec(logFbar);
+    // Yield * (1 - exp(-YearsLost/AgeRange))
+    Type tmp = r.logYe - logspace_sub2(Type(0.0), r.logYearsLost - logAgeRange);
+    return -tmp;
+  }
+};
+
+MAKE_REFPOINT_D(MYPYLprod);
+
+//////// Maximum (life year) Discounted Yield ////////
+
+
+template<class Type>
+struct RPD_MDY : RPD_Base<Type> {
+
+  USING_RPD_BASE;
+ 
+  Type operator()(const vector<Type> &x) {    
+    Type logFbar = x(0);
+    PERREC_t<Type> r = getPerRec(logFbar);
+    return -r.logDiscYe;
+  }
+};
+
+MAKE_REFPOINT_D(MDY);
+
+
+//////// Crash ////////
+
+
+template<class Type>
+struct RPD_Crash : RPD_Base<Type> {
+
+  Type logdSR0;
+  RPD_Crash() = default;
+  
+  RPD_Crash(const dataSet<Type>& dat_,
+	    const confSet& conf_,
+	    const paraSet<Type>& par_,
+	    const referencepointSet<Type>& rp_) : RPD_Base<Type>(dat_, conf_, par_, rp_), logdSR0(R_NegInf) {
+    Recruitment<Type> rec = makeRecruitmentFunction(conf_,par_);
+    logdSR0 = log(rec.dSR(Type(SAM_Zero)));
+  };
+
+  using RPD_Base<Type>::getPerRec;
+  
+  Type operator()(const vector<Type> &x) {    
+    Type logFbar = x(0);
+    PERREC_t<Type> r = getPerRec(logFbar);
+    Type tmp = logdSR0 - (-r.logSPR);
+    return tmp * tmp;
+  }
+};
+
+MAKE_REFPOINT_D(Crash);
+
+
+
+//////// Ext ////////
+
+
+template<class Type>
+struct RPD_Ext : RPD_Base<Type> {
+
+  Type logdSR0;
+  RPD_Ext() = default;
+  
+  RPD_Ext(const dataSet<Type>& dat_,
+	    const confSet& conf_,
+	    const paraSet<Type>& par_,
+	    const referencepointSet<Type>& rp_) : RPD_Base<Type>(dat_, conf_, par_, rp_), logdSR0(R_NegInf) {
+    Recruitment<Type> rec = makeRecruitmentFunction(conf_,par_);
+    logdSR0 = log(rec.dSR(Type(SAM_Zero)));
+  };
+
+  using RPD_Base<Type>::getPerRec;
+  
+  Type operator()(const vector<Type> &x) {    
+    Type logFbar = x(0);
+    PERREC_t<Type> r = getPerRec(logFbar);
+    Type tmp = r.logSe;
+    return tmp * tmp;
+  }
+};
+
+MAKE_REFPOINT_D(Ext);
+
+
+//////// Lim?? ////////
+
 
 /////////////////////////////// Function to call from main program ////////////////////////////////
 
@@ -427,7 +595,12 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
     }else if(rpt  == ReferencePointDeterministic::FixedF){
       rp = Referencepoint_D<Type>("FixedF",i,rps.logF0, new RefPointD_FixedF<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::StatusQuo){
-      //rp = Referencepoint_D<Type>("StatusQuo",i,rps.logF0, new RefPoint_StatusQuo<TMBad::ad_aug>(dat,conf,par,logF,rps));
+      if(rps.xVal.size() == 0)
+	Rf_error("Referencepoint StatusQuo must have at least one xVal");
+      vector<Type> logFsq(rps.xVal.size());
+      for(int xi = 0; xi < rps.xVal.size(); ++xi)
+	logFsq(xi) = fbari(conf, logF, logF.cols()-1 - CppAD::Integer(rps.xVal(xi)), true);
+      rp = Referencepoint_D<Type>("StatusQuo",i,logFsq, new RefPointD_FixedF<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::MSY){
       rp = Referencepoint_D<Type>("MSY",i,rps.logF0, new RefPointD_MSY<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::MSYRange){
@@ -438,11 +611,17 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
     }else if(rpt  == ReferencePointDeterministic::xSPR){
       rp = Referencepoint_D<Type>("xSPR",i,rps.logF0, new RefPointD_xSPR<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::xB0){
+      rp = Referencepoint_D<Type>("xB0",i,rps.logF0, new RefPointD_xB0<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::MYPYLdiv){
+      rp = Referencepoint_D<Type>("MYPYLdiv",i,rps.logF0, new RefPointD_MYPYLdiv<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::MYPYLprod){
+      rp = Referencepoint_D<Type>("MYPYLprod",i,rps.logF0, new RefPointD_MYPYLprod<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::MDY){
+      rp = Referencepoint_D<Type>("MDY",i,rps.logF0, new RefPointD_MDY<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::Crash){
+      rp = Referencepoint_D<Type>("Crash",i,rps.logF0, new RefPointD_Crash<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::Ext){
+      rp = Referencepoint_D<Type>("Ext",i,rps.logF0, new RefPointD_Ext<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::Lim){
 
     }else{

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_SURVIVAL_HPP
 #define SAM_SURVIVAL_HPP
 

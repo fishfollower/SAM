@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_OBS_HPP
 #define SAM_OBS_HPP
 

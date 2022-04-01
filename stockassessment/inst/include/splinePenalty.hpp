@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_SPLINEPENALTY_HPP
 #define SAM_SPLINEPENALTY_HPP
 

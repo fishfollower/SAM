@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_DEFINE_HPP
 #define SAM_DEFINE_HPP
 
@@ -1184,19 +1185,11 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
       forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
       break;
     case useCatchval: // target is a catch value in weight
-      if(uniroot){
-	calcF = catch2F((Type)target(i),
-			exp(lastFullLogF),
-			(vector<Type>)dat.natMor.matrix().row(indx),
-			exp((vector<Type>)logN.col(indx)),
-			(vector<Type>)dat.catchMeanWeight.matrix().row(indx));
-      }else{
-	calcF = catch2F_quick((Type)target(i),
+      calcF = catch2F_quick((Type)target(i),
 			      exp(lastFullLogF),
 			      (vector<Type>)dat.natMor.matrix().row(indx),
 			      exp((vector<Type>)logN.col(indx)),
 			      (vector<Type>)dat.catchMeanWeight.matrix().row(indx));
-      }
       if(i == 0){
 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
       }else{
@@ -1213,29 +1206,15 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
 			  logN,
 			  indx,
 			  logRecruitmentMedian);
-      // if(i == 0){
-      // 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
-      // }else{
-      // 	forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
-      // }
       forecastCalculatedMedian.col(i) = log(calcF) + log(sel);
       break;
     case useLandval:
-      if(uniroot){
-	calcF = landing2F((Type)target(i),
-			  exp(lastFullLogF),
-			  (vector<Type>)dat.natMor.matrix().row(indx),
-			  exp((vector<Type>)logN.col(indx)),
-			  (vector<Type>)dat.landMeanWeight.matrix().row(indx),
-			  (vector<Type>)dat.landFrac.matrix().row(indx));
-      }else{
-	calcF = landing2F_quick((Type)target(i),
+  	calcF = landing2F_quick((Type)target(i),
 				exp(lastFullLogF),
 				(vector<Type>)dat.natMor.matrix().row(indx),
 				exp((vector<Type>)logN.col(indx)),
 				(vector<Type>)dat.landMeanWeight.matrix().row(indx),
 				(vector<Type>)dat.landFrac.matrix().row(indx));
-      }
       if(i == 0){
 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
       }else{

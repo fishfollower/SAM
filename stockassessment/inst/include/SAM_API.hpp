@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_R_API
 #define SAM_R_API
 

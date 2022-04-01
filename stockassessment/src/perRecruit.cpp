@@ -3,6 +3,31 @@
 #include "../inst/include/SAM.hpp"
 
 
+struct F_dFunctionalSR2 {
+  int srmc;
+  double year;
+  double lastR;
+  vector<double> crb;
+
+  template <template<class> class V, class T>
+  T operator()(const V<T> &x){
+    confSet conf;
+    conf.stockRecruitmentModelCode = srmc;
+    conf.constRecBreaks = crb;
+    vector<T> rec_pars(x.size()-1);
+    for(int i = 0; i < rec_pars.size(); ++i)
+      rec_pars(i) = x(i);
+    T logssb = x(x.size()-1);
+    paraSet<T> par;
+    par.rec_pars = rec_pars;
+    Recruitment<T> rec = makeRecruitmentFunction(conf, par);
+    return rec(logssb, T(year), T(lastR));
+  
+  }
+};
+
+
+
 extern "C" {
   
   SEXP hcrR(SEXP ssb, SEXP hcrConf){
@@ -88,78 +113,68 @@ extern "C" {
 
 
   
-  SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code){
+  SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR){
+    // Fake paraSet and confSet
     vector<double> rp = asVector<double>(rec_pars);
+    paraSet<double> par;
+    par.rec_pars = rp;
     int srmc = Rf_asInteger(code);
+    vector<double> crb = asVector<double>(constRecBreaks);
+    confSet conf;
+    conf.stockRecruitmentModelCode = srmc;
+    conf.constRecBreaks = crb;
+    // Make recruitment
+    Recruitment<double> rec = makeRecruitmentFunction(conf, par);
+    // Calculate
     int n = Rf_length(logssb);
     SEXP v = PROTECT(Rf_allocVector(REALSXP, n));
     double* LS = REAL(logssb);
     double* LR = REAL(v);
+    double* y = REAL(year);
+    double* lastRec = REAL(lastR);
     for(int i = 0; i < n; ++i)
-      LR[i] = 0.0; //functionalStockRecruitment(exp(LS[i]), rp, srmc);
+      LR[i] = rec(LS[i], y[i], lastRec[i]);
     UNPROTECT(1);
     return v;
   }
-  
+ 
 
-  SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code){
-    double b = Rf_asReal(ssb);
+  SEXP stockRecruitmentModelR(SEXP logssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR){
+    double b = Rf_asReal(logssb);
+    double y = Rf_asReal(year);
+    double lr = Rf_asReal(lastR);
+     // Fake paraSet and confSet
     vector<double> rp = asVector<double>(rec_pars);
+    paraSet<double> par;
+    par.rec_pars = rp;
     int srmc = Rf_asInteger(code);
-	
-    double v = 0.0; //exp(functionalStockRecruitment(b, rp, srmc));
-
-#ifdef CPPAD_FRAMEWORK
-    vector<AD<double> > rp2(rp.size() + 1);
+    vector<double> crb = asVector<double>(constRecBreaks);
+    confSet conf;
+    conf.stockRecruitmentModelCode = srmc;
+    conf.constRecBreaks = crb;
+    // Make recruitment
+    Recruitment<double> rec = makeRecruitmentFunction(conf, par);
+    // Calculate	
+    double v = rec(b, y, lr);
+    F_dFunctionalSR2 Fd = {srmc,y,lr,crb};
+    vector<double> x(rp.size() + 1);
+    x.setZero();
     for(int i = 0; i < rp.size(); ++i)
-      rp2(i) = rp(i);
-    rp2(rp.size()) = b;
-    CppAD::Independent(rp2);
-    // vector<AD<double> > x( 1 );
-    // x[0] = b;
-    // CppAD::Independent(x);
-    vector<AD<double> > y( 1 );
-    y[0] = 0.0; //exp(functionalStockRecruitment(rp2(rp.size()), (vector<AD<double> >)rp2.head(rp.size()), srmc));
-    CppAD::ADFun<double> F(rp2, y);
-    vector<double> x_eval( rp.size() + 1 );
-    for(int i = 0; i < rp.size(); ++i)
-      x_eval(i) = rp(i);
-    x_eval[rp.size()] = b;
-    vector<double> r = F.Jacobian(x_eval);
-#endif
-#ifdef TMBAD_FRAMEWORK
-   
-    // F_dFunctionalSR2 Fd = {rp.size(),srmc};
-    // vector<double> x(rp.size() + 1);
-    // for(int i = 0; i < rp.size(); ++i)
-    //   x(i) = rp(i);
-    // x(rp.size()) = b;
-    // TMBad::ADFun<> G(TMBad::StdWrap<F_dFunctionalSR2,vector<TMBad::ad_aug> >(Fd), x);
-    // // TMBad::ADFun<> G(Fd,x);
-    // G = G.JacFun();
-    // vector<double> r = G(x);
-    vector<double> r(2); r.setZero();
-#endif
-
-    const char *resNms[] = {"Recruits", "Gradient", ""}; // Must end with ""
+      x(i) = rp(i);
+    x(x.size()-1) = b;
+    TMBad::ADFun<> G(TMBad::StdWrap<F_dFunctionalSR2,vector<TMBad::ad_aug> >(Fd), x);
+    G = G.JacFun();
+    vector<double> r = G(x);
+ 
+    // vector<double> r = x;
+    const char *resNms[] = {"logRecruits", "Gradient", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
     SET_VECTOR_ELT(res, 0, asSEXP(v));
     SET_VECTOR_ELT(res, 1, asSEXP(r));
- 
     UNPROTECT(1);    
     return res;
       
-  }
-
-  SEXP Se_sbhR(SEXP lambda, SEXP a, SEXP b, SEXP g){
-    double r = 0.0; //Se_sbh(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
-    return asSEXP(r);
-  }
-
-  SEXP Se_slR(SEXP lambda, SEXP a, SEXP b, SEXP g){
-    double r = 0.0; // Se_sl(Rf_asReal(lambda), Rf_asReal(a), Rf_asReal(b), Rf_asReal(g));
-    return asSEXP(r);
   }
 
 }

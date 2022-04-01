@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_BIOPAR_HPP
 #define SAM_BIOPAR_HPP
 

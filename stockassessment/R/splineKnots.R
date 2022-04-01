@@ -1,12 +1,12 @@
 getSplineRecBreaks <- function(dat,
                                conf,
                                par = defpar(dat,conf),
-                               srmc = 90,
+                               srmc = 93,
                                map = list(),
                                knotRange = 3:5,
                                returnFit = TRUE,
                                ...){
-    if(!match(srmc, c(90,91,92), FALSE)){
+    if(!match(srmc, c(90,91,92,93), FALSE)){
         stop("Not a spline recruitment model code")
     }
     constRecBreaks <- numeric(0)

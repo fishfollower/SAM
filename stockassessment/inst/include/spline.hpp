@@ -1,8 +1,60 @@
+#pragma once
 #ifndef SAM_SPLINE_HPP
 #define SAM_SPLINE_HPP
 
 
+namespace spline_atomic {
+
+  // template<class Type>
+  // Type pkwnorm(Type x, Type mu, Type sig, Type gam){
+  //   Type a = 1.0 + 0.5 * (gam + sqrt(gam * gam));
+  //   Type b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
+  //   Type lpv = pnorm5(x,mu,sig,Type(1.0), Type(1.0));
+  //   Type lGa = a * lpv;
+  //   // Type lr = logspace_sub(Type(0.0), (Type)(b * logspace_sub(Type(0.0),lGa)));
+  //   return 1.0 - exp(b * logspace_sub2(Type(0.0),lGa));
+  // }
+  
+  template<class Float>
+  struct pkwnorm_t {
+    typedef Float Scalar; // Required by integrate
+    Float mu, sig, gam;         // Parameters
+    // Evaluate joint density of (u, x)
+    Float operator() (Float u) {
+      Float a = 1.0 + 0.5 * (gam + sqrt(gam * gam));
+      Float b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
+      Float lpv = pnorm_atomic::pnorm5_1(u,mu,sig,Float(1.0), Float(1.0));
+      Float lGa = a * lpv;
+      return 1.0 - exp(b * rec_atomic::logspace_sub2_raw(Float(0.0),lGa));
+    }
+    // Integrate latent variable (u) out
+    Float integrate(Float x) {
+      using gauss_kronrod::integrate;
+      Float ans = integrate(*this, -INFINITY, x);
+      return ans;
+    }
+  };
+  
+ template<class Float>
+ Float eval_ipkwnorm(Float x, Float mu, Float sd, Float gam) {
+   pkwnorm_t<Float> f = {mu, sd, gam};
+    return f.integrate(x);
+  }
+
+  TMB_BIND_ATOMIC(fun_ipkwnorm, 1111, eval_ipkwnorm(x[0], x[1], x[2], x[3]))
+  
+}
+
+
+
 namespace spline_helper {
+
+ template<class Type>
+ Type ipkwnorm(Type x, Type mu, Type sd, Type gam) {
+    vector<Type> args(5); // Last index reserved for derivative order
+    args << x, mu, sd, gam, 0;
+    return spline_atomic::fun_ipkwnorm(CppAD::vector<Type>(args))[0];
+  }
   
   template<class Type>
   Type softmax(Type x, Type y, Type k = 1.0){
@@ -78,8 +130,8 @@ Type bcspline(Type x, vector<Type> knots, vector<Type> pars){
   // 					      knots(knots.size()-1),
   // 					      x)
   // 			     );
-  if(knots.size() != pars.size())
-    Rf_error("Knots and pars must have same length");
+  // if(knots.size() + 1 != pars.size())
+  //   Rf_error("Pars must have one more element than knots");
   matrix<Type> sg = spline_helper::getSigAndGam(knots);
   Type res = 0.0;
   for(int i = 0; i < knots.size(); ++i){
@@ -94,8 +146,8 @@ Type bcspline(Type x, vector<Type> knots, vector<Type> pars){
 // Integrated spline using Kw-normal density as basis functions
 template<class Type>
 Type ibcspline(Type x, vector<Type> knots, vector<Type> pars){
-  if(knots.size() != pars.size())
-    Rf_error("Knots and pars must have same length");
+  // if(knots.size() + 1 != pars.size())
+  //   Rf_error("Pars must have one more element than knots");
   // Type x0 = CppAD::CondExpLt(x, knots(0), knots(0),
   // 			     CppAD::CondExpGt(x, knots(knots.size()-1),
   // 					      knots(knots.size()-1),
@@ -143,5 +195,47 @@ Type ibcispline(Type x, vector<Type> knots, vector<Type> pars){
   Type r = ibcspline(x, knots, p2);
   return r + pars(pars.size()-1);
 }
+
+
+// Integrated integrated spline using Kw-normal density as basis functions
+template<class Type>
+Type iibcspline(Type x, vector<Type> knots, vector<Type> pars){
+  // Type x0 = CppAD::CondExpLt(x, knots(0), knots(0),
+  // 			     CppAD::CondExpGt(x, knots(knots.size()-1),
+  // 					      knots(knots.size()-1),
+  // 					      x)
+  // 			     );
+  matrix<Type> sg = spline_helper::getSigAndGam(knots);
+  Type res = 0.0;
+  Type tmp;
+  for(int i = 0; i < knots.size(); ++i){
+    // Should be zero at NegInf - not left endpoint of knot interval
+    Type v0 = 0.0; //spline_helper::pkwnorm(knots(0), knots(i), sg(i,0), sg(i,1));
+    tmp = spline_helper::ipkwnorm(x, knots(i), sg(i,0), sg(i,1));
+    res += pars(i) * (tmp - v0 * x);
+  }
+  // return res - 1.5 * spline_helper::softmax(tmp * (x - knots(knots.size() - 1)),(Type)0,(Type)100.0);
+  Type t1 = 2.5 * spline_helper::softmax(0.5*x*x - knots(knots.size() - 1),(Type)0,(Type)100.0);
+  //Type t2 = 0.1 * spline_helper::softmax(knots(0) - x,(Type)0,(Type)100.0);
+  return res - t1; // + t2 ;
+}
+
+
+
+// Monotonically non-decreasing spline using Kw-nomal as basis functions
+// Has an extra parameter to allow negative value at left bound
+template<class Type>
+Type iibcispline(Type x, vector<Type> knots, vector<Type> pars){
+  if(knots.size() + 1 != pars.size())
+    Rf_error("Pars must have one more element than knots");
+  vector<Type> p2(pars.size() - 1);
+  p2.setZero();
+  for(int i = 0; i < p2.size(); ++i)
+    p2(i) = exp(pars(i));
+  Type r = iibcspline(x, knots, p2);
+  return r + pars(pars.size()-1);
+}
+
+
 
 #endif

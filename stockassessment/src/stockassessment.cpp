@@ -191,7 +191,7 @@ Type objective_function<Type>::operator() ()
     }    
   }
  
-  Recruitment<Type> recruit = makeRecruitmentFunction(dataset, confset, paraset);
+  Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
   
   Type ans=0; //negative log-likelihood
 

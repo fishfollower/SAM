@@ -26,36 +26,53 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- numeric(0)
   }else if(conf$stockRecruitmentModelCode==3){ # Constant mean
       ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)      
-  }else if(conf$stockRecruitmentModelCode==50){ # depensatory logistic Hockey stick
-      ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0,0)
-      if(!is.na(conf$hockeyStickCurve))
-          ret$rec_pars[3] <- log(conf$hockeyStickCurve)   
-      ret$rec_pars[4] <- C
-  }else if(conf$stockRecruitmentModelCode %in% c(51,52)){ # Depensatory Ricker, BevHolt
-      ret$rec_pars <- numeric(3)
-      ret$rec_pars[3] <- C
-  }else if(conf$stockRecruitmentModelCode==53){ # Depensatory Hockey stick
-      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M))  + log(2),C + log(F+M) - log(F) -log(1 - exp(-F -M)), C)
   }else if(conf$stockRecruitmentModelCode==60){ # logistic Hockey stick
       ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0)
-      if(!is.na(conf$hockeyStickCurve))
-          ret$rec_pars[3] <- log(conf$hockeyStickCurve)
+      ## if(!is.na(conf$hockeyStickCurve))
+      ##     ret$rec_pars[3] <- log(conf$hockeyStickCurve)
   }else if(conf$stockRecruitmentModelCode==61){ # Hockey stick
       ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M))  + log(2),C + log(F+M) - log(F) -log(1 - exp(-F -M)))
   }else if(conf$stockRecruitmentModelCode==63){ # Bent hypoerbola / Hockey-stick-like
-      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M)) ,log(0.5),3)
-      if(!is.na(conf$hockeyStickCurve))
-          ret$rec_pars[3] <- log(conf$hockeyStickCurve)
+      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M)) ,log(0.5),log(20))
+      ## if(!is.na(conf$hockeyStickCurve))
+      ##     ret$rec_pars[3] <- log(conf$hockeyStickCurve)
   }else if(conf$stockRecruitmentModelCode %in% c(66,67,68,69)){ # Shepherd, Deriso
       ret$rec_pars <- numeric(3)
-  }else if(conf$stockRecruitmentModelCode %in% c(90,91,92)){
-      ret$rec_pars <- numeric(length(conf$constRecBreaks) + as.integer(conf$stockRecruitmentModelCode==90))
-      if(conf$stockRecruitmentModelCode==90)
-          ret$rec_pars[length(ret$rec_pars)] <- 5
- }else if(conf$stockRecruitmentModelCode %in% c(93)){
+  }else if(conf$stockRecruitmentModelCode %in% c(90,91,92,93)){
+      ret$rec_pars <- numeric(length(conf$constRecBreaks) + 1)
+      ret$rec_pars[length(ret$rec_pars)] <- 5
+  }else if(conf$stockRecruitmentModelCode %in% c(201,202)){ # Depensatory Ricker, BevHolt
+      ret$rec_pars <- numeric(3)
+      ret$rec_pars[3] <- C
+  }else if(conf$stockRecruitmentModelCode==260){ # depensatory logistic Hockey stick
+      ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0,0)
+      ## if(!is.na(conf$hockeyStickCurve))
+      ##     ret$rec_pars[3] <- log(conf$hockeyStickCurve)   
+      ret$rec_pars[4] <- C
+  }else if(conf$stockRecruitmentModelCode==261){ # Depensatory Hockey stick
+      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M))  + log(2),C + log(F+M) - log(F) -log(1 - exp(-F -M)), C)
+  }else if(conf$stockRecruitmentModelCode==263){ # Bent hypoerbola / Hockey-stick-like
+      ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M)) ,log(0.5),log(20), C)
+      ## if(!is.na(conf$hockeyStickCurve))
+      ##     ret$rec_pars[3] <- log(conf$hockeyStickCurve)
+  }else if(conf$stockRecruitmentModelCode == 264){
+      ret$rec_pars <- c(0,0,C)
+  }else if(conf$stockRecruitmentModelCode == 266){
+      ret$rec_pars <- c(0,0,0,C)
+  }else if(conf$stockRecruitmentModelCode == 267){
+      ret$rec_pars <- c(0,0,0,C)
+ }else if(conf$stockRecruitmentModelCode == 290){
       ret$rec_pars <- numeric(length(conf$constRecBreaks) + 2)
       ret$rec_pars[length(ret$rec_pars) - 1] <- 5
       ret$rec_pars[length(ret$rec_pars)] <- C
+
+
+ }else if(conf$stockRecruitmentModelCode %in% c(401,402)){ # Depensatory Ricker, BevHolt
+     ret$rec_pars <- numeric(4)
+     ret$rec_pars[3] <- C
+
+
+      
   }else{ # The rest
       ret$rec_pars <- numeric(2)
   }

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SAM_PREDOBS_HPP
 #define SAM_PREDOBS_HPP
 
