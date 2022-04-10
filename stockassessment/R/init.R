@@ -61,16 +61,21 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- c(0,0,0,C)
   }else if(conf$stockRecruitmentModelCode == 267){
       ret$rec_pars <- c(0,0,0,C)
- }else if(conf$stockRecruitmentModelCode == 290){
+ }else if(conf$stockRecruitmentModelCode %in% c(290,293)){
       ret$rec_pars <- numeric(length(conf$constRecBreaks) + 2)
       ret$rec_pars[length(ret$rec_pars) - 1] <- 5
       ret$rec_pars[length(ret$rec_pars)] <- C
 
 
- }else if(conf$stockRecruitmentModelCode %in% c(401,402)){ # Depensatory Ricker, BevHolt
+ }else if(conf$stockRecruitmentModelCode %in% c(401,402)){ # Depensatory C Ricker, BevHolt
      ret$rec_pars <- numeric(4)
      ret$rec_pars[3] <- C
 
+}else if(conf$stockRecruitmentModelCode %in% c(490,493)){ # Depensatory C splines
+      ret$rec_pars <- numeric(length(conf$constRecBreaks) + 3)
+      ret$rec_pars[length(ret$rec_pars) - 2] <- 5
+      ret$rec_pars[length(ret$rec_pars) - 1] <- C
+      ret$rec_pars[length(ret$rec_pars)] <- 0
 
       
   }else{ # The rest

@@ -1,9 +1,11 @@
-# `ssbplot`: SAM SSB plot
+# `ssbplot`
+
+SAM SSB plot
+
 
 ## Description
 
-
- SAM SSB plot
+SAM SSB plot
 
 
 ## Usage
@@ -12,6 +14,7 @@
 ssbplot(fit, ...)
 list(list("ssbplot"), list("default"))(fit, ...)
 list(list("ssbplot"), list("samforecast"))(fit, ...)
+list(list("ssbplot"), list("hcr"))(fit, ...)
 ```
 
 
@@ -19,12 +22,12 @@ list(list("ssbplot"), list("samforecast"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     the object returned from sam.fit
-```...```     |     extra arguments transferred to plot including the following: list()  `add` logical, plotting is to be added on existing plot list()  `ci` logical, confidence intervals should be plotted list()  `cicol` color to plot the confidence polygon
+`fit`     |     the object returned from sam.fit
+`...`     |     extra arguments transferred to plot including the following: list()  `add` logical, plotting is to be added on existing plot list()  `ci` logical, confidence intervals should be plotted list()  `cicol` color to plot the confidence polygon
+
 
 ## Details
 
-
- Plot of spawning stock biomass
+Plot of spawning stock biomass
 
 

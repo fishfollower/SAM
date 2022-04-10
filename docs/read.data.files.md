@@ -1,9 +1,11 @@
-# `read.data.files`: Read all standard data SAM files and return a list as created by 'setup.sam.data'
+# `read.data.files`
+
+Read all standard data SAM files and return a list as created by 'setup.sam.data'
+
 
 ## Description
 
-
- Read all standard data SAM files and return a list as created by 'setup.sam.data'
+Read all standard data SAM files and return a list as created by 'setup.sam.data'
 
 
 ## Usage
@@ -17,17 +19,16 @@ read.data.files(dir = ".")
 
 Argument      |Description
 ------------- |----------------
-```dir```     |     Directory to read from
+`dir`     |     Directory to read from
+
 
 ## Details
 
-
- Read all standard SAM data files
+Read all standard SAM data files
 
 
 ## Value
 
-
- list (as created by 'setup.sam.data')
+list (as created by 'setup.sam.data')
 
 

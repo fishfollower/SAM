@@ -1,9 +1,11 @@
-# `read.table.nowarn`: Function to supress incomplete final line warning
+# `read.table.nowarn`
+
+Function to supress incomplete final line warning
+
 
 ## Description
 
-
- Function to supress incomplete final line warning
+Function to supress incomplete final line warning
 
 
 ## Usage
@@ -17,11 +19,11 @@ read.table.nowarn(...)
 
 Argument      |Description
 ------------- |----------------
-```...```     |     arguments
+`...`     |     arguments
+
 
 ## Details
 
-
- ...
+...
 
 

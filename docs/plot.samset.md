@@ -1,9 +1,11 @@
-# `plot.samset`: Plot sam object
+# `plot.samset`
+
+Plot sam object
+
 
 ## Description
 
-
- Plot sam object
+Plot sam object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("plot"), list("samset"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     fitted object as returned from the [`sam.fit`](sam.fit.html) function.
-```...```     |     extra arguments
+`x`     |     fitted object as returned from the [`sam.fit`](#sam.fit) function.
+`...`     |     extra arguments
+
 
 ## Details
 
-
- ...
+...
 
 

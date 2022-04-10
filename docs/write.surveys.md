@@ -1,9 +1,11 @@
-# `write.surveys`: Write surveys in ICES/CEFAS data file from a model object
+# `write.surveys`
+
+Write surveys in ICES/CEFAS data file from a model object
+
 
 ## Description
 
-
- Write surveys in ICES/CEFAS data file from a model object
+Write surveys in ICES/CEFAS data file from a model object
 
 
 ## Usage
@@ -17,13 +19,13 @@ write.surveys(fit, fileout, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     A fitted object as returned from sam.fit
-```fileout```     |     file name or connection
-```...```     |     Arguments to be passed to write
+`fit`     |     A fitted object as returned from sam.fit
+`fileout`     |     file name or connection
+`...`     |     Arguments to be passed to write
+
 
 ## Details
 
-
- Takes the survey data from the fitted object and writes them in the ICES/CEFAS format.
+Takes the survey data from the fitted object and writes them in the ICES/CEFAS format.
 
 

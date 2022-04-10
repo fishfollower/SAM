@@ -1,9 +1,11 @@
-# `print.sam`: Print sam object
+# `print.sam`
+
+Print sam object
+
 
 ## Description
 
-
- Print sam object
+Print sam object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("print"), list("sam"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     the fitted object as returned from the [`sam.fit`](sam.fit.html) function
-```...```     |     extra arguments
+`x`     |     the fitted object as returned from the [`sam.fit`](#sam.fit) function
+`...`     |     extra arguments
+
 
 ## Details
 
-
- prints the log-likelihood and the main convergence criteria
+prints the log-likelihood and the main convergence criteria
 
 

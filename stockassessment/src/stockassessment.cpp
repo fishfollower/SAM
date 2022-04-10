@@ -35,6 +35,10 @@
 #include <TMB.hpp>
 #include "../inst/include/SAM.hpp"
 
+// Functions for R
+#include "perRecruit.hpp"
+#include "spline.hpp"
+
 template<class Type>
 Type objective_function<Type>::operator() ()
 {

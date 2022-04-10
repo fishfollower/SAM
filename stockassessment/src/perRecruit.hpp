@@ -1,7 +1,3 @@
-#define WITH_LIBTMB
-#include <TMB.hpp>
-#include "../inst/include/SAM.hpp"
-
 
 struct F_dFunctionalSR2 {
   int srmc;

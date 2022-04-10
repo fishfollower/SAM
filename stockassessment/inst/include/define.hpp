@@ -373,8 +373,6 @@ struct dataSet{
   array<Type> propF;
   array<Type> propM;
   listMatrixFromR<Type> corList;
-  // forecastSet<Type> forecast;
-  // referencepointSet<Type> referencepoint;
 
   dataSet() = default;
 
@@ -404,8 +402,6 @@ struct dataSet{
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
     corList = listMatrixFromR<Type>(getListElement(x,"corList"));
-    // forecast = forecastSet<Type>(getListElement(x,"forecast"));
-    // referencepoint = referencepointSet<Type>(getListElement(x,"referencepoint"));
   };
 
   template<class T>
@@ -433,85 +429,8 @@ struct dataSet{
     landMeanWeight(x.landMeanWeight, x.landMeanWeight.dim), //x.landMeanWeight),
     propF(x.propF, x.propF.dim), //x.propF),
     propM(x.propM, x.propM.dim),
-    corList(x.corList)
-  {
+    corList(x.corList)  {}
 
-  }
-
-  // dataSet<Type>& operator=(const dataSet<Type>& rhs) {
-  //   noFleets = rhs.noFleets;
-  //   fleetTypes = rhs.fleetTypes;
-  //   sampleTimes = rhs.sampleTimes;
-  //   noYears = rhs.noYears;
-  //   years = rhs.years;
-  //   minAgePerFleet = rhs.minAgePerFleet;
-  //   maxAgePerFleet = rhs.maxAgePerFleet;
-  //   nobs = rhs.nobs;
-  //   idx1 = rhs.idx1;
-  //   idx2 = rhs.idx2;
-  //   idxCor = rhs.idxCor;
-  //   aux = rhs.aux;
-  //   logobs = rhs.logobs;
-  //   weight = rhs.weight;
-  //   // keep = rhs.keep;
-  //   propMat = rhs.propMat;
-  //   stockMeanWeight = rhs.stockMeanWeight; 
-  //   catchMeanWeight = rhs.catchMeanWeight;
-  //   natMor = rhs.natMor;
-  //   landFrac = rhs.landFrac;
-  //   disMeanWeight = rhs.disMeanWeight;
-  //   landMeanWeight = rhs.landMeanWeight;
-  //   propF = rhs.propF;
-  //   propM = rhs.propM;
-  //   corList = rhs.corList;
-  //   // forecast = rhs.forecast;
-  //   // referencepoint = rhs.referencepoint;
-  //   return *this;
-  // };
-
-  // template<class T>
-  // dataSet<T> cast() const {
-  //   dataSet<T> d;
-  //   d.noFleets = noFleets; // int
-  //   d.fleetTypes = fleetTypes; //<int> 
-  //   d.sampleTimes = sampleTimes.template cast<T>();
-  //   d.noYears = noYears;	// int
-  //   d.years = years.template cast<T>();
-  //   d.minAgePerFleet = minAgePerFleet;//<int> 
-  //   d.maxAgePerFleet = maxAgePerFleet;//<int> 
-  //   d.nobs = nobs;// int
-  //   d.idx1 = idx1;//<int> 
-  //   d.idx2 = idx2;//<int> 
-  //   d.idxCor = idxCor;//<int> 
-  //   d.aux = aux;//<int> 
-  //   d.logobs = logobs.template cast<T>();
-  //   d.weight = weight.template cast<T>();
-  //   // keep = keep;
-  //   // The array must be resized before copying
-  //   d.propMat.initZeroArray(propMat.dim);
-  //   d.propMat = propMat.template cast<T>();
-  //   d.stockMeanWeight.initZeroArray(stockMeanWeight.dim);
-  //   d.stockMeanWeight = stockMeanWeight.template cast<T>(); 
-  //   d.catchMeanWeight.initZeroArray(catchMeanWeight.dim);
-  //   d.catchMeanWeight = catchMeanWeight.template cast<T>();
-  //   d.natMor.initZeroArray(natMor.dim);
-  //   d.natMor = natMor.template cast<T>();
-  //   d.landFrac.initZeroArray(landFrac.dim);
-  //   d.landFrac = landFrac.template cast<T>();
-  //   d.disMeanWeight.initZeroArray(disMeanWeight.dim);
-  //   d.disMeanWeight = disMeanWeight.template cast<T>();
-  //   d.landMeanWeight.initZeroArray(landMeanWeight.dim);
-  //   d.landMeanWeight = landMeanWeight.template cast<T>();
-  //   d.propF.initZeroArray(propF.dim);
-  //   d.propF = propF.template cast<T>();
-  //   d.propM.initZeroArray(propM.dim);
-  //   d.propM = propM.template cast<T>();
-  //   d.corList = corList.template cast<T>();
-  //   // d.forecast = forecast.template cast<T>();
-  //   // d.referencepoint = referencepoint.template cast<T>();
-  //   return d;    
-  // }
-  
 };
 
 
@@ -645,7 +564,7 @@ struct confSet{
     keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
     keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
     logNMeanCorrection = asVector<int>(getListElement(x,"logNMeanCorrection"));
-  };
+  }
 
   confSet(const confSet &other) :
     minAge(other.minAge),
@@ -688,53 +607,8 @@ struct confSet{
     keyMortalityObsVar(other.keyMortalityObsVar),
     keyXtraSd(other.keyXtraSd),
     logNMeanCorrection(other.logNMeanCorrection)
-  {
-
-  };
+  {}
   
-  // confSet& operator=(const confSet& rhs) {
-  //   minAge = rhs.minAge;
-  //   maxAge = rhs.maxAge; 
-  //   maxAgePlusGroup = rhs.maxAgePlusGroup;
-  //   keyLogFsta = rhs.keyLogFsta;
-  //   keyLogFpar = rhs.keyLogFpar;
-  //   corFlag = rhs.corFlag;
-  //   keyQpow = rhs.keyQpow;
-  //   keyVarF = rhs.keyVarF;
-  //   keyVarLogN = rhs.keyVarLogN;
-  //   keyVarObs = rhs.keyVarObs;
-  //   obsCorStruct = rhs.obsCorStruct;
-  //   keyCorObs = rhs.keyCorObs;
-  //   stockRecruitmentModelCode = rhs.stockRecruitmentModelCode;
-  //   constRecBreaks = rhs.constRecBreaks;
-  //   noScaledYears = rhs.noScaledYears;
-  //   keyScaledYears = rhs.keyScaledYears;
-  //   keyParScaledYA = rhs.keyParScaledYA;
-  //   fbarRange = rhs.fbarRange;
-  //   keyBiomassTreat = rhs.keyBiomassTreat; 
-  //   simFlag = rhs.simFlag;
-  //   resFlag = rhs.resFlag;
-  //   obsLikelihoodFlag = rhs.obsLikelihoodFlag;
-  //   fixVarToWeight = rhs.fixVarToWeight;
-  //   fracMixF = rhs.fracMixF;
-  //   fracMixN = rhs.fracMixN;
-  //   fracMixObs = rhs.fracMixObs;
-  //   predVarObsLink = rhs.predVarObsLink;
-  //   stockWeightModel = rhs.stockWeightModel;
-  //   keyStockWeightMean = rhs.keyStockWeightMean;
-  //   keyStockWeightObsVar = rhs.keyStockWeightObsVar;
-  //   catchWeightModel = rhs.catchWeightModel;
-  //   keyCatchWeightMean = rhs.keyCatchWeightMean;
-  //   keyCatchWeightObsVar = rhs.keyCatchWeightObsVar;
-  //   matureModel = rhs.matureModel;
-  //   keyMatureMean = rhs.keyMatureMean;
-  //   mortalityModel = rhs.mortalityModel;
-  //   keyMortalityMean = rhs.keyMortalityMean;
-  //   keyMortalityObsVar = rhs.keyMortalityObsVar;
-  //   keyXtraSd = rhs.keyXtraSd;
-  //   logNMeanCorrection = rhs.logNMeanCorrection;
-  //   return *this;
-  // };
 };
 
 template <class Type>
@@ -758,17 +632,6 @@ struct paraSet{
   vector<Type> predVarObs;
   Type logFScaleMSY;
   Type implicitFunctionDelta;
-  // Type logScaleFmsy;
-  // Type logScaleFmypyl;
-  // Type logScaleFmdy;
-  // Type logScaleFmax;
-  // vector<Type> logScaleFxdYPR;
-  // vector<Type> logScaleFxB0;
-  // Type logScaleFcrash;
-  // Type logScaleFext;
-  // vector<Type> logScaleFxPercent;
-  // Type logScaleFlim;
-  // matrix<Type> logScaleFmsyRange;
 
   vector<Type> logPhiSW; 
   vector<Type> logSdProcLogSW;
@@ -811,17 +674,6 @@ struct paraSet{
     sepFlogSd = asVector<Type>(getListElement(x,"sepFlogSd"));
     logFScaleMSY = (Type)Rf_asReal(getListElement(x,"logFScaleMSY"));
     implicitFunctionDelta = (Type)Rf_asReal(getListElement(x,"implicitFunctionDelta"));
-    // logScaleFmsy = (Type)Rf_asReal(getListElement(x,"logScaleFmsy"));
-    // logScaleFmypyl = (Type)Rf_asReal(getListElement(x,"logScaleFmypyl"));
-    // logScaleFmdy = (Type)Rf_asReal(getListElement(x,"logScaleFmdy"));
-    // logScaleFmax = (Type)Rf_asReal(getListElement(x,"logScaleFmax"));
-    // logScaleFxdYPR = asVector<Type>(getListElement(x,"logScaleFxdYPR"));
-    // logScaleFxB0 = asVector<Type>(getListElement(x,"logScaleFxB0"));
-    // logScaleFcrash = (Type)Rf_asReal(getListElement(x,"logScaleFcrash"));
-    // logScaleFext = (Type)Rf_asReal(getListElement(x,"logScaleFext"));
-    // logScaleFxPercent = asVector<Type>(getListElement(x,"logScaleFxPercent"));
-    // logScaleFlim = (Type)Rf_asReal(getListElement(x,"logScaleFlim"));
-    // logScaleFmsyRange = asMatrix<Type>(getListElement(x,"logScaleFmsyRange"));
 
     logPhiSW = asVector<Type>(getListElement(x,"logPhiSW")); 
     logSdProcLogSW = asVector<Type>(getListElement(x,"logSdProcLogSW"));
@@ -881,122 +733,8 @@ struct paraSet{
     meanLogNM(other.meanLogNM),
     logSdLogNM(other.logSdLogNM),
     logXtraSd(other.logXtraSd),
-    splinePenalty(other.splinePenalty)
-  {
+    splinePenalty(other.splinePenalty)  {}
 
-  }
-
-  
-  // paraSet<Type>& operator=(const paraSet<Type>& rhs) {
-  //   logFpar = rhs.logFpar; 
-  //   logQpow = rhs.logQpow; 
-  //   logSdLogFsta = rhs.logSdLogFsta; 
-  //   logSdLogN = rhs.logSdLogN; 
-  //   logSdLogObs = rhs.logSdLogObs;
-  //   logSdLogTotalObs = rhs.logSdLogTotalObs;
-  //   transfIRARdist = rhs.transfIRARdist;
-  //   sigmaObsParUS = rhs.sigmaObsParUS;
-  //   rec_pars = rhs.rec_pars; 
-  //   itrans_rho = rhs.itrans_rho; 
-  //   logScale = rhs.logScale;
-  //   logitReleaseSurvival = rhs.logitReleaseSurvival;   
-  //   logitRecapturePhi = rhs.logitRecapturePhi;
-  //   sepFalpha = rhs.sepFalpha;
-  //   sepFlogitRho = rhs.sepFlogitRho;
-  //   sepFlogSd = rhs.sepFlogSd;
-  //   logFScaleMSY = rhs.logFScaleMSY;
-  //   implicitFunctionDelta = rhs.implicitFunctionDelta;
-  //   // logScaleFmsy = rhs.logScaleFmsy;
-  //   // logScaleFmypyl = rhs.logScaleFmypyl;
-  //   // logScaleFmdy = rhs.logScaleFmdy;
-  //   // logScaleFmax = rhs.logScaleFmax;
-  //   // logScaleFxdYPR = rhs.logScaleFxdYPR;
-  //   // logScaleFxB0 = rhs.logScaleFxB0;
-  //   // logScaleFcrash = rhs.logScaleFcrash;
-  //   // logScaleFext = rhs.logScaleFext;
-  //   // logScaleFxPercent = rhs.logScaleFxPercent;
-  //   // logScaleFlim = rhs.logScaleFlim;
-  //   // logScaleFmsyRange = rhs.logScaleFmsyRange;
-
-  //   logPhiSW = rhs.logPhiSW; 
-  //   logSdProcLogSW = rhs.logSdProcLogSW;
-  //   meanLogSW = rhs.meanLogSW; 
-  //   logSdLogSW = rhs.logSdLogSW; 
-  //   logPhiCW = rhs.logPhiCW; 
-  //   logSdProcLogCW = rhs.logSdProcLogCW;
-  //   meanLogCW = rhs.meanLogCW; 
-  //   logSdLogCW = rhs.logSdLogCW;  
-  //   logPhiMO = rhs.logPhiMO; 
-  //   logSdProcLogitMO = rhs.logSdProcLogitMO;
-  //   meanLogitMO = rhs.meanLogitMO; 
-  //   logSdMO = rhs.logSdMO; 
-  //   logPhiNM = rhs.logPhiNM;
-  //   logSdProcLogNM = rhs.logSdProcLogNM;
-  //   meanLogNM = rhs.meanLogNM;
-  //   logSdLogNM = rhs.logSdLogNM;
-  //   logXtraSd = rhs.logXtraSd;
-
-  //   splinePenalty = rhs.splinePenalty;
-
-  //   return *this;
-
-  // }
-
-  // template<class T>
-  // paraSet<T> cast() const {
-  //   paraSet<T> d;
-  //   d.logFpar = logFpar.template cast<T>(); 
-  //   d.logQpow = logQpow.template cast<T>(); 
-  //   d.logSdLogFsta = logSdLogFsta.template cast<T>(); 
-  //   d.logSdLogN = logSdLogN.template cast<T>(); 
-  //   d.logSdLogObs = logSdLogObs.template cast<T>();
-  //   d.logSdLogTotalObs = logSdLogTotalObs.template cast<T>();
-  //   d.transfIRARdist = transfIRARdist.template cast<T>();
-  //   d.sigmaObsParUS = sigmaObsParUS.template cast<T>();
-  //   d.rec_pars = rec_pars.template cast<T>(); 
-  //   d.itrans_rho = itrans_rho.template cast<T>(); 
-  //   d.logScale = logScale.template cast<T>();
-  //   d.logitReleaseSurvival = logitReleaseSurvival.template cast<T>();   
-  //   d.logitRecapturePhi = logitRecapturePhi.template cast<T>();
-  //   d.sepFalpha = sepFalpha.template cast<T>();
-  //   d.sepFlogitRho = sepFlogitRho.template cast<T>();
-  //   d.sepFlogSd = sepFlogSd.template cast<T>();
-  //   d.logFScaleMSY = T(logFScaleMSY);
-  //   d.implicitFunctionDelta = T(implicitFunctionDelta);
-  //   // d.logScaleFmsy = T(logScaleFmsy);
-  //   // d.logScaleFmypyl = T(logScaleFmypyl);
-  //   // d.logScaleFmdy = T(logScaleFmdy);
-  //   // d.logScaleFmax = T(logScaleFmax);
-  //   // d.logScaleFxdYPR = logScaleFxdYPR.template cast<T>();
-  //   // d.logScaleFxB0 = logScaleFxB0.template cast<T>();
-  //   // d.logScaleFcrash = T(logScaleFcrash);
-  //   // d.logScaleFext = T(logScaleFext);
-  //   // d.logScaleFxPercent = logScaleFxPercent.template cast<T>();
-  //   // d.logScaleFlim = T(logScaleFlim);
-  //   // d.logScaleFmsyRange = logScaleFmsyRange.template cast<T>();
-
-  //   d.logPhiSW = logPhiSW.template cast<T>(); 
-  //   d.logSdProcLogSW = logSdProcLogSW.template cast<T>();
-  //   d.meanLogSW = meanLogSW.template cast<T>();
-  //   d.logSdLogSW = logSdLogSW.template cast<T>(); 
-  //   d.logPhiCW = logPhiCW.template cast<T>(); 
-  //   d.logSdProcLogCW = logSdProcLogCW.template cast<T>();
-  //   d.meanLogCW = meanLogCW.template cast<T>();
-  //   d.logSdLogCW = logSdLogCW.template cast<T>(); 
-  //   d.logPhiMO = logPhiMO.template cast<T>(); 
-  //   d.logSdProcLogitMO = logSdProcLogitMO.template cast<T>();
-  //   d.meanLogitMO = meanLogitMO.template cast<T>();
-  //   d.logSdMO = logSdMO.template cast<T>(); 
-  //   d.logPhiNM = logPhiNM.template cast<T>(); 
-  //   d.logSdProcLogNM = logSdProcLogNM.template cast<T>();
-  //   d.meanLogNM = meanLogNM.template cast<T>();
-  //   d.logSdLogNM = logSdLogNM.template cast<T>(); 
-  //   d.logXtraSd = logXtraSd.template cast<T>(); 
-
-  //   d.splinePenalty = T(splinePenalty);
-
-  //   return d;    
-  // }  
 };
 
 
@@ -1475,7 +1213,6 @@ struct referencepointSet {
       logfsum = logspace_add2(logfsum, logfbartmp(y));
     }
     logSel -= logfsum;
-    // Rcout << "Returning logSel. logFbar: " << logfsum << "\n";
     return;
   }
 
@@ -1499,17 +1236,21 @@ struct referencepointSet {
 template<class Type>
 struct referencepointList : vector<referencepointSet<Type> > {
 
+  newton::newton_config cfg;
+
+  referencepointList() :
+    vector<referencepointSet<Type> >(0), cfg(){}
   referencepointList(int i) :
-		     vector<referencepointSet<Type> >(i){}
+    vector<referencepointSet<Type> >(i), cfg(){}
   referencepointList(SEXP x) :
-    vector<referencepointSet<Type> >(Rf_length(x)) {
+    vector<referencepointSet<Type> >(Rf_length(x)), cfg(Rf_getAttrib(x,Rf_install("newton_config"))) {
     for(int i = 0; i < Rf_length(x); ++i){
       (*this)(i) = referencepointSet<Type>(VECTOR_ELT(x,i));
     }
   }
 
   template<class T>
-  referencepointList(const listMatrixFromR<T>& other) : vector<referencepointSet<Type> >(other.size()) {
+  referencepointList(const listMatrixFromR<T>& other) : vector<referencepointSet<Type> >(other.size()), cfg(other.cfg) {
     for(int i = 0; i < other.size(); ++i)
       (*this)(i) = referencepointSet<T>(other(i));
   }

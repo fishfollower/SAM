@@ -122,7 +122,6 @@ struct RefPointD_Numeric : RefPointD_Base<Type> {
   }
 
   vector<Type> optimize(vector<Type> logF0){
-    cfg.trace = 1;
     return newton::Newton(f,logF0, cfg);
   }  
 };
@@ -307,8 +306,10 @@ struct RPD_MSY : RPD_Base<Type> {
 
 MAKE_REFPOINT_D(MSY);
 
+//////// MSYRange Reference point ////////
 
-//////// MSY Reference point ////////
+
+//////// Max Reference point ////////
 
 
 template<class Type>
@@ -484,8 +485,8 @@ struct RPD_MYPYLprod : RPD_Base<Type> {
   Type operator()(const vector<Type> &x) {    
     Type logFbar = x(0);
     PERREC_t<Type> r = getPerRec(logFbar);
-    // Yield * (1 - exp(-YearsLost/AgeRange))
-    Type tmp = r.logYe - logspace_sub2(Type(0.0), r.logYearsLost - logAgeRange);
+    // Yield * (1 - YearsLost/AgeRange)
+    Type tmp = r.logYe + logspace_sub2(Type(0.0), exp(r.logYearsLost - logAgeRange));
     return -tmp;
   }
 };
@@ -582,6 +583,8 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
   
   if(referencepoints.size() == 0)
     return;
+
+  newton::newton_config cfg = referencepoints.cfg;
   
   // Report reference points
   for(int i = 0; i < referencepoints.size(); ++i){
@@ -602,30 +605,31 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
 	logFsq(xi) = fbari(conf, logF, logF.cols()-1 - CppAD::Integer(rps.xVal(xi)), true);
       rp = Referencepoint_D<Type>("StatusQuo",i,logFsq, new RefPointD_FixedF<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::MSY){
-      rp = Referencepoint_D<Type>("MSY",i,rps.logF0, new RefPointD_MSY<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("MSY",i,rps.logF0, new RefPointD_MSY<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::MSYRange){
+      Rf_error("MSYRange not implemented yet");
     }else if(rpt  == ReferencePointDeterministic::Max){
-      rp = Referencepoint_D<Type>("Max",i,rps.logF0, new RefPointD_Max<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("Max",i,rps.logF0, new RefPointD_Max<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::xdYPR){
-      rp = Referencepoint_D<Type>("xdYPR",i,rps.logF0, new RefPointD_xdYPR<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("xdYPR",i,rps.logF0, new RefPointD_xdYPR<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::xSPR){
-      rp = Referencepoint_D<Type>("xSPR",i,rps.logF0, new RefPointD_xSPR<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("xSPR",i,rps.logF0, new RefPointD_xSPR<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::xB0){
-      rp = Referencepoint_D<Type>("xB0",i,rps.logF0, new RefPointD_xB0<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("xB0",i,rps.logF0, new RefPointD_xB0<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::MYPYLdiv){
-      rp = Referencepoint_D<Type>("MYPYLdiv",i,rps.logF0, new RefPointD_MYPYLdiv<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("MYPYLdiv",i,rps.logF0, new RefPointD_MYPYLdiv<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::MYPYLprod){
-      rp = Referencepoint_D<Type>("MYPYLprod",i,rps.logF0, new RefPointD_MYPYLprod<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("MYPYLprod",i,rps.logF0, new RefPointD_MYPYLprod<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::MDY){
-      rp = Referencepoint_D<Type>("MDY",i,rps.logF0, new RefPointD_MDY<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("MDY",i,rps.logF0, new RefPointD_MDY<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::Crash){
-      rp = Referencepoint_D<Type>("Crash",i,rps.logF0, new RefPointD_Crash<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("Crash",i,rps.logF0, new RefPointD_Crash<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::Ext){
-      rp = Referencepoint_D<Type>("Ext",i,rps.logF0, new RefPointD_Ext<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("Ext",i,rps.logF0, new RefPointD_Ext<Type>(dat,conf,par,rps, cfg));
     }else if(rpt  == ReferencePointDeterministic::Lim){
-
+      Rf_error("Lim not implemented yet");
     }else{
-      Rf_error("Referencepoint type not implemented yet");
+      Rf_error("Referencepoint type not implemented");
     }
     rp.report(of);
     rp.adreport(of);

@@ -258,6 +258,16 @@ vector<Type> spawnersPerRecruit(dataSet<Type>& dat, confSet& conf, paraSet<Type>
   return r;
 }
 
+// For calculations about assessment period for one year
+template<class Type>
+Type SPR0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int i, int CT, int nYears, bool give_log = false){
+  // Make referencepointSet
+  referencepointSet<Type> rp(nYears, CT, i, logF, conf);
+  Type logFbar = R_NegInf; //rp.logFbar(logF, conf);
+  return spawnersPerRecruit_i(logFbar, dat, conf, par, rp, give_log);
+}
+
+
 ////////// Convenience functions to get equilibrium biomass //////////
 
 

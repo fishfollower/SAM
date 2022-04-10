@@ -76,7 +76,7 @@ template<class Type>
 Type logspace_sum(vector<Type> logx){
   Type r = R_NegInf;
   for(int i = 0; i < logx.size(); ++i)
-    r = logspace_add2(r, logx);
+    r = logspace_add2(r, logx(i));
   return r;
 }
 

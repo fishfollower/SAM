@@ -342,28 +342,37 @@ namespace pnorm_atomic {
   }
 
 
+  // template<class Float>
+  // Float pnorm5_1(Float x, Float mu, Float sigma, Float lower_tail, Float log_p)
+  // {
+  //   return pnorm5_raw(x,mu,sigma,lower_tail,log_p);
+  // }
+
+  // TMB_BIND_ATOMIC(pnorm5_2,11100,pnorm5_1(x[0], x[1], x[2], x[3], x[4]))  
+
   template<class Float>
-  Float pnorm5_1(Float x, Float mu, Float sigma, Float lower_tail, Float log_p)
+  Float pnorm1_1x(Float x, Float lower_tail, Float log_p)
   {
-    return pnorm5_raw(x,mu,sigma,lower_tail,log_p);
+    return pnorm5_raw(x,Float(0.0),Float(1.0),lower_tail,log_p);
   }
 
-  TMB_BIND_ATOMIC(pnorm5_2,11100,pnorm5_1(x[0], x[1], x[2], x[3], x[4]))  
+  TMB_BIND_ATOMIC(pnorm1_2x,100,pnorm1_1x(x[0], x[1], x[2]))  
 
+  
 }
 
 
 
 template<class Type>
 Type pnorm5(Type x, Type mu, Type sigma, Type lower_tail, Type log_p){
-  CppAD::vector<Type> tx(6);
-  tx[0] = x;
-  tx[1] = mu;
-  tx[2] = sigma;
-  tx[3] = lower_tail;
-  tx[4] = log_p;
-  tx[5] = 0; // extra argument for derivative order
-  Type res = pnorm_atomic::pnorm5_2(tx)[0];
+  CppAD::vector<Type> tx(4);
+  tx[0] = (x-mu) / sigma;
+  // tx[1] = mu;
+  // tx[2] = sigma;
+  tx[1] = lower_tail;
+  tx[2] = log_p;
+  tx[3] = 0; // extra argument for derivative order
+  Type res = pnorm_atomic::pnorm1_2x(tx)[0];
   return res;
 }
 

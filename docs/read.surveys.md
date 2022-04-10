@@ -1,9 +1,11 @@
-# `read.surveys`: Function to read ices survey format
+# `read.surveys`
+
+Function to read ices survey format
+
 
 ## Description
 
-
- Function to read ices survey format
+Function to read ices survey format
 
 
 ## Usage
@@ -17,11 +19,11 @@ read.surveys(filen)
 
 Argument      |Description
 ------------- |----------------
-```filen```     |     the file
+`filen`     |     the file
+
 
 ## Details
 
-
- ...
+...
 
 

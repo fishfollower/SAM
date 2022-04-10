@@ -107,7 +107,7 @@ updateData:
 	      nscodData <- dat; nscodConf <- conf; nscodParameters <- par; \
 	      save(nscodData, file='stockassessment/data/nscodData.RData', version=2); \
 	      save(nscodConf, file='stockassessment/data/nscodConf.RData', version=2); \
-	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData', version=2); " | R --slave
+	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData', version=2); " | $(R) --slave
 
 updateDocs:
 	rm -rf docs
@@ -115,7 +115,7 @@ updateDocs:
 	echo "library(Rd2md); \
 	      fn<-dir('$(PACKAGE)/man'); \
 	      d<-sapply(fn, function(f)Rd2markdown(paste0('$(PACKAGE)/man/',f), sub('Rd','md',paste0('docs/',f))));\
-	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | R --slave
+	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | $(R) --slave
 	R CMD Rdconv -t html $(PACKAGE)/man/sam.fit.Rd -o temp.html
 	sed -i '/page for sam.fit/d' temp.html
 	pandoc temp.html -t markdown_github -o docs/sam.fit.md; rm temp.html;
@@ -166,3 +166,4 @@ webtestone:
 $(testfiles):
 	@$(MAKE) -s webtestone $(@D)
 	@rm -rf $(@D)
+

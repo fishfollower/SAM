@@ -1,6 +1,6 @@
-#define WITH_LIBTMB
-#include <TMB.hpp>
-#include "../inst/include/SAM.hpp"
+// #define WITH_LIBTMB
+// #include <TMB.hpp>
+// #include "../inst/include/SAM.hpp"
 
   
 extern "C" {
@@ -25,14 +25,14 @@ extern "C" {
     return asSEXP(r);
   }
   SEXP ibcisplineR(SEXP x, SEXP knots, SEXP pars){
-    double r = ibcdspline(Rf_asReal(x),
+    double r = ibcispline(Rf_asReal(x),
 			  asVector<double>(knots),
 			  asVector<double>(pars));
     return asSEXP(r);
   }
 
   SEXP iibcisplineR(SEXP x, SEXP knots, SEXP pars){
-    double r = ibcdspline(Rf_asReal(x),
+    double r = iibcispline(Rf_asReal(x),
 			  asVector<double>(knots),
 			  asVector<double>(pars));
     return asSEXP(r);

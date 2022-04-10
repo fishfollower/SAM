@@ -1,9 +1,11 @@
-# `print.samypr`: Print samypr object
+# `print.samypr`
+
+Print samypr object
+
 
 ## Description
 
-
- Print samypr object
+Print samypr object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("print"), list("samypr"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     an object as returned from the ypr function
-```...```     |     extra arguments
+`x`     |     an object as returned from the ypr function
+`...`     |     extra arguments
+
 
 ## Details
 
-
- ...
+...
 
 
