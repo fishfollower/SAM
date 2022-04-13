@@ -152,10 +152,14 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   he <- function(par){ optimHess(par, obj$fn, obj$gr) }
   ## }
   for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
-    g <- as.numeric( obj$gr(opt$par) )
-    h <- he(opt$par)
-    opt$par <- opt$par - solve(h, g)
-    opt$objective <- obj$fn(opt$par)
+        atLBound <- (opt$par < (lower2 + sqrt(.Machine$double.eps)))
+        atUBound <- (upper2 < (opt$par + sqrt(.Machine$double.eps)))
+        atBound <- atLBound | atUBound
+        g <- as.numeric( obj$gr(opt$par) )
+        h <- stats::optimHess(opt$par, obj$fn, obj$gr)
+        opt$par[!atBound] <- opt$par[!atBound]- solve(h[!atBound,!atBound], g[!atBound])
+        opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
+        opt$objective <- obj$fn(opt$par)
   }
   opt$he <- optimHess(opt$par, obj$fn, obj$gr)
   rep <- obj$report()
