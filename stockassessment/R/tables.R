@@ -35,8 +35,8 @@ tableit.samforecast <- function (fit, what, x=fit$data$years, trans=function(x)x
     }else if(what == "logR"){
         ret <- tab[,4:6,drop=FALSE]
     }else if(what == "logtsb"){
-        if(any(grepl("^tsb:",rownames(tab)))){
-            ret <- tab[,grepl("^tsb:",rownames(tab)), drop=FALSE]
+        if(any(grepl("^tsb:",colnames(tab)))){
+            ret <- tab[,grepl("^tsb:",colnames(tab)), drop=FALSE]
         }else{
             stop("The forecast was not made with addTSB=TRUE")
         }
