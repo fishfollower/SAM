@@ -40,6 +40,7 @@ sink(zz, type = "output")
 sink(zz, type ="message")
 TMB::compile(f,
              CXXFLAGS=sprintf("-I%s",system.file("include",package="stockassessment")),
+             framework = "TMBad",
              libinit = FALSE)
 sink(type ="message")
 sink(type = "output")
