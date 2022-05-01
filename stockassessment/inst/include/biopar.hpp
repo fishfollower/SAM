@@ -170,17 +170,15 @@ Type nllASD(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_fun
       dd=obs(i,2);
       m=logAge(ss);
       sd=sqrt(log(alpha(0)*exp(m*(beta(0)-2))+1)); // corresponds to v=alpha*mu^beta on natural scale ()
-      std::cout<<sd<<" "<<i<<" "<<aa<<"  "<<alpha(0)<<" "<<beta(0)<<" "<<m<<" ";
       if(pg==aa){
-        nll+= -log(Type(1)-pnorm(log(Type(aa)),m,sd));
+	nll += -pnorm5(log(Type(aa)),m,sd,Type(0),Type(1));
       }else{
         if(mg==aa){
-          nll+= -log(pnorm(log(Type(aa)+Type(1.0)),m,sd));
+	  nll += -pnorm5(log(Type(aa)+Type(1.0)),m,sd,Type(1),Type(1));
         }else{
-          nll+= -log(pnorm(log(Type(aa)+Type(1.0)),m,sd)-pnorm(log(Type(aa)) ,m,sd));
+	  nll += -logspace_sub(pnorm5(log(Type(aa)+Type(1.0)),m,sd,Type(1),Type(1)),pnorm5(log(Type(aa)),m,sd,Type(1),Type(1)));
         }
       }
-      std::cout<<nll<<std::endl;
     }
   
     for(int f=0; f<dat.noFleets; ++f){
@@ -192,13 +190,12 @@ Type nllASD(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_fun
       	      m=log(Type(i)+dat.minAgePerFleet(f)+conf.offsetAgeSampleData(f));
               sd=sqrt(log(alpha(0)*exp(m*(beta(0)-2))+1));
   	      if(pg==(j+dat.minAgePerFleet(f))){
-                confusion(i,j)=1-pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd); 
+                confusion(i,j)=pnorm5(log(Type(j+dat.minAgePerFleet(f))),m,sd,Type(0),Type(0)); 
   	      }else{
                 if(mg==(j+dat.minAgePerFleet(f))){
-  	          confusion(i,j)=pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd);
+  	          confusion(i,j)=pnorm5(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd,Type(1),Type(0));
   	        }else{
-                  confusion(i,j)=pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd)-
-  	                       pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd);
+                  confusion(i,j)=pnorm5(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd,Type(1),Type(0))-pnorm5(log(Type(j+dat.minAgePerFleet(f))),m,sd,Type(1),Type(0));
   	        }
   	      }
             }
@@ -216,13 +213,13 @@ Type nllASD(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_fun
       	        m=log(Type(i)+dat.minAgePerFleet(f)+dt*k+0.5*dt);
                 sd=sqrt(log(alpha(0)*exp(m*(beta(0)-2))+1));
   	        if(pg==(j+dat.minAgePerFleet(f))){
-                  confusion(i,j)+=dt*(1-pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd)); 
+                  confusion(i,j)+=dt*(pnorm5(log(Type(j+dat.minAgePerFleet(f))),m,sd,Type(0),Type(0))); 
   	        }else{
                   if(mg==(j+dat.minAgePerFleet(f))){
-  	            confusion(i,j)+=dt*(pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd));
+  	            confusion(i,j)+=dt*(pnorm5(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd,Type(1),Type(0)));
   	          }else{
-                    confusion(i,j)+=dt*(pnorm(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd)-
-				       pnorm(log(Type(j+dat.minAgePerFleet(f))),m,sd));
+                    confusion(i,j)+=dt*(pnorm5(log(Type(j+dat.minAgePerFleet(f))+Type(1.0)),m,sd,Type(1),Type(0))-
+					pnorm5(log(Type(j+dat.minAgePerFleet(f))),m,sd,Type(1),Type(0)));
   	          }
   	        }
               }
