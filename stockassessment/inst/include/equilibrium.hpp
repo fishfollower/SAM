@@ -25,6 +25,13 @@ struct PERREC_t {
 
 template<class Type>
 PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int>& aveYears, int nYears = 300, int CT = 0){
+  if(nYears <= 0)
+    Rf_error("nYears must be greater than 0.");
+  if(aveYears.size() == 0)
+    Rf_error("aveYears must be given.");
+  if(logSel.size() != conf.keyLogFsta.maxCoeff()+1)
+    Rf_error("Wrong size of selectivity vector");
+
   // Prepare data
   dataSet<Type> newDat = dat;
   int nMYears = dat.noYears;
@@ -219,7 +226,7 @@ Type yieldPerRecruit_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, ar
 
 template<class Type>
 vector<Type> yieldPerRecruit(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, bool give_log = false){
-  vector<Type> r(dat.catchMeanWeight.dim[0]);
+  vector<Type> r(dat.catchMeanWeight.dim(0));
   r.setZero();
   for(int i = 0; i < r.size(); ++i)
     r(i) = yieldPerRecruit_i(dat, conf, par, logF, i, 0, 300, give_log);
@@ -342,7 +349,15 @@ vector<Type> B0(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Typ
 
 
 template<class Type>
-PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int> aveYears, int nYears, int CT, vector<Type> logNinit){
+PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int> aveYears, int nYears, int CT, vector<Type> logNinit){
+  if(nYears < 0)
+    Rf_error("nYears must be non-negative.");
+  if(aveYears.size() == 0)
+    Rf_error("aveYears must be given.");
+  if(logSel.size() != conf.keyLogFsta.maxCoeff()+1)
+    Rf_error("Wrong size of selectivity vector");
+  if(logNinit.size() != conf.maxAge - conf.minAge + 1)
+    Rf_error("Wrong size of initial N");
 
   // Extend arrays
   dataSet<Type> newDat = dat;
@@ -480,7 +495,7 @@ PERREC_t<Type> stochPerRecruit(Type logFbar, dataSet<Type>& dat, confSet& conf, 
   //  int nYearsEqMax = (guessNY) ? 1000 : nYears;
   array<Type> logNeq(nAge, nYears);
   logNeq.setConstant(R_NegInf);
-  // logNeq.col(0) = logNinit;
+  logNeq.col(0) = logNinit;
  
   // array<Type> logFeq0(logSel.size(), nYearsEqMax);
   // logFeq0.setZero();

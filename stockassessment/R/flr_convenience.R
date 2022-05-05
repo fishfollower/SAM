@@ -1,4 +1,5 @@
 as.matrix.FLQuant <- function(v){
+    require(FLCore)
     d <- dim(v@.Data)
     dn <- dimnames(v@.Data)
     xx <- t(matrix(v@.Data, d[1],d[2]))
@@ -7,7 +8,8 @@ as.matrix.FLQuant <- function(v){
     xx
 }
 
-as.FLStock.sam <- function(fit, unit.w = "kg"){
+as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted = FALSE){
+    require(FLCore)
     toFLQ <- function(x, unit = "NA"){
         FLQuant(t(x),dimnames=list(age=as.numeric(colnames(x)),
                                    year=as.numeric(rownames(x)),
@@ -16,6 +18,10 @@ as.FLStock.sam <- function(fit, unit.w = "kg"){
                                    area="unique",
                                    iter=1),
                 units = unit)
+    }
+    na2zero <- function(x){
+        x[is.na(x)] <- 0
+        x
     }
     resize <- function(x, ages, years, replicate = FALSE){
         x1 <- matrix(NA,length(years),length(ages))
@@ -41,7 +47,7 @@ as.FLStock.sam <- function(fit, unit.w = "kg"){
     ## catch.n
     ages <- fit$conf$minAge:fit$conf$maxAge
     years <- fit$data$years
-    CN <- toFLQ(resize(getFleet(fit,1),ages,years))
+    CN <- toFLQ(resize(na2zero(getFleet(fit,1, predicted)),ages,years))
     LF <- toFLQ(resize(fit$data$landFrac,ages,years,TRUE))
     ## mat
     MA <- toFLQ(resize(fit$data$propMat,ages,years,TRUE))
@@ -67,20 +73,25 @@ as.FLStock.sam <- function(fit, unit.w = "kg"){
     PM <- toFLQ(resize(fit$data$propM,ages,years,TRUE))
     ## harvest
     F <- toFLQ(resize(faytable(fit),ages,years,FALSE), "f")
-    FLStock(stock.n = SN,
-            catch.n = CN,
-            mat = MA,
-            stock.wt = SW,
-            stock.n = SN,
-            catch.wt = CW,
-            discards.wt = DW,
-            discards.n = DN,
-            landings.wt = LW,
-            landings.n = LN,
-            m = M,
-            harvest.spwn = PF,
-            m.spwn = PM,
-            harvest = F,
+    FLStock(catch = FLCore::apply(CN * CW,2,sum), # Total catch weight (‘FLQuant’)
+            catch.n = CN, # Catch numbers (‘FLQuant’)
+            catch.wt = CW, # Mean catch weights (‘FLQuant’)
+            discards = FLCore::apply(DW * DN,2,sum), # Total discards weight (‘FLQuant’)
+            discards.n = DN, # Discard numbers (‘FLQuant’)
+            discards.wt = DW, # Mean discard weights (‘FLQuant’)
+            landings = FLCore::apply(LW * LN,2,sum), # Total landings weight (‘FLQuant’)
+            landings.n = LN, # Landing numbers (‘FLQuant’)
+            landings.wt = LW, # Landing weights (‘FLQuant’)
+            stock = FLCore::apply(SW * SN,2,sum), # Total stock weight (‘FLQuant’)
+            stock.n = SN, # Stock numbers (‘FLQuant’)
+            stock.wt = SW, # Mean stock weights (‘FLQuant’)
+            m = M, # Natural mortality (‘FLQuant’)
+            mat = MA, # Proportion mature (‘FLQuant’)
+            harvest = F, # Harvest rate or fishing mortality. The units of this slot should be set to 'hr' or 'f' accordingly (‘FLQuant’)
+            harvest.spwn = PF, # Proportion of harvest/fishing mortality before spawning (‘FLQuant’)
+            m.spwn = PM, # Proportion of natural mortality before spawning (‘FLQuant’)
+            name = name, # Name of the stock (‘character’)
+            desc = desc, # Description of the stock (‘character’)
             range = c(min = fit$conf$minAge,
                       max = fit$conf$maxAge,
                       plusgroup = ifelse(fit$conf$maxAgePlusGroup[1],fit$conf$maxAge,NA),
@@ -88,7 +99,7 @@ as.FLStock.sam <- function(fit, unit.w = "kg"){
                       maxyear = max(fit$data$years),
                       minfbar = fit$conf$fbarRange[2],
                       maxfbar = fit$conf$fbarRange[2]
-                      )
+                      ) # Named numeric vector containing the quant and year ranges, the plusgroup and the quant range that the average fishing mortality should be calculated over (‘numeric’)
             )
 }
 
@@ -161,6 +172,7 @@ as.sam.fit.FLStock <- function(x, sr, rec_pars, makePlusGroup = TRUE){
         sr <- 0
     dat <- getSamFitData(x, makePlusGroup)
     cnf <- defcon(dat)
+    cnf$keyLogFsta[1,] <- seq_len(ncol(cnf$keyLogFsta))-1
     f1 <- max(min(dat$minAgePerFleet), x@range["minfbar"])
     f2 <- min(max(dat$maxAgePerFleet), x@range["maxfbar"])
     cnf$fbarRange <- c(f1,f2)
@@ -182,6 +194,7 @@ as.sam.tmbargs.FLStock <- function(x, sr, rec_pars, makePlusGroup = TRUE){
         sr <- 0
     data <- getSamFitData(x, makePlusGroup)
     conf <- defcon(data)
+    conf$keyLogFsta[1,] <- seq_len(ncol(conf$keyLogFsta))-1
     f1 <- max(min(data$minAgePerFleet), x@range["minfbar"])
     f2 <- min(max(data$maxAgePerFleet), x@range["maxfbar"])
     conf$fbarRange <- c(f1,f2)

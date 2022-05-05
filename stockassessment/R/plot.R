@@ -1280,13 +1280,14 @@ yprplot<-function(fit, ...){
 ##' @method yprplot default
 ##' @export
 yprplot.default <- function(fit, ...){
-         plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, ...)  
+         plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
 }
 ##' @rdname yprplot
 ##' @method yprplot samforecast
 ##' @export
 yprplot.samforecast <- function(fit, ...){
-    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, ...)
+    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logYPR")
 }
 
@@ -1294,7 +1295,8 @@ yprplot.samforecast <- function(fit, ...){
 ##' @method yprplot hcr
 ##' @export
 yprplot.hcr <- function(fit, ...){
-    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, ...)
+    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logYPR")
 }
 
@@ -1315,13 +1317,14 @@ sprplot<-function(fit, ...){
 ##' @method sprplot default
 ##' @export
 sprplot.default <- function(fit, ...){
-         plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp, ...)  
+         plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
 }
 ##' @rdname sprplot
 ##' @method sprplot samforecast
 ##' @export
 sprplot.samforecast <- function(fit, ...){
-    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp, ...)
+    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logSPR")
 }
 
@@ -1329,7 +1332,8 @@ sprplot.samforecast <- function(fit, ...){
 ##' @method sprplot hcr
 ##' @export
 sprplot.hcr <- function(fit, ...){
-    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp, ...)
+    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logSPR")
 }
 
@@ -1350,13 +1354,14 @@ equilibriumbiomassplot<-function(fit, ...){
 ##' @method equilibriumbiomassplot default
 ##' @export
 equilibriumbiomassplot.default <- function(fit, ...){
-         plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp, ...)  
+         plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
 }
 ##' @rdname equilibriumbiomassplot
 ##' @method equilibriumbiomassplot samforecast
 ##' @export
 equilibriumbiomassplot.samforecast <- function(fit, ...){
-    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp, ...)
+    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logSe")
 }
 
@@ -1364,7 +1369,8 @@ equilibriumbiomassplot.samforecast <- function(fit, ...){
 ##' @method equilibriumbiomassplot hcr
 ##' @export
 equilibriumbiomassplot.hcr <- function(fit, ...){
-    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp, ...)
+    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logSe")
 }
 
@@ -1386,13 +1392,14 @@ b0plot<-function(fit, ...){
 ##' @method b0plot default
 ##' @export
 b0plot.default <- function(fit, ...){
-         plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp, ...)  
+         plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
 }
 ##' @rdname b0plot
 ##' @method b0plot samforecast
 ##' @export
 b0plot.samforecast <- function(fit, ...){
-    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp, ...)
+    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logB0")
 }
 
@@ -1400,7 +1407,8 @@ b0plot.samforecast <- function(fit, ...){
 ##' @method b0plot hcr
 ##' @export
 b0plot.hcr <- function(fit, ...){
-    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp, ...)
+    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logSe")
 }
 

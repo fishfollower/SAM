@@ -51,7 +51,7 @@ extern "C" {
     // int RC0 = Rf_asInteger(RC);
     int CT0 = Rf_asInteger(CT);
     PERREC_t<double> y = perRecruit_D<double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0);
-    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
+    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "dSR0", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
     SET_VECTOR_ELT(res, 0, asSEXP(y.logFbar));
@@ -60,17 +60,18 @@ extern "C" {
     SET_VECTOR_ELT(res, 3, asSEXP(y.logSe));
     SET_VECTOR_ELT(res, 4, asSEXP(y.logRe));
     SET_VECTOR_ELT(res, 5, asSEXP(y.logYe));
-    SET_VECTOR_ELT(res, 6, asSEXP(y.logLifeExpectancy));
-    SET_VECTOR_ELT(res, 7, asSEXP(y.logYearsLost));
-    SET_VECTOR_ELT(res, 8, asSEXP(y.logDiscYe));
-    SET_VECTOR_ELT(res, 9, asSEXP(y.logDiscYPR));
+    SET_VECTOR_ELT(res, 6, asSEXP(y.dSR0));
+    SET_VECTOR_ELT(res, 7, asSEXP(y.logLifeExpectancy));
+    SET_VECTOR_ELT(res, 8, asSEXP(y.logYearsLost));
+    SET_VECTOR_ELT(res, 9, asSEXP(y.logDiscYe));
+    SET_VECTOR_ELT(res, 10, asSEXP(y.logDiscYPR));
 
     UNPROTECT(1);    
     return res;
 
   }
 
-  SEXP stochPerRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
+  SEXP perRecruitSR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
     dataSet<double> d0(tmbdat);
     confSet c0(tmbdat);
     paraSet<double> p0(pl);
@@ -85,9 +86,9 @@ extern "C" {
     int CT0 = Rf_asInteger(CT);
     vector<double> logNinit0 = asVector<double>(logNinit);
     GetRNGstate();
-    PERREC_t<double> y = stochPerRecruit<double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0, logNinit0);
+    PERREC_t<double> y = perRecruit_S<double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0, logNinit0);
     PutRNGstate();
-    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
+    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "dSR0", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
     SET_VECTOR_ELT(res, 0, asSEXP(y.logFbar));
@@ -96,11 +97,12 @@ extern "C" {
     SET_VECTOR_ELT(res, 3, asSEXP(y.logSe));
     SET_VECTOR_ELT(res, 4, asSEXP(y.logRe));
     SET_VECTOR_ELT(res, 5, asSEXP(y.logYe));
-    SET_VECTOR_ELT(res, 6, asSEXP(y.logLifeExpectancy));
-    SET_VECTOR_ELT(res, 7, asSEXP(y.logYearsLost));
-    SET_VECTOR_ELT(res, 8, asSEXP(y.logDiscYe));
-    SET_VECTOR_ELT(res, 9, asSEXP(y.logDiscYPR));
-
+    SET_VECTOR_ELT(res, 6, asSEXP(y.dSR0));
+    SET_VECTOR_ELT(res, 7, asSEXP(y.logLifeExpectancy));
+    SET_VECTOR_ELT(res, 8, asSEXP(y.logYearsLost));
+    SET_VECTOR_ELT(res, 9, asSEXP(y.logDiscYe));
+    SET_VECTOR_ELT(res, 10, asSEXP(y.logDiscYPR));
+    
     UNPROTECT(1);    
     return res;
 

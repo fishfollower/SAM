@@ -9,18 +9,18 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   vector<Type> predN(stateDimN);
   //predN.setZero();
   predN.setConstant(R_NegInf);
-  Type thisSSB=Type(0);
+  Type logThisSSB=Type(R_NegInf);
 
   if((i-conf.minAge)>=0){
-    thisSSB=ssbi(dat,conf,logN,logF,i-conf.minAge);
+    logThisSSB=ssbi(dat,conf,logN,logF,i-conf.minAge, true);
   }else{
-    thisSSB=ssbi(dat,conf,logN,logF,0); // use first in beginning       
+    logThisSSB=ssbi(dat,conf,logN,logF,0, true); // use first in beginning       
   }
 
   Type lastLogR = R_NaReal;
   if(i > 0)
     lastLogR = logN(0,i-1);    
-  predN(0) = recruit(log(thisSSB + SAM_Zero), lastLogR, dat.years(i));
+  predN(0) = recruit(logThisSSB, lastLogR, dat.years(i));
 
   switch(conf.logNMeanCorrection(0)){
   case 1:			// Mean on natural scale

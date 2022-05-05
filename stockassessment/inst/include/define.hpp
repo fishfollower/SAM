@@ -2,8 +2,8 @@
 #ifndef SAM_DEFINE_HPP
 #define SAM_DEFINE_HPP
 
-#define SAM_NegInf -20.0
-#define SAM_NIZero -10.0
+#define SAM_NegInf R_NegInf
+#define SAM_NIZero R_NegInf
 #define SAM_Zero exp(SAM_NIZero)
 
 

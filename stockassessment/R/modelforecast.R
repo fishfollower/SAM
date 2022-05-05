@@ -54,7 +54,7 @@ modelforecast.sam <- function(fit,
                      hcr = NULL,
                      nosim = NULL,
                      year.base = max(fit$data$years),
-                     ave.years = max(fit$data$years)+(-4:0),
+                     ave.years = c(),
                      rec.years = c(), #max(fit$data$years)+(-9:0),
                      label = NULL,
                      overwriteSelYears = NULL,
@@ -80,6 +80,13 @@ modelforecast.sam <- function(fit,
         stop("")
     }else if(year.base < max(fit$data$years)){
         warning("year.base is ignored for now")
+    }
+
+    if(length(ave.years) == 0){
+        useModelBio <- TRUE
+        ave.years = max(fit$data$years)+(-4:0)
+    }else{
+        useModelBio <- FALSE
     }
     
     ## Checks
@@ -175,6 +182,7 @@ modelforecast.sam <- function(fit,
 
     
     ## Convert average years to indices
+    ave.yearsIn <- ave.years
     ave.years <- match(ave.years, fit$data$years) - 1
     if(any(is.na(ave.years)))
         stop("ave.years has years without data.")
@@ -188,6 +196,29 @@ modelforecast.sam <- function(fit,
     pl <- fit$pl
     pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),nYears))
     pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),nYears))
+    if(useModelBio){
+        extendBio <- function(x) rbind(x,matrix(x[nrow(x)],nYears,ncol(x)))
+        if(nrow(pl$logitMO) > 0){            
+            pl$logitMO <- extendBio(pl$logitMO)
+        }else{
+            warning(sprintf("No MO random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+        }
+        if(nrow(pl$logNM) > 0){            
+            pl$logNM <- extendBio(pl$logNM)
+        }else{
+            warning(sprintf("No NM random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+        }
+        if(nrow(pl$logSW) > 0){            
+            pl$logSW <- extendBio(pl$logSW)
+        }else{
+            warning(sprintf("No SW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+        }
+        if(nrow(pl$logCW) > 0){            
+            pl$logCW <- extendBio(pl$logCW)
+        }else{
+            warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+        }
+    }
     args$parameters <- pl
     args$random <- unique(names(obj0$env$par[obj0$env$random]))
     args$data$forecast <- list(nYears = as.numeric(nYears),

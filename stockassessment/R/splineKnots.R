@@ -171,3 +171,154 @@ stockRecruitmentStartingValues <- function(fit, stockRecruitmentModelCode, const
     names(res) <- stockRecruitmentModelCode
     res
 }
+
+
+
+
+##' Spline basis for use with formula interface
+##'
+##' @param x Points to evaluate the basis in
+##' @param df Degrees of freedom
+##' @param knots Internal knots. If NULL, they are selected from quantiles of x.
+##' @param Boundary.knots Boundary knots. Defaults to range of x
+##' @param intercept Include an intercept in basis?
+##' @return A spline basis
+##' @importFrom stats quantile
+##' @importFrom utils head tail
+##' @author Christoffer Moesgaard Albertsen
+##' @export
+bc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
+    if(is.null(knots)){
+        nik <- df-length(Boundary.knots)-intercept
+        if(nik < 0){
+            warning(gettextf("'df' was too small; have used %d",length(Boundary.knots)-intercept))
+            nik <- 0
+        }
+        if(nik > 0)
+            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
+    }
+    Aknots <- sort(c(knots,Boundary.knots))
+    v <- .Call("splinebasis_bcR",x,Aknots)
+    v[is.na(v) | is.nan(v)] <- 0        # Stability issue quick fix (maybe from dnorm?)
+    if(intercept)
+        v <- cbind(1,v)
+    a <- list(df = df, knots = if (is.null(knots)) numeric(0L) else knots, 
+              Boundary.knots = Boundary.knots, intercept = intercept)
+
+    attributes(v) <- c(attributes(v), a)
+    class(v) <- c("bc","basis","matrix")
+    v
+}
+
+##' @importFrom stats makepredictcall
+##' @method makepredictcall bc
+##' @export
+makepredictcall.bc <- function (var, call){
+    if (as.character(call)[1L] != "bc") 
+        return(call)
+    at <- attributes(var)[c("df", "knots", "Boundary.knots", 
+        "intercept")]
+    xxx <- call[1L:2]
+    xxx[names(at)] <- at
+    xxx
+}
+
+
+
+##' Integrated spline basis for use with formula interface
+##'
+##' @param x Points to evaluate the basis in
+##' @param df Degrees of freedom
+##' @param knots Internal knots. If NULL, they are selected from quantiles of x.
+##' @param Boundary.knots Boundary knots. Defaults to range of x
+##' @param intercept Include an intercept in basis?
+##' @return A spline basis
+##' @importFrom stats quantile
+##' @importFrom utils head tail
+##' @author Christoffer Moesgaard Albertsen
+##' @export
+ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
+    if(is.null(knots)){
+        nik <- df-length(Boundary.knots)-intercept
+        if(nik < 0){
+            warning(gettextf("'df' was too small; have used %d",length(Boundary.knots)-intercept))
+            nik <- 0
+        }
+        if(nik > 0)
+            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
+    }
+    Aknots <- sort(c(knots,Boundary.knots))
+    v <- .Call("splinebasis_ibcR",x,Aknots)
+    if(intercept)
+        v <- cbind(1,v)
+    a <- list(df = df, knots = if (is.null(knots)) numeric(0L) else knots, 
+              Boundary.knots = Boundary.knots, intercept = intercept)
+
+    attributes(v) <- c(attributes(v), a)
+    class(v) <- c("ibc","basis","matrix")
+    v
+}
+
+##' @importFrom stats makepredictcall
+##' @method makepredictcall ibc
+##' @export
+makepredictcall.ibc <- function (var, call){
+    if (as.character(call)[1L] != "ibc") 
+        return(call)
+    at <- attributes(var)[c("df", "knots", "Boundary.knots", 
+        "intercept")]
+    xxx <- call[1L:2]
+    xxx[names(at)] <- at
+    xxx
+}
+
+
+
+
+##' Double integrated spline basis for use with formula interface
+##'
+##' @param x Points to evaluate the basis in
+##' @param df Degrees of freedom
+##' @param knots Internal knots. If NULL, they are selected from quantiles of x.
+##' @param Boundary.knots Boundary knots. Defaults to range of x
+##' @param intercept Include an intercept in basis?
+##' @return A spline basis
+##' @importFrom stats quantile
+##' @importFrom utils head tail
+##' @author Christoffer Moesgaard Albertsen
+##' @export
+iibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
+    if(is.null(knots)){
+        nik <- df-length(Boundary.knots)-intercept
+        if(nik < 0){
+            warning(gettextf("'df' was too small; have used %d",length(Boundary.knots)-intercept))
+            nik <- 0
+        }
+        if(nik > 0)
+            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
+    }
+    Aknots <- sort(c(knots,Boundary.knots))
+    v <- .Call("splinebasis_iibcR",x,Aknots)
+    if(intercept)
+        v <- cbind(1,v)
+    a <- list(df = df, knots = if (is.null(knots)) numeric(0L) else knots, 
+              Boundary.knots = Boundary.knots, intercept = intercept)
+
+    attributes(v) <- c(attributes(v), a)
+    class(v) <- c("iibc","basis","matrix")
+    v
+}
+
+##' @importFrom stats makepredictcall
+##' @method makepredictcall iibc
+##' @export
+makepredictcall.iibc <- function (var, call){
+   if (as.character(call)[1L] != "iibc") 
+        return(call)
+    at <- attributes(var)[c("df", "knots", "Boundary.knots", 
+        "intercept")]
+    xxx <- call[1L:2]
+    xxx[names(at)] <- at
+    xxx
+}
+

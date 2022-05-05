@@ -125,7 +125,11 @@ namespace spline_helper {
     res.setZero();
     for(int i = 1; i < knots.size() - 1; ++i){
       // Sigma
-      res(i,0) = (knots(i+1) - knots(i-1)) / 3.0;
+      if(fabs(knots(i) - knots(i-1)) < 0.001){
+	res(i,0) = 0.001 / 3.0;
+      }else{
+	res(i,0) = (knots(i+1) - knots(i-1)) / 3.0;
+      }
       // Gamma
       if(fabs(knots(i) - knots(i-1)) < 1e-8){
 	res(i,1) = res(i,0);

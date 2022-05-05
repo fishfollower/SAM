@@ -483,11 +483,16 @@ struct RPD_MYPYLprod : RPD_Base<Type> {
   using RPD_Base<Type>::getPerRec;
  
   Type operator()(const vector<Type> &x) {    
-    Type logFbar = x(0);
-    PERREC_t<Type> r = getPerRec(logFbar);
-    // Yield * (1 - YearsLost/AgeRange)
-    Type tmp = r.logYe + logspace_sub2(Type(0.0), exp(r.logYearsLost - logAgeRange));
-    return -tmp;
+    if(x.size() != this->rp.xVal.size())
+      Rf_error("In reference point MYPYLprod, length of F does not match length of powers.");
+     // Yield * (1 - (YearsLost/AgeRange^d)
+    Type kappa = 0.0;    
+    for(int i = 0; i < x.size(); ++i){
+      Type logFbar = x(i);
+      PERREC_t<Type> r = getPerRec(logFbar);
+      kappa -= r.logYe + logspace_sub2(Type(0.0), this->rp.xVal(i) * (r.logYearsLost - logAgeRange));
+    }
+    return kappa;
   }
 };
 

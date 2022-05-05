@@ -9,11 +9,37 @@
                    xSPR = 5,
                    xB0 = 6,
                    MYPYLdiv = 7,
-                   MYPYLprod = 8,
+                   MYPYL = 8,
                    MDY = 9,
                    Crash = 10,
                    Ext = 11,
                    Lim = 12)
+
+
+.logFtoSel <- function(logF, selYears, conf){
+    logSel <- log(rowSums(exp(logF[,selYears + 1,drop=FALSE])))
+    frng <- conf$fbarRange[1]:conf$fbarRange[2]
+    logFsum <- log(sum(colMeans(exp(logF)[conf$keyLogFsta[1,frng-conf$minAge+1]+1,selYears + 1,drop=FALSE])))
+    logSel - logFsum
+}
+
+.perRecruitR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct = 0, logCustomSel = numeric(0)){
+    if(length(logCustomSel) > 0){
+        sel <- exp(logCustomSel)
+    }else{
+        sel <- exp(.logFtoSel(pl$logF, selYears, fit$conf))
+    }
+    as.data.frame(.Call("perRecruitR",
+                        logFbar = logf,
+                        tmbdat = fit$obj$env$data,
+                        pl = pl,
+                        sel = sel,
+                        aveYears = aveYears,
+                        nYears = ifelse(nYears==0,150,nYears),
+                        CT = ct
+                        ))
+}
+
 
 .refpointParser <- function(x, ...){
     if(length(x) > 1)
@@ -27,6 +53,12 @@
         x <- gsub("=\\.","=0.",x)
     }else if(grepl("^F=[[:digit:]]+\\.$",x)){
         x <- gsub("\\.$",".0",x)
+    }else if(grepl("^MYPYL$",x)){
+        x <- "1.0MYPYL"
+    }else if(grepl("^[[:digit:]]+MYPYL$",x)){
+        x <- gsub("MYPYL",".0MYPYL",x)
+    }else if(grepl("^\\.[[:digit:]]+MYPYL$",x)){
+        x <- gsub("\\.","0.",x)
     }
     ## NOTE: enum, typePatterns, and xvalPatterns are assumed to have the same order and list elements
   
@@ -40,7 +72,7 @@
                          xSPR = "^0\\.[[:digit:]]+SPR$", # E.g., "0.35SPR"
                          xB0 =  "^0\\.[[:digit:]]+B0$", # E.g., "0.2B0"
                          MYPYLdiv = "^MYPYLdiv$",
-                         MYPYLprod = "^MYPYLprod$",
+                         MYPYL = "^[[:digit:]]+\\.[[:digit:]]+MYPYL$",
                          MDY = "^MDY$",
                          Crash = "^Crash$",
                          Ext = "^Ext$",
@@ -55,7 +87,7 @@
                          xSPR = c("(0\\.[[:digit:]]+)(SPR)","\\1"),
                          xB0 =  c("(0\\.[[:digit:]]+)(B0)","\\1"),
                          MYPYLdiv = NA,
-                         MYPYLprod = NA,
+                         MYPYL = c("([[:digit:]]+\\.[[:digit:]])(MYPYL)","\\1"),
                          MDY = NA,
                          Crash = NA,
                          Ext = NA,
@@ -106,7 +138,7 @@
     
     i <- match(rparg$rpType, invalidRP)
     if(length(i) > 0 && !is.na(i))
-        stop(sprintf("%s cannot be estimated for %s recruitment",names(.refpointEnum)[invalidRP[i]],srName))
+        stop(sprintf("%s cannot be estimated for %s recruitment",names(.refpointEnum)[match(invalidRP[i],.refpointEnum)],srName))
     
     if(rparg$rpType == -99){            # None
         rparg$logF0 <- numeric(0)
@@ -121,24 +153,19 @@
     ## Wrapper for perRecruit calculations    
     dd <- fit$obj$env$data #lapply(tmbargs$data,dataSanitize)
     pl <- fit$pl #lapply(tmbargs$parameters,parameterSanitize)
-    if(length(rparg$logCustomSel) > 0){
-        sel <- exp(rparg$logCustomSel)
-    }else{
-        sel <- colMeans((fay / fbar)[rparg$selYears+1,,drop=FALSE])
-    }
-    getPR <- function(logf){ .Call("perRecruitR",logf,dd,pl,sel,rparg$aveYears,rparg$nYears,rparg$catchType) }
+    getPR <- function(logf){ .perRecruitR(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel) }
     ## Apply to Fsequence for grid search
     .na2 <- function(x) ifelse(is.na(x) | is.nan(x), -Inf, x)
     logF <- log(Fsequence)
-    prv <- lapply(logF, getPR)    
-    logYPR <- .na2(sapply(prv, function(x) x$logYPR))
-    logSPR <- .na2(sapply(prv, function(x) x$logSPR))
-    logSe <- .na2(sapply(prv, function(x) x$logSe))
-    logRe <- .na2(sapply(prv, function(x) x$logRe))
-    logYe <- .na2(sapply(prv, function(x) x$logYe))
-    logLifeExpectancy <- .na2(sapply(prv, function(x) x$logLifeExpectancy))
-    logYearsLost <- .na2(sapply(prv, function(x) x$logYearsLost))
-    logDiscYe <- .na2(sapply(prv, function(x) x$logDiscYe))
+    prv <- do.call("rbind",lapply(logF, getPR))    
+    logYPR <- .na2(prv$logYPR)
+    logSPR <- .na2(prv$logSPR)
+    logSe <- .na2(prv$logSe)
+    logRe <- .na2(prv$logRe)
+    logYe <- .na2(prv$logYe)
+    logLifeExpectancy <- .na2(prv$logLifeExpectancy)
+    logYearsLost <- .na2(prv$logYearsLost)
+    logDiscYe <- .na2(prv$logDiscYe)
     dSR0 <- exp(stockRecruitmentModelR(-20, fit$pl$rec_pars, fit$conf$stockRecruitmentModelCode, fit$conf$constRecBreaks)$Gradient_logssb) / exp(-20)
 
     
@@ -176,11 +203,15 @@
         if(logF0 == max(logF))
             stop("The stock does not appear to have a well-defined F~MYPYLdiv~. Increase the upper bound of Fsequence to try again, or remove MYPYLdiv from the list.")
     }else if(rpType == 8){ ## MYPYLprod
+        if(any(rparg$xVal < 0))
+            stop("MYPYL power must be non-negative.")
         Arng <- fit$conf$maxAge - fit$conf$minAge + 1
-        v <- logYe + log(1.0 - exp(logYearsLost - log(Arng)))
-        logF0 <- logF[which.max(v)]
-        if(logF0 == max(logF))
-            stop("The stock does not appear to have a well-defined F~MYPYLprod~. Increase the upper bound of Fsequence to try again, or remove MYPYLprod from the list.")
+        logF0 <- sapply(rparg$xVal, function(x){
+            v <- logYe + log(1.0 - exp(x*(logYearsLost - log(Arng))))
+            logF[which.max(v)]
+        })
+        if(any(logF0 == max(logF)))
+            stop("The stock does not appear to have a well-defined F~MYPYL~. Increase the upper bound of Fsequence to try again, or remove MYPYL from the list.")
     }else if(rpType == 9){ ## MDY
         logF0 <- logF[which.max(logDiscYe)]
         if(logF0 == max(logF))
@@ -198,7 +229,7 @@
 
 .refpointNames <- function(rpType, xVal){
     baseName <- names(.refpointEnum)[match(rpType,.refpointEnum)]
-    if(length(xVal) == 0 | rpType %in% c(1,3,7,8,9,10,11,12))
+    if(length(xVal) == 0 | rpType %in% c(1,3,7,9,10,11,12))
         return(baseName)
     if(rpType == -1){                   #F=x
         return(sapply(xVal, function(xx) sprintf("F=%s",xx)))
@@ -214,27 +245,30 @@
 
 .refpointOutput <- function(ssdr, rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn, Fsequence, referencepoints){
     rwnms <- unlist(lapply(rpArgs,function(x) .refpointNames(x$rpType, x$xVal)))
-    outputOrder <- match(rwnms, referencepoints)
+    rpRename <- sapply(lapply(referencepoints,.refpointParser),function(args)do.call(.refpointNames,args))
+    outputOrder <- match(rwnms, rpRename)
     toCI <- function(pattern){
         indx <- 1:2
         if(biasCorrect)
             indx <- 3:4
         tmp <- ssdr[grepl(pattern,rownames(ssdr)),indx,drop=FALSE]
         CI <- exp(tmp %*% cbind(CIL=c(1,-2),CIH=c(1,2)))
-        cbind(Estimate = exp(tmp[outputOrder,1]), CI)
+        Est <- exp(tmp[,1])
+        CI[is.na(Est),] <- NA
+        cbind(Estimate = Est, CI)
     }
 
     ## Tables assume that the first reference point is used for Fsequence
-    Ftab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logF$")
-    Btab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSe$")
-    Rtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logRe$")
-    Ytab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYe$")
-    SPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSPR$")
-    YPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYPR$")
-    YLtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYearsLost$")
-    LEtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logLifeExpectancy$")
+    Ftab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logF$")[outputOrder,,drop=FALSE]
+    Btab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSe$")[outputOrder,,drop=FALSE]
+    Rtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logRe$")[outputOrder,,drop=FALSE]
+    Ytab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYe$")[outputOrder,,drop=FALSE]
+    SPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSPR$")[outputOrder,,drop=FALSE]
+    YPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYPR$")[outputOrder,,drop=FALSE]
+    YLtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYearsLost$")[outputOrder,,drop=FALSE]
+    LEtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logLifeExpectancy$")[outputOrder,,drop=FALSE]
     colnames(Ftab) <- colnames(Btab) <- colnames(Rtab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- colnames(YLtab) <- colnames(LEtab) <- c("Estimate","Low","High")
-    rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rownames(YLtab) <- rownames(LEtab) <- rwnms
+    rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rownames(YLtab) <- rownames(LEtab) <- referencepoints[outputOrder]
 
     ## First reference point is used for Fsequence
     YPRseq <- toCI("referencepoint_0_FixedF_logYPR$")
@@ -267,8 +301,8 @@
                               LifeExpectancy = LEseq),
                 ## opt = NA,
                 ## ssdr = sdr,
-                fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2]))## ,
-                ## diagonalCorrection = tv
+                fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
+                stochastic = FALSE
                 )
     
     attr(res,"aveYears") <-  aveYearsIn
@@ -311,7 +345,7 @@ deterministicReferencepoints <- function(fit,
 ##' @export
 deterministicReferencepoints.sam <- function(fit,
                                              referencepoints,
-                                             catchType = "landing",
+                                             catchType = "catch",
                                              nYears = 300,
                                              Fsequence = seq(0,2, len = 50),
                                              aveYears = max(fit$data$years)+(-9:0),

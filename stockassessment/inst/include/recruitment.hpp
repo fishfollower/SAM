@@ -125,24 +125,24 @@ public:
 
 };
 
-template<class Type, class Functor>
-vector<double> getStartingValues1D(Functor f, double x0, double x1, int N = 200){
-  vector<double> xx(N);
-  vector<double> r(N);
-  int minI = 0;
-  double minV = R_PosInf;
-  for(int i = 0; i < N; ++i){
-    xx(i) = x0 + (double(i) / double(N-1)) * (x1-x0);
-    vector<Type> yy(1); yy(0) = (xx(i));    
-    r(i) = asDouble(f(yy));
-    if(r(i) <= minV){
-      minI = i;
-      minV = r(i);
-    }
-  }
-  vector<double> yy(1); yy(0) = (xx(minI));
-  return yy;
-}
+// template<class Type, class Functor>
+// vector<double> getStartingValues1D(Functor f, double x0, double x1, int N = 50){
+//   vector<double> xx(N);
+//   vector<double> r(N);
+//   int minI = 0;
+//   double minV = R_PosInf;
+//   for(int i = 0; i < N; ++i){
+//     xx(i) = x0 + (double(i) / double(N-1)) * (x1-x0);
+//     vector<Type> yy(1); yy(0) = (xx(i));    
+//     r(i) = asDouble(f(yy));
+//     if(r(i) <= minV){
+//       minI = i;
+//       minV = r(i);
+//     }
+//   }
+//   vector<double> yy(1); yy(0) = (xx(minI));
+//   return yy;
+// }
 
 /*
 The functor f should return logR for a given logSSB
@@ -247,8 +247,10 @@ template<class Type, class Functor>
 struct RecruitmentNumeric : RecruitmentWorker<Type> {
 
   Functor f;
+  Type x0;
   
-  RecruitmentNumeric(Functor f_) : f(f_) {};
+  RecruitmentNumeric(Functor f_) : f(f_), x0(10.0) {};
+  RecruitmentNumeric(Functor f_, Type x0_) : f(f_), x0(x0_) {};
    
   Type operator()(Type logssb, Type lastR, Type year){
     vector<Type> ls(1); ls(0) = logssb;
@@ -257,8 +259,8 @@ struct RecruitmentNumeric : RecruitmentWorker<Type> {
   
   virtual Type logSe(Type logLambda){
     WrapEquiS<Type, Functor> fx(f, logLambda);
-    // vector<Type> x0v(1); x0v(0) = x0;
-    vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));
+    vector<Type> x0v(1); x0v(0) = x0;
+    // vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));
     vector<Type> v = newton::Newton(fx,x0v);  
     return (Type)v(0);
   }
@@ -270,8 +272,8 @@ struct RecruitmentNumeric : RecruitmentWorker<Type> {
   }
   virtual Type logSAtMaxR(){
     WrapSR<Functor> fx(f);
-    // vector<Type> x0v(1); x0v(0) = x0;
-    vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));    
+    vector<Type> x0v(1); x0v(0) = x0;
+    // vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));    
     vector<Type> v = newton::Newton(fx,x0v);  
     return v(0);
   }
@@ -281,8 +283,8 @@ struct RecruitmentNumeric : RecruitmentWorker<Type> {
   }
   virtual Type maxGradient(){
     WrapDiffSR<Functor> fx(f);
-    // vector<Type> x0v(1); x0v(0) = x0;
-    vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));
+    vector<Type> x0v(1); x0v(0) = x0;
+    // vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));
     vector<Type> v = newton::Newton(fx,x0v);      
     return dSR(v(0));
   }  
@@ -312,7 +314,7 @@ struct WrapDepensatoryA {
 template <template<class> class Functor, class Type>
 RecruitmentNumeric<Type, WrapDepensatoryA<Functor, Type> >* Rec_DepensatoryA(Functor<Type> SR, Type logd){
   WrapDepensatoryA<Functor, Type> DepSR(SR, logd);
-  return new RecruitmentNumeric<Type, WrapDepensatoryA<Functor, Type> >(DepSR);
+  return new RecruitmentNumeric<Type, WrapDepensatoryA<Functor, Type> >(DepSR, logd + 2.0);
 }
 
 
@@ -339,7 +341,7 @@ struct WrapDepensatoryB {
 template <template<class> class Functor, class Type>
 RecruitmentNumeric<Type, WrapDepensatoryB<Functor, Type> >* Rec_DepensatoryB(Functor<Type> SR, Type logd){
   WrapDepensatoryB<Functor, Type> DepSR(SR, logd);
-  return new RecruitmentNumeric<Type, WrapDepensatoryB<Functor, Type> >(DepSR);
+  return new RecruitmentNumeric<Type, WrapDepensatoryB<Functor, Type> >(DepSR, logd + 2.0);
 }
 
 
@@ -367,7 +369,7 @@ struct WrapDepensatoryC {
 template <template<class> class Functor, class Type>
 RecruitmentNumeric<Type, WrapDepensatoryC<Functor, Type> >* Rec_DepensatoryC(Functor<Type> SR, Type logd, Type logl){
   WrapDepensatoryC<Functor, Type> DepSR(SR, logd, logl);
-  return new RecruitmentNumeric<Type, WrapDepensatoryC<Functor, Type> >(DepSR);
+  return new RecruitmentNumeric<Type, WrapDepensatoryC<Functor, Type> >(DepSR, logd + 2.0);
 }
 
 
@@ -600,11 +602,11 @@ struct Rec_LogisticHockeyStick : RecruitmentNumeric<Type, RF_LogisticHockeyStick
   Type logt;
   
   Rec_LogisticHockeyStick(Type la, Type lm, Type lt) :
-    RecruitmentNumeric<Type, RF_LogisticHockeyStick_t<Type> >(RF_LogisticHockeyStick_t<Type>(la, lm, lt)), loga(la), logm(lm), logt(lt) {};
+    RecruitmentNumeric<Type, RF_LogisticHockeyStick_t<Type> >(RF_LogisticHockeyStick_t<Type>(la, lm, lt), la), loga(la), logm(lm), logt(lt) {};
 
   template<class T>
   Rec_LogisticHockeyStick(const Rec_LogisticHockeyStick<T>& other) :
-    RecruitmentNumeric<Type, RF_LogisticHockeyStick_t<Type> >(other.f), loga(other.loga), logm(other.logm), logt(other.logt) {}
+    RecruitmentNumeric<Type, RF_LogisticHockeyStick_t<Type> >(other.f, other.x0), loga(other.loga), logm(other.logm), logt(other.logt) {}
 
   
   Type logSAtMaxR(){
@@ -741,11 +743,11 @@ template<class Type>
 struct Rec_BentHyperbola : RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >  {
   // Implement with known values when time permits!
   Rec_BentHyperbola(Type logBlim, Type logHalfSlope, Type logSmooth) :
-    RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >(RF_BentHyperbola_t<Type>(logBlim, logHalfSlope, logSmooth)) {};
+    RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >(RF_BentHyperbola_t<Type>(logBlim, logHalfSlope, logSmooth), logBlim) {};
 
   template<class T>
   Rec_BentHyperbola(const Rec_BentHyperbola<T>& other) :
-    RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >(other.f, other.x0) {}
 
 };
 
@@ -789,11 +791,11 @@ template<class Type>
 struct Rec_PowerCMP : RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >  {
   // Implement with known values when time permits!
   Rec_PowerCMP(Type loga, Type logb) :
-    RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >(RF_PowerCMP_t<Type>(loga, logb)) {};
+    RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >(RF_PowerCMP_t<Type>(loga, logb), loga) {};
 
   template<class T>
   Rec_PowerCMP(const Rec_PowerCMP<T>& other) :
-    RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >(other.f, other.x0) {}
 };
 
 
@@ -834,11 +836,11 @@ template<class Type>
 struct Rec_PowerNCMP : RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >  {
   // Implement with known values when time permits!
   Rec_PowerNCMP(Type loga, Type logb) :
-    RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >(RF_PowerNCMP_t<Type>(loga, logb)) {};
+    RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >(RF_PowerNCMP_t<Type>(loga, logb), loga) {};
 
   template<class T>
   Rec_PowerNCMP(const Rec_PowerNCMP<T>& other) :
-    RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >(other.f, other.x0) {}
 };
 
 
@@ -885,11 +887,11 @@ template<class Type>
 struct Rec_Shepherd : RecruitmentNumeric<Type, RF_Shepherd_t<Type> >  {
 
   Rec_Shepherd(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_Shepherd_t<Type> >(RF_Shepherd_t<Type>(loga, logb, logg)) {};
+    RecruitmentNumeric<Type, RF_Shepherd_t<Type> >(RF_Shepherd_t<Type>(loga, logb, logg), loga) {};
 
   template<class T>
   Rec_Shepherd(const Rec_Shepherd<T>& other) :
-    RecruitmentNumeric<Type, RF_Shepherd_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_Shepherd_t<Type> >(other.f, other.x0) {}
 
 };
 
@@ -938,11 +940,11 @@ template<class Type>
 struct Rec_HasselDeriso : RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >  {
 
   Rec_HasselDeriso(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >(RF_HasselDeriso_t<Type>(loga, logb, logg)) {};
+    RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >(RF_HasselDeriso_t<Type>(loga, logb, logg), loga) {};
 
   template<class T>
   Rec_HasselDeriso(const Rec_HasselDeriso<T>& other) :
-    RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >(other.f, other.x0) {}
 
 };
 
@@ -986,11 +988,11 @@ template<class Type>
 struct Rec_SailaLorda : RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >  {
 
   Rec_SailaLorda(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >(RF_SailaLorda_t<Type>(loga, logb, logg)) {};
+    RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >(RF_SailaLorda_t<Type>(loga, logb, logg), loga) {};
 
   template<class T>
   Rec_SailaLorda(const Rec_SailaLorda<T>& other) :
-    RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >(other.f, other.x0) {}
 
 };
 
@@ -1035,11 +1037,11 @@ template<class Type>
 struct Rec_SigmoidalBevHolt : RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >  {
 
   Rec_SigmoidalBevHolt(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(RF_SigmoidalBevHolt_t<Type>(loga, logb, logg)) {};
+    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(RF_SigmoidalBevHolt_t<Type>(loga, logb, logg), loga) {};
 
   template<class T>
   Rec_SigmoidalBevHolt(const Rec_SigmoidalBevHolt<T>& other) :
-    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(other.f, other.x0) {}
 
 };
 
@@ -1081,11 +1083,11 @@ template<class Type>
 struct Rec_SplineCMP : RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >  {
 
   Rec_SplineCMP(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >(RF_SplineCMP_t<Type>(pars,knots)) {}
+    RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >(RF_SplineCMP_t<Type>(pars,knots), pars(pars.size()-1)) {}
 
   template<class T>
   Rec_SplineCMP(const Rec_SplineCMP<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >(other.f, other.x0) {}
 };
 
 
@@ -1116,11 +1118,11 @@ template<class Type>
 struct Rec_SplineConvexCompensatory : RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >  {
 
   Rec_SplineConvexCompensatory(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >(RF_SplineConvexCompensatory_t<Type>(pars,knots)) {}
+    RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >(RF_SplineConvexCompensatory_t<Type>(pars,knots), pars(pars.size()-1)) {}
 
   template<class T>
   Rec_SplineConvexCompensatory(const Rec_SplineConvexCompensatory<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >(other.f, other.x0) {}
 };
 
 
@@ -1162,11 +1164,11 @@ template<class Type>
 struct Rec_SplineSmooth : RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >  {
 
   Rec_SplineSmooth(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >(RF_SplineSmooth_t<Type>(pars,knots)) {}
+    RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >(RF_SplineSmooth_t<Type>(pars,knots), pars(pars.size()-1)) {}
 
   template<class T>
   Rec_SplineSmooth(const Rec_SplineSmooth<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >(other.f, other.x0) {}
 };
 
 
@@ -1207,11 +1209,11 @@ template<class Type>
 struct Rec_SplineGeneral : RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >  {
 
   Rec_SplineGeneral(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >(RF_SplineGeneral_t<Type>(pars,knots)) {}
+    RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >(RF_SplineGeneral_t<Type>(pars,knots), pars(pars.size()-1)) {}
 
   template<class T>
   Rec_SplineGeneral(const Rec_SplineGeneral<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >(other.f) {}
+    RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >(other.f, other.x0) {}
 };
 
 
@@ -1343,13 +1345,13 @@ r = Recruitment<Type>(Rec_DepensatoryB(Rec_HockeyStick<Type>(par.rec_pars(0), pa
      Rf_error("The depensatory B Hassel/Deriso recruitment should have four parameters.");
 r = Recruitment<Type>(Rec_DepensatoryB(Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
   }else if(rm == RecruitmentModel::Depensatory_B_Spline_CMP){
-    if(par.rec_pars.size() != conf.constRecBreaks.size() + 2)
-      Rf_error("The depensatory B spline recruitment should have two parameters more than constRecBreaks.");
+    if(par.rec_pars.size() != conf.constRecBreaks.size() + 2 && conf.constRecBreaks.size() >= 3)
+      Rf_error("The depensatory B spline recruitment should have two parameters more than the number of knots which should be at least 3.");
     r = Recruitment<Type>(Rec_DepensatoryB(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
 
  }else if(rm == RecruitmentModel::Depensatory_B_Spline_ConvexCompensatory){
-    if(par.rec_pars.size() != conf.constRecBreaks.size() + 2)
-      Rf_error("The depensatory B spline recruitment should have two parameters more than constRecBreaks.");
+    if(par.rec_pars.size() != conf.constRecBreaks.size() + 2 && conf.constRecBreaks.size() >= 3)
+      Rf_error("The depensatory B spline recruitment should have two parameters more than the number of knots which should be at least 3.");
     r = Recruitment<Type>(Rec_DepensatoryB(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
 
     
@@ -1366,16 +1368,14 @@ r = Recruitment<Type>(Rec_DepensatoryB(Rec_HasselDeriso<Type>(par.rec_pars(0), p
     r = Recruitment<Type>(Rec_DepensatoryC(Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
 
    }else if(rm == RecruitmentModel::Depensatory_C_Spline_CMP){
-    if(par.rec_pars.size() != conf.constRecBreaks.size() + 3)
-      Rf_error("The depensatory C spline recruitment should have three parameters more than constRecBreaks.");
-    Recruitment<Type>(Rec_DepensatoryC(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
-
-
+    if(par.rec_pars.size() != conf.constRecBreaks.size() + 3 && conf.constRecBreaks.size() >= 3)
+      Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");
+    r = Recruitment<Type>(Rec_DepensatoryC(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
 
   }else if(rm == RecruitmentModel::Depensatory_C_Spline_ConvexCompensatory){
-    if(par.rec_pars.size() != conf.constRecBreaks.size() + 3)
-      Rf_error("The depensatory C spline recruitment should have three parameters more than constRecBreaks.");
-    Recruitment<Type>(Rec_DepensatoryC(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
+    if(par.rec_pars.size() != conf.constRecBreaks.size() + 3 && conf.constRecBreaks.size() >= 3)
+      Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");
+    r = Recruitment<Type>(Rec_DepensatoryC(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
 
 
 ///////////////////////////////////////////// The End /////////////////////////////////////////////
