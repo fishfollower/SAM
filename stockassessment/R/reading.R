@@ -135,7 +135,7 @@ read.ices<-function(filen){
     minA<-head[3]
     maxA<-head[4]
     datatype<-head[5]
-  
+    
     if(!is.whole.positive.number(minY)){
       stop(paste("In file",filen, ": Minimum year is expected to be a positive integer number"))
     }
@@ -219,7 +219,7 @@ read.ices<-function(filen){
 ##' Combine the data sources to SAM readable object  
 ##' @param fleets comm fleets vith effort (currently unimplemented)
 ##' @param surveys surveys
-##' @param residual.fleet total catch minus commercial 
+##' @param residual.fleets fleet, or list of fleets without effort information 
 ##' @param prop.mature pm
 ##' @param stock.mean.weight sw
 ##' @param catch.mean.weight cw
@@ -230,13 +230,14 @@ read.ices<-function(filen){
 ##' @param prop.m ...
 ##' @param land.frac ...
 ##' @param recapture ...
+##' @param sum.residual.fleets ...
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
-setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
+setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL,
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL,
                            keep.all.ages = FALSE){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
@@ -245,11 +246,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   time<-NULL
   name<-NULL
   corList <- list()
-  idxCor <- matrix(NA, nrow=length(fleets)+length(surveys)+1, ncol=nrow(natural.mortality))
+  idxCor <- matrix(NA_integer_, nrow=length(fleets)+length(surveys)+length(residual.fleets) + length(sum.residual.fleets), ncol=nrow(natural.mortality))
   colnames(idxCor)<-rownames(natural.mortality)
-    dat<-data.frame(year=NA,fleet=NA,age=NA,aux=NA)
+    dat<-data.frame(year=NA_integer_,fleet=NA_integer_,age=NA_integer_,aux=NA_integer_)
     fleetAges <- list()
   weight<-NULL
+  sumKey<-NULL
   doone<-function(m){
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
@@ -270,7 +272,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
           weight<<-c(weight,1/as.vector(weigthTmp))
         }
       else{
-          weight<<-c(weight,rep(NA,length(year)))
+          weight<<-c(weight,rep(NA_real_,length(year)))
         }
       }
     }
@@ -289,11 +291,18 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
     }
   }
-  if(!is.null(residual.fleet)){
-    doone(residual.fleet)
-    type<-c(type,0)
-    time<-c(time,0)
-    name<-c(name,"Residual catch")
+  if(!is.null(residual.fleets)){
+    if(is.data.frame(residual.fleets)|is.matrix(residual.fleets)){
+      doone(residual.fleets)
+      type<-c(type,0)
+      time<-c(time,0)
+      name<-c(name,"Residual catch")
+    }else{
+      dummy<-lapply(residual.fleets,doone)
+      type<-c(type,rep(0,length(residual.fleets)))
+      time<-c(time,rep(0,length(residual.fleets)))
+      name<-c(name,paste0("Fleet w.o. effort ", 1:length(residual.fleets)))
+    }
   }
   if(!is.null(fleets)){
     if(is.data.frame(fleets)|is.matrix(fleets)){
@@ -322,24 +331,65 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
       name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
     }
   }
-  if(is.null(land.frac)){
-    land.frac<-matrix(1,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) # should be pure 1 
-  }
-  if(is.null(dis.mean.weight)){
-    dis.mean.weight<-catch.mean.weight
-  }
-  if(is.null(land.mean.weight)){
-    land.mean.weight<-catch.mean.weight
-  }
-  if(is.null(prop.f)){
-    prop.f<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
-  }
-  if(is.null(prop.m)){
-    prop.m<-matrix(0,nrow=nrow(residual.fleet), ncol=ncol(residual.fleet)) 
-  }
-  dat$aux[which(dat$aux<=0)] <- NA
-  dat<-dat[!is.na(dat$year),]
 
+  if(!is.null(sum.residual.fleets)){
+    if(is.data.frame(sum.residual.fleets)|is.matrix(sum.residual.fleets)){
+      doone(sum.residual.fleets)
+      type <- c(type,7)
+      time <- c(time,0)
+      name <- c(name,paste0("Fleet(", paste0(attr(sum.residual.fleets,"sumof"), collapse="+"),")"))
+    }else{
+      dummy<-lapply(sum.residual.fleets,doone)
+      type<-c(type,rep(7,length(sum.residual.fleets)))
+      time<-c(time,rep(0,length(sum.residual.fleets)))
+      name<-c(name,unlist(lapply(sum.residual.fleets,function(x)paste0("Fleet(", paste0(attr(x,"sumof"), collapse="+"),")"))))
+    }
+  }
+
+  ii <- type[dat[,"fleet"]]%in%c(0,7)
+  ynam <- min(dat[ii,"year"]):max(dat[ii,"year"])
+  ydim <- length(ynam)
+  ynam2 <- rownames(stock.mean.weight)
+  ydim2 <- length(ynam2)
+  anam <- min(dat[ii,"age"]):max(dat[ii,"age"])
+  adim <- length(anam)
+  anam2 <- colnames(stock.mean.weight)
+  adim2 <- length(anam2)
+  fdim <- sum(type==0)
+  fnam <- paste0("Fleet w.o. effort ", 1:fdim)
+    
+  d3verify<-function(X, yd=ydim, ad=adim, fd=fdim, yn=ynam, an=anam, fn=fnam, fill=NULL){
+    if(is.null(X)){
+      if(is.null(fill)){
+        stop(paste("Please specify", substitute(X)))
+      }else{
+        ret <- array(fill, dim=c(yd,ad,fd), dimnames=list(yn,an,fn))
+      }
+    }
+    if(length(dim(X))==2){ # matrix or data.frame
+      if(dim(X)[1]!=yd) stop(paste("Please check year range of", substitute(X)))
+      if(dim(X)[2]!=ad) stop(paste("Please check age range of", substitute(X)))
+      ret <- array(X, dim=c(yd,ad,fd), dimnames=list(yn,an,fn))
+    }else{ #must be list
+      num<-unlist(X)
+      if(length(num)!=(yd*ad*fd))stop(paste("Please check dimensions of", substitute(X)))
+      ret <- array(num, dim=c(yd,ad,fd), dimnames=list(yn,an,fn))
+    }
+    ret
+  }
+  land.frac <- d3verify(land.frac, fill=1)
+  catch.mean.weight <- d3verify(catch.mean.weight)
+  dis.mean.weight <- d3verify(dis.mean.weight)
+  land.mean.weight <- d3verify(land.mean.weight)
+  prop.f <- d3verify(prop.f, yd=ydim2, ad=adim2, yn=ynam2, an=anam2, fill=0)
+
+  if(is.null(prop.m)){
+    prop.m<-matrix(0,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) 
+  }
+    
+  dat$aux[which(dat$aux<=0)] <- NA_integer_
+  dat<-dat[!is.na(dat$year),]
+    
   if(!is.null(recapture)){
     tag<-data.frame(year=recapture$ReleaseY)
     fleet.idx <- fleet.idx+1
@@ -347,13 +397,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     tag$age <- recapture$ReleaseY-recapture$Yearclass
     tag$aux <- exp(recapture$r)
     tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type")])
-    dat[names(tag)[!names(tag)%in%names(dat)]]<-NA
+    dat[names(tag)[!names(tag)%in%names(dat)]]<-NA_integer_
     dat<-rbind(dat, tag)
-    weight<-c(weight,rep(NA,nrow(tag)))
+    weight<-c(weight,rep(NA_real_,nrow(tag)))
     type<-c(type,5)
     time<-c(time,0)
     name<-c(name,"Recaptures")
   }
+
   dat<-dat[complete.cases(dat[,1:3]),]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
@@ -366,7 +417,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   weight<-weight[o]
   newyear<-min(as.numeric(dat$year)):max(as.numeric(dat$year))
   newfleet<-min(as.numeric(dat$fleet)):max(as.numeric(dat$fleet))
-  mmfun<-function(f,y, ff){idx<-which(dat$year==y & dat$fleet==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
+  mmfun<-function(f,y, ff){idx<-which(dat$year==y & dat$fleet==f); ifelse(length(idx)==0, NA_integer_, ff(idx)-1)}
   idx1<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=min)
   idx2<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=max)
   attr(dat,'idx1')<-idx1
@@ -385,15 +436,30 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,]
-  attr(dat,'prop.mature')<-prop.mature
-  attr(dat,'stock.mean.weight')<-stock.mean.weight
-  attr(dat,'catch.mean.weight')<-catch.mean.weight
-  attr(dat,'dis.mean.weight')<-cutY(dis.mean.weight)
-  attr(dat,'land.mean.weight')<-cutY(land.mean.weight)
-  attr(dat,'natural.mortality')<-natural.mortality
-  attr(dat,'prop.f')<-cutY(prop.f)
+  cutYA<- function(x)x[dimnames(x)[[1]]%in%newyear,,,drop=FALSE]
+  attr(dat,'prop.mature')<-cutY(prop.mature)
+  attr(dat,'stock.mean.weight')<-cutY(stock.mean.weight)
+  attr(dat,'catch.mean.weight')<-cutYA(catch.mean.weight)
+  attr(dat,'dis.mean.weight')<-cutYA(dis.mean.weight)
+  attr(dat,'land.mean.weight')<-cutYA(land.mean.weight)
+  attr(dat,'natural.mortality')<-cutY(natural.mortality)
+  attr(dat,'prop.f')<-cutYA(prop.f)
   attr(dat,'prop.m')<-cutY(prop.m)
-  attr(dat,'land.frac')<-cutY(land.frac)
+
+  attr(dat,'land.frac')<-cutYA(land.frac)  
+  ft <- as.integer(attr(dat,'type'))
+  sumKey <- matrix(0,length(ft),length(ft))
+  if(!is.null(sum.residual.fleets)){
+    fl7 <- which(ft==7)
+    if(is.data.frame(sum.residual.fleets)|is.matrix(sum.residual.fleets)){
+      idxone <- cbind(fl7,attr(sum.residual.fleets,"sumof"))
+    }else{
+      idxone <- do.call(rbind,lapply(1:length(fl7), function(i)cbind(fl7[i],attr(sum.residual.fleets[[i]],"sumof"))))
+    }
+    sumKey[idxone] <- 1
+  }
+  attr(dat,'sumKey')<-sumKey
+
   ret<-list(
     noFleets=length(attr(dat,'type')),
     fleetTypes=as.integer(attr(dat,'type')),
@@ -406,7 +472,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
     idxCor=idxCor,
-    aux=do.call(cbind,lapply(dat,as.numeric))[,-4],
+    aux=do.call(cbind,lapply(dat,as.integer))[,-4],
     logobs=log(dat[,4]),
     weight=as.numeric(weight),
     propMat=attr(dat,'prop.mature'),
@@ -418,12 +484,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     landMeanWeight=attr(dat,'land.mean.weight'),
     propF=attr(dat,'prop.f'),
     propM=attr(dat,'prop.m'),
-    corList=corList
+    corList=corList,
+    sumKey=attr(dat,'sumKey')
   )
   attr(ret,"fleetNames")<-attr(dat,"name")  
   return(ret)
 }
-
 
 ##' Read a fitted model from stockassessment.org   
 ##' @param stockname The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.

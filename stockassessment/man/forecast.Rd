@@ -30,7 +30,14 @@ forecast(
   useCWmodel = (fit$conf$catchWeightModel == 1),
   useMOmodel = (fit$conf$matureModel == 1),
   useNMmodel = (fit$conf$mortalityModel == 1),
-  savesim = FALSE
+  savesim = FALSE,
+  cf.cv.keep.cv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0), nrow =
+    length(catchval)),
+  cf.cv.keep.fv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0), nrow =
+    length(catchval)),
+  cf.keep.fv.offset = matrix(0, ncol = sum(fit$data$fleetTypes == 0), nrow =
+    length(catchval)),
+  estimate = median
 )
 }
 \arguments{
@@ -85,6 +92,14 @@ forecast(
 \item{useNMmodel}{if TRUE the natural mortality predicted from the assessment model is used (can only be used for configurations supporting this)}
 
 \item{savesim}{save the individual simulations}
+
+\item{cf.cv.keep.cv}{exotic option}
+
+\item{cf.cv.keep.fv}{exotic option}
+
+\item{cf.keep.fv.offset}{exotic option}
+
+\item{estimate}{the summary function used (typically mean or median)}
 }
 \value{
 an object of type samforecast
@@ -93,5 +108,5 @@ an object of type samforecast
 forecast function to do shortterm
 }
 \details{
-There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run.
+There are three ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the last assessment year (base.year), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). The length of the vector specifies how many years forward the scenarios run.
 }

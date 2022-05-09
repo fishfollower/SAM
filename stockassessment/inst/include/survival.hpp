@@ -22,8 +22,9 @@ Type survivalFunction_i(dataSet<Type> &dat, confSet &conf, array<Type> &logF,
     int i = std::min(y, dat.natMor.rows()-1);	// Cohort year index
     Type M = dat.natMor(i,j);
     Type F = 0.0;
-    if(conf.keyLogFsta(0,j)>(-1) && a >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && a >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
     Type Z = M + F;
     CH += Z;		// Always one year
   }
@@ -40,8 +41,9 @@ Type temporaryLifeExpectancy_i(dataSet<Type> &dat, confSet &conf, array<Type> &l
     int i = std::min(y, dat.natMor.rows()-1);	// Cohort year index
     Type M = dat.natMor(i,j);
     Type F = 0.0;
-    if(conf.keyLogFsta(0,j)>(-1) && a >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && a >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
     Type Z = M + F;
     // Survival until the beginning of current age, i.e., end of last age (should be one for a=a0)
     Type p = survivalFunction_i(dat, conf, logF, y, a0, a-1);
@@ -61,8 +63,9 @@ Type cumulativeIncidenceFishing_i(dataSet<Type> &dat, confSet &conf, array<Type>
     int i = std::min(y, dat.natMor.rows()-1);	// Cohort year index
     Type M = dat.natMor(i,j);
     Type F = 0.0;
-    if(conf.keyLogFsta(0,j)>(-1) && a >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && a >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
     Type Z = M + F;
     // Survival until the beginning of current age, i.e., end of last age (should be one for a=a0)
     Type p = survivalFunction_i(dat, conf, logF, y, a0, a-1);
@@ -82,8 +85,9 @@ Type cumulativeIncidenceOther_i(dataSet<Type> &dat, confSet &conf, array<Type> &
     int i = std::min(y, dat.natMor.rows()-1);	// Cohort year index
     Type M = dat.natMor(i,j);
     Type F = 0.0;
-    if(conf.keyLogFsta(0,j)>(-1) && a >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && a >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
     Type Z = M + F;
     // Survival until the beginning of current age, i.e., end of last age (should be one for a=a0)
     Type p = survivalFunction_i(dat, conf, logF, y, a0, a-1);
@@ -101,8 +105,9 @@ Type yearsLostFishing_i(dataSet<Type> &dat, confSet &conf, array<Type> &logF,
     int i = std::min(y, dat.natMor.rows()-1);	// Cohort year index
     Type M = dat.natMor(i,j);
     Type F = 0.0;
-    if(conf.keyLogFsta(0,j)>(-1) && a >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && a >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
     Type Z = M + F;
     // Survival until the beginning of current age, i.e., end of last age (should be one for a=a0)
     Type p = survivalFunction_i(dat, conf, logF, y, a0, a-1);
@@ -122,8 +127,9 @@ Type yearsLostOther_i(dataSet<Type> &dat, confSet &conf, array<Type> &logF,
     int i = std::min(y, dat.natMor.rows()-1);	// Cohort year index
     Type M = dat.natMor(i,j);
     Type F = 0.0;
-    if(conf.keyLogFsta(0,j)>(-1) && a >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && a >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
     Type Z = M + F;
     // Survival until the beginning of current age, i.e., end of last age (should be one for a=a0)
     Type p = survivalFunction_i(dat, conf, logF, y, a0, a-1);

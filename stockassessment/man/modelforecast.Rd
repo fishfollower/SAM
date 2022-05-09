@@ -18,7 +18,7 @@ modelforecast(fit, ...)
   hcr = NULL,
   nosim = NULL,
   year.base = max(fit$data$years),
-  ave.years = max(fit$data$years) + (-4:0),
+  ave.years = c(),
   rec.years = c(),
   label = NULL,
   overwriteSelYears = NULL,

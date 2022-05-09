@@ -117,9 +117,10 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
     int i = std::min(aa, newDat.natMor.rows()-1);
     Type M = newDat.natMor(i,j);
     Type F = 0.0;
-    if(conf.keyLogFsta(0,j)>(-1) && aa >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
-    Type Z = M + F;
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && aa >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
+   Type Z = M + F;
     yl += yl_q + exp(yl_logp) * F / Z * (1.0 - 1.0 / Z * (1.0 - exp(-Z)));
     discYPR += cat(aa) * exp(-yl);
     // discYe += catYe(aa) * exp(-yl);
@@ -207,7 +208,7 @@ Type dYPR(Type logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, r
 // For calculations about future
 template<class Type>
 Type yieldPerRecruit_i(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, referencepointSet<Type>& rp, bool give_log = false){
-   vector<Type> ls = rp.getLogSelectivity();
+  vector<Type> ls = rp.getLogSelectivity();
   PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
   if(give_log)
     return r.logYPR;
@@ -228,8 +229,9 @@ template<class Type>
 vector<Type> yieldPerRecruit(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, bool give_log = false){
   vector<Type> r(dat.catchMeanWeight.dim(0));
   r.setZero();
-  for(int i = 0; i < r.size(); ++i)
+  for(int i = 0; i < r.size(); ++i){
     r(i) = yieldPerRecruit_i(dat, conf, par, logF, i, 0, 300, give_log);
+  }
   return r;
 }
 

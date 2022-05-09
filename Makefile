@@ -31,10 +31,10 @@ testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 
 all:
 	make install
-	make pdf
 
 doc-update: $(PACKAGE)/R/*.R
 	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\")" | $(R) --slave
+	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 	@touch doc-update
 
 vignette-update: vignettes/*.Rnw vignettes/*.Rmd
@@ -57,6 +57,7 @@ $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
 	$(R) CMD build --no-manual --resave-data=no $(PACKAGE)
 	rm $(PACKAGE)/DESCRIPTION  
 	mv old-description $(PACKAGE)/DESCRIPTION  
+	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 
 install: $(TARBALL)
 	$(R) CMD INSTALL --preclean --html $<

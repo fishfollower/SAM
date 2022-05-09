@@ -1,7 +1,7 @@
 ##' Plot helper
 ##' @param fit the fitted object from sam.fit of a set of such fits c(fit1,fit2)
 ##' @param what quoted name of object to extract
-##' @param x x-alues
+##' @param x x-values
 ##' @param ylab label on y-axis
 ##' @param xlab label on x-axis
 ##' @param ex extra y's to make room for
@@ -139,7 +139,7 @@ addforecast.samforecast <- function(fit, what, dotcol="black", dotpch=19, dotcex
                         }
                     }
                     )
-    points(y,x[,paste(what,"median", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
+    points(y,x[,paste(what,"Estimate", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
 }
 
 addforecast.hcr <- function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5),...){
@@ -701,59 +701,100 @@ recplot.hcr <- function(fit, lagR=FALSE, ...){
 catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
     UseMethod("catchplot")
 }
+
 ##' @rdname catchplot
-##' @param plot true if catch should be plotted
 ##' @method catchplot sam
 ##' @export
-catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,plot=TRUE,...){
-    if(is.null(drop)){
-        drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
-    }
-    CW <- fit$data$catchMeanWeight
-    CW <- CW[apply(!is.na(CW),1,all),]
-    x <- as.numeric(rownames(CW))
-    obs <- NULL
-    if(plot)
-        plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
-    if(obs.show){
-        aux <- fit$data$aux
-        logobs <- fit$data$logobs
-        .goget <- function(y,a){
-            ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
-            ifelse(length(ret)==0,0,ret)
-        }
-        if(plot)
-            points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
-        obs <- list(x=x,y=rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE))
-    }
-    invisible(list(drop=drop,obs=obs))
+## catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,plot=TRUE,...){
+##     if(is.null(drop)){
+##         drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
+##     }
+##     CW <- fit$data$catchMeanWeight
+##     CW <- CW[apply(!is.na(CW),1,all),]
+##     x <- as.numeric(rownames(CW))
+##     obs <- NULL
+##     if(plot)
+##         plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+##     if(obs.show){
+##         aux <- fit$data$aux
+##         logobs <- fit$data$logobs
+##         .goget <- function(y,a){
+##             ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
+##             ifelse(length(ret)==0,0,ret)
+##         }
+##         if(plot)
+##             points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
+##         obs <- list(x=x,y=rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE))
+##     }
+##     invisible(list(drop=drop,obs=obs))
+## }
+catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,...){
+  if(is.null(drop)){
+    drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
+  }
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  if(obs.show){
+    ct <- catchtable(fit, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
+  }
 }
+
 ##' @rdname catchplot
 ##' @method catchplot samset
 ##' @export
 catchplot.samset <- function(fit, obs.show=TRUE, drop=NULL,...){
-    if(!is.null(attr(fit,"fit"))){
-        fitlocal <- attr(fit,"fit")
-    }else{
-        fitlocal <- fit[[1]]
-    }
-    tmp <- catchplot(fitlocal,obs.show,drop,plot=FALSE,...)
-    plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=tmp$drop,...)
-    if(obs.show){
-        points(tmp$obs$x, tmp$obs$y, pch=4, lwd=2, cex=1.2)
-    }
+  if(!is.null(attr(fit,"fit"))){
+    fitlocal <- attr(fit,"fit")
+  }else{
+    fitlocal <- fit[[1]]
+  }
+  if(is.null(drop)){
+    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
+  }
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  if(obs.show){
+    ct <- catchtable(fitlocal, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
+  }
 }
+
 ##' @rdname catchplot
 ##' @method catchplot samforecast
 ##' @export
 catchplot.samforecast <- function(fit, obs.show=TRUE, drop=NULL,...){
-    fitlocal <- attr(fit,"fit")
-    tmp <- catchplot(fitlocal,obs.show,drop,plot=FALSE,...)
-    plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=tmp$drop,...)
-    if(obs.show){
-        points(tmp$obs$x, tmp$obs$y, pch=4, lwd=2, cex=1.2)
-    }
-    addforecast(fit, "catch")
+  fitlocal <- attr(fit,"fit")
+  if(is.null(drop)){
+    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
+  }
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  if(obs.show){
+    ct <- catchtable(fitlocal, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
+  }
+  addforecast(fit, "catch")
+}
+
+##' SAM catchbyfleet plot 
+##' @param fit the object returned from sam.fit
+##' @param obs.show if observations are to be shown also
+##' @param ... extra arguments transferred to plot
+##' @details Plot of estimated (and optionally observed) total catch in weight  
+##' @importFrom graphics points
+##' @export
+catchbyfleetplot<-function(fit, obs.show=FALSE, ...){
+  colSet = c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")
+  ciColSet = paste0(colSet,"80")
+  nf <- sum(fit$data$fleetTypes==0)
+  ct <- catchbyfleettable(fit,obs.show=TRUE)
+  x <- as.integer(rownames(ct))
+  matplot(rownames(ct), ct[,1:nf], type="l", lty="solid", lwd=3, ylab="Catch", xlab="Year", col=colSet[1:nf], ylim=range(ct, na.rm=TRUE))
+  for(f in 1:nf){  
+    polygon(c(x,rev(x)), y = c(ct[,nf+f],rev(ct[,2*nf+f])), border = gray(.5,alpha=.5), col = ciColSet[f])
+  }
+  if(obs.show){
+    matplot(rownames(ct), ct[,1:nf+3*nf], cex=1.2, pch=4, lwd=2, add=TRUE, col=colSet[1:nf])
+ }
+ legend("topright", legend=sub("Catch", "", colnames(ct[,1:nf])), col=colSet[1:nf], lty="solid", lwd=3)
 }
 ##' @rdname catchplot
 ##' @method catchplot hcr
@@ -1068,7 +1109,6 @@ qtableplot.samqtable<-function(qt,exp=FALSE){
     }
 }
 
-
 ##' SAM Data plot 
 ##' @param fit the object returned from sam.fit
 ##' @param col color to use for each fleet, default is two sequential colors \cr
@@ -1122,7 +1162,6 @@ dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
       if(fleet_type[i]==7) fleet_type[i]<-"Sum of fleets"
     }
   }
-
   layout(matrix(c(rep(1,3),2), nrow=1))
   par(oma=c(2,10,2,0),mar=c(0,0,0,0), xpd=NA)
   plot(x=rep(years,(ynum+1) ), y= rep(0:ynum,length(years)), type="n", xlab="", ylab="", yaxt="n")
@@ -1157,8 +1196,6 @@ dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
   mtext(text = "Data type", side=3, line=0.5, at=7/8, outer = TRUE)
 }
 
-
-
 ##' Plots the sd of the log observations as estimated in SAM in increasing order
 ##' @param fit the object returned from sam.fit
 ##' @param barcol color for each fleet and age
@@ -1190,9 +1227,6 @@ sdplot.sam <- function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
   par(mar=marg)
   barplot(res$sd, names.arg=res$name,las=2, col=barcol, ylab="SD", ylim=ylim); box()
 }
-
-
-
 
 ##' SAM rmax plot 
 ##' @param fit the object returned from sam.fit
@@ -1411,4 +1445,3 @@ b0plot.hcr <- function(fit, ...){
            x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logSe")
 }
-

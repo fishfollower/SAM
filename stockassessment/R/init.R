@@ -82,23 +82,22 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- numeric(2)
   }
   
-  ret$itrans_rho=if(conf$corFlag==0){numeric(0)}else{numeric(1)+.5}
+  ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))
   ret$logScale=if(conf$noScaledYears==0){numeric(0)}else{numeric(max(conf$keyParScaledYA)+1)}
   ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))
                            }else{numeric(0)}
   ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(ret$logitReleaseSurvival))
                         }else{numeric(0)}
-  
-  if(conf$corFlag ==3 ){
+
+  if(sum(conf$corFlag == 3) > 1 || (any( conf$corFlag == 3) && sum(dat$fleetTypes==0) > 1))
+      stop("Separable F structure is only implemented for single fleet models")
+  if(conf$corFlag[1] ==3 ){
     ret$sepFalpha=rep(0,max(conf$keyLogFsta)+1)
     ret$sepFlogitRho = rep(1,2)
     ret$sepFlogSd = rep(-1,2)
     ret$logSdLogFsta = numeric(0)
     ret$itrans_rho = numeric(0)
 
-    if(conf$corFlag==3){
-      ret$logSdLogFsta = numeric(0)
-    }
   }else{
     ret$sepFalpha=numeric(0)
     ret$sepFlogitRho = numeric(0)

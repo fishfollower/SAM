@@ -48,7 +48,7 @@ defcon<-function(dat){
     }
   }  
   ret$keyLogFsta <- x - 1
-  ret$corFlag <- 2
+  ret$corFlag <- rep(2,length(which(fleetTypes==0)))
   x <- matrix(0, nrow=nFleets, ncol=nAges)
   lastMax <- 0
   for(i in 1:nrow(x)){
@@ -79,12 +79,15 @@ defcon<-function(dat){
   }  
   ret$keyVarObs <- x - 1
   ret$obsCorStruct <- factor(rep("ID",nFleets),levels=c("ID","AR","US"))
+  ret$obsCorStruct[fleetTypes==7] <- NA
   ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=nAges-1)
   colnames(ret$keyCorObs)<-paste(minAge:(maxAge-1),(minAge+1):maxAge,sep="-")
   for(i in 1:nrow(x)){
+    if(fleetTypes[i]!=7){
       if(ages[i,1]<ages[i,2]){
         ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-NA
       }
+    }
   }
     
   ret$stockRecruitmentModelCode <- 0
@@ -92,9 +95,9 @@ defcon<-function(dat){
   ret$keyScaledYears <- numeric(0)
   ret$keyParScaledYA <- array(0,c(0,0))
 
-  cs <- colSums(dat$catchMeanWeight, na.rm=TRUE)
-  ii <- min(which(dat$fleetTypes==0))
-  tc <- tapply(dat$logobs[dat$aux[,2]==ii], INDEX=dat$aux[,3][dat$aux[,2]==ii], function(x)sum(x,na.rm=TRUE))
+  cs <- colSums(apply(dat$catchMeanWeight,1:2,median,na.rm=T))
+  ii <- which(dat$fleetTypes==0)
+  tc <- tapply(dat$logobs[dat$aux[,2]%in%ii], INDEX=dat$aux[,3][dat$aux[,2]%in%ii], function(x)sum(x,na.rm=TRUE))
   tc <- tc*cs[names(cs)%in%names(tc)]
   pp <- tc/sum(tc)
   ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)

@@ -31,15 +31,17 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
   Type pred = 0.0;
   Type logzz = R_NegInf;
   Type zz = 0.0;
+  Type sumF = 0.0;
 
    if(age==dat.maxAgePerFleet(f-1)){ma=1;}else{ma=0;}
     pg=conf.maxAgePlusGroup(f-1);
     if(ft==3){a=0;}
     if(ft<3){ 
       logzz = log(dat.natMor(y,a));
-      if(conf.keyLogFsta(0,a)>(-1)){
-        logzz = logspace_add2(logzz, logF(conf.keyLogFsta(0,a),y));
-      }
+      for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
+	if(conf.keyLogFsta(fx,a)>(-1)){
+	  logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,a),y));
+	}
     }    
 
     switch(ft){
@@ -47,7 +49,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
         //pred(i)=logN(a,y)-logzz+log(1-exp(-exp(logzz)));
 	pred=logN(a,y)-logzz+logspace_sub2(Type(0.0),-exp(logzz));
         if(conf.keyLogFsta(f-1,a)>(-1)){
-          pred+=logF(conf.keyLogFsta(0,a),y);
+          pred+=logF(conf.keyLogFsta(f-1,a),y);
         }
         scaleIdx=-1;
         yy=year;
@@ -76,8 +78,9 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 	  pred=0;
 	  for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
 	    logzz = log(dat.natMor(y,aa));
-            if(conf.keyLogFsta(0,aa)>(-1)){
-              logzz = logspace_add2(logzz, logF(conf.keyLogFsta(0,aa),y));
+	    for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
+	      if(conf.keyLogFsta(fx,aa)>(-1)){
+              logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,aa),y));
 	    }
 	    pred+=exp(logN(aa,y)-exp(logzz)*dat.sampleTimes(f-1));
 	  }
@@ -117,9 +120,10 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
           Type N = 0;
           for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
             zz = dat.natMor(y,aa);
-            if(conf.keyLogFsta(0,aa)>(-1)){
-              zz+=exp(logF(conf.keyLogFsta(0,aa),y));
-            }
+	    for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
+	      if(conf.keyLogFsta(fx,aa)>(-1)){
+		zz+=exp(logF(conf.keyLogFsta(fx,aa),y));
+	      }
             N +=  exp(logN(aa,y)-zz*dat.sampleTimes(f-1));
           }
           pred = log(N) +par.logFpar(conf.keyLogFpar(f-1,a));
@@ -133,7 +137,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
   
       case 5:// tags  
         if((a+conf.minAge)>conf.maxAge){a=conf.maxAge-conf.minAge;} 
-	pred=exp(log(tagv2)+log(tagv1)-logN(a,y)-log(1000))*releaseSurvival;
+	pred=exp(log(tagv2)+log(tagv1)-logN(a,y)-log(1000.0))*releaseSurvival;
       break;
   
       case 6:
@@ -141,9 +145,17 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
         return 0;
       break;
   
-      case 7:
-  	Rf_error("Unknown fleet code");
-        return 0;
+      case 7:// sum residual fleets 
+	pred=logN(a,y)-log(zz)+log(1-exp(-zz));
+        sumF=0;
+        for(int ff=1; ff<=dat.noFleets; ++ff){
+          if(dat.sumKey(f-1,ff-1)==1){
+            if(conf.keyLogFsta(ff-1,a)>(-1)){
+              sumF+=exp(logF(conf.keyLogFsta(ff-1,a),y));
+            }
+          }
+        }
+        pred+=log(sumF);
       break;
   
       default:
@@ -200,122 +212,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 			 tagv1,
 			 tagv2,	     
 			 releaseSurvivalVec(i) // releaseSurvival
-			 );
-    
-    // y=dat.aux(i,0)-minYear;
-    // f=dat.aux(i,1);
-    // ft=dat.fleetTypes(f-1);
-    // a=dat.aux(i,2)-conf.minAge;
-    
-    // if(dat.aux(i,2)==dat.maxAgePerFleet(f-1)){ma=1;}else{ma=0;}
-    // pg=conf.maxAgePlusGroup(f-1);
-    // if(ft==3){a=0;}
-    // if(ft<3){ 
-    //   logzz = log(dat.natMor(y,a));
-    //   if(conf.keyLogFsta(0,a)>(-1)){
-    //     logzz = logspace_add2(logzz, logF(conf.keyLogFsta(0,a),y));
-    //   }
-    // }    
-
-    // switch(ft){
-    //   case 0:
-    //     //pred(i)=logN(a,y)-logzz+log(1-exp(-exp(logzz)));
-    // 	pred(i)=logN(a,y)-logzz+logspace_sub2(Type(0.0),-exp(logzz));
-    //     if(conf.keyLogFsta(f-1,a)>(-1)){
-    //       pred(i)+=logF(conf.keyLogFsta(0,a),y);
-    //     }
-    //     scaleIdx=-1;
-    //     yy=dat.aux(i,0);
-    //     for(int j=0; j<conf.noScaledYears; ++j){
-    //       if(yy==conf.keyScaledYears(j)){
-    //         scaleIdx=conf.keyParScaledYA(j,a);
-    //         if(scaleIdx>=0){
-    //           pred(i)-=par.logScale(scaleIdx);
-    //         }
-    //         break;
-    //       }
-    //     }
-    //   break;
-  
-    //   case 1:
-    // 	Rf_error("Unknown fleet code");
-    //     return(0);
-    //   break;
-      
-    //   case 2:
-    // 	if((pg!=conf.maxAgePlusGroup(0))&&(a==(conf.maxAge-conf.minAge))){
-    //       Rf_error("When maximum age for the fleet is the same as maximum age in the assessment it must be treated the same way as catches w.r.t. plusgroup configuration");
-    // 	}
-
-    // 	if((ma==1) && (pg==1)){
-    // 	  pred(i)=0;
-    // 	  for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
-    // 	    logzz = log(dat.natMor(y,aa));
-    //         if(conf.keyLogFsta(0,aa)>(-1)){
-    //           logzz = logspace_add2(logzz, logF(conf.keyLogFsta(0,aa),y));
-    // 	    }
-    // 	    pred(i)+=exp(logN(aa,y)-exp(logzz)*dat.sampleTimes(f-1));
-    // 	  }
-    // 	  pred(i)=log(pred(i));
-    // 	}else{
-    //       pred(i)=logN(a,y)-exp(logzz)*dat.sampleTimes(f-1);
-    // 	}
-    //     if(conf.keyQpow(f-1,a)>(-1)){
-    //       pred(i)*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
-    //     }
-    //     if(conf.keyLogFpar(f-1,a)>(-1)){
-    //       pred(i)+=par.logFpar(conf.keyLogFpar(f-1,a));
-    //     }
-        
-    //   break;
-  
-    //   case 3:// biomass or catch survey
-    //     if(conf.keyBiomassTreat(f-1)==0){
-    //       pred(i) = logssb(y)+par.logFpar(conf.keyLogFpar(f-1,a));
-    //     }
-    //     if(conf.keyBiomassTreat(f-1)==1){
-    //       pred(i) = logCatch(y)+par.logFpar(conf.keyLogFpar(f-1,a));
-    //     }
-    //     if(conf.keyBiomassTreat(f-1)==2){
-    //       pred(i) = logfsb(y)+par.logFpar(conf.keyLogFpar(f-1,a));
-    //     }
-    //     if(conf.keyBiomassTreat(f-1)==3){
-    //       pred(i) = logCatch(y);
-    //     }
-    //     if(conf.keyBiomassTreat(f-1)==4){
-    //       pred(i) = logLand(y);
-    //     }
-    //     if(conf.keyBiomassTreat(f-1)==5){
-    //       pred(i) = logtsb(y)+par.logFpar(conf.keyLogFpar(f-1,a));
-    //     }
-    // 	break;
-  
-    //   case 4:
-    // 	Rf_error("Unknown fleet code");
-    //     return 0;
-    //   break;
-  
-    //   case 5:// tags  
-    //     if((a+conf.minAge)>conf.maxAge){a=conf.maxAge-conf.minAge;} 
-    // 	pred(i)=exp(log(dat.aux(i,6))+log(dat.aux(i,5))-logN(a,y)-log(1000))*releaseSurvivalVec(i);
-    //   break;
-  
-    //   case 6:
-    // 	Rf_error("Unknown fleet code");
-    //     return 0;
-    //   break;
-  
-    //   case 7:
-    // 	Rf_error("Unknown fleet code");
-    //     return 0;
-    //   break;
-  
-    //   default:
-    // 	Rf_error("Unknown fleet code");
-    //     return 0 ;
-    //   break;
-    // }    
+			 );    
   }
+
   return pred;
 }
 

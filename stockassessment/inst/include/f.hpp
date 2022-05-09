@@ -35,45 +35,84 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   using CppAD::abs;
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
+  int noFleets=conf.keyLogFsta.dim[0];
   int stateDimN=conf.keyLogFsta.dim[1];
   vector<Type> sdLogFsta=exp(par.logSdLogFsta);
   array<Type> resF(stateDimF,timeSteps-1);
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
-
-  if(conf.corFlag==0){
-    fcor.setZero();
+  vector<Type> statesFleets(stateDimF);
+  
+  //Fill statesFleets: we need this to make the 
+  for(int f=0; f<noFleets;f++){
+  	for(int i=0;i<stateDimF;i++){
+      for(int j=0;j<stateDimN;j++){
+  	    if(conf.keyLogFsta(f,j)==i){
+	      statesFleets(i)=f;
+	    }  
+      }
+    }
   }
-
+  
+  fcor.setZero();
   for(int i=0; i<stateDimF; ++i){
     fcor(i,i)=1.0;
   }
-
-  if(conf.corFlag==1){
+  
+  int count=0; //if corFlag varies between 0-2, itrans_rho is shorter than comm fleet length
+  for(int f=0;f<noFleets;f++){
+    bool cont = true;
     for(int i=0; i<stateDimF; ++i){
       for(int j=0; j<i; ++j){
-        fcor(i,j)=trans(par.itrans_rho(0));
-        fcor(j,i)=fcor(i,j);
+        if(statesFleets(i)==f && statesFleets(j)==f){
+	  if(conf.corFlag(f)==1){
+	    if(cont){
+              fcor(i,j)=trans(par.itrans_rho(count));
+              count++;
+              cont=false;
+	    } else {
+	      fcor(i,j)=trans(par.itrans_rho(count-1));		
+	    }
+            fcor(j,i)=fcor(i,j);
+          }
+        }
+      }
+    } 
+  
+    for(int i=0; i<stateDimF; ++i){
+      for(int j=0; j<i; ++j){
+      	if(statesFleets(i)==f && statesFleets(j)==f){
+      	  if(conf.corFlag(f)==2){
+	    if(cont){
+	      fcor(i,j)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
+	      count++;
+	      cont=false;
+            } else {
+              fcor(i,j)=pow(trans(par.itrans_rho(count-1)),abs(Type(i-j)));
+	    }
+            fcor(j,i)=fcor(i,j);
+	  }
+        }
       }
     } 
   }
 
-  if(conf.corFlag==2){
-    for(int i=0; i<stateDimF; ++i){
-      for(int j=0; j<i; ++j){
-        fcor(i,j)=pow(trans(par.itrans_rho(0)),abs(Type(i-j)));
-        fcor(j,i)=fcor(i,j);
-      }
-    } 
-  }
-
-  int i,j;
+  int i = 0;
+  int ff = 0;
+  int j = 0;
   for(i=0; i<stateDimF; ++i){
-    for(j=0; j<stateDimN; ++j){
-      if(conf.keyLogFsta(0,j)==i)break;
+    bool stop = false;
+    for(ff=0; ff<noFleets; ff++){
+      for(j=0; j<stateDimN; j++){
+        if(conf.keyLogFsta(ff,j)==i){
+          stop=true;
+          break;
+        } 
+      }
+      if(stop)break;
     }
-    fsd(i)=sdLogFsta(conf.keyVarF(0,j));
+    fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
   }
  
   for(i=0; i<stateDimF; ++i){
@@ -94,7 +133,8 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
   array<Type> resF(stateDimF,timeSteps-1);
 
   
-  if(conf.corFlag==3){
+  if(conf.corFlag(0)==3){
+    // Only works for one catch fleet!
     return(nllFseparable(dat, conf, par, forecast, logF, keep ,of));
   }
  

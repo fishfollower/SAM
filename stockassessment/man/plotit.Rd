@@ -92,7 +92,7 @@ plotit(fit, what, ...)
 
 \item{...}{extra arguments transferred to plot}
 
-\item{x}{x-alues}
+\item{x}{x-values}
 
 \item{ylab}{label on y-axis}
 

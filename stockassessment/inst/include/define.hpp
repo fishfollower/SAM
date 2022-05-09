@@ -373,6 +373,7 @@ struct dataSet{
   array<Type> propF;
   array<Type> propM;
   listMatrixFromR<Type> corList;
+  array<int> sumKey;
 
   dataSet() = default;
 
@@ -402,6 +403,7 @@ struct dataSet{
     propF = asArray<Type>(getListElement(x,"propF"));
     propM = asArray<Type>(getListElement(x,"propM"));
     corList = listMatrixFromR<Type>(getListElement(x,"corList"));
+    sumKey = asArray<int>(getListElement(x,"sumKey"));
   };
 
   template<class T>
@@ -414,10 +416,10 @@ struct dataSet{
     minAgePerFleet(x.minAgePerFleet),
     maxAgePerFleet(x.maxAgePerFleet),
     nobs(x.nobs),
-    idx1(x.idx1),
-    idx2(x.idx2),
-    idxCor(x.idxCor),
-    aux(x.aux),
+    idx1(x.idx1, x.idx1.dim),
+    idx2(x.idx2, x.idx2.dim),
+    idxCor(x.idxCor, x.idxCor.dim),
+    aux(x.aux, x.aux.dim),
     logobs(x.logobs),		
     weight(x.weight),  // Good
     propMat(x.propMat,x.propMat.dim), //(x.propMat),
@@ -429,11 +431,9 @@ struct dataSet{
     landMeanWeight(x.landMeanWeight, x.landMeanWeight.dim), //x.landMeanWeight),
     propF(x.propF, x.propF.dim), //x.propF),
     propM(x.propM, x.propM.dim),
-    corList(x.corList)  {}
-
+    corList(x.corList),
+    sumKey(x.sumKey, x.sumKey.dim) {}
 };
-
-
 
 
 template <class Type>
@@ -483,7 +483,7 @@ struct confSet{
   int maxAge;
   vector<int> maxAgePlusGroup;
   array<int> keyLogFsta;
-  int corFlag;
+  vector<int> corFlag;
   array<int> keyLogFpar;
   array<int> keyQpow;
   array<int> keyVarF;
@@ -528,7 +528,7 @@ struct confSet{
     maxAge = (int)*REAL(getListElement(x,"maxAge"));
     maxAgePlusGroup = asVector<int>(getListElement(x,"maxAgePlusGroup"));
     keyLogFsta = asArray<int>(getListElement(x,"keyLogFsta"));
-    corFlag = (int)*REAL(getListElement(x,"corFlag"));
+    corFlag = asVector<int>(getListElement(x,"corFlag"));
     keyLogFpar = asArray<int>(getListElement(x,"keyLogFpar"));
     keyQpow = asArray<int>(getListElement(x,"keyQpow"));
     keyVarF = asArray<int>(getListElement(x,"keyVarF"));

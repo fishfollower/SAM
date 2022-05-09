@@ -69,6 +69,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
+  DATA_IARRAY(sumKey); dataset.sumKey=sumKey; 
+
   DATA_STRUCT(forecast, forecastSet);
   DATA_STRUCT(referencepoints, referencepointList);
   
@@ -77,7 +79,7 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
   DATA_IVECTOR(maxAgePlusGroup); confset.maxAgePlusGroup=maxAgePlusGroup; 
   DATA_IARRAY(keyLogFsta); confset.keyLogFsta=keyLogFsta; 
-  DATA_INTEGER(corFlag); confset.corFlag=corFlag; 
+  DATA_IVECTOR(corFlag); confset.corFlag=corFlag; 
   DATA_IARRAY(keyLogFpar); confset.keyLogFpar=keyLogFpar; 
   DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
   DATA_IARRAY(keyVarF); confset.keyVarF=keyVarF; 
@@ -186,7 +188,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logitMO);
   PARAMETER_ARRAY(logNM);    
   PARAMETER_VECTOR(missing);
-  
+
   // patch missing 
   int idxmis=0; 
   for(int i=0;i<nobs;i++){
@@ -194,35 +196,36 @@ Type objective_function<Type>::operator() ()
       dataset.logobs(i)=missing(idxmis++);
     }    
   }
- 
-  Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
+
+  REPORT(dataset.idxCor);
   
+  Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
+
   Type ans=0; //negative log-likelihood
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   }
-
   ans += nllSplinePenalty(dataset, confset, paraset, this);
-         
+ 
   prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
   forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit);    
-
+ 
   ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
-
+ 
   ans += nllSW(logSW, dataset, confset, paraset, this);
   ans += nllCW(logCW, dataset, confset, paraset, this);
   ans += nllMO(logitMO, dataset, confset, paraset, this);
   ans += nllNM(logNM, dataset, confset, paraset, this);
-
+ 
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, keep, this);
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit, this);
-
+ 
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, keep, this);
-  //ans += nllReferencepoints(dataset, confset, paraset, logN, logF, recruit, this);
-
+  // ans += nllReferencepoints(dataset, confset, paraset, logN, logF, recruit, this);
+ 
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
-
+   
   return ans;
 }

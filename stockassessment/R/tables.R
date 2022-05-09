@@ -156,7 +156,7 @@ rectable.default <- function(fit, lagR=FALSE,...){
 }
 
 ##' Catch table 
-##' @param  fit ...
+##' @param  fit object returned from sam.fit
 ##' @param obs.show logical add a column with catch sum of product rowsums(C*W)
 ##' @param ... extra arguments not currently used
 ##' @details ...
@@ -169,18 +169,67 @@ catchtable<-function(fit, obs.show=FALSE,...){
 ##' @export
 catchtable.sam <- function(fit, obs.show=FALSE,...){
    CW <- fit$data$catchMeanWeight
-   CW <- CW[apply(!is.na(CW),1,all),] 
-   xx <- as.integer(rownames(CW))
-   ret <- tableit(fit, x=xx, "logCatch", trans=exp)
+   ## CW <- CW[apply(!is.na(CW),1,all),] 
+   ## xx <- as.integer(rownames(CW))
+   ## ret <- tableit(fit, x=xx, "logCatch", trans=exp)
+   if(length(dim(CW))==2)CW<-array(CW,dim=c(dim(CW),1))
+   nf <- dim(CW)[3]
+   yy <- as.integer(rownames(CW[,,1]))
+   aa <- as.integer(colnames(CW[,,1]))
+   ret <- tableit(fit, x=yy, "logCatch", trans=exp)
+   idx <- fit$data$fleetTypes[fit$data$aux[,'fleet']]%in%c(0)
+   o <- exp(fit$data$logobs[idx])
+   f <- fit$data$aux[idx,"fleet"]
+   a <- match(fit$data$aux[idx,"age"],aa)
+   y <- match(fit$data$aux[idx,"year"],yy)
+   w <- CW[cbind(y,a,f)]
+   cw <- o*w
+   sop <- tapply(cw, INDEX=y, FUN=sum, na.rm=TRUE)
    if(obs.show){
-     aux <- fit$data$aux
-     logobs <- fit$data$logobs
-     .goget <- function(y,a){
-       ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
-       ifelse(length(ret)==0,0,ret)
-      }
-      sop<-rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE)
-      ret<-cbind(ret,sop.catch=sop)
+      sop.catch <- rep(NA, nrow(ret))
+      sop.catch[as.integer(names(sop))] <- sop
+      ret<-cbind(ret,sop.catch=sop.catch)
+   }
+   return(ret)
+}
+
+##' CatchByFleet table 
+##' @param  fit object returned from sam.fit
+##' @param obs.show logical add a column with catch sum of product rowsums(C*W)
+##' @details ...
+##' @export
+catchbyfleettable<-function(fit, obs.show=FALSE){
+   CW <- fit$data$catchMeanWeight
+   if(length(dim(CW))==2)CW<-array(CW,dim=c(dim(CW),1))
+   nf <- dim(CW)[3]
+   yy <- as.integer(rownames(CW[,,1]))
+   aa <- as.integer(colnames(CW[,,1]))
+   ret <- tableit(fit, x=rep(yy, fit$data$noFleets), "logCatchByFleet", trans=exp)
+   ret <- cbind(ret, fleet=rep(1:fit$data$noFleets, each=length(yy)))
+   allzero<-which(tapply(ret[,"Estimate"], INDEX=ret[,"fleet"], FUN=sum)==0)
+   ret<-ret[!ret[,"fleet"]%in%allzero,]
+   idx <- fit$data$fleetTypes[fit$data$aux[,'fleet']]%in%c(0)  
+   o <- exp(fit$data$logobs[idx])
+   f <- fit$data$aux[idx,"fleet"]
+   a <- match(fit$data$aux[idx,"age"],aa)
+   y <- match(fit$data$aux[idx,"year"],yy)
+   w <- CW[cbind(y,a,f)]
+   cw <- o*w
+   fnam <- attr(fit$data, "fleetNames")[unique(f)]
+   est <- matrix(ret[,"Estimate"], ncol=nf)
+   colnames(est)<-paste0("Catch(",fnam,")")
+   low <- matrix(ret[,"Low"], ncol=nf)
+   colnames(low)<-paste0("Low(",fnam,")")
+   hig <- matrix(ret[,"High"], ncol=nf)
+   colnames(hig)<-paste0("High(",fnam,")")
+   sop <- xtabs(cw~y+f)
+   ret <- cbind(est,low,hig)
+   rownames(ret)<-yy
+   if(obs.show){
+      sop.catch <- matrix(NA, nrow=nrow(est), ncol=ncol(est))
+      sop.catch[as.integer(rownames(sop)),] <- sop
+      colnames(sop.catch)<-paste0("Obs(",fnam,")")
+      ret<-cbind(ret,sop.catch=sop.catch)
    }
    return(ret)
 }
@@ -204,7 +253,7 @@ ntable.sam <- function(fit,...){
 }
 
 ##' F-at-age table 
-##' @param  fit ... 
+##' @param  fit a fitted object of class 'sam' as returned from sam.fit
 ##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
@@ -212,12 +261,37 @@ faytable <- function(fit,...){
     UseMethod("faytable")
 }
 ##' @rdname faytable
+##' @param fleet the fleet number(s) to return F summed for (default is to return the sum of all residual fleets). 
 ##' @method faytable sam
 ##' @export
-faytable.sam <- function(fit,...){
-   idx <- fit$conf$keyLogFsta[1,]+2    
-   ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
-   ret[,idx==0] <- 0
+faytable.sam <- function(fit, fleet=which(fit$data$fleetTypes==0), ...){
+   getfleet <- function(f){
+     idx <- fit$conf$keyLogFsta[f,]+2    
+     ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
+     ret[is.na(ret)] <- 0
+     ret
+   }
+   ret <- Reduce("+",lapply(fleet,getfleet))
+   colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
+   rownames(ret) <- fit$data$years
+   return(ret)
+}
+
+##' Catch-at-age in numbers table 
+##' @param fit a fitted object of class 'sam' as returned from sam.fit
+##' @param fleet the fleet number(s) to return catch summed for (default is to return the sum of all residual fleets).  
+##' @details ...
+##' @export
+caytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
+   getfleet <- function(f){
+     idx <- fit$conf$keyLogFsta[f,]+2    
+     F <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
+     F[is.na(F)] <- 0
+     M <- fit$data$natMor
+     N <- exp(t(fit$pl$logN))
+     F/(F+M)*N*(1-exp(-F-M))
+   }
+   ret <- Reduce("+",lapply(fleet,getfleet)) 
    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
    rownames(ret) <- fit$data$years
    return(ret)
@@ -349,8 +423,6 @@ ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$
   barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
   last.year.used=max(fit$data$years)
   idxno<-which(fit$data$years==last.year.used)
-  #dim<-fit.current$stateDim
-  #idxN<-1:ncol(stock.mean.weight) 
   F <- t(faytable(fit))
   F[is.na(F)]<-0
   
@@ -371,14 +443,24 @@ ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$
     ret[-c(1:length(x))]<-x[length(x)]
     ret
   }
-
+  aveByCatch <- function(X) {
+    fun <- function(f) {
+      cay <- caytable(fit, f)
+      XX <- X[, , f]
+      cay <- cay[rownames(cay) %in% rownames(XX), ]
+      cay.safe<-cay
+      cay.safe[cay==0]<-1
+      cay * XX/cay.safe
+    }
+    Reduce("+", lapply(which(fit$data$fleetTypes == 0), fun))
+  }
   ave.sl<-sel()
   ave.sw<-colMeans(fit$data$stockMeanWeight[(idxno-aveYears+1):idxno,,drop=FALSE])
-  ave.cw<-colMeans(fit$data$catchMeanWeight[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.cw<-colMeans(aveByCatch(fit$data$catchMeanWeight)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
   ave.pm<-colMeans(fit$data$propMat[(idxno-aveYears+1):idxno,,drop=FALSE])
   ave.nm<-colMeans(fit$data$natMor[(idxno-aveYears+1):idxno,,drop=FALSE])
-  ave.lf<-colMeans(fit$data$landFrac[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
-  ave.cw.land<-colMeans(fit$data$landMeanWeight[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.lf<-colMeans(aveByCatch(fit$data$landFrac)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
+  ave.cw.land<-colMeans(aveByCatch(fit$data$landMeanWeight)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
 
   N<-numeric(ageLimit)
   N[1]<-1.0
@@ -459,5 +541,74 @@ generationlengthtable<-function(fit,...){
 ##' @export
 generationlengthtable.default <- function(fit,...){
    ret<-tableit(fit, "logGenerationLength", trans=exp,...)
+   return(ret)
+}
+
+
+##' YPR table 
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+yprtable<-function(fit,...){
+    UseMethod("yprtable")
+}
+##' @rdname yprtable
+##' @method yprtable default
+##' @export
+yprtable.default <- function(fit,...){
+   ret<-tableit(fit, "logYPR", trans=exp,...)
+   return(ret)
+}
+
+
+##' SPR table 
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+sprtable<-function(fit,...){
+    UseMethod("sprtable")
+}
+##' @rdname sprtable
+##' @method sprtable default
+##' @export
+sprtable.default <- function(fit,...){
+   ret<-tableit(fit, "logSPR", trans=exp,...)
+   return(ret)
+}
+
+
+##' equilibrium biomass table 
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+equilibriumbiomasstable<-function(fit,...){
+    UseMethod("equilibriumbiomasstable")
+}
+##' @rdname equilibriumbiomasstable
+##' @method equilibriumbiomasstable default
+##' @export
+equilibriumbiomasstable.default <- function(fit,...){
+   ret<-tableit(fit, "logSe", trans=exp,...)
+   return(ret)
+}
+
+
+
+##' B0 biomass table 
+##' @param  fit ...
+##' @param ... extra arguments not currently used
+##' @details ...
+##' @export
+b0table<-function(fit,...){
+    UseMethod("b0table")
+}
+##' @rdname b0table
+##' @method b0table default
+##' @export
+b0table.default <- function(fit,...){
+   ret<-tableit(fit, "logB0", trans=exp,...)
    return(ret)
 }

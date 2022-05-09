@@ -10,7 +10,7 @@
 \usage{
 catchplot(fit, obs.show = TRUE, drop = NULL, ...)
 
-\method{catchplot}{sam}(fit, obs.show = TRUE, drop = NULL, plot = TRUE, ...)
+\method{catchplot}{sam}(fit, obs.show = TRUE, drop = NULL, ...)
 
 \method{catchplot}{samset}(fit, obs.show = TRUE, drop = NULL, ...)
 
@@ -29,8 +29,6 @@ catchplot(fit, obs.show = TRUE, drop = NULL, ...)
 \code{add} logical, plotting is to be added on existing plot \cr
 \code{ci} logical, confidence intervals should be plotted \cr
 \code{cicol} color to plot the confidence polygon}
-
-\item{plot}{true if catch should be plotted}
 }
 \description{
 SAM catch plot

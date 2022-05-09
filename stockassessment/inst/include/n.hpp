@@ -37,8 +37,12 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
   matrix<Type> LN = lltCovN.matrixL();
   matrix<Type> LinvN = LN.inverse();
 
+  matrix<Type> pn(stateDimN,timeSteps);
+  pn.setZero();
+  
   for(int i = 1; i < timeSteps; ++i){
     vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,i);
+    pn.col(i) = predN;
     if(forecast.nYears > 0 &&
        forecast.forecastYear(i) > 0 &&
        forecast.recModel(CppAD::Integer(forecast.forecastYear(i))-1) != forecast.asRecModel){
@@ -90,6 +94,8 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     Type huge = 10;
     for (int i = 0; i < stateDimN; i++) nll -= dnorm(logN(i, 0), Type(0), huge, true);  
   } 
+  REPORT_F(nvar,of);
+  REPORT_F(pn,of);
   return nll;
 }
 
