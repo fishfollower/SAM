@@ -16,11 +16,19 @@
                    Lim = 12)
 
 
-.logFtoSel <- function(logF, selYears, conf){
-    logSel <- log(rowSums(exp(logF[,selYears + 1,drop=FALSE])))
+.logTotalF <- function(logF, conf){
+    t(log(apply(conf$keyLogFsta+1,2,function(i) colSums(exp(logF)[i[i>0],]))))
+}
+.logFbar <- function(logF, selYears, conf){
     frng <- conf$fbarRange[1]:conf$fbarRange[2]
-    logFsum <- log(sum(colMeans(exp(logF)[conf$keyLogFsta[1,frng-conf$minAge+1]+1,selYears + 1,drop=FALSE])))
-    logSel - logFsum
+    totalF <- exp(.logTotalF(logF,conf))[,selYears+1,drop=FALSE]
+    log(sum(colMeans(totalF[frng-conf$minAge+1,,drop=FALSE])))
+}
+
+.logFtoSel <- function(logF, selYears, conf){
+    logSel <- log(rowMeans(exp(logF[,selYears + 1,drop=FALSE])))
+    logFbar <- .logFbar(logF, selYears, conf)
+    logSel - logFbar
 }
 
 .perRecruitR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct = 0, logCustomSel = numeric(0)){

@@ -56,6 +56,8 @@ struct SSB2F_QUICK {
     
   array<Type> logN;
   array<Type> logF;
+
+  MortalitySet<Type> mort;
   
   confSet cf;
   dataSet<Type> ds;
@@ -70,7 +72,7 @@ struct SSB2F_QUICK {
     array<Type> lN = logN;
     array<Type> lF = logF;
     lF += logFScale;
-    vector<Type> nextN = predNFun(ds, cf, ps, lN, lF, recruit, i);
+    vector<Type> nextN = predNFun(ds, cf, ps, lN, lF, recruit, mort, i);
     if(!isNA(rec_mean))
       nextN(0) = rec_mean;
     int jj = i;
@@ -112,9 +114,9 @@ struct SSB2F_QUICK {
 
 
 template<class Type>
-Type ssb2F_quick(Type ssbval, vector<Type> logFlast, dataSet<Type> dat, confSet conf, paraSet<Type> par, array<Type> logF, array<Type> logN, int i, Type rec_mean) {
+Type ssb2F_quick(Type ssbval, vector<Type> logFlast, dataSet<Type> dat, confSet conf, paraSet<Type> par, array<Type> logF, array<Type> logN, MortalitySet<Type> mort, int i, Type rec_mean) {
   Type sv = 0;
-  SSB2F_QUICK<Type> f = {logFlast, logN, logF, conf, dat, par, i, ssbval, rec_mean};
+  SSB2F_QUICK<Type> f = {logFlast, logN, logF, mort, conf, dat, par, i, ssbval, rec_mean};
   for(int j = 0; j < 30; ++j){
     sv = f.numnewt(sv);
   }

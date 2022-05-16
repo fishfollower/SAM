@@ -17,7 +17,7 @@ matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 }
 
 template <class Type>
-Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   Type nll=0;
   int stateDimN=logN.dim[0];
   int timeSteps=logN.dim[1];
@@ -41,7 +41,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
   pn.setZero();
   
   for(int i = 1; i < timeSteps; ++i){
-    vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,i);
+    vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort, i);
     pn.col(i) = predN;
     if(forecast.nYears > 0 &&
        forecast.forecastYear(i) > 0 &&
@@ -71,7 +71,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     	    vector<Type> noiseN = neg_log_densityN.simulate();
     	    logN.col(i) = predN + noiseN;
 	    if(conf.minAge == 0){
-	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,i)(0) + noiseN(0);
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,mort,i)(0) + noiseN(0);
 	    }
     	  }
     	}else{
@@ -80,7 +80,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     	    logN.col(i) = predN + noiseN;
 	    // Handle recruitment if minAge == 0, assuming propMat(-,0)=0
 	    if(conf.minAge == 0){
-	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,i)(0) + noiseN(0);
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,mort,i)(0) + noiseN(0);
 	    }
     	  }
     	}

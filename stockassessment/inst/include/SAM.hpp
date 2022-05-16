@@ -8,6 +8,7 @@
 #include "pnorm.hpp"
 #include "spline.hpp"
 #include "define.hpp"
+#include "incidence.hpp"
 #include "recruitment.hpp"
 #include "survival.hpp"
 #include "biopar.hpp"

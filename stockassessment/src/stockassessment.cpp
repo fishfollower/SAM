@@ -73,7 +73,7 @@ Type objective_function<Type>::operator() ()
 
   DATA_STRUCT(forecast, forecastSet);
   DATA_STRUCT(referencepoints, referencepointList);
-  
+
   confSet confset;
   DATA_INTEGER(minAge); confset.minAge=minAge; 
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
@@ -124,7 +124,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
   DATA_IVECTOR(logNMeanCorrection); confset.logNMeanCorrection=logNMeanCorrection; 
-  
+
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
@@ -188,7 +188,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logitMO);
   PARAMETER_ARRAY(logNM);    
   PARAMETER_VECTOR(missing);
-
+ 
   // patch missing 
   int idxmis=0; 
   for(int i=0;i<nobs;i++){
@@ -197,8 +197,6 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
-  REPORT(dataset.idxCor);
-  
   Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
 
   Type ans=0; //negative log-likelihood
@@ -208,24 +206,27 @@ Type objective_function<Type>::operator() ()
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
   }
   ans += nllSplinePenalty(dataset, confset, paraset, this);
- 
+
   prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
-  forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit);    
- 
-  ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
- 
+  
   ans += nllSW(logSW, dataset, confset, paraset, this);
   ans += nllCW(logCW, dataset, confset, paraset, this);
   ans += nllMO(logitMO, dataset, confset, paraset, this);
   ans += nllNM(logNM, dataset, confset, paraset, this);
- 
-  ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, keep, this);
-  forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit, this);
- 
-  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, keep, this);
+
+  MortalitySet<Type> mort(dataset, confset, paraset, logF);
+  forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
+
+  ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
+
+  ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
+
+  forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit,mort, this);
+
+  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
   // ans += nllReferencepoints(dataset, confset, paraset, logN, logF, recruit, this);
- 
+
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
-   
+
   return ans;
 }

@@ -28,11 +28,12 @@ Type hcr(Type ssb, vector<Type> hcrConf){
 }
 
 template <class Type>
-void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, Recruitment<Type> recruit, objective_function<Type> *of){
+void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, Recruitment<Type> recruit, MortalitySet<Type>& mort, objective_function<Type> *of){
   // Only for forecast simulation
   if(forecast.nYears == 0 || !(isDouble<Type>::value) || !(of->do_simulate))
     return;
 
+  MortalitySet<Type> mort2(mort);
   // General setup
   // int stateDimF=logF.dim[0];
   // int timeSteps=logF.dim[1];
@@ -53,16 +54,18 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
   for(int i = 0; i < nYears; ++i){
     int indx = forecast.forecastYear.size() - nYears + i;
     // Update forecast
-    forecast.updateForecast(i, logF, logN, dat, conf, par, recruit);
+    forecast.updateForecast(i, logF, logN, dat, conf, par, recruit, mort2);
     // Simulate F
     // int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+    bool didSim = false;
     if(forecast.simFlag(0) == 0){
       Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
       logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
+      didSim = true;
     }
     // Simulate N
     if(forecast.simFlag(1) == 0){
-      vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,indx);
+      vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort2,indx);
       vector<Type> Nscale(logN.rows());
       Nscale.setConstant((Type)1.0);
       if(forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) != forecast.asRecModel){
@@ -74,8 +77,11 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
       logN.col(indx) = predN + noiseN;
       if(conf.minAge == 0 &&
 	 forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.asRecModel)
-	logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,i)(0) + noiseN(0);
+	logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,mort2,i)(0) + noiseN(0);
+      didSim = true;
     }
+    if(didSim)
+      mort2.updateYear(dat,conf,par,logF,i);
   }
   return;
 }

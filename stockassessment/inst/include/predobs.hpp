@@ -8,11 +8,12 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		int age,	// obs.aux(i,2)-confA(s).minAge
 		int year, // obs.aux(i,0)
 		int minYear, // obs.aux(0,0)
-	        dataSet<Type> dat,
-		confSet conf,
-		paraSet<Type> par,
-		array<Type> logF,
-		array<Type> logN,
+	        dataSet<Type>& dat,
+		confSet& conf,
+		paraSet<Type>& par,
+		array<Type>& logF,
+		array<Type>& logN,
+		MortalitySet<Type>& mort,
 		Type logssb,
 		Type logtsb,
 		Type logfsb,
@@ -29,28 +30,32 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
   a=age-conf.minAge;
 
   Type pred = 0.0;
-  Type logzz = R_NegInf;
-  Type zz = 0.0;
+  // Type logzz = R_NegInf;
+  // Type zz = 0.0;
   Type sumF = 0.0;
-
+  // Type vv = 0.0;
+  
    if(age==dat.maxAgePerFleet(f-1)){ma=1;}else{ma=0;}
     pg=conf.maxAgePlusGroup(f-1);
     if(ft==3){a=0;}
-    if(ft<3){ 
-      logzz = log(dat.natMor(y,a));
-      for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
-	if(conf.keyLogFsta(fx,a)>(-1)){
-	  logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,a),y));
-	}
-    }    
+    // if(ft<3){ 
+    //   logzz = log(dat.natMor(y,a));
+    //   // for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
+    //   // 	if(conf.keyLogFsta(fx,a)>(-1)){
+    //   // 	  logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,a),y));
+    //   // 	}
+    //   //logzz = log(mort.totalZ(a,y));
+    // }    
 
     switch(ft){
       case 0:
         //pred(i)=logN(a,y)-logzz+log(1-exp(-exp(logzz)));
-	pred=logN(a,y)-logzz+logspace_sub2(Type(0.0),-exp(logzz));
-        if(conf.keyLogFsta(f-1,a)>(-1)){
-          pred+=logF(conf.keyLogFsta(f-1,a),y);
-        }
+        // vv=-logzz+logspace_sub2(Type(0.0),-exp(logzz));
+        // if(conf.keyLogFsta(f-1,a)>(-1)){
+        //   vv+=logF(conf.keyLogFsta(f-1,a),y);
+        // }
+	// TODO: Update to allow range within year
+	pred = logN(a,y) + log(mort.fleetCumulativeIncidence(a,y,f-1));
         scaleIdx=-1;
         yy=year;
         for(int j=0; j<conf.noScaledYears; ++j){
@@ -62,6 +67,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
             break;
           }
         }
+
       break;
   
       case 1:
@@ -77,16 +83,18 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 	if((ma==1) && (pg==1)){
 	  pred=0;
 	  for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
-	    logzz = log(dat.natMor(y,aa));
-	    for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
-	      if(conf.keyLogFsta(fx,aa)>(-1)){
-              logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,aa),y));
-	    }
-	    pred+=exp(logN(aa,y)-exp(logzz)*dat.sampleTimes(f-1));
+	    // logzz = log(dat.natMor(y,aa));
+	    // for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
+	    //   if(conf.keyLogFsta(fx,aa)>(-1)){
+            //   logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,aa),y));
+	    // }
+	    // pred+=exp(logN(aa,y)-exp(logzz)*dat.sampleTimes(f-1));
+	    pred += exp(logN(aa,y)) * mort.fleetSurvival_before(aa,y,f-1);
 	  }
 	  pred=log(pred);
 	}else{
-          pred=logN(a,y)-exp(logzz)*dat.sampleTimes(f-1);
+          //pred=logN(a,y)-exp(logzz)*dat.sampleTimes(f-1);
+	  pred = logN(a,y) + log(mort.fleetSurvival_before(a,y,f-1));
 	}
         if(conf.keyQpow(f-1,a)>(-1)){
           pred*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
@@ -94,7 +102,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
         if(conf.keyLogFpar(f-1,a)>(-1)){
           pred+=par.logFpar(conf.keyLogFpar(f-1,a));
         }
-        
+
       break;
   
       case 3:// biomass or catch survey
@@ -119,14 +127,15 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
         if(conf.keyBiomassTreat(f-1)==6){
           Type N = 0;
           for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
-            zz = dat.natMor(y,aa);
-	    for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
-	      if(conf.keyLogFsta(fx,aa)>(-1)){
-		zz+=exp(logF(conf.keyLogFsta(fx,aa),y));
-	      }
-            N +=  exp(logN(aa,y)-zz*dat.sampleTimes(f-1));
+            // zz = dat.natMor(y,aa);
+	    // for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
+	    //   if(conf.keyLogFsta(fx,aa)>(-1)){
+	    // 	zz+=exp(logF(conf.keyLogFsta(fx,aa),y));
+	    //   }
+            // N +=  exp(logN(aa,y)-zz*dat.sampleTimes(f-1));
+	    N += exp(logN(aa,y)) * mort.fleetSurvival_before(aa,y,f-1);
           }
-          pred = log(N) +par.logFpar(conf.keyLogFpar(f-1,a));
+          pred = log(N) + par.logFpar(conf.keyLogFpar(f-1,a));
         }
 	break;
   
@@ -146,13 +155,15 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
       break;
   
       case 7:// sum residual fleets 
-	pred=logN(a,y)-log(zz)+log(1-exp(-zz));
+	//pred=logN(a,y)-log(zz)+log(1-exp(-zz));
+	pred = logN(a,y);
         sumF=0;
         for(int ff=1; ff<=dat.noFleets; ++ff){
           if(dat.sumKey(f-1,ff-1)==1){
-            if(conf.keyLogFsta(ff-1,a)>(-1)){
-              sumF+=exp(logF(conf.keyLogFsta(ff-1,a),y));
-            }
+	    sumF += mort.fleetCumulativeIncidence(a,y,ff-1);
+            // if(conf.keyLogFsta(ff-1,a)>(-1)){
+            //   sumF+=exp(logF(conf.keyLogFsta(ff-1,a),y));
+            // }
           }
         }
         pred+=log(sumF);
@@ -168,7 +179,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 
 
 template <class Type>
-vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand){
+vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand){
   vector<Type> pred(dat.nobs);
   pred.setConstant(R_NegInf);
 
@@ -204,6 +215,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 			 par,
 			 logF,
 			 logN,
+			 mort,
 			 logssb(dat.aux(i,0)-dat.aux(0,0)),
 			 logtsb(dat.aux(i,0)-dat.aux(0,0)),
 			 logfsb(dat.aux(i,0)-dat.aux(0,0)),
@@ -212,7 +224,8 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 			 tagv1,
 			 tagv2,	     
 			 releaseSurvivalVec(i) // releaseSurvival
-			 );    
+			 );
+
   }
 
   return pred;

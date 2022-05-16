@@ -54,7 +54,7 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   // propM
   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
   newDat.noYears = nYears;
-  
+
   Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
   Recruitment<Type> rec0 = Recruitment<Type>(new Rec_None<Type>());
 
@@ -70,9 +70,11 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   logN.setConstant(R_NegInf);
   logN(0,0) = 0.0;
 
+  MortalitySet<Type> mort(newDat, conf, par, logF);
+  
   // Run loop over years
   for(int i = 1; i < nYears; ++i){
-    logN.col(i) = predNFun(newDat, conf, par, logN, logF, rec0, i);
+    logN.col(i) = predNFun(newDat, conf, par, logN, logF, rec0, mort, i);
     //logN(0,i) = R_NegInf;
   }
  
@@ -82,13 +84,13 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   typename referencepointSet<Type>::CatchType catchType = static_cast<typename referencepointSet<Type>::CatchType>(CT);
   switch(catchType){
   case referencepointSet<Type>::totalCatch:
-    cat = catchFun(newDat, conf, logN, logF);
+    cat = catchFun(newDat, conf, logN, logF, mort);
     break;
   case referencepointSet<Type>::landings:
-    cat = landFun(newDat, conf, logN, logF);
+    cat = landFun(newDat, conf, logN, logF, mort);
     break;
   case referencepointSet<Type>::discard:
-    cat = disFun(newDat, conf, logN, logF);
+    cat = disFun(newDat, conf, logN, logF, mort);
     break;
   default:
     Rf_error("Unknown reference point catch type.");
@@ -100,7 +102,7 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
 
   // Calculate spawners
-  vector<Type> ssb = ssbFun(newDat, conf, logN, logF);
+  vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);
   Type logSPR = log(sum(ssb) + SAM_Zero);
 
   ////////////////////////////////////////////////////////////////////////////////
@@ -412,8 +414,9 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
   vector<Type> fracMixN(conf.fracMixN.size());
   for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
   MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
+  MortalitySet<Type> mort(newDat, conf, par, logF);
   for(int i = 1; i < nYears; ++i){
-    vector<Type> predN = predNFun(newDat, conf, par, logN, logF, recruit, i);
+    vector<Type> predN = predNFun(newDat, conf, par, logN, logF, recruit, mort, i);
     logN.col(i) = predN + neg_log_densityN.simulate();
     // Remove recruitment
     logN(0,i) = R_NegInf;    
@@ -424,13 +427,13 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
   typename referencepointSet<Type>::CatchType catchType = static_cast<typename referencepointSet<Type>::CatchType>(CT);
   switch(catchType){
   case referencepointSet<Type>::totalCatch:
-    cat = catchFun(newDat, conf, logN, logF);
+    cat = catchFun(newDat, conf, logN, logF,mort);
     break;
   case referencepointSet<Type>::landings:
-    cat = landFun(newDat, conf, logN, logF);
+    cat = landFun(newDat, conf, logN, logF,mort);
     break;
   case referencepointSet<Type>::discard:
-    cat = disFun(newDat, conf, logN, logF);
+    cat = disFun(newDat, conf, logN, logF,mort);
     break;
   default:
     Rf_error("Unknown reference point catch type.");
@@ -440,7 +443,7 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
 
   Type logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
   Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
-  vector<Type> ssb = ssbFun(newDat, conf, logN, logF);
+  vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);
   Type logSPR = log(sum(ssb) + SAM_Zero); //log(sum(ssb)); log(sum(ssb) + (T)exp(-12.0));
 
 
@@ -458,8 +461,9 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
     int i = std::min(aa, newDat.natMor.rows()-1);
     Type M = newDat.natMor(i,j);
     Type F = 0.0;    
-    if(conf.keyLogFsta(0,j)>(-1) && aa >= conf.minAge)
-      F += exp(logF(conf.keyLogFsta(0,j),i));
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1) && aa >= conf.minAge)
+	F += exp(logF(conf.keyLogFsta(f,j),i));
     Type Z = M + F;
     yl += yl_q + exp(yl_logp) * F / Z * (1.0 - 1.0 / Z * (1.0 - exp(-Z)));    
     discYPR += cat(aa) * exp(-yl);
@@ -504,7 +508,7 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
   // for(int i = 0; i < nYearsEqMax; ++i)
   //   logFeq0.col(i) = logSel + logFbar;
 
-  
+  // MortalitySet<Type> mort(newDat, conf, par, logF);
   if(guessNY){
     // Improve Initial value by starting stochastic simulation at deterministic equilibrium, but avoid a crashed equilibrium.
     vector<Type> logNinit2 = logNinit;
@@ -519,10 +523,10 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
       tmp.setZero();
       tmp.col(0) = logNinit2;
       // Try unfished equilibrium? Or adaptively reduce F if crashing?
-      vector<Type> lnitmp = predNFun(newDat, conf, par, tmp, logFInit,recruit, 1);
+      vector<Type> lnitmp = predNFun(newDat, conf, par, tmp, logFInit,recruit,mort, 1);
       if(conf.minAge == 0){
 	tmp.col(1) = lnitmp;
-	lnitmp(0) = predNFun(newDat, conf, par, tmp, logFInit,recruit, 1)(0);
+	lnitmp(0) = predNFun(newDat, conf, par, tmp, logFInit,recruit,mort, 1)(0);
       }
       if(lnitmp(0) < logNinit(0) + log(0.01)){ // Probably heading for crash
 	imp = 0.0;
@@ -544,13 +548,13 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
   // int nYearsEq = 1;
   for(int i = 1; i < nYears; ++i){
     //Harvest control rule?
-    vector<Type> predN = predNFun(newDat, conf, par, logNeq, logF,recruit, i);
+    vector<Type> predN = predNFun(newDat, conf, par, logNeq, logF,recruit,mort, i);
     vector<Type> noiseN = neg_log_densityNeq.simulate();
     logNeq.col(i) = predN + noiseN;
     if(conf.minAge == 0){
       // In this case, predicted recruitment was wrong since it depends on SSB the same year
       // Predict recruitment again with updated ssb (assuming maturity at age 0 is 0):
-      Type predRec = predNFun(newDat, conf, par, logNeq, logF,recruit, i)(0);
+      Type predRec = predNFun(newDat, conf, par, logNeq, logF,recruit,mort, i)(0);
       // Overwrite recruitment, but keep simulated noise to retain correlation:
       logNeq(0,i) = predRec + noiseN(0);      
     }
@@ -560,20 +564,20 @@ PERREC_t<Type> perRecruit_S(Type logFbar, dataSet<Type>& dat, confSet& conf, par
   catYe.setZero();
   switch(catchType){
   case referencepointSet<Type>::totalCatch:
-    catYe = catchFun(newDat, conf, logNeq, logF);
+    catYe = catchFun(newDat, conf, logNeq, logF,mort);
     break;
   case referencepointSet<Type>::landings:
-    catYe = landFun(newDat, conf, logNeq, logF);
+    catYe = landFun(newDat, conf, logNeq, logF,mort);
     break;
   case referencepointSet<Type>::discard:
-    catYe = disFun(newDat, conf, logNeq, logF);
+    catYe = disFun(newDat, conf, logNeq, logF,mort);
     break;
   default:
     Rf_error("Unknown reference point catch type.");
     break;
   }
 
-  vector<Type> ssbeq = ssbFun(newDat, conf, logNeq, logF);
+  vector<Type> ssbeq = ssbFun(newDat, conf, logNeq, logF,mort);
   Type logSe = log(ssbeq(nYears-1));
   Type logYe = log(catYe(nYears-1));
   Type logRe = logNeq(0,nYears-1);

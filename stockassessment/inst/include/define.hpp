@@ -63,7 +63,13 @@ template <class Type>
 struct Recruitment;
 
 template <class Type>
+struct MortalitySet;
+
+template <class Type>
 Type hcr(Type ssb, vector<Type> hcrConf);
+
+template <class Type>
+array<Type> totFFun(confSet &conf, array<Type> &logF);
 
 #define REPORT_F(name,F)					\
   if(isDouble<Type>::value && F->current_parallel_region<0) {	\
@@ -180,8 +186,8 @@ struct forecastSet {
   vector<Type> selFull;
   Type initialFbar;
   
-  void calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit); // Defined after dataSet and confSet
-  void updateForecast(int i, array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit); // Defined after dataSet and confSet
+  void calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit, MortalitySet<Type>& mort); // Defined after dataSet and confSet
+  void updateForecast(int i, array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit, MortalitySet<Type>& mort); // Defined after dataSet and confSet
   
   forecastSet() : nYears(0),
 			nCatchAverageYears(0),
@@ -279,70 +285,92 @@ struct forecastSet {
     }
   };
 
-  forecastSet<Type>& operator=(const forecastSet<Type>& rhs) {
-    nYears = rhs.nYears;
-    if(nYears == 0)
-      return *this;
-    nCatchAverageYears = rhs.nCatchAverageYears;
-    aveYears = rhs.aveYears;
-    forecastYear = rhs.forecastYear;
-    FModel = rhs.FModel;
-    target = rhs.target;
-    selectivity = rhs.selectivity;
-    recModel = rhs.recModel;
-    logRecruitmentMedian = rhs.logRecruitmentMedian;
-    logRecruitmentVar = rhs.logRecruitmentVar;
-    fsdTimeScaleModel = rhs.fsdTimeScaleModel;
-    simFlag = rhs.simFlag;
-    uniroot = rhs.uniroot;
-    hcrConf = rhs.hcrConf;
-    hcrCurrentSSB = rhs.hcrCurrentSSB;
-    forecastCalculatedMedian = rhs.forecastCalculatedMedian;
-    forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
-    sel = rhs.sel;
-    selFull = rhs.selFull;
-    initialFbar = rhs.initialFbar;
-
-    return *this;
-  }
-
   template<class T>
-  forecastSet<T> cast() const {
-    forecastSet<T> d;
-    d.nYears = nYears;	// int
-    if(nYears == 0)
-      return d;
-    d.nCatchAverageYears = nCatchAverageYears; // int
-    d.aveYears = aveYears;	// <int>
-    d.forecastYear = forecastYear.template cast<T>();
-    // d.FModel = FModel; // <int>
-    d.FModel = vector<typename forecastSet<T>::FModelType>(FModel.size());
-    for(int i = 0; i < FModel.size(); ++i)
-      d.FModel(i) = static_cast<typename forecastSet<T>::FModelType>((int)FModel(i));
-    d.target = target.template cast<T>();
-    d.selectivity = selectivity.template cast<T>();
-    // d.recModel = recModel; // <int>
-    d.recModel = vector<typename forecastSet<T>::recModelType>(recModel.size());
-    for(int i = 0; i < recModel.size(); ++i)
-      d.recModel(i) = static_cast<typename forecastSet<T>::recModelType>((int)recModel(i));
-    d.logRecruitmentMedian = T(logRecruitmentMedian);
-    d.logRecruitmentVar = T(logRecruitmentVar);
-    // d.fsdTimeScaleModel = fsdTimeScaleModel; // <int>
-    d.fsdTimeScaleModel = vector<typename forecastSet<T>::FSdTimeScaleModel>(fsdTimeScaleModel.size());
-    for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
-      d.fsdTimeScaleModel(i) = static_cast<typename forecastSet<T>::FSdTimeScaleModel>((int)fsdTimeScaleModel(i));
+  forecastSet(const forecastSet<T>& x) : nYears(x.nYears),
+					 nCatchAverageYears(x.nCatchAverageYears),
+					 aveYears(x.aveYears),
+					 forecastYear(x.forecastYear),
+					 FModel(x.FModel),
+					 target(x.target),
+					 selectivity(x.selectivity),
+					 recModel(x.recModel),
+					 logRecruitmentMedian(x.logRecruitmentMedian),
+					 logRecruitmentVar(x.logRecruitmentVar),
+					 fsdTimeScaleModel(x.fsdTimeScaleModel),
+					 simFlag(x.simFlag),
+					 uniroot(x.uniroot),
+					 hcrConf(x.hcrConf),
+					 hcrCurrentSSB(x.hcrCurrentSSB),
+					 forecastCalculatedMedian(x-forecastCalculatedMedian),
+					 forecastCalculatedLogSdCorrection(x.forecastCalculatedLogSdCorrection),
+					 sel(x.sel),
+					 selFull(x.selFull),
+					 initialFbar(x.initialFbar) {}
 
-    d.simFlag = simFlag; // <int>
-    d.uniroot = uniroot;
-    d.hcrConf = hcrConf.template cast<T>();
-    d.hcrCurrentSSB = hcrCurrentSSB;
-    d.forecastCalculatedMedian = forecastCalculatedMedian.template cast<T>();
-    d.forecastCalculatedLogSdCorrection = forecastCalculatedLogSdCorrection.template cast<T>();
-    d.sel = sel.template cast<T>();
-    d.selFull = selFull.template cast<T>();
-    d.initialFbar = T(initialFbar);
-    return d;    
-  }
+  // forecastSet<Type>& operator=(const forecastSet<Type>& rhs) {
+  //   nYears = rhs.nYears;
+  //   if(nYears == 0)
+  //     return *this;
+  //   nCatchAverageYears = rhs.nCatchAverageYears;
+  //   aveYears = rhs.aveYears;
+  //   forecastYear = rhs.forecastYear;
+  //   FModel = rhs.FModel;
+  //   target = rhs.target;
+  //   selectivity = rhs.selectivity;
+  //   recModel = rhs.recModel;
+  //   logRecruitmentMedian = rhs.logRecruitmentMedian;
+  //   logRecruitmentVar = rhs.logRecruitmentVar;
+  //   fsdTimeScaleModel = rhs.fsdTimeScaleModel;
+  //   simFlag = rhs.simFlag;
+  //   uniroot = rhs.uniroot;
+  //   hcrConf = rhs.hcrConf;
+  //   hcrCurrentSSB = rhs.hcrCurrentSSB;
+  //   forecastCalculatedMedian = rhs.forecastCalculatedMedian;
+  //   forecastCalculatedLogSdCorrection = rhs.forecastCalculatedLogSdCorrection;
+  //   sel = rhs.sel;
+  //   selFull = rhs.selFull;
+  //   initialFbar = rhs.initialFbar;
+
+  //   return *this;
+  // }
+
+  // template<class T>
+  // forecastSet<T> cast() const {
+  //   forecastSet<T> d;
+  //   d.nYears = nYears;	// int
+  //   if(nYears == 0)
+  //     return d;
+  //   d.nCatchAverageYears = nCatchAverageYears; // int
+  //   d.aveYears = aveYears;	// <int>
+  //   d.forecastYear = forecastYear.template cast<T>();
+  //   // d.FModel = FModel; // <int>
+  //   d.FModel = vector<typename forecastSet<T>::FModelType>(FModel.size());
+  //   for(int i = 0; i < FModel.size(); ++i)
+  //     d.FModel(i) = static_cast<typename forecastSet<T>::FModelType>((int)FModel(i));
+  //   d.target = target.template cast<T>();
+  //   d.selectivity = selectivity.template cast<T>();
+  //   // d.recModel = recModel; // <int>
+  //   d.recModel = vector<typename forecastSet<T>::recModelType>(recModel.size());
+  //   for(int i = 0; i < recModel.size(); ++i)
+  //     d.recModel(i) = static_cast<typename forecastSet<T>::recModelType>((int)recModel(i));
+  //   d.logRecruitmentMedian = T(logRecruitmentMedian);
+  //   d.logRecruitmentVar = T(logRecruitmentVar);
+  //   // d.fsdTimeScaleModel = fsdTimeScaleModel; // <int>
+  //   d.fsdTimeScaleModel = vector<typename forecastSet<T>::FSdTimeScaleModel>(fsdTimeScaleModel.size());
+  //   for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
+  //     d.fsdTimeScaleModel(i) = static_cast<typename forecastSet<T>::FSdTimeScaleModel>((int)fsdTimeScaleModel(i));
+
+  //   d.simFlag = simFlag; // <int>
+  //   d.uniroot = uniroot;
+  //   d.hcrConf = hcrConf.template cast<T>();
+  //   d.hcrCurrentSSB = hcrCurrentSSB;
+  //   d.forecastCalculatedMedian = forecastCalculatedMedian.template cast<T>();
+  //   d.forecastCalculatedLogSdCorrection = forecastCalculatedLogSdCorrection.template cast<T>();
+  //   d.sel = sel.template cast<T>();
+  //   d.selFull = selFull.template cast<T>();
+  //   d.initialFbar = T(initialFbar);
+  //   return d;    
+  // }
 
 };
 
@@ -437,7 +465,7 @@ struct dataSet{
 
 
 template <class Type>
-void extendArray(array<Type>& x, int nModelYears, int nForecastYears, vector<int> aveYears, bool keepModelYears = true){
+void extendArray_2D(array<Type>& x, int nModelYears, int nForecastYears, vector<int> aveYears, bool keepModelYears = true){
   vector<int> dim = x.dim;
   array<Type> tmp((int)keepModelYears*nModelYears+nForecastYears,dim(1));
   tmp.setZero();
@@ -475,6 +503,65 @@ void extendArray(array<Type>& x, int nModelYears, int nForecastYears, vector<int
   // NOTE: x must be resized first, otherwise x=tmp will not work.
   x.initZeroArray(tmp.dim);
   x = tmp;
+  return;
+}
+
+
+template <class Type>
+void extendArray_3D(array<Type>& x, int nModelYears, int nForecastYears, vector<int> aveYears, bool keepModelYears = true){
+  vector<int> dim = x.dim;
+  array<Type> tmp((int)keepModelYears*nModelYears+nForecastYears,dim(1),dim(2));
+  tmp.setZero();
+  array<Type> ave(dim(1),dim(2));
+  ave.setZero();
+  Type nave = aveYears.size();
+
+  // Calculate average
+  for(int i = 0; i < aveYears.size(); ++i){
+    if(aveYears(i) < dim(0)){
+      for(int k = 0; k < dim(2); ++k){
+	for(int j = 0; j < dim(1); ++j){
+	  ave(j,k) += x(aveYears(i), j, k);
+	}
+      }
+    }else{
+      nave -= 1.0;
+    }
+  }
+
+  if(nave == 0)
+    Rf_error("ave.years does not cover the data period.");
+  
+  ave /= nave;
+
+  // Insert values in tmp
+  for(int i = 0; i < tmp.dim(0); ++i){
+    for(int j = 0; j < tmp.dim(1); ++j){
+      for(int k = 0; k < tmp.dim(2); ++k){
+	if(keepModelYears && i < dim(0)){ // Take value from x
+	  tmp(i,j,k) = x(i,j,k);
+	}else{ // Take value from ave
+	  tmp(i,j,k) = ave(j,k);
+	}
+      }
+    }
+  }
+  // Overwrite x
+  // NOTE: x must be resized first, otherwise x=tmp will not work.
+  x.initZeroArray(tmp.dim);
+  x = tmp;
+  return;
+}
+
+template <class Type>
+void extendArray(array<Type>& x, int nModelYears, int nForecastYears, vector<int> aveYears, bool keepModelYears = true){
+  if(x.dim.size() == 2){
+    extendArray_2D(x, nModelYears, nForecastYears, aveYears, keepModelYears);
+  }else if(x.dim.size() == 3){
+    extendArray_3D(x, nModelYears, nForecastYears, aveYears, keepModelYears);
+  }else{
+    Rf_error("extendArray is only implemented for arrays of dimension 2 and 3");
+  }
   return;
 }
 
@@ -774,8 +861,10 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
   int fbarFirst = conf.fbarRange(0) - conf.minAge;
   int fbarLast = conf.fbarRange(1) - conf.minAge;
   forecast.initialFbar = 0.0;
+  array<Type> totF = totFFun(conf, logF);
   for(int a = fbarFirst; a <= fbarLast; ++a){  
-    forecast.initialFbar += exp(logF(conf.keyLogFsta(0,a),forecast.forecastYear.size() - nFYears - 1));
+    //forecast.initialFbar += exp(logF(conf.keyLogFsta(0,a),forecast.forecastYear.size() - nFYears - 1));
+    forecast.initialFbar += totF(a,forecast.forecastYear.size() - nFYears - 1);
   }
   forecast.initialFbar /= Type(fbarLast - fbarFirst + 1);
 
@@ -791,7 +880,9 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
     // Rcout << "Using custom selectivity!\n";
     for(int a = fbarFirst; a <= fbarLast; ++a){  
       if(forecast.selectivity.size() == logF.rows()){
-	inputFbar += forecast.selectivity(conf.keyLogFsta(0,a));
+	for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+	  if(conf.keyLogFsta(f,a) > (-1))
+	    inputFbar += forecast.selectivity(conf.keyLogFsta(f,a));
       }else if(forecast.selectivity.size() == logN.rows()){
 	inputFbar += forecast.selectivity(a);
       }else{
@@ -806,19 +897,22 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
   }
 
   for(int j = 0; j < logN.rows(); ++j){
-    if(conf.keyLogFsta(0,j)>(-1)){
-      if(forecast.selectivity.size() == 0){
-	forecast.selFull(j) = exp(logF(conf.keyLogFsta(0,j),forecast.forecastYear.size() - nFYears - 1)) / forecast.initialFbar;
-	forecast.sel(conf.keyLogFsta(0,j)) = forecast.selFull(j);
-      }else if(forecast.selectivity.size() == logF.rows()){
-	forecast.selFull(j) = forecast.selectivity(conf.keyLogFsta(0,j));
-      }else if(forecast.selectivity.size() == logN.rows()){
-	forecast.selFull(j) = forecast.selectivity(j);
-      }else{
-	Rf_error("Wrong size of selectivity. Must match logF or logN array.");
+    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+      if(conf.keyLogFsta(f,j)>(-1)){
+	if(forecast.selectivity.size() == 0){
+	  Type v = exp(logF(conf.keyLogFsta(f,j),forecast.forecastYear.size() - nFYears - 1)) / forecast.initialFbar;
+	  forecast.selFull(j) += v;
+	  forecast.sel(conf.keyLogFsta(f,j)) = v;
+	}else if(forecast.selectivity.size() == logF.rows()){
+	  forecast.selFull(j) += forecast.selectivity(conf.keyLogFsta(f,j));
+	  forecast.sel(conf.keyLogFsta(f,j)) = forecast.selectivity(conf.keyLogFsta(f,j));
+	}else if(forecast.selectivity.size() == logN.rows()){
+	  forecast.selFull(j) = forecast.selectivity(j);
+	  forecast.sel(conf.keyLogFsta(f,j)) = forecast.selFull(j);
+	}else{
+	  Rf_error("Wrong size of selectivity. Must match logF or logN array.");
+	}
       }
-      forecast.sel(conf.keyLogFsta(0,j)) = forecast.selFull(j);
-    }
   }
   
   return;  
@@ -842,30 +936,29 @@ Type catch2F(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, 
 
 
 template<class Type>
-void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit){
+void forecastSet<Type>::calculateForecast(array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit, MortalitySet<Type>& mort){
   if(nYears == 0){ // no forecast
     return;
   }
 
   for(int i = 0; i < nYears; ++i){
-    updateForecast(i, logF, logN, dat, conf, par, recruit);
+    updateForecast(i, logF, logN, dat, conf, par, recruit, mort);
   }
   return;
 
 }
 
 template<class Type>
-void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit){
+void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& logN, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit, MortalitySet<Type>& mort){
   if(nYears == 0){ // no forecast
     return;
   }
 
-  
     int indx = forecastYear.size() - nYears + i;    
     Type y = forecastYear(indx);    
-    Type lastSSB = ssbi(dat, conf, logN, logF, indx-1);
+    Type lastSSB = ssbi(dat, conf, logN, logF, mort, indx-1);
     // Assuming F before spawning is zero
-    Type thisSSB = ssbi(dat, conf, logN, logF, indx);
+    Type thisSSB = ssbi(dat, conf, logN, logF, mort, indx);
     Type calcF = 0.0;
 
     vector<Type> lastShortLogF(logF.rows());
@@ -877,16 +970,11 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
       
     vector<Type> lastFullLogF(logN.rows());
     for(int j = 0; j < logN.rows(); ++j){
-      if(conf.keyLogFsta(0,j)>(-1)){
-	// if(i == 0){
-	//   lastFullLogF(j) = log(initialFbar) + log(selFull(j));
-	// }else{
-	//   lastFullLogF(j) = forecastCalculatedMedian(conf.keyLogFsta(0,j),i-1);
-	// }
-	lastFullLogF(j) = lastShortLogF(conf.keyLogFsta(0,j));
-      }else{
-	lastFullLogF(j)= 0.0; 
-      }
+      lastFullLogF(j) = R_NegInf;
+      for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+	if(conf.keyLogFsta(f,j)>(-1)){
+	  lastFullLogF(j) = logspace_add2(lastFullLogF(j),lastShortLogF(conf.keyLogFsta(f,j)));
+	}
     }
 
 
@@ -942,6 +1030,7 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
 			  par,
 			  logF,
 			  logN,
+			  mort,
 			  indx,
 			  logRecruitmentMedian);
       forecastCalculatedMedian.col(i) = log(calcF) + log(sel);
@@ -963,6 +1052,7 @@ void forecastSet<Type>::updateForecast(int i, array<Type>& logF, array<Type>& lo
       forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel); // 
       break;
     case HCR:
+      // TODO: Allow hcr forecast based on predicted SSB
       if(hcrCurrentSSB){
 	if(sum((vector<Type>)dat.propF.matrix().row(indx)) > 0)
 	  Rf_error("currentSSB in HCR can only be used when propF is zero.");
@@ -1207,7 +1297,9 @@ struct referencepointSet {
 	logSel(i) = logspace_add2(logSel(i), logF(i,selYears(y)));
       }
       for(int a = conf.fbarRange(0); a <= conf.fbarRange(1); a++){
-	logfbartmp(y) = logspace_add2(logfbartmp(y), logF(conf.keyLogFsta(0,a-conf.minAge),selYears(y)));
+	for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+	  if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
+	    logfbartmp(y) = logspace_add2(logfbartmp(y), logF(conf.keyLogFsta(f,a-conf.minAge),selYears(y)));
       }
       logfbartmp(y) -= log(Type(conf.fbarRange(1)-conf.fbarRange(0)+1));
       logfsum = logspace_add2(logfsum, logfbartmp(y));
@@ -1222,7 +1314,9 @@ struct referencepointSet {
     Type logfsum = R_NegInf;
      for(int y = 0; y < selYears.size(); ++y){
        for(int a = conf.fbarRange(0); a <= conf.fbarRange(1); a++){  
-	 logfbartmp(y) = logspace_add2(logfbartmp(y), logF(conf.keyLogFsta(0,a-conf.minAge),selYears(y)));
+	 for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+	   if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
+	     logfbartmp(y) = logspace_add2(logfbartmp(y), logF(conf.keyLogFsta(f,a-conf.minAge),selYears(y)));
        }
        logfbartmp(y) -= log(Type(conf.fbarRange(1)-conf.fbarRange(0)+1));
        logfsum = logspace_add2(logfsum, logfbartmp(y));
