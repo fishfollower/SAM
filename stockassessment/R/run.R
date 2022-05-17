@@ -74,7 +74,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
   nmissing <- sum(is.na(data$logobs))
   parameters$missing <- numeric(nmissing)
-  ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM")
+  ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logQprocVal")
 
   
   args <- c(list(data = tmball,

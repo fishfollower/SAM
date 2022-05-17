@@ -5,7 +5,7 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
-#include <algorithm>
+//#include <algorithm>
 
 typedef struct r_function {
 

@@ -125,6 +125,10 @@ defcon<-function(dat){
   ret$keyMortalityMean <- rep(NA_integer_,nAges)
   ret$keyMortalityObsVar <- rep(NA_integer_,nAges)  
   ret$keyXtraSd<-matrix(NA_integer_, nrow=0, ncol=4)
+  x<-ret$keyLogFpar
+  x[x<(-.5)]<-NA
+  x[x>(-.5)]<- -1
+  ret$keyQprocess<-x
   return(ret) 
 }
 
@@ -212,7 +216,8 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$mortalityModel <- "Integer code describing the treatment of natural mortality in the model (0 use as known, 1 use as observations to inform natural mortality process (GMRF with cohort and within year correlations))"
     txt$MortalityMean <- "Coupling of natural mortality process mean parameters (not used if mortalityModel==0)"
     txt$keyMortalityObsVar <- "Coupling of natural mortality observation variance parameters (not used if mortalityModel==0)"
-    txt$keyXtraSd<-"An integer matrix with 4 columns (fleet year age coupling), which allows additional uncertainty to be estimated for the specified observations" 
+    txt$keyXtraSd<-"An integer matrix with 4 columns (fleet year age coupling), which allows additional uncertainty to be estimated for the specified observations"
+    txt$keyQprocess<-"Optionally added AR processes for catchbilities for surveys to allow time varying (highly experimental)" 
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)

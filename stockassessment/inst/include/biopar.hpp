@@ -149,3 +149,18 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
   }
   return Type(0);
 }
+
+
+template <class Type>
+Type nllQproc(vector< vector<Type> > &logQproc, paraSet<Type> &par, objective_function<Type> *of){
+  using namespace density;
+  Type nll=0;
+  for(int i=0; i<logQproc.size(); ++i){
+    vector<Type> v=logQproc(i);
+    nll+=-dnorm(v(0),Type(0),Type(0.0001),true);
+    nll+=SCALE(AR1(invlogit(par.logitQprocessPhi(i))),exp(par.logQprocessSd(i)))(v);
+  }
+  //ADREPORT_F(logNM,of);
+  return nll;
+}
+

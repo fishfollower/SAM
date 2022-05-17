@@ -46,6 +46,8 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(years); dataset.years=years; 
   DATA_IVECTOR(minAgePerFleet); dataset.minAgePerFleet=minAgePerFleet; 
   DATA_IVECTOR(maxAgePerFleet); dataset.maxAgePerFleet=maxAgePerFleet; 
+  DATA_IVECTOR(minYearPerFleet); dataset.minYearPerFleet=minYearPerFleet; 
+  DATA_IVECTOR(maxYearPerFleet); dataset.maxYearPerFleet=maxYearPerFleet; 
   DATA_INTEGER(nobs); dataset.nobs=nobs; 
   DATA_IARRAY(idx1); dataset.idx1=idx1;     // minimum index of obs by fleet x year
   DATA_IARRAY(idx2); dataset.idx2=idx2;     // maximum index of obs by fleet x year
@@ -115,7 +117,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(mortalityModel); confset.mortalityModel=mortalityModel;
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
-  DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
+  DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd;
+  DATA_IMATRIX(keyQprocess); confset.keyQprocess=keyQprocess;   
   
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
@@ -153,6 +156,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(meanLogNM); paraset.meanLogNM=meanLogNM;
   PARAMETER_VECTOR(logSdLogNM); paraset.logSdLogNM=logSdLogNM;
   PARAMETER_VECTOR(logXtraSd); paraset.logXtraSd=logXtraSd;
+  PARAMETER_VECTOR(logitQprocessPhi); paraset.logitQprocessPhi=logitQprocessPhi;
+  PARAMETER_VECTOR(logQprocessSd); paraset.logQprocessSd=logQprocessSd;  
 
   // Forecast FMSY
   PARAMETER(logFScaleMSY); paraset.logFScaleMSY = logFScaleMSY;
@@ -173,7 +178,23 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logSW);
   PARAMETER_ARRAY(logCW);  
   PARAMETER_ARRAY(logitMO);
-  PARAMETER_ARRAY(logNM);    
+  PARAMETER_ARRAY(logNM);
+  PARAMETER_VECTOR(logQprocVal);
+  vector<int> logQprocFac(logQprocVal.size());
+  int k=0, fillfrom=0;
+  while(k<=confset.keyQprocess.maxCoeff()){
+    for(int i=0; i<confset.keyQprocess.rows(); ++i){
+      for(int j=0; j<confset.keyQprocess.cols(); ++j){
+        if(confset.keyQprocess(i,j)==k){
+	  int howmany=dataset.maxYearPerFleet(i)-dataset.minYearPerFleet(i)+1;
+          logQprocFac.segment(fillfrom,howmany)=k;
+	  fillfrom+=howmany;
+	  k++;
+	}
+      }
+    }
+  }
+  vector< vector<Type> > logQproc=split(logQprocVal, logQprocFac);
   PARAMETER_VECTOR(missing);
   
   // patch missing 
@@ -199,9 +220,10 @@ Type objective_function<Type>::operator() ()
   ans += nllMO(logitMO, dataset, confset, paraset, this);
   ans += nllNM(logNM, dataset, confset, paraset, this);      
   ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
+  ans += nllQproc(logQproc,paraset,this);
   forecastSimulation(dataset, confset, paraset, logN, logF, this);
 
-  ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
+  ans += nllObs(dataset, confset, paraset, logN, logF, logQproc, keep,  this);
 
   ans += nllReferencepoints(dataset, confset, paraset, logN, logF, this);
         

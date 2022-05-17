@@ -52,10 +52,10 @@ struct listMatrixFromR : vector<matrix<Type> > {
       (*this)(i) = tmp;
     }
     return *this;
-  }
-
-  
+  }  
 };
+
+
 
 
 #define ADREPORT_F(name,F) F->reportvector.push(name,#name);
@@ -306,6 +306,8 @@ struct dataSet{
   vector<Type> years;
   vector<int> minAgePerFleet;
   vector<int> maxAgePerFleet;
+  vector<int> minYearPerFleet;
+  vector<int> maxYearPerFleet;
   int nobs;
   array<int> idx1;
   array<int> idx2;
@@ -338,6 +340,8 @@ struct dataSet{
     years = asVector<Type>(getListElement(x,"years"));
     minAgePerFleet = asVector<int>(getListElement(x,"minAgePerFleet"));
     maxAgePerFleet = asVector<int>(getListElement(x,"maxAgePerFleet"));
+    minYearPerFleet = asVector<int>(getListElement(x,"minYearPerFleet"));
+    maxYearPerFleet = asVector<int>(getListElement(x,"maxYearPerFleet"));
     nobs = (int)*REAL(getListElement(x,"nobs"));
     idx1 = asArray<int>(getListElement(x,"idx1"));
     idx2 = asArray<int>(getListElement(x,"idx2"));
@@ -367,6 +371,8 @@ struct dataSet{
     years = rhs.years;
     minAgePerFleet = rhs.minAgePerFleet;
     maxAgePerFleet = rhs.maxAgePerFleet;
+    minYearPerFleet = rhs.minYearPerFleet;
+    maxYearPerFleet = rhs.maxYearPerFleet;
     nobs = rhs.nobs;
     idx1 = rhs.idx1;
     idx2 = rhs.idx2;
@@ -400,6 +406,8 @@ struct dataSet{
     d.years = years.template cast<T>();
     d.minAgePerFleet = minAgePerFleet;//<int> 
     d.maxAgePerFleet = maxAgePerFleet;//<int> 
+    d.minYearPerFleet = minYearPerFleet;//<int> 
+    d.maxYearPerFleet = maxYearPerFleet;//<int> 
     d.nobs = nobs;// int
     d.idx1 = idx1;//<int> 
     d.idx2 = idx2;//<int> 
@@ -520,6 +528,7 @@ struct confSet{
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
   matrix<int> keyXtraSd;
+  matrix<int> keyQprocess;
   confSet() {};
 
   confSet(SEXP x){
@@ -563,7 +572,7 @@ struct confSet{
     keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean"));
     keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
     keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
-
+    keyQprocess = asMatrix<int>(getListElement(x,"keyQprocess"));
   };
 
   confSet& operator=(const confSet& rhs) {
@@ -606,7 +615,7 @@ struct confSet{
     keyMortalityMean = rhs.keyMortalityMean;
     keyMortalityObsVar = rhs.keyMortalityObsVar;
     keyXtraSd = rhs.keyXtraSd;
-
+    keyQprocess = rhs.keyQprocess;
     return *this;
   };
 };
@@ -657,7 +666,8 @@ struct paraSet{
   vector<Type> meanLogNM; 
   vector<Type> logSdLogNM;
   vector<Type> logXtraSd;
-
+  vector<Type> logitQprocessPhi;
+  vector<Type> logQprocessSd;  
   paraSet() {};
   
   paraSet(SEXP x){
@@ -704,6 +714,8 @@ struct paraSet{
     meanLogNM  = asVector<Type>(getListElement(x,"meanLogNM")); 
     logSdLogNM = asVector<Type>(getListElement(x,"logSdLogNM"));
     logXtraSd = asVector<Type>(getListElement(x,"logXtraSd"));
+    logitQprocessPhi = asVector<Type>(getListElement(x,"logitQprocessPhi"));
+    logQprocessSd = asVector<Type>(getListElement(x,"logQprocessSd"));   
   }
 
   paraSet<Type>& operator=(const paraSet<Type>& rhs) {
@@ -750,6 +762,8 @@ struct paraSet{
     meanLogNM = rhs.meanLogNM;
     logSdLogNM = rhs.logSdLogNM;
     logXtraSd = rhs.logXtraSd;
+    logitQprocessPhi = rhs.logitQprocessPhi;
+    logQprocessSd = rhs.logQprocessSd;    
     return *this;
 
   }
@@ -799,7 +813,9 @@ struct paraSet{
     d.logSdProcLogNM = logSdProcLogNM.template cast<T>();
     d.meanLogNM = meanLogNM.template cast<T>();
     d.logSdLogNM = logSdLogNM.template cast<T>(); 
-    d.logXtraSd = logXtraSd.template cast<T>(); 
+    d.logXtraSd = logXtraSd.template cast<T>();
+    d.logitQprocessPhi = logitQprocessPhi.template cast<T>();
+    d.logQprocessSd = logQprocessSd.template cast<T>();     
     return d;    
   }  
 };

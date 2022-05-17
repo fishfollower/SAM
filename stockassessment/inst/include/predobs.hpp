@@ -1,5 +1,5 @@
 template <class Type>
-vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand){
+vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand, vector< vector<Type> > & logQproc){
   vector<Type> pred(dat.nobs);
   pred.setZero();
 
@@ -80,6 +80,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         }
         if(conf.keyLogFpar(f-1,a)>(-1)){
           pred(i)+=par.logFpar(conf.keyLogFpar(f-1,a));
+        }
+        if(conf.keyQprocess(f-1,a)>(-1)){
+          pred(i)+=logQproc(conf.keyQprocess(f-1,a))(dat.aux(i,0)-dat.minYearPerFleet(f-1));
         }
         
       break;

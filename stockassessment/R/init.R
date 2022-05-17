@@ -94,8 +94,9 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$meanLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityMean,na.rm=TRUE)+1)}
   ret$logSdLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityObsVar,na.rm=TRUE)+1)}
   ret$logXtraSd=if(nrow(conf$keyXtraSd)==0){numeric(0)}else{numeric(length(unique(conf$keyXtraSd[,4])))}
+  ret$logitQprocessPhi<-numeric(max(conf$keyQprocess, na.rm=TRUE)+1)
+  ret$logQprocessSd<-numeric(max(conf$keyQprocess, na.rm=TRUE)+1)
   
-
   ## Reference points
   ret$logFScaleMSY <- 0
   ret$implicitFunctionDelta <- 0
@@ -115,5 +116,9 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logCW=if(conf$catchWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$catchMeanWeight), nrow=nrow(dat$catchMeanWeight)+spinoutyear)}  
   ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat)+spinoutyear)}
   ret$logNM=if(conf$mortalityModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$natMor), nrow=nrow(dat$natMor)+spinoutyear)}
+
+  yr <- tapply(dat$aux[,"year"], INDEX=dat$aux[,"fleet"], function(x)max(x)-min(x)+1)
+  dup <- duplicated(conf$keyQprocess[which(conf$keyQprocess>=0)])
+  ret$logQprocVal <- numeric(length(unlist(lapply(yr[row(conf$keyQprocess)[which(conf$keyQprocess>=0)]], numeric)[!dup])))
   return(ret)
 }
