@@ -157,8 +157,8 @@ Type nllQproc(vector< vector<Type> > &logQproc, paraSet<Type> &par, objective_fu
   Type nll=0;
   for(int i=0; i<logQproc.size(); ++i){
     vector<Type> v=logQproc(i);
-    nll+=-dnorm(v(0),Type(0),Type(0.0001),true);
-    nll+=SCALE(AR1(invlogit(par.logitQprocessPhi(i))),exp(par.logQprocessSd(i)))(v);
+    //nll+=-dnorm(v(0),Type(0),Type(0.0001),true);
+    nll+=SCALE(AR1(Type(2)*invlogit(par.logitQprocessPhi(i))-Type(1)),exp(par.logQprocessSd(i)))(v);
   }
   //ADREPORT_F(logNM,of);
   return nll;
