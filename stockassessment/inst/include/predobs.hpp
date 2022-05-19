@@ -100,9 +100,17 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
         if(conf.keyBiomassTreat(f-1)==4){
           pred(i) = logLand(y);
         }
-        if(conf.keyBiomassTreat(f-1)==5){
-          pred(i) = logtsb(y)+par.logFpar(conf.keyLogFpar(f-1,a));
-        }
+	if(conf.keyBiomassTreat(f-1)==5){
+	  Type tsb = 0;
+	  for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
+	    zz = dat.natMor(y,aa);
+	    if(conf.keyLogFsta(0,aa)>(-1)){
+	      zz+=exp(logF(conf.keyLogFsta(0,aa),y));
+	    }
+	    tsb +=  exp(logN(aa,y)-zz*dat.sampleTimes(f-1))*dat.stockMeanWeight(y,aa);
+	  }
+	  pred(i) = log(tsb) +par.logFpar(conf.keyLogFpar(f-1,a));
+	}
         if(conf.keyBiomassTreat(f-1)==6){
           Type N = 0;
           for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
