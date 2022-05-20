@@ -76,8 +76,10 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
   if(conf.catchWeightModel==1){
     Type nll=0;
     array<Type> cw=dat.catchMeanWeight;
-    for(int k = 0; k < logCW.dim[2]; ++k)
-      nll += nllBioProcess((array<Type>)logCW.col(k), par.meanLogCW, (vector<int>)conf.keyCatchWeightMean.row(k), (vector<Type>)par.logPhiCW.col(k), (Type)par.logSdProcLogCW(k));
+    for(int k = 0; k < logCW.dim[2]; ++k){
+      array<Type> lcw = logCW.col(k);
+      nll += nllBioProcess(lcw, par.meanLogCW, (vector<int>)conf.keyCatchWeightMean.row(k), (vector<Type>)par.logPhiCW.col(k), (Type)par.logSdProcLogCW(k));
+    }
     for(int i=0; i<cw.dim[0]; ++i){
       for(int j=0; j<cw.dim[1]; ++j){
 	for(int k=0; k<cw.dim[2]; ++k){

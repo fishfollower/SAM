@@ -646,8 +646,8 @@ struct confSet{
     keyStockWeightMean = asVector<int>(getListElement(x,"keyStockWeightMean"));
     keyStockWeightObsVar = asVector<int>(getListElement(x,"keyStockWeightObsVar"));
     catchWeightModel = (int)*REAL(getListElement(x,"catchWeightModel"));
-    keyCatchWeightMean = asVector<int>(getListElement(x,"keyCatchWeightMean"));
-    keyCatchWeightObsVar = asVector<int>(getListElement(x,"keyCatchWeightObsVar"));
+    keyCatchWeightMean = asMatrix<int>(getListElement(x,"keyCatchWeightMean"));
+    keyCatchWeightObsVar = asMatrix<int>(getListElement(x,"keyCatchWeightObsVar"));
     matureModel = (int)*REAL(getListElement(x,"matureModel"));
     keyMatureMean = asVector<int>(getListElement(x,"keyMatureMean"));
     mortalityModel = (int)*REAL(getListElement(x,"mortalityModel"));
