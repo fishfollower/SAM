@@ -122,8 +122,8 @@ defcon<-function(dat){
   ret$keyStockWeightMean <- rep(NA_integer_,nAges)
   ret$keyStockWeightObsVar <- rep(NA_integer_,nAges)  
   ret$catchWeightModel <- 0
-  ret$keyCatchWeightMean <- matrix(NA_integer_,nFleets,nAges)
-  ret$keyCatchWeightObsVar <- matrix(NA_integer_,nFleets,nAges)  
+  ret$keyCatchWeightMean <- matrix(NA_integer_,sum(fleetTypes==0),nAges)
+  ret$keyCatchWeightObsVar <- matrix(NA_integer_,sum(fleetTypes==0),nAges)  
   ret$matureModel <- 0
   ret$keyMatureMean <- rep(NA_integer_,nAges)
   ret$mortalityModel <- 0

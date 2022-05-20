@@ -14,6 +14,7 @@
   selYears = max(fit$data$years),
   biasCorrect = FALSE,
   newton.control = list(),
+  run = TRUE,
   ...
 )
 }
