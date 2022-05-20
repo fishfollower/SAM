@@ -35,7 +35,7 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   using CppAD::abs;
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
-  int noCatchFleets=conf.keyLogFsta.dim[0];
+  int noFleets=conf.keyLogFsta.dim[0];
   int stateDimN=conf.keyLogFsta.dim[1];
   vector<Type> sdLogFsta=exp(par.logSdLogFsta);
   array<Type> resF(stateDimF,timeSteps-1);
@@ -75,12 +75,13 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 	    fcor(j,i)=trans(par.itrans_rho(count));
 	    nxtPar = true;
 	    break;
-	  case 2:		// AR(1)
+	  case 2:		// AR(1) structure
 	    fcor(j,i)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
 	    nxtPar = true;
 	    break;
-	  case 4:		// (almosT) Perfect correlation
-            fcor(j,i)=0.999;
+	    // case 3: separable structure
+	  case 4:		// (almost) Perfect correlation
+            fcor(j,i)= 0.99;
 	    break;
 	  default:
 	    Rf_error("F correlation not implemented");

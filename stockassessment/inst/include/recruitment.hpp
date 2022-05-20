@@ -52,7 +52,9 @@ enum RecruitmentModel {
 		       Depensatory_C_Ricker = 401,
 		       Depensatory_C_BevertonHolt = 402,
 		       Depensatory_C_Spline_CMP = 490,
-		       Depensatory_C_Spline_ConvexCompensatory = 493,		       
+		       Depensatory_C_Spline_ConvexCompensatory = 493,
+		       Num_Ricker = 991,
+		       Num_BevertonHolt = 992
 		    
 };
 
@@ -94,7 +96,7 @@ struct RecruitmentWorker {
 };
 
 template<class Type>
-class Recruitment {
+struct Recruitment {
 public:
   // RecruitmentWorker<Type>* ptr;
   std::shared_ptr<RecruitmentWorker<Type> > ptr;
@@ -238,7 +240,7 @@ struct WrapEquiS {
   T operator()(const V<T> &x){
   // template<class T>
   // T operator()(const vector<T> &x) {
-    T v = (T)logLambda + f(x) - x(0);
+    T v = exp((T)logLambda + f(x)) - exp(x(0));
     return v * v;
   }  
 };
@@ -1037,7 +1039,7 @@ template<class Type>
 struct Rec_SigmoidalBevHolt : RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >  {
 
   Rec_SigmoidalBevHolt(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(RF_SigmoidalBevHolt_t<Type>(loga, logb, logg), loga) {};
+    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(RF_SigmoidalBevHolt_t<Type>(loga, logb, logg), (Type)20.0) {}; //loga - logb + (Type)log(2.0)
 
   template<class T>
   Rec_SigmoidalBevHolt(const Rec_SigmoidalBevHolt<T>& other) :
@@ -1217,6 +1219,85 @@ struct Rec_SplineGeneral : RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >  
 };
 
 
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+// Numerical Ricker for testing
+
+
+template<class Type>
+struct RF_NumRicker_t {
+  Type loga;
+  Type logb;
+
+  RF_NumRicker_t(Type loga_, Type logb_) :
+    loga(loga_), logb(logb_) {}
+
+  template<class T>
+  RF_NumRicker_t(const RF_NumRicker_t<T>& other) :
+    loga(other.loga), logb(other.logb) {}
+
+  
+  template <template<class> class V, class T>
+  T operator()(const V<T> &logssb0){
+    T logssb = logssb0(0);
+    T v = loga + logssb - exp(logb + logssb);
+    return v;
+  }
+ 
+};
+  
+template<class Type>
+struct Rec_NumRicker : RecruitmentNumeric<Type, RF_NumRicker_t<Type> >  {
+
+  Rec_NumRicker(Type loga, Type logb) :
+    RecruitmentNumeric<Type, RF_NumRicker_t<Type> >(RF_NumRicker_t<Type>(loga, logb), loga) {};
+
+  template<class T>
+  Rec_NumRicker(const Rec_NumRicker<T>& other) :
+    RecruitmentNumeric<Type, RF_NumRicker_t<Type> >(other.f, other.x0) {}
+
+};
+
+// Numerical Beverton Holt
+
+
+template<class Type>
+struct RF_NumBevHolt_t {
+  Type loga;
+  Type logb;
+
+  RF_NumBevHolt_t(Type loga_, Type logb_) :
+    loga(loga_), logb(logb_) {}
+
+  template<class T>
+  RF_NumBevHolt_t(const RF_NumBevHolt_t<T>& other) :
+    loga(other.loga), logb(other.logb) {}
+
+  
+  template <template<class> class V, class T>
+  T operator()(const V<T> &logssb0){
+    T logssb = logssb0(0);
+    T v = loga + logssb - exp(logb + logssb);
+    return v;
+  }
+ 
+};
+  
+template<class Type>
+struct Rec_NumBevHolt : RecruitmentNumeric<Type, RF_NumBevHolt_t<Type> >  {
+
+  Rec_NumBevHolt(Type loga, Type logb) :
+    RecruitmentNumeric<Type, RF_NumBevHolt_t<Type> >(RF_NumBevHolt_t<Type>(loga, logb), loga) {};
+
+  template<class T>
+  Rec_NumBevHolt(const Rec_NumBevHolt<T>& other) :
+    RecruitmentNumeric<Type, RF_NumBevHolt_t<Type> >(other.f, other.x0) {}
+
+};
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Type>
@@ -1377,6 +1458,17 @@ r = Recruitment<Type>(Rec_DepensatoryB(Rec_HasselDeriso<Type>(par.rec_pars(0), p
       Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");
     r = Recruitment<Type>(Rec_DepensatoryC(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
 
+    
+///////////////////////////////////////////// For testing /////////////////////////////////////////////
+  }else if(rm == RecruitmentModel::Num_Ricker){
+    if(par.rec_pars.size() != 2)
+      Rf_error("The Numeric Ricker recruitment must have two parameters.");
+    r = Recruitment<Type>(new Rec_NumRicker<Type>(par.rec_pars(0), par.rec_pars(1)));
+
+  }else if(rm == RecruitmentModel::Num_BevertonHolt){
+    if(par.rec_pars.size() != 2)
+      Rf_error("The Numeric Beverton Holt recruitment must have two parameters.");
+    r = Recruitment<Type>(new Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
 
 ///////////////////////////////////////////// The End /////////////////////////////////////////////
     

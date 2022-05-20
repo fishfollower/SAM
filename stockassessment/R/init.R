@@ -116,8 +116,9 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$meanLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightMean,na.rm=TRUE)+1)}
   ret$logSdLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightObsVar,na.rm=TRUE)+1)}
 
-  ret$logPhiCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(2)}
-  ret$logSdProcLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(1)}
+  nFleets <- sum(dat$fleetTypes == 0)
+  ret$logPhiCW=if(conf$catchWeightModel==0){matrix(0,0,0)}else{matrix(0,2,nFleets)}
+  ret$logSdProcLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(nFleets)}
   ret$meanLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(max(conf$keyCatchWeightMean,na.rm=TRUE)+1)}
   ret$logSdLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(max(conf$keyCatchWeightObsVar,na.rm=TRUE)+1)}
 
@@ -153,7 +154,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logF=matrix(0, nrow=max(conf$keyLogFsta)+1,ncol=dat$noYears)
   ret$logN=matrix(0, nrow=conf$maxAge-conf$minAge+1, ncol=dat$noYears)
   ret$logSW=if(conf$stockWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$stockMeanWeight), nrow=nrow(dat$stockMeanWeight)+spinoutyear)}
-  ret$logCW=if(conf$catchWeightModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$catchMeanWeight), nrow=nrow(dat$catchMeanWeight)+spinoutyear)}  
+  ret$logCW=if(conf$catchWeightModel==0){array(0, dim = c(0, 0, 0))}else{array(0, dim = c(nrow(dat$catchMeanWeight)+spinoutyear, ncol(dat$catchMeanWeight), nFleets))}  
   ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat)+spinoutyear)}
   ret$logNM=if(conf$mortalityModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$natMor), nrow=nrow(dat$natMor)+spinoutyear)}
   return(ret)

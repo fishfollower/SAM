@@ -64,7 +64,7 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	dat.stockMeanWeight(i,j)=exp(logSW(i,j));
       }
     }
-    ADREPORT_F(logSW,of);
+    //ADREPORT_F(logSW,of);
     return nll;
   }
   return Type(0);
@@ -76,16 +76,19 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
   if(conf.catchWeightModel==1){
     Type nll=0;
     array<Type> cw=dat.catchMeanWeight;
-    nll += nllBioProcess(logCW, par.meanLogCW, conf.keyCatchWeightMean, par.logPhiCW, par.logSdProcLogCW(0));
+    for(int k = 0; k < logCW.dim[2]; ++k)
+      nll += nllBioProcess((array<Type>)logCW.col(k), par.meanLogCW, (vector<int>)conf.keyCatchWeightMean.row(k), (vector<Type>)par.logPhiCW.col(k), (Type)par.logSdProcLogCW(k));
     for(int i=0; i<cw.dim[0]; ++i){
       for(int j=0; j<cw.dim[1]; ++j){
-        if(!isNA(cw(i,j))){
-          nll += -dnorm(log(cw(i,j)),logCW(i,j),exp(par.logSdLogCW(conf.keyCatchWeightObsVar(j))),true);
-        }
-	dat.catchMeanWeight(i,j)=exp(logCW(i,j));
+	for(int k=0; k<cw.dim[2]; ++k){
+	  if(!isNA(cw(i,j,k))){
+	    nll += -dnorm(log(cw(i,j,k)),logCW(i,j,k),exp(par.logSdLogCW(conf.keyCatchWeightObsVar(k,j))),true);
+	  }
+	  dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
+	}
       }
     }
-    ADREPORT_F(logCW,of);
+    //ADREPORT_F(logCW,of);
     return nll;
   }
   return Type(0);
@@ -126,7 +129,7 @@ Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type
 	dat.propMat(i,j)=m;
       }
     }
-    ADREPORT_F(logitMO,of);
+    //ADREPORT_F(logitMO,of);
     return nll;
   }
   return Type(0);
@@ -148,7 +151,7 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	dat.natMor(i,j)=exp(logNM(i,j));
       }
     }
-    ADREPORT_F(logNM,of);
+    //ADREPORT_F(logNM,of);
     return nll;
   }
   return Type(0);

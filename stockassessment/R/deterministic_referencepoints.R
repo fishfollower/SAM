@@ -17,7 +17,7 @@
 
 
 .logTotalF <- function(logF, conf){
-    t(log(apply(conf$keyLogFsta+1,2,function(i) colSums(exp(logF)[i[i>0],]))))
+    t(log(apply(conf$keyLogFsta+1,2,function(i) colSums(exp(logF)[i[i>0],,drop=FALSE]))))
 }
 .logFbar <- function(logF, selYears, conf){
     frng <- conf$fbarRange[1]:conf$fbarRange[2]
@@ -185,7 +185,7 @@
     }else if(rpType == 2){ ## MSYRange
 
     }else if(rpType == 3){ ## Max
-        logF0 <- logF[which.max(logSPR)]
+        logF0 <- logF[which.max(logYPR)]
         if(logF0 == max(logF))
             stop("The stock does not appear to have a well-defined F~Max~. Increase the upper bound of Fsequence to try again, or remove Max from the list.")
     }else if(rpType == 4){ ## xdYPR
@@ -360,6 +360,7 @@ deterministicReferencepoints.sam <- function(fit,
                                              selYears = max(fit$data$years),
                                              biasCorrect = FALSE,
                                              newton.control = list(),
+                                             run = TRUE,
                                              ...){
     if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
         stop("Values of Fsequence must be positive and increasing.")
@@ -408,6 +409,8 @@ deterministicReferencepoints.sam <- function(fit,
     attr(argsIn$data$referencepoints,"newton_config") <- newton.control
     args <- argsIn
 
+    if(!run) return(args)
+    
      objSDR <- do.call(TMB::MakeADFun, args)
     objSDR$fn(fit$opt$par)
     sdr <- TMB::sdreport(objSDR, objSDR$par, fit$opt$he,

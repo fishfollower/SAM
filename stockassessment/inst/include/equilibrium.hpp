@@ -201,10 +201,10 @@ Type dYPR(Type logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, r
   // autodiff::gradient gives memory not mapped error
   // Using numeric gradient instead
   Type h = 0.001;
-  Type v = -f((vector<Type>)((vector<Type>)(u + 2.0 * h))) + 8.0 * f((vector<Type>)(u + h)) - 8.0 * f((vector<Type>)(u - h)) + f((vector<Type>)(u - 2.0 * h));
-  vector<Type> g(1); g(0) = v / (12.0 * h);
+  Type v = -f((vector<Type>)(u + 2.0 * h)) + 8.0 * f((vector<Type>)(u + h)) - 8.0 * f((vector<Type>)(u - h)) + f((vector<Type>)(u - 2.0 * h));
+  Type g = v / (12.0 * h);
   // Return diff(YPR(f))|_f=exp(logFbar)
-  return g(0) / exp(logFbar);
+  return g / exp(logFbar);
 }
 
 // For calculations about future

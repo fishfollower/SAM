@@ -2,8 +2,8 @@
 #ifndef SAM_DEFINE_HPP
 #define SAM_DEFINE_HPP
 
-#define SAM_NegInf R_NegInf
-#define SAM_NIZero R_NegInf
+#define SAM_NegInf -20.0
+#define SAM_NIZero -10.0
 #define SAM_Zero exp(SAM_NIZero)
 
 
@@ -127,6 +127,10 @@ struct listMatrixFromR : vector<matrix<Type> > {
 
 #define SIMULATE_F(F)				\
   if(isDouble<Type>::value && F->do_simulate)
+
+#define NOT_SIMULATE_F(F)				\
+  if(!(isDouble<Type>::value && F->do_simulate))
+
 
 template<class Type>
 bool isNA(Type x){
@@ -597,8 +601,8 @@ struct confSet{
   vector<int> keyStockWeightMean;
   vector<int> keyStockWeightObsVar;
   int catchWeightModel;
-  vector<int> keyCatchWeightMean;
-  vector<int> keyCatchWeightObsVar;
+  matrix<int> keyCatchWeightMean;
+  matrix<int> keyCatchWeightObsVar;
   int matureModel;
   vector<int> keyMatureMean;
   int mortalityModel;
@@ -724,7 +728,7 @@ struct paraSet{
   vector<Type> logSdProcLogSW;
   vector<Type> meanLogSW; 
   vector<Type> logSdLogSW; 
-  vector<Type> logPhiCW; 
+  matrix<Type> logPhiCW; 
   vector<Type> logSdProcLogCW;
   vector<Type> meanLogCW; 
   vector<Type> logSdLogCW; 
@@ -766,7 +770,7 @@ struct paraSet{
     logSdProcLogSW = asVector<Type>(getListElement(x,"logSdProcLogSW"));
     meanLogSW  = asVector<Type>(getListElement(x,"meanLogSW")); 
     logSdLogSW = asVector<Type>(getListElement(x,"logSdLogSW"));
-    logPhiCW = asVector<Type>(getListElement(x,"logPhiCW")); 
+    logPhiCW = asMatrix<Type>(getListElement(x,"logPhiCW")); 
     logSdProcLogCW = asVector<Type>(getListElement(x,"logSdProcLogCW"));
     meanLogCW  = asVector<Type>(getListElement(x,"meanLogCW")); 
     logSdLogCW = asVector<Type>(getListElement(x,"logSdLogCW"));
@@ -1350,11 +1354,6 @@ struct referencepointList : vector<referencepointSet<Type> > {
   }
   
 };
-
-
-template<class Type>
-class Recruitment;
-
 
 
 #endif

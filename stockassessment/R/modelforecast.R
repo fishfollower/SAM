@@ -35,6 +35,7 @@ modelforecast <- function(fit, ...){
 ##' @param returnObj Only return TMB object?
 ##' @param hcrConf Should not be used. See \link{hcr}.
 ##' @param hcrCurrentSSB Should not be used. See \link{hcr}.
+##' @param progress Show progress bar for simulations?
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @seealso forecast
@@ -72,9 +73,18 @@ modelforecast.sam <- function(fit,
                      returnObj = FALSE,
                      hcrConf = numeric(0),
                      hcrCurrentSSB = 0,
+                     progress = TRUE,
                      ...
                      ){
-    
+
+    if(progress && !returnObj && !is.null(nosim) && nosim > 0){
+        pb <- txtProgressBar(min = 0, max = nosim+3, style = 3)
+        incpb <- function() setTxtProgressBar(pb, pb$getVal()+1)
+    }else{
+        incpb <- function(){ return(invisible(NULL)) }
+    }
+
+
     ## Handle year.base < max(fit$data$years)
     if(year.base > max(fit$data$years)){
         stop("")
@@ -241,9 +251,19 @@ modelforecast.sam <- function(fit,
         args$map$logFScaleMSY <- NULL
         return(args)
     }
-
     ## Create forecast object
+    if(!is.null(nosim) && nosim > 0){
+        args$type <- "Fun"
+        args$integrate <- NULL
+        args$random <- NULL
+    }
+
+    ## Done with initial work chunk
+    incpb()
+    
     obj <- do.call(TMB::MakeADFun, args)
+    ## Done with initial MakeADFun
+    incpb()
 
     if(returnObj)
         return(obj)
@@ -266,7 +286,8 @@ modelforecast.sam <- function(fit,
         applyMap <- function(par.name) {
             tapply(plMap[[par.name]], map[[par.name]], mean)
         }
-        plMap[with.map] <- sapply(with.map, applyMap, simplify = FALSE)         
+        plMap[with.map] <- sapply(with.map, applyMap, simplify = FALSE)
+        sniii <- 1
         doSim <- function(){
             sim0 <- est 
             if(resampleFirst)
@@ -279,9 +300,11 @@ modelforecast.sam <- function(fit,
             indxF <- matrix(which(names(p) %in% "logF"),nrow=length(estList0$LogF))[,i0]
             p[indxN] <- estList0$LogN
             p[indxF] <- estList0$LogF
-            obj$simulate(par = p)
+            v <- obj$simulate(par = p)
+            sniii <<- sniii+1
+            incpb()
+            return(v)
         }
-        
         simvals <- replicate(nosim, doSim(), simplify = FALSE)
         simlist <- vector("list",length(FModel) + 1)
         for(i in 0:(length(FModel))){
@@ -306,7 +329,6 @@ modelforecast.sam <- function(fit,
             quan <- quantile(x, c(.50,.025,.975), na.rm = TRUE)
             c(median=quan[1], low=quan[2], high=quan[3])
         }
-
         fbar <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbar))),3)
         fbarL <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbarL))),3)  
         rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
@@ -344,7 +366,9 @@ modelforecast.sam <- function(fit,
         attr(simlist, "label") <- label    
         attr(simlist, "caytable")<-caytable
         class(simlist) <- "samforecast"
-          
+        ## Done with reporting
+        incpb()
+        close(pb)
         return(simlist)
     }else{
         obj$fn(fit$opt$par)

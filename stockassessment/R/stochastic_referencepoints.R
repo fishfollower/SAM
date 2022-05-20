@@ -71,8 +71,6 @@ predict.rpscurvefit <- function(x,newF,...){
     as.numeric(pM)  
 }
 
-
-
 .perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = numeric(0)){
     if(length(logCustomSel) > 0){
         sel <- exp(logCustomSel)
@@ -91,6 +89,9 @@ predict.rpscurvefit <- function(x,newF,...){
                         ))
 }
 
+.numDiff <- function(x,y){
+    diff(y) / diff(x)    
+}
 
 .refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType){
     rfv <- function(n,a,b){
@@ -173,7 +174,10 @@ predict.rpscurvefit <- function(x,newF,...){
                     names(v) <- paste0(rp$xVal,"dYPR")
                 v
             }
-            ## fn <- function(x) -predict(CurveFit,trans(x))
+            fn <- function(x){
+                p <- predict(CurveFit,trans(x))
+                
+            }
             ## startVals <- function() log(Fseq[which.max(pv)])            
         }else if(rp$rpType == 5){ ## xSPR
 

@@ -557,7 +557,7 @@ yprtable<-function(fit,...){
 ##' @method yprtable default
 ##' @export
 yprtable.default <- function(fit,...){
-   ret<-tableit(fit, "logYPR", trans=exp,...)
+   ret<-tableit(fit, "logYPR", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
    return(ret)
 }
 
@@ -574,7 +574,7 @@ sprtable<-function(fit,...){
 ##' @method sprtable default
 ##' @export
 sprtable.default <- function(fit,...){
-   ret<-tableit(fit, "logSPR", trans=exp,...)
+   ret<-tableit(fit, "logSPR", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
    return(ret)
 }
 
@@ -591,7 +591,7 @@ equilibriumbiomasstable<-function(fit,...){
 ##' @method equilibriumbiomasstable default
 ##' @export
 equilibriumbiomasstable.default <- function(fit,...){
-   ret<-tableit(fit, "logSe", trans=exp,...)
+   ret<-tableit(fit, "logSe", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
    return(ret)
 }
 
@@ -609,6 +609,6 @@ b0table<-function(fit,...){
 ##' @method b0table default
 ##' @export
 b0table.default <- function(fit,...){
-   ret<-tableit(fit, "logB0", trans=exp,...)
+   ret<-tableit(fit, "logB0", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
    return(ret)
 }

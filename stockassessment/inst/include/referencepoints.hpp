@@ -63,6 +63,7 @@ struct RefPointD_Base {
   
   virtual PERREC_t<Type> getPerRecruit(Type logFbar) = 0;
   virtual vector<Type> optimize(vector<Type> logF0) = 0;
+  virtual ~RefPointD_Base() = default;
   
 };
 
@@ -74,6 +75,7 @@ struct RefPointD_Known : RefPointD_Base<Type> {
   referencepointSet<Type> rp;
 
   RefPointD_Known() = default;
+  ~RefPointD_Known() = default;
   
   RefPointD_Known(const dataSet<Type>& dat_,
 	    const confSet& conf_,
@@ -102,6 +104,8 @@ struct RefPointD_Numeric : RefPointD_Base<Type> {
   RefPointD_Numeric(Functor f_,
 		    newton::newton_config cfg_ = newton::newton_config()) :
     f(f_), cfg(cfg_) {};
+  ~RefPointD_Numeric() = default;
+
   
   PERREC_t<Type> getPerRecruit(Type logFbar){
     PERREC_t<TMBad::ad_aug> r0 = f.getPerRec(logFbar);
@@ -271,6 +275,7 @@ public:
 		     referencepointSet<Type>& rp,			\
 		     newton::newton_config cfg = newton::newton_config()) : \
     RefPointD_Numeric<Type, RPD_##NAME<TMBad::ad_aug> >(RPD_##NAME<TMBad::ad_aug>(dat,conf,par,rp),cfg) {}; \
+    ~RefPointD_##NAME() = default; \
   }
   
 

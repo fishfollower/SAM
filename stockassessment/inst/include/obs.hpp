@@ -231,23 +231,35 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
   vector<Type> fbarL = landFbarFun(dat, conf, logF);
   vector<Type> logfbarL = log(fbarL);
 
-  vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
-  matrix<Type> logLifeExpectancyAge = lifeexpectancyAge(dat, conf, logF).array().log().matrix();
-  vector<Type> logLifeExpectancyRec = log(lifeexpectancyRec(dat, conf, logF));
+  NOT_SIMULATE_F(of){  
+    vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
+    matrix<Type> logLifeExpectancyAge = lifeexpectancyAge(dat, conf, logF).array().log().matrix();
+    vector<Type> logLifeExpectancyRec = log(lifeexpectancyRec(dat, conf, logF));
+    ADREPORT_F(logLifeExpectancy,of);
+    ADREPORT_F(logLifeExpectancyRec,of);
+    ADREPORT_F(logLifeExpectancyAge,of);
 
-  vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
-  vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
-  vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
-
-  vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
-  vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
-
- // B0, SPR, YPR, ...
-
-  vector<Type> logYPR = yieldPerRecruit(dat,conf,par,logF, true);
-  vector<Type> logSPR = spawnersPerRecruit(dat,conf,par,logF, true);
-  vector<Type> logSe = equilibriumBiomass(dat,conf,par,logF, true);
-  vector<Type> logB0 = B0(dat,conf,par,logF, true);
+    vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
+    vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
+    vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
+    ADREPORT_F(logYLTF, of);
+    ADREPORT_F(logYLTM, of);
+    ADREPORT_F(logYNL, of);
+ 
+    vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
+    vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
+    ADREPORT_F(logrmax, of);
+    ADREPORT_F(logGenerationLength, of);
+ 
+    vector<Type> logYPR = yieldPerRecruit(dat,conf,par,logF, true);
+    vector<Type> logSPR = spawnersPerRecruit(dat,conf,par,logF, true);
+    vector<Type> logSe = equilibriumBiomass(dat,conf,par,logF, true);
+    vector<Type> logB0 = B0(dat,conf,par,logF, true);
+    ADREPORT_F(logYPR, of);
+    ADREPORT_F(logSPR, of);
+    ADREPORT_F(logSe, of);
+    ADREPORT_F(logB0, of);
+  }
 
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF,mort, logssb, logtsb, logfsb, logCatch, logLand);
 
@@ -528,18 +540,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
   ADREPORT_F(logCatchByFleet,of);
   ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
-  ADREPORT_F(logLifeExpectancy,of);
-  ADREPORT_F(logLifeExpectancyRec,of);
-  ADREPORT_F(logLifeExpectancyAge,of);
-  ADREPORT_F(logYLTF, of);
-  ADREPORT_F(logYLTM, of);
-  ADREPORT_F(logYNL, of);
-  ADREPORT_F(logrmax, of);
-  ADREPORT_F(logGenerationLength, of);
-  ADREPORT_F(logYPR, of);
-  ADREPORT_F(logSPR, of);
-  ADREPORT_F(logSe, of);
-  ADREPORT_F(logB0, of);
 
   // Additional forecast quantities
   if(forecast.nYears > 0){
