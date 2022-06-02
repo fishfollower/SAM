@@ -39,6 +39,9 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
   data$aux[,"fleet"] <- match(data$aux[,"fleet"],suf)
   data$minAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=min)
   data$maxAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=max)
+  data$minYearPerFleet <- tapply(as.integer(data$aux[,"year"]), INDEX=data$aux[,"fleet"], FUN=min)
+  data$maxYearPerFleet <-tapply(as.integer(data$aux[,"year"]), INDEX=data$aux[,"fleet"], FUN=max)
+
   attr(data,"fleetNames") <- attr(data,"fleetNames")[suf]
   if(!missing(conf)){
     .reidx <- function(x){
