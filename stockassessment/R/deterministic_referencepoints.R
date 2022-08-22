@@ -1,4 +1,13 @@
 
+
+recruitmentProperties <- function(fit){
+    .Call("recruitmentProperties",fit$obj$env$data,fit$pl)
+}
+
+
+
+
+
 .refpointEnum <- c(None = -99,
                    FixedF = -1,
                    StatusQuo = 0,
@@ -95,7 +104,7 @@
                          xSPR = c("(0\\.[[:digit:]]+)(SPR)","\\1"),
                          xB0 =  c("(0\\.[[:digit:]]+)(B0)","\\1"),
                          MYPYLdiv = NA,
-                         MYPYL = c("([[:digit:]]+\\.[[:digit:]])(MYPYL)","\\1"),
+                         MYPYL = c("([[:digit:]]+\\.[[:digit:]]+)(MYPYL)","\\1"),
                          MDY = NA,
                          Crash = NA,
                          Ext = NA,
@@ -136,13 +145,29 @@
 
     ## Check validity of SRR-refpoint combination
     srmc <- fit$conf$stockRecruitmentModelCode
-    if(srmc == 0){
-        invalidRP <- c(-1,1,2,6,7,8,9,10,11,12)
-        srName <- "random walk (no equilibrium biomass)"
-    }else{
-        invalidRP <- c(-Inf)
-        srName <- "the selected"
-    }
+    recProp <- recruitmentProperties(fit)
+
+    ## MSY = 1              # hasEquilibrium
+    ## MSYRange = 2         # hasEquilibrium
+    ## Max = 3              # all
+    ## xdYPR = 4            # all
+    ## xSPR = 5,            # all
+    ## xB0 = 6,             # hasEquilibrium
+    ## MYPYLdiv = 7,        # hasEquilibrium    
+    ## MYPYL = 8,           # hasEquilibrium
+    ## MDY = 9,             # hasEquilibrium
+    ## Crash = 10,          # isCompensatory
+    ## Ext = 11             # hasFinitedMaxGradient
+    ## Lim = 12             # none
+
+    invalidRP <- c(12)
+    if(!recProp$hasEquilibrium)
+        invalidRP <- sort(unique(c(invalidRP, 1,2,6,7,8,9)))
+    if(!recProp$isCompensatory)
+        invalidRP <- sort(unique(c(invalidRP,10)))
+    if(!recProp$hasFiniteMaxGradient)
+        invalidRP <- sort(unique(c(invalidRP,10,11)))
+    srName <- recProp$name
     
     i <- match(rparg$rpType, invalidRP)
     if(length(i) > 0 && !is.na(i))
@@ -183,7 +208,18 @@
         if(logF0 == max(logF))
             stop("The stock does not appear to have a well-defined F~MSY~. Increase the upper bound of Fsequence to try again, or remove MSY from the list.")
     }else if(rpType == 2){ ## MSYRange
-
+        logFmsy <- logF[which.max(logYe)]
+        YeMSY <- max(logYe)
+        logFx <- sapply(rparg$xVal, function(x){
+            ff <- logF[logF < logFmsy]
+            yy <- logYe[logF < logFmsy]
+            lfLow <- ff[which.min((yy - (YeMSY+log(x)))^2)]
+            ff <- logF[logF > logFmsy]
+            yy <- logYe[logF > logFmsy]
+            lfUp <- ff[which.min((yy - (YeMSY+log(x)))^2)]
+            c(-log(logFmsy-lfLow), log(lfUp-logFmsy))
+        })
+        logF0 <- c(logFmsy, as.vector(logFx))
     }else if(rpType == 3){ ## Max
         logF0 <- logF[which.max(logYPR)]
         if(logF0 == max(logF))
@@ -227,7 +263,10 @@
     }else if(rpType == 10){ ## Crash (dSR(0) = 1 / SPR)
         logF0 <- logF[which.min((log(dSR0) - (-logSPR))^2)]
     }else if(rpType == 11){ ## Ext
-        logF0 <- logF[which.min(logSe^2)]
+        ## If Hard crash, we want a value before
+        lf2 <- logF[logSe > -5]
+        ls2 <- logSe[logSe > -5]
+        logF0 <- lf2[which.min(ls2^2)] - 0.01
     }else{
         stop("Reference point type not implemented yet")
     }    
@@ -244,7 +283,7 @@
     }else if(rpType == 0){              #baseName - x
         return(gsub("-0$","",sapply(xVal, function(xx) sprintf("%s-%d", baseName,xx))))
     }else if(rpType == 2){ # MSYRange
-        return(sapply(xVal, function(xx) sapply(c("Lower","Upper"), function(y) sprintf("%s%s %s",xx, gsub("^x","",baseName),y))))
+        return(as.vector(sapply(xVal, function(xx) as.vector(sapply(c("(Lower)","(Upper)"), function(y) sprintf("%s%s %s",xx, gsub("^x","",baseName),y))))))
     }else{  ## Value before baseName
         return(sapply(xVal, function(xx) sprintf("%s%s",xx, gsub("^x","",baseName))))
     }
@@ -253,8 +292,14 @@
 
 .refpointOutput <- function(ssdr, rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn, Fsequence, referencepoints){
     rwnms <- unlist(lapply(rpArgs,function(x) .refpointNames(x$rpType, x$xVal)))
-    rpRename <- sapply(lapply(referencepoints,.refpointParser),function(args)do.call(.refpointNames,args))
-    outputOrder <- match(rwnms, rpRename)
+    rpRename <- unlist(sapply(lapply(referencepoints,.refpointParser),function(args)do.call(.refpointNames,args)))
+    rpLabels <- unlist(lapply(referencepoints,function(x){
+        v <- .refpointParser(x)
+        if(v$rpType == 2)
+            return(c(paste(x,c("(Lower)","(Upper)"))))
+        return(x)
+    }))
+    outputOrder <- match(rpRename, rwnms)
     toCI <- function(pattern){
         indx <- 1:2
         if(biasCorrect)
@@ -276,7 +321,7 @@
     YLtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYearsLost$")[outputOrder,,drop=FALSE]
     LEtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logLifeExpectancy$")[outputOrder,,drop=FALSE]
     colnames(Ftab) <- colnames(Btab) <- colnames(Rtab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- colnames(YLtab) <- colnames(LEtab) <- c("Estimate","Low","High")
-    rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rownames(YLtab) <- rownames(LEtab) <- referencepoints[outputOrder]
+    rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rownames(YLtab) <- rownames(LEtab) <- rpLabels #[outputOrder]
 
     ## First reference point is used for Fsequence
     YPRseq <- toCI("referencepoint_0_FixedF_logYPR$")
@@ -400,10 +445,11 @@ deterministicReferencepoints.sam <- function(fit,
 
     ## Make list for TMB
     obj0 <- fit$obj
-    argsIn <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
-    argsIn$silent <- fit$obj$env$silent
+    argsIn <- as.list(obj0$env)[setdiff(methods::formalArgs(TMB::MakeADFun),"...")]
+    argsIn$silent <- obj0$env$silent
     argsIn$parameters <- fit$pl
     argsIn$random <- unique(names(obj0$env$par[obj0$env$random]))
+    argsIn$data$reportingLevel <- 0
 
     argsIn$data$referencepoints <- c(list(rp0), rpArgs)
     attr(argsIn$data$referencepoints,"newton_config") <- newton.control
@@ -411,7 +457,7 @@ deterministicReferencepoints.sam <- function(fit,
 
     if(!run) return(args)
     
-     objSDR <- do.call(TMB::MakeADFun, args)
+    objSDR <- do.call(TMB::MakeADFun, args)
     objSDR$fn(fit$opt$par)
     sdr <- TMB::sdreport(objSDR, objSDR$par, fit$opt$he,
                          bias.correct= biasCorrect,

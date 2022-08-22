@@ -56,7 +56,7 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   newDat.noYears = nYears;
 
   Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
-  Recruitment<Type> rec0 = Recruitment<Type>(new Rec_None<Type>());
+  Recruitment<Type> rec0 = Recruitment<Type>("zero",new Rec_None<Type>());
 
   // Make logF array
   array<Type> logF(logSel.size(), nYears);

@@ -54,6 +54,7 @@ getSplineRecBreaks <- function(x, df, Boundary.knots = range(x), method = c("bs"
     UseMethod("getSplineRecBreaks")
 }
 
+#' @export
 getSplineRecBreaks.numeric <- function(x, df, Boundary.knots = range(x), method = c("bs","stone"), ...){
     ## bs way
     if(df < 3)
@@ -69,6 +70,7 @@ getSplineRecBreaks.numeric <- function(x, df, Boundary.knots = range(x), method 
     sort(unname(c(iknots,Boundary.knots)))
 }
 
+#' @export
 getSplineRecBreaks.sam <- function(x, df, Boundary.knots, method = c("bs","stone"), alpha = 0, ...){
     logssb <- log(ssbtable(x)[,1])
     if(missing(Boundary.knots)){
@@ -140,7 +142,7 @@ stockRecruitmentStartingValues <- function(fit, stockRecruitmentModelCode, const
         if(sr == 3){
             return(head(seq(min(year),max(year), len = df + 1),-1))
         }else if( sr %in% c(90,91,92,93,290,293,490,493)){ #Add depensatory splines
-            return(getSplineRecBreaks(fit, df=df, ...))
+            return(getSplineRecBreaks.sam(fit, df=df, ...))
         }else{
             return(numeric(0))
         }
@@ -238,6 +240,8 @@ makepredictcall.bc <- function (var, call){
 ##' @author Christoffer Moesgaard Albertsen
 ##' @export
 ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
+    if(any(!is.finite(x)))
+        warning("Non finite data")
     if(is.null(knots)){
         nik <- df-length(Boundary.knots)-intercept
         if(nik < 0){
@@ -245,7 +249,7 @@ ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept =
             nik <- 0
         }
         if(nik > 0)
-            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
+            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2), na.rm=TRUE),-1),-1)
     }
     Aknots <- sort(c(knots,Boundary.knots))
     v <- .Call("splinebasis_ibcR",x,Aknots)

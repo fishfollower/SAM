@@ -41,7 +41,7 @@ plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=
       lines(x, trans(y), lwd=3,...)
     }else{
         if(missing(ylim)){
-            yr <- range(c(trans(lowhig),0,ex,ylimAdd), na.rm = TRUE)
+            yr <- range(c(trans(lowhig),trans(y),0,ex,ylimAdd), na.rm = TRUE)
         }else{
             yr <- ylim
         }
@@ -1029,7 +1029,7 @@ srplot<-function(fit, ...){
 ##' @param ylim bounds for y-axis
 ##' @param add false if a new plot should be created
 ##' @export
-srplot.sam <- function(fit, textcol="red", years=TRUE, linetype="l", linecol="black", xlim, ylim, add=FALSE, ...){
+srplot.sam <- function(fit, textcol="red", years=TRUE, linetype="l", linecol="black", xlim, ylim, add=FALSE, CIlevel = 0.95, ...){
   X <- summary(fit)
   n<-nrow(X)
   lag <- fit$conf$minAge
@@ -1040,13 +1040,21 @@ srplot.sam <- function(fit, textcol="red", years=TRUE, linetype="l", linecol="bl
   Rnam<-colnames(X)[1]
   Snam<-colnames(X)[4]
   y<-rownames(X)
-  if(add){
-    lines(S,R)
-  }else{
-    if (missing(xlim)) xlim=range(0,S)
-    if (missing(ylim)) ylim=range(0,R)
-    plot(S,R, xlab=Snam, ylab=Rnam, type=linetype, col=linecol, xlim=xlim, ylim=ylim, ...)
+  makeCIpolygon <- function(i){
+    mu <- c(log(S)[i],log(R)[i])
+    Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
+                              c(idxS[i], n + idxR[i])]    
+    r <- ellipse::ellipse(Sig,centre=mu, level = CIlevel)
+    list(x = r[,1], y = r[,2], col = do.call("rgb",c(as.list(col2rgb(linecol)[,1]),list(alpha=0.1))), border = do.call("rgb",c(as.list(col2rgb(linecol)[,1]),list(alpha=0.3))), lty = 3)
+}
+  pols <- lapply(seq_along(idxR), makeCIpolygon)
+  if(!add){
+      if (missing(xlim)) xlim=range(0,S, unlist(lapply(pols,function(x)x$x)))
+      if (missing(ylim)) ylim=range(0,R, unlist(lapply(pols,function(x)x$y)))
+      plot(S,R, xlab=Snam, ylab=Rnam, type="n", col=linecol, xlim=xlim, ylim=ylim)
   }
+  invisible(lapply(pols,polygon))
+  lines(S,R, col = linecol, type = linetype, ...)
   if (years) text(S,R, labels=y[idxR], cex=.7, col=textcol )
 }
 

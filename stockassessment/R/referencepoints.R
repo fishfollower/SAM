@@ -1,3 +1,4 @@
+
 ##' Calculate jacobian of a function
 ##'
 ##' @param func function
@@ -97,6 +98,7 @@ forecastMSY.sam <- function(fit,
                        processNoiseF = processNoiseF,
                        nCatchAverageYears = nCatchAverageYears,
                        ...)
+    argsIn$data$reportingLevel <- 0
     argsIn$DLL <- "stockassessment"
     argsIn$silent <- fit$obj$env$silent
     

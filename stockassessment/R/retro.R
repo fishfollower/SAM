@@ -29,15 +29,35 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
   data$idx2 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=max)
   data$idxCor <- data$idxCor[suf,match(data$years,oldYears)]
   data$nobs <- length(data$logobs[idx])  
-  data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages]
-  data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, colnames(data$stockMeanWeight)%in%ages]
-  data$natMor <- data$natMor[rownames(data$natMor)%in%data$years, colnames(data$natMor)%in%ages]
-  data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages,,drop=FALSE]
-  data$propM <- data$propM[rownames(data$propM)%in%data$years, colnames(data$propM)%in%ages]
-  data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages,,drop=FALSE]  
-  data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages,,drop=FALSE]
-  data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages,,drop=FALSE]
-  data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,,drop=FALSE]
+  data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages,drop=FALSE]
+  data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, colnames(data$stockMeanWeight)%in%ages,drop=FALSE]
+  data$natMor <- data$natMor[rownames(data$natMor)%in%data$years, colnames(data$natMor)%in%ages,drop=FALSE]
+  if(length(dim(data$propF))==3){
+      data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages,,drop=FALSE]
+  }else{
+      data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages,drop=FALSE]
+  }
+  data$propM <- data$propM[rownames(data$propM)%in%data$years, colnames(data$propM)%in%ages,drop=FALSE]
+  if(length(dim(data$landFrac))==3){
+      data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages,,drop=FALSE]
+  }else{
+      data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages,drop=FALSE]
+  }
+  if(length(dim(data$catchMeanWeight))==3){
+      data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages,,drop=FALSE]
+  }else{
+            data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages,drop=FALSE]
+  }
+  if(length(dim(data$disMeanWeight))==3){
+      data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages,,drop=FALSE]
+  }else{
+      data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages,drop=FALSE]
+  }
+  if(length(dim(data$landMeanWeight))==3){
+      data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,,drop=FALSE]
+  }else{
+data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,drop=FALSE]
+  }
   data$aux[,"fleet"] <- match(data$aux[,"fleet"],suf)
   data$minAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=min)
   data$maxAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=max)

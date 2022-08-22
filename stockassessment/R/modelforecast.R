@@ -36,6 +36,7 @@ modelforecast <- function(fit, ...){
 ##' @param hcrConf Should not be used. See \link{hcr}.
 ##' @param hcrCurrentSSB Should not be used. See \link{hcr}.
 ##' @param progress Show progress bar for simulations?
+##' @param estimate the summary function used (typically mean or median) for simulations 
 ##' @details There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. 
 ##' @return an object of type samforecast
 ##' @seealso forecast
@@ -74,6 +75,7 @@ modelforecast.sam <- function(fit,
                      hcrConf = numeric(0),
                      hcrCurrentSSB = 0,
                      progress = TRUE,
+                     estimate = median,
                      ...
                      ){
 
@@ -326,8 +328,9 @@ modelforecast.sam <- function(fit,
         attr(simlist, "fit")<-fit
         ## Similar to stockassessment::forecast
         collect <- function(x){
-            quan <- quantile(x, c(.50,.025,.975), na.rm = TRUE)
-            c(median=quan[1], low=quan[2], high=quan[3])
+            est <- estimate(x)
+            quan <- quantile(x, c(.025,.975), na.rm = TRUE)
+            c(Estimate=est, low=quan[1], high=quan[2])
         }
         fbar <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbar))),3)
         fbarL <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbarL))),3)  
@@ -346,7 +349,7 @@ modelforecast.sam <- function(fit,
         }
         ## if(!missing(customWeights)) tab <- cbind(tab,cwF=round(do.call(rbind, lapply(simlist, function(xx)collect(xx$cwF))),3))
         rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
-        nam <- c("median","low","high")
+        nam <- c("Estimate","low","high")
         basename<-c("fbar:","rec:","ssb:","catch:")
         if(splitLD){
             basename<-c(basename,"fbarL:","fbarD:","Land:","Discard:")    
@@ -360,8 +363,8 @@ modelforecast.sam <- function(fit,
         colnames(tab)<-paste0(rep(basename, each=length(nam)), nam)
         
         attr(simlist, "tab")<-tab
-        shorttab<-t(tab[,grep("median",colnames(tab))])
-        rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
+        shorttab<-t(tab[,grep("Estimate",colnames(tab))])
+        rownames(shorttab)<-sub(":Estimate","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
         attr(simlist, "shorttab")<-shorttab
         attr(simlist, "label") <- label    
         attr(simlist, "caytable")<-caytable
@@ -427,7 +430,7 @@ modelforecast.sam <- function(fit,
         fullTable <- tab
         tab <- tab[as.numeric(rownames(tab)) %in% futureYears, , drop = FALSE]
         
-        nam <- c("median","low","high")
+        nam <- c("Estimate","low","high")
         basename<-c("fbar:","rec:","ssb:","catch:")
         if(splitLD){
             basename<-c(basename,"fbarL:","fbarD:","Land:","Discard:")    
@@ -443,8 +446,8 @@ modelforecast.sam <- function(fit,
         if(returnAllYears || !biasCorrect)
             colnames(fullTable) <- colnames(tab)
         attr(simlist, "tab")<-tab
-        shorttab<-t(tab[,grep("median",colnames(tab))])
-        rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
+        shorttab<-t(tab[,grep("Estimate",colnames(tab))])
+        rownames(shorttab)<-sub(":Estimate","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
         attr(simlist, "shorttab")<-shorttab
         attr(simlist, "label") <- label    
         ## attr(simlist, "caytable")<-caytable

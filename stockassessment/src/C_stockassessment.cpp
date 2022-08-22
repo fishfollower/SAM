@@ -4,7 +4,7 @@
 // Mollie Brooks <molbr@aqua.dtu.dk>,
 // and Christoffer Moesgaard Albertsen <cmoe@aqua.dtu.dk>.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright
@@ -32,17 +32,18 @@
 // R_init_stockassessment is now defined in main.cpp
 //#define TMB_LIB_INIT R_init_stockassessment
 //#define TMB_SAFEBOUNDS
-#include <TMB.hpp>
+// #define TMB_MAX_ORDER 4
+#include "TMB.h"
+// #include "SAM.h"
 #include "../inst/include/SAM.hpp"
 
-// Functions for R
-#include "perRecruit.hpp"
-#include "spline.hpp"
+#include "R_perRecruit.hpp"
+#include "R_spline.hpp"
 
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
-  using CppAD::abs;
+
   dataSet<Type> dataset;
   DATA_INTEGER(noFleets); dataset.noFleets=noFleets; 
   DATA_IVECTOR(fleetTypes); dataset.fleetTypes=fleetTypes;    
@@ -123,7 +124,9 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
-  DATA_IVECTOR(logNMeanCorrection); confset.logNMeanCorrection=logNMeanCorrection; 
+  DATA_IVECTOR(logNMeanCorrection); confset.logNMeanCorrection=logNMeanCorrection;
+
+  DATA_INTEGER(reportingLevel);
 
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
@@ -218,13 +221,10 @@ Type objective_function<Type>::operator() ()
   forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
 
   ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
-
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
-
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit,mort, this);
 
-  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
-  // ans += nllReferencepoints(dataset, confset, paraset, logN, logF, recruit, this);
+  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep,reportingLevel, this);
 
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
 

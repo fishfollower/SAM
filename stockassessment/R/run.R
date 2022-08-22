@@ -50,77 +50,83 @@
 ##' @references
 ##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}
 sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, penalizeSpline = FALSE, ...){
-  if(length(conf$maxAgePlusGroup)==1){
-    tmp <- conf$maxAgePlusGroup    
-    conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
-    conf$maxAgePlusGroup[1] <- tmp
-  }
-  definit <- defpar(data, conf)
-  if(!identical(parameters,relist(unlist(parameters), skeleton=definit))){
-    warning("Initial values are not consistent, so running with default init values from defpar()")
-    parameters<-definit
-  }
-  data<-clean.void.catches(data,conf)
-  
-  confTmp = defcon(data)
-  for(i in 1:length(confTmp)){
-    if(!names(confTmp)[i] %in% names(conf)){
-      conf[[length(conf)+1]] = confTmp[[i]]
-      names(conf)[length(conf)] = names(confTmp)[i]
+    t0 <- Sys.time()    
+    if(length(conf$maxAgePlusGroup)==1){
+        tmp <- conf$maxAgePlusGroup    
+        conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
+        conf$maxAgePlusGroup[1] <- tmp
     }
-  }
-  
-  tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
-  if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
-  nmissing <- sum(is.na(data$logobs))
-  parameters$missing <- numeric(nmissing)
-  ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM")
-  if(penalizeSpline)
-      ran <- c(ran, "rec_pars")
-  
-  args <- c(list(data = tmball,
-                 parameters = parameters,
-                 random = ran,
-                 ## intern = intern,
-                 DLL = "stockassessment"),
-            list(...))
+    definit <- defpar(data, conf)
+    if(!identical(parameters,relist(unlist(parameters), skeleton=definit))){
+        warning("Initial values are not consistent, so running with default init values from defpar()")
+        parameters<-definit
+    }
+    data<-clean.void.catches(data,conf)
+    
+    confTmp = defcon(data)
+    for(i in 1:length(confTmp)){
+        if(!names(confTmp)[i] %in% names(conf)){
+            conf[[length(conf)+1]] = confTmp[[i]]
+            names(conf)[length(conf)] = names(confTmp)[i]
+        }
+    }
+    
+    tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
+    if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
+    nmissing <- sum(is.na(data$logobs))
+    parameters$missing <- numeric(nmissing)
+    ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM")
+    if(penalizeSpline)
+        ran <- c(ran, "rec_pars")
+    
+    args <- c(list(data = tmball,
+                   parameters = parameters,
+                   random = ran,
+                   ## intern = intern,
+                   DLL = "stockassessment"),
+              list(...))
+    args$data$reportingLevel <- 0
 
-  mapRP <- list(logFScaleMSY = factor(NA),
-                implicitFunctionDelta = factor(NA),
-  ##               logScaleFmsy = factor(NA),
-  ##               logScaleFmypyl = factor(NA),
-  ##               logScaleFmdy = factor(NA),
-  ##               logScaleFmax = factor(NA),
-  ##               logScaleFxdYPR = factor(rep(NA,length(args$parameters$logScaleFxdYPR))),
-  ##               logScaleFxB0 = factor(rep(NA,length(args$parameters$logScaleFxB0))),
-  ##               logScaleFcrash = factor(NA),
-  ##               logScaleFext = factor(NA),
-  ##               logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
-  ##               logScaleFlim = factor(NA),
-                splinePenalty = factor(ifelse(penalizeSpline,1,NA))
-                )
-  if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
-      args$map <- mapRP
-  }else{
-      args$map <- c(args$map, mapRP)
-  }
-  
-  if(!is.null(conf$hockeyStickCurve))
-      if(is.null(args$map$rec_pars) &
-         !is.na(conf$hockeyStickCurve) &
-         conf$stockRecruitmentModelCode == 63)
-          args$map$rec_pars = factor(c(1,2,NA))
+    mapRP <- list(logFScaleMSY = factor(NA),
+                  implicitFunctionDelta = factor(NA),
+                  ##               logScaleFmsy = factor(NA),
+                  ##               logScaleFmypyl = factor(NA),
+                  ##               logScaleFmdy = factor(NA),
+                  ##               logScaleFmax = factor(NA),
+                  ##               logScaleFxdYPR = factor(rep(NA,length(args$parameters$logScaleFxdYPR))),
+                  ##               logScaleFxB0 = factor(rep(NA,length(args$parameters$logScaleFxB0))),
+                  ##               logScaleFcrash = factor(NA),
+                  ##               logScaleFext = factor(NA),
+                  ##               logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
+                  ##               logScaleFlim = factor(NA),
+                  splinePenalty = factor(ifelse(penalizeSpline,1,NA))
+                  )
+    if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
+        args$map <- mapRP
+    }else{
+        args$map <- c(args$map, mapRP)
+    }
+    
+    if(!is.null(conf$hockeyStickCurve))
+        if(is.null(args$map$rec_pars) &
+           !is.na(conf$hockeyStickCurve) &
+           conf$stockRecruitmentModelCode == 63)
+            args$map$rec_pars = factor(c(1,2,NA))
 
-
-  obj <- do.call(MakeADFun,args)
-
-  if(rm.unidentified){
+    t1 <- Sys.time()
+    cat(sprintf("Made args: %fs\n",as.numeric(t1-t0,units="secs")))
+    obj <- do.call(MakeADFun,args)
+    t2 <- Sys.time()
+    cat(sprintf("Made obj: %fs\n",as.numeric(t2-t1,units="secs")))
+    
+    ddd <- args
+    if(rm.unidentified){
     gr <- obj$gr()
     #grNA[abs(grNA)<1.0e-15] <- NA
     safemap <- obj$env$parList(gr)
     safemap <- safemap[!names(safemap)%in%ran]
     safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
-    ddd<-args # list(...)
+    ## ddd<-args # list(...)
     if(!is.null(ddd$map)){
       ddd$map <- c(ddd$map,safemap)
     }else{
@@ -135,6 +141,10 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     ##   obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
     ## }
   }
+
+  t3 <- Sys.time()
+  cat(sprintf("remove unidentified: %fs\n",as.numeric(t3-t2,units="secs")))
+
   
   lower2<-rep(-Inf,length(obj$par))
   upper2<-rep(Inf,length(obj$par))
@@ -149,6 +159,10 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ##     he <- obj$he
   ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
+
+  t4 <- Sys.time()
+  cat(sprintf("Optimize: %fs\n",as.numeric(t4-t3,units="secs")))
+  
   he <- function(par){ optimHess(par, obj$fn, obj$gr) }
   ## }
   for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
@@ -162,10 +176,28 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         opt$objective <- obj$fn(opt$par)
   }
   opt$he <- optimHess(opt$par, obj$fn, obj$gr)
-  rep <- obj$report()
-  sdrep <- sdreport(obj,opt$par, ##opt$he,
-                    ignore.parm.uncertainty = ignore.parm.uncertainty)
 
+  t5 <- Sys.time()
+  cat(sprintf("Newton steps: %fs\n",as.numeric(t5-t4,units="secs")))
+  rep <- obj$report()
+
+    t6 <- Sys.time()
+    cat(sprintf("Report: %fs\n",as.numeric(t6-t5,units="secs")))
+    ddd2 <- ddd
+    ddd2$data$reportingLevel <- 1
+    obj$fn(opt$par)
+    ddd2$parameters <- obj$env$parList(par=obj$env$last.par)
+    obj <- do.call(MakeADFun,ddd2)
+    t7 <- Sys.time()
+  cat(sprintf("New obj: %fs\n",as.numeric(t7-t6,units="secs")))
+
+  sdrep <- sdreport(obj,opt$par, opt$he,
+                    ignore.parm.uncertainty = ignore.parm.uncertainty)    
+    obj$env$data$reportingLevel <- 0
+  t8 <- Sys.time()
+  cat(sprintf("Sdreport: %fs\n",as.numeric(t8-t7,units="secs")))
+
+  
   # Last two states
   idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
   sdrep$estY <- sdrep$value[idx]
@@ -178,7 +210,13 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ## rec_pars
   idx <- which(names(sdrep$value)=="rec_pars")
   sdrep$covRecPars <- sdrep$cov[idx,idx, drop = FALSE]
-  
+
+    ## S-R pairs
+    idx <- names(sdrep$value)%in%c("logssb","logR")
+    sdrep$covSRpairs <- sdrep$cov[idx,idx, drop = FALSE]
+    colnames(sdrep$covSRpairs) <- rownames(sdrep$covSRpairs) <- names(sdrep$value)[idx]
+    
+    
   pl <- as.list(sdrep,"Est")
   plsd <- as.list(sdrep,"Std")
 
@@ -188,6 +226,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
   attr(ret, "Version") <- packageDescription("stockassessment")$Version
   class(ret)<-"sam"
+  t9 <- Sys.time()
+  cat(sprintf("Finish: %fs\n",as.numeric(t9-t8,units="secs")))
+
   return(ret)
 }
 

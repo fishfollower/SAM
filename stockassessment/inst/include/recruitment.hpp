@@ -4,6 +4,13 @@
 
 #include <memory>
 
+#define SAMREC_TYPEDEFS(scalartype_)			\
+public:						\
+typedef scalartype_ scalartype;			\
+typedef vector<scalartype> vectortype;		\
+typedef matrix<scalartype> matrixtype;		\
+typedef array<scalartype> arraytype
+
 /*
 Depensatory_A_%s models:
 R^B_%s(S) = R_%s(S^g)
@@ -17,6 +24,8 @@ R^B_%s(S) = R_%s(S) / (1 + exp(-l * (S-d)))
 
 
  */
+
+
 
 enum RecruitmentModel {
 		       ICESforecast = -2,
@@ -58,24 +67,16 @@ enum RecruitmentModel {
 		    
 };
 
-// Convert newton::vector to utils::vector
-template<class Type>
-vector<Type> n2u(const newton::vector<Type>& x){
-  vector<Type> r(x);
-  return r;
-}
-
-template<class Type>
-vector<Type> n2u(vector<Type>& x){
-  return x;
-}
-template<class Type>
-vector<Type> n2u(const vector<Type>& x){
-  return x;
-}
 
 template<class Type>
 struct RecruitmentWorker {
+
+  int isAutoregressive;
+  int isTimevarying;
+
+  RecruitmentWorker() : isAutoregressive(0), isTimevarying(0) {}
+  RecruitmentWorker(int isA, int isT) : isAutoregressive(isA), isTimevarying(isT) {}
+  
   // Stock recruitment function logR = f(logssb)
   virtual Type operator()(Type logssb, Type lastLogR, Type year) = 0;
 
@@ -93,16 +94,28 @@ struct RecruitmentWorker {
   virtual Type maxGradient() = 0;
 
   virtual ~RecruitmentWorker() {};
+
 };
 
 template<class Type>
 struct Recruitment {
 public:
   // RecruitmentWorker<Type>* ptr;
+  const char* name;
   std::shared_ptr<RecruitmentWorker<Type> > ptr;
-  explicit Recruitment(RecruitmentWorker<Type>* p=NULL) : ptr(p) {};
+  explicit Recruitment() : name("Uninitialized"), ptr(nullptr) {};
+  explicit Recruitment(const char* nm, RecruitmentWorker<Type>* p=nullptr) : name(nm), ptr(p) {};
   virtual ~Recruitment() { ptr.reset(); };
 
+  
+  int isTimevarying(){
+    return ptr->isTimevarying;
+  }
+
+  int isAutoregressive(){
+    return ptr->isAutoregressive;
+  }
+  
   Type operator()(Type logssb, Type lastLogR, Type year){
     return ptr->operator()(logssb, lastLogR, year);
   }
@@ -127,167 +140,205 @@ public:
 
 };
 
-// template<class Type, class Functor>
-// vector<double> getStartingValues1D(Functor f, double x0, double x1, int N = 50){
-//   vector<double> xx(N);
-//   vector<double> r(N);
-//   int minI = 0;
-//   double minV = R_PosInf;
-//   for(int i = 0; i < N; ++i){
-//     xx(i) = x0 + (double(i) / double(N-1)) * (x1-x0);
-//     vector<Type> yy(1); yy(0) = (xx(i));    
-//     r(i) = asDouble(f(yy));
-//     if(r(i) <= minV){
-//       minI = i;
-//       minV = r(i);
-//     }
-//   }
-//   vector<double> yy(1); yy(0) = (xx(minI));
-//   return yy;
-// }
-
-/*
-The functor f should return logR for a given logSSB
- */
-
 template<class Functor>
 struct WrapSR {
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
   Functor f;
-  WrapSR(Functor f_) : f(f_) {};
+  WrapSR(const Functor& f_) : f(f_) {};
+  WrapSR(const WrapSR<Functor>& wf_) : f(wf_.f) {};
+
+  auto to_ad(){
+    return WrapSR<decltype(f.to_ad())>(f.to_ad());
+  }
   
-  // template<class T>
-  // T operator()(vector<T> x){
-  //    return -f(x);
-  // }
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-  //  template<class T>
-  // T operator()(const vector<T> &x) {
-    return -f(x);
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &x){
+  scalartype operator()(const vectortype &x) {
+    // T v = -f(x(0));
+    // return v;
+    return -f(x(0));
   }
 };
 
 template<class Functor>
-struct Exp {
+struct WrapSRp {
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
   Functor f;
+  WrapSRp(const Functor& f_) : f(f_) {};
+  WrapSRp(const WrapSRp<Functor>& wf_) : f(wf_.f) {};
 
-  Exp(Functor f_) : f(f_) {};
+  auto to_ad(){
+    return WrapSRp<decltype(f.to_ad())>(f.to_ad());
+  }
 
-  // template<class T>
-  // T operator()(vector<T> x){
-  //   return exp(f(x));
-  // }
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-  // template<class T>
-  // T operator()(const vector<T> &x) {
+ 
+  scalartype operator()(const vectortype &x) {
+    return f(x(0));
+  }
+};
+
+// template<class Functor>
+template <class Functor>
+struct Exp {
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
+  Functor f;
+  Exp(const Functor& f_) : f(f_) {};
+  Exp(const Exp<Functor>& ef_) : f(ef_.f) {};
+
+  auto to_ad(){
+    return Exp<decltype(f.to_ad())>(f.to_ad());
+  }
+
+   
+  scalartype operator()(const scalartype& x){
     return exp(f(x));
+  }
+  vectortype operator()(const vectortype& x){
+    vectortype r(x.size()); r.setZero();
+    for(int i = 0; i < r.size(); ++i)
+      r(i) = this->operator()(x(i));
+    return r;
   }
 };
 
 template<class Functor>
 struct diffSR {
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
   Exp<Functor> f;
+  
+  diffSR(const Functor& f_) : f(f_) {}; //f(Exp<Functor>(f_)) {};
+  diffSR(const Exp<Functor>& ef_) : f(ef_) {};
+  diffSR(const diffSR<Functor>& wf_) : f(wf_.f) {};
 
-  diffSR(Functor f_) : f(f_) {};
+  auto to_ad(){
+    return diffSR<decltype(f.to_ad())>(f.to_ad());
+  }
+
+ 
   
   // template<class T>
-  // T operator()(vector<T> x){
-  //    vector<T> g = autodiff::gradient(f, x);
-  //   return (T)g(0) / exp(x(0));
-  // }
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-  // template<class T>
-  // T operator()(const vector<T> &x) {
-    vector<T> g = autodiff::gradient(f, n2u(x));
-    return (T)g(0) / exp(x(0));
+  // T operator()(const T& x){
+  scalartype operator()(const scalartype& x){
+    // vector<scalartype> v(1); v[0] = x;
+    // auto f2 = f.to_ad();
+    // vectortype g = autodiff::gradient(f, v);
+    // TMBad::ADFun<> G(TMBad::StdWrap<decltype(f.to_ad()),vector<TMBad::ad_aug> >(f), v);
+    // G = G.JacFun();
+    // scalartype gg = newton::unsafe_cast<scalartype>(G(v)[0]);
+    // scalartype gg = G(v)[0];
+    // return gg / exp(x);
+    // return g(0) / exp(x);
+    scalartype h = 0.0001 * sqrt(x * x + SAM_Zero);
+    scalartype x1 = x + 2.0 * h;
+    scalartype v1 = f(x1);
+    scalartype x2 = x + h;
+    scalartype v2 = f(x2);
+    scalartype x3 = x - h;
+    scalartype v3 = f(x3);
+    scalartype x4 = x - 2.0 * h;
+    scalartype v4 = f(x4);
+    scalartype g = (-v1 + 8.0 * v2 - 8.0 * v3 + v4) / (12.0 * h);
+    return (scalartype)g / exp(x);
   }
 };
 
 
 template<class Functor>
 struct WrapDiffSR {
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
   diffSR<Functor> dF;
 
-  WrapDiffSR(Functor f_) : dF(f_) {};
-  
-  // template<class T>
-  // T operator()(vector<T> x){
-  //    return -dF(x);
-  // }
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-  // template<class T>
-  // T operator()(const vector<T> &x) {
-     return -dF(x);
+  WrapDiffSR(const Functor& f_) : dF(f_) {};
+  WrapDiffSR(const diffSR<Functor>& f_) : dF(f_) {};
+  WrapDiffSR(const WrapDiffSR<Functor>& wf_) : dF(wf_.dF) {};
+
+  auto to_ad(){
+    return WrapDiffSR<decltype(dF.to_ad())>(dF.to_ad());
+  }
+
+   
+  scalartype operator()(const vectortype &x) {
+    return -dF(x(0));
   }
 };
 
-template<class Type, class Functor>
+template<class Functor>
 struct WrapEquiS {
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
   Functor f;
-  Type logLambda;
+  scalartype logLambda;
 
-  WrapEquiS(Functor f_, const Type& l) : f(f_), logLambda(l) {};
+  WrapEquiS(const Functor& f_, const scalartype& l) : f(f_), logLambda(l) {};
 
-  // template<class T>
-  // T operator()(vector<T> x){
-  //   T v = (T)logLambda + f(x) - x(0);
-  //   return v * v;
-  // }
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-  // template<class T>
-  // T operator()(const vector<T> &x) {
-    T v = exp((T)logLambda + f(x)) - exp(x(0));
-    return v * v;
+  auto to_ad(){
+    return WrapEquiS<decltype(f.to_ad())>(f.to_ad(), TMBad::ad_aug(logLambda));
+  }
+ 
+  
+  scalartype operator()(const vectortype &x) {
+    scalartype xv = x(0);
+    scalartype loga = logLambda + f(xv);
+    scalartype logb = xv;
+    // v = (a-b)^2
+    //scalartype v = exp(2.0 * loga) + exp(2.0 * logb) - 2.0 * exp(loga + logb);
+    scalartype v = (loga - logb) * (loga - logb);
+    return v;
   }  
 };
 
-template<class Type, class Functor>
-struct RecruitmentNumeric : RecruitmentWorker<Type> {
 
+
+
+//template<class Type, class Functor>
+// RecruitmentNumeric is not allowed to be autoregressive or timevarying
+template<class Functor>
+struct RecruitmentNumeric : RecruitmentWorker<typename Functor::scalartype> {
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
   Functor f;
-  Type x0;
   
-  RecruitmentNumeric(Functor f_) : f(f_), x0(10.0) {};
-  RecruitmentNumeric(Functor f_, Type x0_) : f(f_), x0(x0_) {};
+  RecruitmentNumeric(const Functor& f_) : RecruitmentWorker<scalartype>(0,0), f(f_) {};  
    
-  Type operator()(Type logssb, Type lastR, Type year){
-    vector<Type> ls(1); ls(0) = logssb;
-    return f(ls);
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
+    return f(logssb);
   }
   
-  virtual Type logSe(Type logLambda){
-    WrapEquiS<Type, Functor> fx(f, logLambda);
-    vector<Type> x0v(1); x0v(0) = x0;
-    // vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));
-    vector<Type> v = newton::Newton(fx,x0v);  
-    return (Type)v(0);
+  virtual scalartype logSe(scalartype logLambda){
+    // WARNING: Only working if re-running with optimized parameter values!
+    // WARNING: Do not use in nll!
+    
+    WrapEquiS<Functor> fx(f,logLambda);//(f.to_ad(), TMBad::ad_aug(logLambda));
+    vectortype x0v(1); x0v(0) = 20.0;
+    newton::newton_config cfg;
+    cfg.decompose = false;
+    cfg.simplify = false;
+    cfg.trace = false;
+    cfg.on_failure_return_nan = false;
+    auto fx_ad = fx.to_ad();
+    vectortype v = newton::Newton(fx_ad,x0v,cfg);
+    return TMBad::CondExpLt((scalartype)v(0),(scalartype)SAM_NegInf,(scalartype)SAM_NegInf,(scalartype)v(0));
   }
-  virtual Type dSR(Type logssb){
-    vector<Type> ls(1); ls(0) = logssb;
+
+  virtual scalartype dSR(scalartype logssb){
     diffSR<Functor> dF(f);
-    Type r = dF(ls);
-    return r;
+    return dF(logssb);
   }
-  virtual Type logSAtMaxR(){
-    WrapSR<Functor> fx(f);
-    vector<Type> x0v(1); x0v(0) = x0;
-    // vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));    
-    vector<Type> v = newton::Newton(fx,x0v);  
+  
+  virtual scalartype logSAtMaxR(){
+    WrapSR<Functor> fx(f);//.to_ad());
+    vectortype x0v(1); x0v(0) = 20.0;
+    auto fx_ad = fx.to_ad();
+    vectortype v = newton::Newton(fx_ad,x0v);  
     return v(0);
   }
-  virtual Type logMaxR(){   
-    vector<Type> v(1); v(0) = logSAtMaxR();    
+  virtual scalartype logMaxR(){   
+    scalartype v = logSAtMaxR();    
     return f(v);
   }
-  virtual Type maxGradient(){
-    WrapDiffSR<Functor> fx(f);
-    vector<Type> x0v(1); x0v(0) = x0;
-    // vector<Type> x0v(getStartingValues1D<Type>(fx, 0.0, 20.0));
-    vector<Type> v = newton::Newton(fx,x0v);      
+  virtual scalartype maxGradient(){
+    WrapDiffSR<Functor> fx(f);//.to_ad());
+    vectortype x0v(1); x0v(0) = 0.0;
+    auto fx_ad = fx.to_ad();
+    vectortype v = newton::Newton(fx_ad,x0v);      
     return dSR(v(0));
   }  
 };
@@ -295,270 +346,328 @@ struct RecruitmentNumeric : RecruitmentWorker<Type> {
 
 
 
-template <template<class> class Functor, class Type>
+template <class Functor>
 struct WrapDepensatoryA {
-  Functor<Type> f;
-  Type logd;
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
+  Functor f;
+  scalartype logd;
 
-  WrapDepensatoryA(Functor<Type> f_, const Type& logd_) : f(f_), logd(logd_) {};
+  WrapDepensatoryA(const Functor& f_, const scalartype& logd_) : f(f_), logd(logd_) {};
 
+  auto to_ad(){
+    return WrapDepensatoryA<decltype(f.to_ad())>(f.to_ad(), TMBad::ad_aug(logd));
+  }
+
+  
   // template<class T>
-  // T operator()(const vector<T> &x) {
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-    Functor<T>f2(f);
-    T logssb = exp((T)logd) * x(0);
-    T v = f2(logssb, (T)R_NaReal, (T)R_NaReal);
+  // T operator()(const T& x){
+  scalartype operator()(const scalartype& x){
+    scalartype logssb = exp(logd) * x;
+    scalartype v = f(logssb, R_NaReal, R_NaReal);
     return v;
-  }  
+  }
+
+
+
+  
 };
 
-template <template<class> class Functor, class Type>
-RecruitmentNumeric<Type, WrapDepensatoryA<Functor, Type> >* Rec_DepensatoryA(Functor<Type> SR, Type logd){
-  WrapDepensatoryA<Functor, Type> DepSR(SR, logd);
-  return new RecruitmentNumeric<Type, WrapDepensatoryA<Functor, Type> >(DepSR, logd + 2.0);
+template <class Functor>
+RecruitmentNumeric<WrapDepensatoryA<Functor> >* Rec_DepensatoryA(Functor SR, typename Functor::scalartype logd){
+  WrapDepensatoryA<Functor> DepSR(SR, logd);
+  return new RecruitmentNumeric<WrapDepensatoryA<Functor> >(DepSR);
 }
 
 
 
 
-template <template<class> class Functor, class Type>
+template <class Functor>
 struct WrapDepensatoryB {
-  Functor<Type> f;
-  Type logd;
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
+  Functor f;
+  scalartype logd;
 
-  WrapDepensatoryB(Functor<Type> f_, const Type& logd_) : f(f_), logd(logd_) {};
+  WrapDepensatoryB(const Functor& f_, const scalartype& logd_) : f(f_), logd(logd_) {};
 
-  // template<class T>
-  // T operator()(const vector<T> &x) {
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-    Functor<T>f2(f);
-    T logssb = x(0);
-    T v = f2(logssb, (T)R_NaReal, (T)R_NaReal) + logssb - logspace_add2(logssb, (T)logd);
+  auto to_ad(){
+    return WrapDepensatoryB<decltype(f.to_ad())>(f.to_ad(), TMBad::ad_aug(logd));
+  }
+
+  
+  scalartype operator()(const scalartype& x){
+    scalartype logssb = x;
+    scalartype v = f(logssb, (scalartype)R_NaReal, (scalartype)R_NaReal) + logssb - logspace_add_SAM(logssb, (scalartype)logd);
     return v;
-  }  
+  }
+
 };
 
-template <template<class> class Functor, class Type>
-RecruitmentNumeric<Type, WrapDepensatoryB<Functor, Type> >* Rec_DepensatoryB(Functor<Type> SR, Type logd){
-  WrapDepensatoryB<Functor, Type> DepSR(SR, logd);
-  return new RecruitmentNumeric<Type, WrapDepensatoryB<Functor, Type> >(DepSR, logd + 2.0);
+template <class Functor>
+RecruitmentNumeric<WrapDepensatoryB<Functor> >* Rec_DepensatoryB(Functor SR, typename Functor::scalartype logd){
+  WrapDepensatoryB<Functor> DepSR(SR, logd);
+  return new RecruitmentNumeric<WrapDepensatoryB<Functor> >(DepSR);
 }
 
 
 
 
-template <template<class> class Functor, class Type>
+template <class Functor>
 struct WrapDepensatoryC {
-  Functor<Type> f;
-  Type logd;
-  Type logl;
+  SAMREC_TYPEDEFS(typename Functor::scalartype);
+  Functor f;
+  scalartype logd;
+  scalartype logl;
 
-  WrapDepensatoryC(Functor<Type> f_, const Type& logd_, const Type& logl_) : f(f_), logd(logd_), logl(logl_) {};
+  WrapDepensatoryC(const Functor& f_, const scalartype& logd_, const scalartype& logl_) : f(f_), logd(logd_), logl(logl_) {};
 
-  // template<class T>
-  // T operator()(const vector<T> &x) {
-  template <template<class> class V, class T>
-  T operator()(const V<T> &x){
-    Functor<T>f2(f);
-    T logssb = x(0);
-    T v = f2(logssb, (T)R_NaReal, (T)R_NaReal) - logspace_add2((T)0.0, -exp((T)logl) * (exp(logssb) - exp((T)logd)));
+  auto to_ad(){
+    return WrapDepensatoryC<decltype(f.to_ad())>(f.to_ad(), TMBad::ad_aug(logd), TMBad::ad_aug(logl));
+  }
+  
+  scalartype operator()(const scalartype& x){
+    scalartype logssb = x;
+    scalartype v = f(logssb, (scalartype)R_NaReal, (scalartype)R_NaReal) - logspace_add_SAM((scalartype)0.0, -exp(logl) * (exp(logssb) - exp(logd)));
     return v;
-  }  
+  }
+
 };
 
-template <template<class> class Functor, class Type>
-RecruitmentNumeric<Type, WrapDepensatoryC<Functor, Type> >* Rec_DepensatoryC(Functor<Type> SR, Type logd, Type logl){
-  WrapDepensatoryC<Functor, Type> DepSR(SR, logd, logl);
-  return new RecruitmentNumeric<Type, WrapDepensatoryC<Functor, Type> >(DepSR, logd + 2.0);
+template <class Functor>
+RecruitmentNumeric<WrapDepensatoryC<Functor> >* Rec_DepensatoryC(Functor SR, typename Functor::scalartype logd, typename Functor::scalartype logl){
+  WrapDepensatoryC<Functor> DepSR(SR, logd, logl);
+  return new RecruitmentNumeric<WrapDepensatoryC<Functor> >(DepSR);
 }
-
 
 
 // Recruitment function -2
 // No recruitment
-template<class Type>
-struct Rec_ICESforecast : RecruitmentWorker<Type> {
-  Type logMean;
-  Type logSd;
-  Type operator()(Type logssb, Type lastLogR, Type year){
+template<class scalartype_>
+struct Rec_ICESforecast : RecruitmentWorker<scalartype_> {
+  SAMREC_TYPEDEFS(scalartype_);
+  scalartype logMean;
+  scalartype logSd;
+
+  Rec_ICESforecast(scalartype lm, scalartype lsd) : RecruitmentWorker<scalartype>(0,0), logMean(lm), logSd(lsd) {}
+  
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
     return logMean;
   }
-  Type logSe(Type logLambda){
+  scalartype logSe(scalartype logLambda){
     return logLambda + logMean;
   }
-  Type dSR(Type logssb){
+  scalartype dSR(scalartype logssb){
     return 0.0;
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_NaReal;
   }
-   Type logMaxR(){
+  scalartype logMaxR(){
     return logMean;
   }
-  Type maxGradient(){
+  scalartype maxGradient(){
     return 0.0;
   }
+
+  Rec_ICESforecast<TMBad::ad_aug> to_ad(){
+    return Rec_ICESforecast<TMBad::ad_aug>(TMBad::ad_aug(logMean),TMBad::ad_aug(logSd));
+  }
+
 };
 
 
 // Recruitment function -1
 // No recruitment
-template<class Type>
-struct Rec_None : RecruitmentWorker<Type> {
-  Type operator()(Type logssb, Type lastLogR, Type year){
+template<class scalartype_>
+struct Rec_None : RecruitmentWorker<scalartype_> {
+  SAMREC_TYPEDEFS(scalartype_);
+
+  Rec_None() : RecruitmentWorker<scalartype>(0,0) {};
+  
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
     return R_NegInf;
   }
-  Type logSe(Type logLambda){
+  scalartype logSe(scalartype logLambda){
     return R_NegInf;
   }
-  Type dSR(Type logssb){
+  scalartype dSR(scalartype logssb){
     return R_NaReal;
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_NaReal;
   }
-   Type logMaxR(){
+   scalartype logMaxR(){
     return R_NegInf;
   }
-  Type maxGradient(){
+  scalartype maxGradient(){
     return R_NaReal;
   }
+  Rec_None<TMBad::ad_aug> to_ad(){
+    return Rec_None<TMBad::ad_aug>();
+  }
+
 };
 
 // Recruitment function 0
 // Random walk
-template<class Type>
-struct Rec_LogRW : RecruitmentWorker<Type> {
-  Type operator()(Type logssb, Type lastLogR, Type year){
+template<class scalartype_>
+struct Rec_LogRW : RecruitmentWorker<scalartype_> {
+  SAMREC_TYPEDEFS(scalartype_);
+
+  Rec_LogRW() : RecruitmentWorker<scalartype>(1,0) {};
+  
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
     return lastLogR;
   }
-  Type logSe(Type logLambda){
+  scalartype logSe(scalartype logLambda){
     return R_NaReal;
   }
-  Type dSR(Type logssb){
+  scalartype dSR(scalartype logssb){
     return R_NaReal;
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_NaReal;
   }
-   Type logMaxR(){
+   scalartype logMaxR(){
     return R_NaReal;
   }
-  Type maxGradient(){
+  scalartype maxGradient(){
     return R_NaReal;
   }
+  Rec_LogRW<TMBad::ad_aug> to_ad(){
+    return Rec_LogRW<TMBad::ad_aug>();
+  }
+
 };
 
 // Recruitment function 1
 // Ricker
-template<class Type>
-struct Rec_Ricker : RecruitmentWorker<Type> {
+template<class scalartype_>
+struct Rec_Ricker : RecruitmentWorker<scalartype_> {
 
-  Type loga;
-  Type logb;
-
-  Rec_Ricker(Type la, Type lb) : loga(la), logb(lb) {};
-  template<class T>
-  Rec_Ricker(const Rec_Ricker<T>& other) : loga(other.loga), logb(other.logb) {}
+  SAMREC_TYPEDEFS(scalartype_);
   
-  Type operator()(Type logssb, Type lastR, Type year){
+  scalartype loga;
+  scalartype logb;
+
+  Rec_Ricker(scalartype la, scalartype lb) : RecruitmentWorker<scalartype>(0,0), loga(la), logb(lb) {};
+  template<class T>
+  Rec_Ricker(const Rec_Ricker<T>& other) : RecruitmentWorker<scalartype>(0,0), loga(other.loga), logb(other.logb) {}
+  
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
     return loga + logssb - exp(logb + logssb);
   }
   
-  Type logSe(Type logLambda){
-    Type v = TMBad::CondExpLe(loga+logLambda, Type(0.0), Type(0.0), (loga + logLambda) * exp(-logb));
-    return log(v);
+  scalartype logSe(scalartype logLambda){    
+    scalartype v = TMBad::CondExpLe(loga+logLambda, scalartype(0.0), exp(loga+logLambda), (loga + logLambda) * exp(-logb));
+    return log(v + SAM_Zero);
   }
-  Type dSR(Type logssb){
-    Type a = exp(loga);
-    Type ee = -exp(logb + logssb);
+  scalartype dSR(scalartype logssb){
+    scalartype a = exp(loga);
+    scalartype ee = -exp(logb + logssb);
     return -a * exp(ee) * (-ee - 1.0);
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return -logb;
   }
-  Type logMaxR(){
+  scalartype logMaxR(){
     return loga - 1.0 - logb;
   }
-  Type maxGradient(){
+  scalartype maxGradient(){
     return exp(loga);
   }
+
+  Rec_Ricker<TMBad::ad_aug> to_ad(){
+    return Rec_Ricker<TMBad::ad_aug>(TMBad::ad_aug(loga),TMBad::ad_aug(logb));
+  }
+
+  
 };
 
 
 // Recruitment function 2
 // Beverton Holt
-template<class Type>
-struct Rec_BevertonHolt : RecruitmentWorker<Type> {
+template<class scalartype_>
+struct Rec_BevertonHolt : RecruitmentWorker<scalartype_> {
+  SAMREC_TYPEDEFS(scalartype_);
 
-  Type loga;
-  Type logb;
+  scalartype loga;
+  scalartype logb;
 
-  Rec_BevertonHolt(Type la, Type lb) : loga(la), logb(lb) {};
+  Rec_BevertonHolt(scalartype la, scalartype lb) : RecruitmentWorker<scalartype>(0,0), loga(la), logb(lb) {};
   template<class T>
-  Rec_BevertonHolt(const Rec_BevertonHolt<T>& other) : loga(other.loga), logb(other.logb) {}
+  Rec_BevertonHolt(const Rec_BevertonHolt<T>& other) : RecruitmentWorker<scalartype>(0,0), loga(other.loga), logb(other.logb) {}
 
-  Type operator()(Type logssb, Type lastR, Type year){
-    return loga + logssb - logspace_add2(Type(0.0),logb + logssb);
+  scalartype operator()(scalartype logssb, scalartype lastR, scalartype year){
+    return loga + logssb - logspace_add_SAM(scalartype(0.0),logb + logssb);
   }
   
-  Type logSe(Type logLambda){
-    Type v = TMBad::CondExpLe(loga+logLambda, Type(0.0), Type(0.0), (exp(loga + logLambda) - 1.0) * exp(-logb));
-    return log(v);
+  scalartype logSe(scalartype logLambda){
+    scalartype v = TMBad::CondExpLe(loga+logLambda, scalartype(0.0), scalartype(0.0), (exp(loga + logLambda) - 1.0) * exp(-logb));
+    return log(v + 1.0e-16);
   }
-  Type dSR(Type logssb){
-    Type a = exp(loga);
-    Type ee = exp(logb + logssb) + 1.0;
+  scalartype dSR(scalartype logssb){
+    scalartype a = exp(loga);
+    scalartype ee = exp(logb + logssb) + 1.0;
     return a / (ee * ee);
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_PosInf;
   }
-  Type logMaxR(){
+  scalartype logMaxR(){
     return loga - logb;
   }
-  Type maxGradient(){
+  scalartype maxGradient(){
     return exp(loga);
   }
+
+  Rec_BevertonHolt<TMBad::ad_aug> to_ad(){
+    return Rec_BevertonHolt<TMBad::ad_aug>(TMBad::ad_aug(loga),TMBad::ad_aug(logb));
+  }
+
 };
 
 // Recruitment function 3
 // Constant mean
-template<class Type>
-struct Rec_ConstantMean : RecruitmentWorker<Type> {
+template<class scalartype_>
+struct Rec_ConstantMean : RecruitmentWorker<scalartype_> {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  vector<Type> logRvalue;
+  vectortype logRvalue;
+  vectortype constRecBreaks;
 
-  vector<Type> constRecBreaks;
+  Rec_ConstantMean(const vectortype& logRv, const vectortype& crb) : RecruitmentWorker<scalartype>(0,1), logRvalue(logRv), constRecBreaks(crb) {};
 
-  Rec_ConstantMean(vector<Type> logRv, vector<Type> crb) :
-    logRvalue(logRv), constRecBreaks(crb) {};
+  template<class T>
+  Rec_ConstantMean(const vector<T>& logRv, const vector<T>& crb) : RecruitmentWorker<scalartype>(0,1), logRvalue(logRv), constRecBreaks(crb) {};
   
-  Type operator()(Type logssb, Type lastR, Type year){
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
     int usepar=0;
     for(int ii=0; ii<constRecBreaks.size(); ++ii){
-      if(year>(Type)constRecBreaks(ii)){usepar++;}
+      if(year>(scalartype)constRecBreaks(ii)){usepar++;}
     }
     return logRvalue(usepar);
   }
   
-  Type logSe(Type logLambda){
+  scalartype logSe(scalartype logLambda){
     return  logLambda + logRvalue(logRvalue.size()-1);
   }
-  Type dSR(Type logssb){
+  scalartype dSR(scalartype logssb){
     return 0.0;
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_NaReal;
   }
-  Type logMaxR(){
+  scalartype logMaxR(){
     return R_NaReal;
   }
-  Type maxGradient(){
-    return R_NaReal;
+  scalartype maxGradient(){
+    return 0.0;
   }
+
+  Rec_ConstantMean<TMBad::ad_aug> to_ad(){
+    return Rec_ConstantMean<TMBad::ad_aug>(logRvalue, constRecBreaks);
+  }
+
 };
 
 
@@ -574,126 +683,152 @@ struct Rec_ConstantMean : RecruitmentWorker<Type> {
 // mdsr = exp(par.rec_pars(0));
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_LogisticHockeyStick_t {
-  Type loga;			// alpha
-  Type logm;			// mu
-  Type logt;			// theta
+ SAMREC_TYPEDEFS(scalartype_);
+  scalartype loga;			// alpha
+  scalartype logm;			// mu
+  scalartype logt;			// theta
 
-  RF_LogisticHockeyStick_t(Type la, Type lm, Type lt) :
+  RF_LogisticHockeyStick_t(scalartype la, scalartype lm, scalartype lt) :
     loga(la), logm(lm), logt(lt) {}
 
   template<class T>
   RF_LogisticHockeyStick_t(const RF_LogisticHockeyStick_t<T>& other) :
     loga(other.loga), logm(other.logm), logt(other.logt) {}
+
+  RF_LogisticHockeyStick_t<TMBad::ad_aug> to_ad(){
+    return RF_LogisticHockeyStick_t<TMBad::ad_aug>(TMBad::ad_aug(loga),TMBad::ad_aug(logm),TMBad::ad_aug(logt));
+  }
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T thisSSB = exp(logssb);
-    T v= loga + logm + logt + log(1.0 + exp(-exp(-logt))) + log(exp(logssb - logm - logt) - log(1.0 + exp((thisSSB-exp(logm))/exp(logm + logt))) + log(1.0 + exp(-exp(-logt))));
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    scalartype thisSSB = exp(logssb);
+    scalartype v= loga + logm + logt + log(1.0 + exp(-exp(-logt))) + log(exp(logssb - logm - logt) - log(1.0 + exp((thisSSB-exp(logm))/exp(logm + logt))) + log(1.0 + exp(-exp(-logt))));
     return v;
-  } 
+  }
+  
 };
   
-template<class Type>
-struct Rec_LogisticHockeyStick : RecruitmentNumeric<Type, RF_LogisticHockeyStick_t<Type> >  {
+template<class scalartype_>
+struct Rec_LogisticHockeyStick : RecruitmentNumeric<RF_LogisticHockeyStick_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Type loga;
-  Type logm;
-  Type logt;
+  scalartype loga;
+  scalartype logm;
+  scalartype logt;
   
-  Rec_LogisticHockeyStick(Type la, Type lm, Type lt) :
-    RecruitmentNumeric<Type, RF_LogisticHockeyStick_t<Type> >(RF_LogisticHockeyStick_t<Type>(la, lm, lt), la), loga(la), logm(lm), logt(lt) {};
+  Rec_LogisticHockeyStick(scalartype la, scalartype lm, scalartype lt) :
+    RecruitmentNumeric<RF_LogisticHockeyStick_t<scalartype> >(RF_LogisticHockeyStick_t<scalartype>(la, lm, lt)), loga(la), logm(lm), logt(lt) {};
 
   template<class T>
   Rec_LogisticHockeyStick(const Rec_LogisticHockeyStick<T>& other) :
-    RecruitmentNumeric<Type, RF_LogisticHockeyStick_t<Type> >(other.f, other.x0), loga(other.loga), logm(other.logm), logt(other.logt) {}
+    RecruitmentNumeric<RF_LogisticHockeyStick_t<scalartype> >(other.f), loga(other.loga), logm(other.logm), logt(other.logt) {}
 
   
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_PosInf;
   }
-   Type logMaxR(){
+   scalartype logMaxR(){
      return loga + logm + logt + log(1.0 + exp(-exp(-logt))) + log(exp(-logt) - log(1.0 + exp(-exp(-logt))));
   }
-  Type maxGradient(){
+  scalartype maxGradient(){
     return exp(loga);
   }
+
+  Rec_LogisticHockeyStick<TMBad::ad_aug> to_ad(){
+    return Rec_LogisticHockeyStick<TMBad::ad_aug>(TMBad::ad_aug(loga),TMBad::ad_aug(logm),TMBad::ad_aug(logt));
+  }
+
+  
 };
 
 
 // Recruitment function 61
 // Hockey Stick
 
-template<class Type>
-struct Rec_HockeyStick : RecruitmentWorker<Type> {
+template<class scalartype_>
+struct Rec_HockeyStick : RecruitmentWorker<scalartype_> {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Type loglevel;
-  Type logblim;
+  scalartype loglevel;
+  scalartype logblim;
 
-  Rec_HockeyStick(Type ll, Type lbl) :
-    loglevel(ll), logblim(lbl) {};
+  Rec_HockeyStick(scalartype ll, scalartype lbl) :
+    RecruitmentWorker<scalartype>(0,0), loglevel(ll), logblim(lbl) {};
 
   template<class T>
   Rec_HockeyStick(const Rec_HockeyStick<T>& other) :
-    loglevel(other.loglevel), logblim(other.logblim) {}
+    RecruitmentWorker<scalartype>(0,0), loglevel(other.loglevel), logblim(other.logblim) {}
 
   
-  Type operator()(Type logssb, Type lastR, Type year){
-    Type thisSSB = exp(logssb);
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
+    scalartype thisSSB = exp(logssb);
     return loglevel - logblim +
-      log(thisSSB - (0.5 * ((thisSSB - exp(logblim))+Type(0.0)+TMBad::fabs((thisSSB - exp(logblim))-Type(0.0)))));
+      log(thisSSB - (0.5 * ((thisSSB - exp(logblim))+scalartype(0.0)+TMBad::fabs((thisSSB - exp(logblim))-scalartype(0.0)))));
   }
   
-  Type logSe(Type logLambda){
+  scalartype logSe(scalartype logLambda){
     return exp(logLambda + loglevel);
   }
-  Type dSR(Type logssb){
-    return TMBad::CondExpLt(logssb, logblim, exp(loglevel-logblim), Type(0.0));
+  scalartype dSR(scalartype logssb){
+    return TMBad::CondExpLt(logssb, logblim, exp(loglevel-logblim), scalartype(0.0));
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_NaReal;
   }
-  Type logMaxR(){
+  scalartype logMaxR(){
     return loglevel;
   }
-  Type maxGradient(){
+  scalartype maxGradient(){
     return exp(loglevel-logblim);
   }
+
+  Rec_HockeyStick<TMBad::ad_aug> to_ad(){
+    return Rec_HockeyStick<TMBad::ad_aug>(TMBad::ad_aug(loglevel),TMBad::ad_aug(logblim));
+  }
+  
 };
 
 
 // Recruitment function 62
 // AR(1) on log-recruitment
 
-template<class Type>
-struct Rec_LogAR1 : RecruitmentWorker<Type> {
+template<class scalartype_>
+struct Rec_LogAR1 : RecruitmentWorker<scalartype_> {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Type loglevel;
-  Type logitPhi;
+  scalartype loglevel;
+  scalartype logitPhi;
 
-  Rec_LogAR1(Type ll, Type lp) : loglevel(ll), logitPhi(lp) {};
+  Rec_LogAR1(scalartype ll, scalartype lp) : RecruitmentWorker<scalartype>(1,0), loglevel(ll), logitPhi(lp) {};
   
-  Type operator()(Type logssb, Type lastR, Type year){
-    return loglevel + (2.0 / (1.0 + exp(-logitPhi)) - 1.0) * (lastR - loglevel);
+  scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
+    return loglevel + (2.0 / (1.0 + exp(-logitPhi)) - 1.0) * (lastLogR - loglevel);
   }
   
-  Type logSe(Type logLambda){
+  scalartype logSe(scalartype logLambda){
     return exp(logLambda + loglevel);
   }
-  Type dSR(Type logssb){
+  scalartype dSR(scalartype logssb){
     return 0.0;
   }
-  Type logSAtMaxR(){
+  scalartype logSAtMaxR(){
     return R_NegInf;
   }
-  Type logMaxR(){
+  scalartype logMaxR(){
     return loglevel;
   }
-  Type maxGradient(){
-    return R_PosInf;
+  scalartype maxGradient(){
+    return 0.0;
   }
+  Rec_LogAR1<TMBad::ad_aug> to_ad(){
+    return Rec_LogAR1<TMBad::ad_aug>(TMBad::ad_aug(loglevel),TMBad::ad_aug(logitPhi));
+  }
+
 };
 
 
@@ -715,42 +850,61 @@ struct Rec_LogAR1 : RecruitmentWorker<Type> {
 //    mdsr = 2.0 * exp(par.rec_pars(1));
 
 
-template<class Type>
-struct RF_BentHyperbola_t {
-  Type logBlim;
-  Type logHalfSlope;
-  Type logSmooth;
+#define THIS_RF_TO_AD(NAME)			\
+  RF_##NAME##_t<TMBad::ad_aug> to_ad(){		\
+    return RF_##NAME##_t<TMBad::ad_aug>(*this);	\
+  }
 
-  RF_BentHyperbola_t(Type loga_, Type logb_, Type logg_) :
+#define THIS_REC_TO_AD(NAME)			\
+  Rec_##NAME<TMBad::ad_aug> to_ad(){		\
+    return Rec_##NAME<TMBad::ad_aug>(*this);	\
+  }
+
+
+template<class scalartype_>
+struct RF_BentHyperbola_t {
+  SAMREC_TYPEDEFS(scalartype_);
+ scalartype logBlim;
+  scalartype logHalfSlope;
+  scalartype logSmooth;
+
+  RF_BentHyperbola_t(scalartype loga_, scalartype logb_, scalartype logg_) :
     logBlim(loga_), logHalfSlope(logb_), logSmooth(logg_) {}
 
   template<class T>
   RF_BentHyperbola_t(const RF_BentHyperbola_t<T>& other) :
     logBlim(other.logBlim), logHalfSlope(other.logHalfSlope), logSmooth(other.logSmooth) {}
 
+  THIS_RF_TO_AD(BentHyperbola);
   
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T thisSSB = exp(logssb);
-    T v = logHalfSlope + log(thisSSB + sqrt(exp(2.0 * logBlim) + (exp(2.0 * logSmooth) / 4.0)) -
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+    // T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    scalartype thisSSB = exp(logssb);
+    scalartype v = logHalfSlope + log(thisSSB + sqrt(exp(2.0 * logBlim) + (exp(2.0 * logSmooth) / 4.0)) -
 			     sqrt(pow(thisSSB-exp(logBlim),2) + (exp(2.0 * logSmooth) / 4.0)));
     return v;
   }
  
 };
   
-template<class Type>
-struct Rec_BentHyperbola : RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >  {
-  // Implement with known values when time permits!
-  Rec_BentHyperbola(Type logBlim, Type logHalfSlope, Type logSmooth) :
-    RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >(RF_BentHyperbola_t<Type>(logBlim, logHalfSlope, logSmooth), logBlim) {};
+template<class scalartype_>
+struct Rec_BentHyperbola : RecruitmentNumeric<RF_BentHyperbola_t<scalartype_> >  {
+  SAMREC_TYPEDEFS(scalartype_);
+ // Implement with known values when time permits!
+  Rec_BentHyperbola(scalartype logBlim, scalartype logHalfSlope, scalartype logSmooth) :
+    RecruitmentNumeric<RF_BentHyperbola_t<scalartype> >(RF_BentHyperbola_t<scalartype>(logBlim, logHalfSlope, logSmooth)) {};
 
   template<class T>
   Rec_BentHyperbola(const Rec_BentHyperbola<T>& other) :
-    RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_BentHyperbola_t<scalartype> >(other.f) {}
 
+  THIS_REC_TO_AD(BentHyperbola);
+  
 };
 
 
@@ -768,36 +922,47 @@ struct Rec_BentHyperbola : RecruitmentNumeric<Type, RF_BentHyperbola_t<Type> >  
 //    mdsr = R_PosInf;
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_PowerCMP_t {
-  Type loga;
-  Type logb;
+  SAMREC_TYPEDEFS(scalartype_);
+ scalartype loga;
+  scalartype logb;
 
-  RF_PowerCMP_t(Type loga_, Type logb_) :
+  RF_PowerCMP_t(scalartype loga_, scalartype logb_) :
     loga(loga_), logb(logb_) {}
   
   template<class T>
   RF_PowerCMP_t(const RF_PowerCMP_t<T>& other) :
     loga(other.loga), logb(other.logb) {}
 
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T v = loga + invlogit(logb) * logssb;
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    return loga + invlogit(logb) * logssb;
+    // return v;
   }
+
+   THIS_RF_TO_AD(PowerCMP);
+
  
 };
   
-template<class Type>
-struct Rec_PowerCMP : RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >  {
-  // Implement with known values when time permits!
-  Rec_PowerCMP(Type loga, Type logb) :
-    RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >(RF_PowerCMP_t<Type>(loga, logb), loga) {};
+template<class scalartype_>
+struct Rec_PowerCMP : RecruitmentNumeric<RF_PowerCMP_t<scalartype_> >  {
+  SAMREC_TYPEDEFS(scalartype_);
+ // Implement with known values when time permits!
+  Rec_PowerCMP(scalartype loga, scalartype logb) :
+    RecruitmentNumeric<RF_PowerCMP_t<scalartype> >(RF_PowerCMP_t<scalartype>(loga, logb)) {};
 
   template<class T>
   Rec_PowerCMP(const Rec_PowerCMP<T>& other) :
-    RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_PowerCMP_t<scalartype> >(other.f) {}
+
+  THIS_REC_TO_AD(PowerCMP);
+  
 };
 
 
@@ -813,36 +978,46 @@ struct Rec_PowerCMP : RecruitmentNumeric<Type, RF_PowerCMP_t<Type> >  {
 //   mdsr = R_PosInf;
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_PowerNCMP_t {
-  Type loga;
-  Type logb;
+ SAMREC_TYPEDEFS(scalartype_);
+  scalartype loga;
+  scalartype logb;
 
-  RF_PowerNCMP_t(Type loga_, Type logb_) :
+  RF_PowerNCMP_t(scalartype loga_, scalartype logb_) :
     loga(loga_), logb(logb_) {}
   
   template<class T>
   RF_PowerNCMP_t(const RF_PowerNCMP_t<T>& other) :
     loga(other.loga), logb(other.logb) {}
 
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T v = loga + (exp(logb)+1.0001) * logssb;
-    return v;
+  THIS_RF_TO_AD(PowerNCMP);
+  
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    return loga + (exp(logb)+1.0001) * logssb;
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_PowerNCMP : RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >  {
+template<class scalartype_>
+struct Rec_PowerNCMP : RecruitmentNumeric<RF_PowerNCMP_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
   // Implement with known values when time permits!
-  Rec_PowerNCMP(Type loga, Type logb) :
-    RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >(RF_PowerNCMP_t<Type>(loga, logb), loga) {};
+  Rec_PowerNCMP(scalartype loga, scalartype logb) :
+    RecruitmentNumeric<RF_PowerNCMP_t<scalartype> >(RF_PowerNCMP_t<scalartype>(loga, logb)) {};
 
   template<class T>
   Rec_PowerNCMP(const Rec_PowerNCMP<T>& other) :
-    RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_PowerNCMP_t<scalartype> >(other.f) {}
+
+  THIS_REC_TO_AD(PowerNCMP);
+
 };
 
 
@@ -862,39 +1037,47 @@ struct Rec_PowerNCMP : RecruitmentNumeric<Type, RF_PowerNCMP_t<Type> >  {
   //   mdsr = -(-1.0 + (exp(par.rec_pars(2)) - 1.0)*pow(xx/exp(par.rec_pars(1)),exp(par.rec_pars(2))))*exp(par.rec_pars(0))/pow(pow(xx/exp(par.rec_pars(1)),exp(par.rec_pars(2))) + 1.0,2.0);
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_Shepherd_t {
-  Type loga;
-  Type logb;
-  Type logg;
+ SAMREC_TYPEDEFS(scalartype_);
+  scalartype loga;
+  scalartype logb;
+  scalartype logg;
 
-  RF_Shepherd_t(Type loga_, Type logb_, Type logg_) :
+  RF_Shepherd_t(scalartype loga_, scalartype logb_, scalartype logg_) :
     loga(loga_), logb(logb_), logg(logg_) {}
 
   template<class T>
   RF_Shepherd_t(const RF_Shepherd_t<T>& other) :
     loga(other.loga), logb(other.logb), logg(other.logg) {}
 
+    THIS_RF_TO_AD(Shepherd);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T v = loga + logssb - logspace_add2(T(0.0), exp(logg) * (logssb - logb));
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    return loga + logssb - logspace_add_SAM(scalartype(0.0), exp(logg) * (logssb - logb));
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_Shepherd : RecruitmentNumeric<Type, RF_Shepherd_t<Type> >  {
+template<class scalartype_>
+struct Rec_Shepherd : RecruitmentNumeric<RF_Shepherd_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_Shepherd(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_Shepherd_t<Type> >(RF_Shepherd_t<Type>(loga, logb, logg), loga) {};
+  Rec_Shepherd(scalartype loga, scalartype logb, scalartype logg) :
+    RecruitmentNumeric<RF_Shepherd_t<scalartype> >(RF_Shepherd_t<scalartype>(loga, logb, logg)) {};
 
   template<class T>
   Rec_Shepherd(const Rec_Shepherd<T>& other) :
-    RecruitmentNumeric<Type, RF_Shepherd_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_Shepherd_t<scalartype> >(other.f) {}
 
+  THIS_REC_TO_AD(Shepherd);
+  
 };
 
 
@@ -915,39 +1098,48 @@ struct Rec_Shepherd : RecruitmentNumeric<Type, RF_Shepherd_t<Type> >  {
 
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_HasselDeriso_t {
-  Type loga;
-  Type logb;
-  Type logg;
+  SAMREC_TYPEDEFS(scalartype_);
+ scalartype loga;
+  scalartype logb;
+  scalartype logg;
 
-  RF_HasselDeriso_t(Type loga_, Type logb_, Type logg_) :
+  RF_HasselDeriso_t(scalartype loga_, scalartype logb_, scalartype logg_) :
     loga(loga_), logb(logb_), logg(logg_) {}
 
   template<class T>
   RF_HasselDeriso_t(const RF_HasselDeriso_t<T>& other) :
     loga(other.loga), logb(other.logb), logg(other.logg) {}
 
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T thisSSB = exp(logssb);
-    T v = loga+logssb-exp(logg) * log(1.0+exp(logb + logg)*thisSSB);
-    return v;
+  THIS_RF_TO_AD(HasselDeriso);
+  
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    scalartype thisSSB = exp(logssb);
+    return loga+logssb-exp(logg) * log(1.0+exp(logb + logg)*thisSSB);
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_HasselDeriso : RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >  {
+template<class scalartype_>
+struct Rec_HasselDeriso : RecruitmentNumeric<RF_HasselDeriso_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_HasselDeriso(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >(RF_HasselDeriso_t<Type>(loga, logb, logg), loga) {};
+  Rec_HasselDeriso(scalartype loga, scalartype logb, scalartype logg) :
+    RecruitmentNumeric<RF_HasselDeriso_t<scalartype> >(RF_HasselDeriso_t<scalartype>(loga, logb, logg)) {};
 
   template<class T>
   Rec_HasselDeriso(const Rec_HasselDeriso<T>& other) :
-    RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_HasselDeriso_t<scalartype> >(other.f) {}
 
+  THIS_REC_TO_AD(HasselDeriso);
+  
 };
 
 
@@ -962,40 +1154,48 @@ struct Rec_HasselDeriso : RecruitmentNumeric<Type, RF_HasselDeriso_t<Type> >  {
 
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_SailaLorda_t {
-  Type loga;
-  Type logb;
-  Type logg;
+  SAMREC_TYPEDEFS(scalartype_);
+ scalartype loga;
+  scalartype logb;
+  scalartype logg;
 
-  RF_SailaLorda_t(Type loga_, Type logb_, Type logg_) :
+  RF_SailaLorda_t(scalartype loga_, scalartype logb_, scalartype logg_) :
     loga(loga_), logb(logb_), logg(logg_) {}
 
   template<class T>
   RF_SailaLorda_t(const RF_SailaLorda_t<T>& other) :
     loga(other.loga), logb(other.logb), logg(other.logg) {}
 
+    THIS_RF_TO_AD(SailaLorda);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T thisSSB = exp(logssb);
-    T v = loga+exp(logg) * logssb - exp(logb)*thisSSB;
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    scalartype thisSSB = exp(logssb);
+    return loga+exp(logg) * logssb - exp(logb)*thisSSB;
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_SailaLorda : RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >  {
+template<class scalartype_>
+struct Rec_SailaLorda : RecruitmentNumeric<RF_SailaLorda_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_SailaLorda(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >(RF_SailaLorda_t<Type>(loga, logb, logg), loga) {};
+  Rec_SailaLorda(scalartype loga, scalartype logb, scalartype logg) :
+    RecruitmentNumeric<RF_SailaLorda_t<scalartype> >(RF_SailaLorda_t<scalartype>(loga, logb, logg)) {};
 
   template<class T>
   Rec_SailaLorda(const Rec_SailaLorda<T>& other) :
-    RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_SailaLorda_t<scalartype> >(other.f) {}
 
+  THIS_REC_TO_AD(SailaLorda);
+  
 };
 
 
@@ -1012,39 +1212,48 @@ struct Rec_SailaLorda : RecruitmentNumeric<Type, RF_SailaLorda_t<Type> >  {
  
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_SigmoidalBevHolt_t {
-  Type loga;
-  Type logb;
-  Type logg;
+ SAMREC_TYPEDEFS(scalartype_);
+  scalartype loga;
+  scalartype logb;
+  scalartype logg;
 
-  RF_SigmoidalBevHolt_t(Type loga_, Type logb_, Type logg_) :
+  RF_SigmoidalBevHolt_t(scalartype loga_, scalartype logb_, scalartype logg_) :
     loga(loga_), logb(logb_), logg(logg_) {}
 
   template<class T>
   RF_SigmoidalBevHolt_t(const RF_SigmoidalBevHolt_t<T>& other) :
     loga(other.loga), logb(other.logb), logg(other.logg) {}
 
+  THIS_RF_TO_AD(SigmoidalBevHolt);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T v = loga+exp(logg) * logssb-log(1.0+exp(logb)*exp(exp(logg) * logssb));
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    return loga+exp(logg) * logssb-log(1.0+exp(logb)*exp(exp(logg) * logssb));
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_SigmoidalBevHolt : RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >  {
+template<class scalartype_>
+struct Rec_SigmoidalBevHolt : RecruitmentNumeric<RF_SigmoidalBevHolt_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_SigmoidalBevHolt(Type loga, Type logb, Type logg) :
-    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(RF_SigmoidalBevHolt_t<Type>(loga, logb, logg), (Type)20.0) {}; //loga - logb + (Type)log(2.0)
+  Rec_SigmoidalBevHolt(scalartype loga, scalartype logb, scalartype logg) :
+    RecruitmentNumeric<RF_SigmoidalBevHolt_t<scalartype> >(RF_SigmoidalBevHolt_t<scalartype>(loga, logb, logg)) {};
 
   template<class T>
   Rec_SigmoidalBevHolt(const Rec_SigmoidalBevHolt<T>& other) :
-    RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_SigmoidalBevHolt_t<scalartype> >(other.f) {}
 
+  THIS_REC_TO_AD(SigmoidalBevHolt);
+
+  
 };
 
 
@@ -1058,73 +1267,94 @@ struct Rec_SigmoidalBevHolt : RecruitmentNumeric<Type, RF_SigmoidalBevHolt_t<Typ
   // 					 par.rec_pars);
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_SplineCMP_t {
-  vector<Type> pars;
-  vector<Type> knots;
+  SAMREC_TYPEDEFS(scalartype_);
+ vectortype pars;
+  vectortype knots;
 
-  RF_SplineCMP_t(vector<Type> pars_, vector<Type> knots_) :
+  RF_SplineCMP_t(vectortype pars_, vectortype knots_) :
     pars(pars_), knots(knots_) {}
 
   template<class T>
   RF_SplineCMP_t(const RF_SplineCMP_t<T>& other) :
     pars(other.pars), knots(other.knots) {}
+
+  THIS_RF_TO_AD(SplineCMP);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    vector<T> k2(knots);
-    vector<T> p2(pars);
-    T v = logssb + ibcdspline(logssb,k2,p2);
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  //  template<class T>
+  // T operator()(const T& logssb){
+  //  vector<T> k2(knots);
+  //   vector<T> p2(pars);
+  scalartype operator()(const scalartype& logssb){
+    return logssb + ibcdspline(logssb,knots,pars);
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_SplineCMP : RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >  {
+template<class scalartype_>
+struct Rec_SplineCMP : RecruitmentNumeric<RF_SplineCMP_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_SplineCMP(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >(RF_SplineCMP_t<Type>(pars,knots), pars(pars.size()-1)) {}
+  Rec_SplineCMP(vectortype pars, vectortype knots) :
+    RecruitmentNumeric<RF_SplineCMP_t<scalartype> >(RF_SplineCMP_t<scalartype>(pars,knots)) {}
 
   template<class T>
   Rec_SplineCMP(const Rec_SplineCMP<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineCMP_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_SplineCMP_t<scalartype> >(other.f) {}
+
+  THIS_REC_TO_AD(SplineCMP);
+
+  
 };
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_SplineConvexCompensatory_t {
-  vector<Type> pars;
-  vector<Type> knots;		// These knots are for SSB, input knots are for logssb to be consistent with other splines.
+ SAMREC_TYPEDEFS(scalartype_);
+  vectortype pars;
+  vectortype knots;		// These knots are for SSB, input knots are for logssb to be consistent with other splines.
 
-  RF_SplineConvexCompensatory_t(vector<Type> pars_, vector<Type> knots_) :
+  RF_SplineConvexCompensatory_t(vectortype pars_, vectortype knots_) :
     pars(pars_), knots(exp(knots_)) {}
 
   template<class T>
   RF_SplineConvexCompensatory_t(const RF_SplineConvexCompensatory_t<T>& other) :
     pars(other.pars), knots(other.knots) {}
+
+  THIS_RF_TO_AD(SplineConvexCompensatory);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    vector<T> k2(knots);
-    vector<T> p2(pars);
-    T v = logssb + iibcispline(exp(logssb),k2,p2);
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  //   vector<T> k2(knots);
+  //   vector<T> p2(pars);
+  scalartype operator()(const scalartype& logssb){
+    return logssb + iibcispline(exp(logssb),knots,pars);
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_SplineConvexCompensatory : RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >  {
+template<class scalartype_>
+struct Rec_SplineConvexCompensatory : RecruitmentNumeric<RF_SplineConvexCompensatory_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_SplineConvexCompensatory(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >(RF_SplineConvexCompensatory_t<Type>(pars,knots), pars(pars.size()-1)) {}
+  Rec_SplineConvexCompensatory(vectortype pars, vectortype knots) :
+    RecruitmentNumeric<RF_SplineConvexCompensatory_t<scalartype> >(RF_SplineConvexCompensatory_t<scalartype>(pars,knots)) {}
 
   template<class T>
   Rec_SplineConvexCompensatory(const Rec_SplineConvexCompensatory<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineConvexCompensatory_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_SplineConvexCompensatory_t<scalartype> >(other.f) {}
+
+  THIS_REC_TO_AD(SplineConvexCompensatory);
+  
 };
 
 
@@ -1138,39 +1368,49 @@ struct Rec_SplineConvexCompensatory : RecruitmentNumeric<Type, RF_SplineConvexCo
   // 					par.rec_pars);
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_SplineSmooth_t {
-  vector<Type> pars;
-  vector<Type> knots;
+  SAMREC_TYPEDEFS(scalartype_);
+ vectortype pars;
+  vectortype knots;
 
-  RF_SplineSmooth_t(vector<Type> pars_, vector<Type> knots_) :
+  RF_SplineSmooth_t(vectortype pars_, vectortype knots_) :
     pars(pars_), knots(knots_) {}
 
   template<class T>
   RF_SplineSmooth_t(const RF_SplineSmooth_t<T>& other) :
     pars(other.pars), knots(other.knots) {}
+
+  THIS_RF_TO_AD(SplineSmooth);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    vector<T> k2(knots);
-    vector<T> p2(pars.segment(0, pars.size()-1));
-    T mu(pars(pars.size()-1));
-    T v = logssb + ibcspline(logssb,k2,p2) + mu;
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  //   vector<T> k2(knots);
+  //   vector<T> p2(pars.segment(0, pars.size()-1));
+  scalartype operator()(const scalartype& logssb){
+    scalartype mu(pars(pars.size()-1));
+    return logssb + ibcspline(logssb,knots,(vectortype)pars.segment(0, pars.size()-1)) + mu;
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_SplineSmooth : RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >  {
+template<class scalartype_>
+struct Rec_SplineSmooth : RecruitmentNumeric<RF_SplineSmooth_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_SplineSmooth(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >(RF_SplineSmooth_t<Type>(pars,knots), pars(pars.size()-1)) {}
+  Rec_SplineSmooth(vectortype pars, vectortype knots) :
+    RecruitmentNumeric<RF_SplineSmooth_t<scalartype> >(RF_SplineSmooth_t<scalartype>(pars,knots)) {}
 
   template<class T>
   Rec_SplineSmooth(const Rec_SplineSmooth<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_SplineSmooth_t<scalartype> >(other.f) {}
+
+  THIS_REC_TO_AD(SplineSmooth);
+  
 };
 
 
@@ -1183,39 +1423,48 @@ struct Rec_SplineSmooth : RecruitmentNumeric<Type, RF_SplineSmooth_t<Type> >  {
 
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_SplineGeneral_t {
-  vector<Type> pars;
-  vector<Type> knots;
+  SAMREC_TYPEDEFS(scalartype_);
+ vectortype pars;
+  vectortype knots;
 
-  RF_SplineGeneral_t(vector<Type> pars_, vector<Type> knots_) :
+  RF_SplineGeneral_t(vectortype pars_, vectortype knots_) :
     pars(pars_), knots(knots_) {}
 
   template<class T>
   RF_SplineGeneral_t(const RF_SplineGeneral_t<T>& other) :
     pars(other.pars), knots(other.knots) {}
+
+THIS_RF_TO_AD(SplineGeneral);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    vector<T> k2(knots);
-    vector<T> p2(pars.segment(0, pars.size()-1));
-    T mu(pars(pars.size()-1));
-    T v = logssb + bcspline(logssb,k2,p2) + mu;
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    // vector k2(knots);
+    //   vector<T> p2(pars.segment(0, pars.size()-1));
+    scalartype mu(pars(pars.size()-1));
+    return logssb + bcspline(logssb,knots,(vectortype)pars.segment(0, pars.size()-1)) + mu;
+    // return v;
   }
  
 };
   
-template<class Type>
-struct Rec_SplineGeneral : RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >  {
+template<class scalartype_>
+struct Rec_SplineGeneral : RecruitmentNumeric<RF_SplineGeneral_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_SplineGeneral(vector<Type> pars, vector<Type> knots) :
-    RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >(RF_SplineGeneral_t<Type>(pars,knots), pars(pars.size()-1)) {}
+  Rec_SplineGeneral(vectortype pars, vectortype knots) :
+    RecruitmentNumeric<RF_SplineGeneral_t<scalartype> >(RF_SplineGeneral_t<scalartype>(pars,knots)) {}
 
   template<class T>
   Rec_SplineGeneral(const Rec_SplineGeneral<T>& other) :
-    RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_SplineGeneral_t<scalartype> >(other.f) {}
+
+  THIS_REC_TO_AD(SplineGeneral);
 };
 
 
@@ -1225,75 +1474,90 @@ struct Rec_SplineGeneral : RecruitmentNumeric<Type, RF_SplineGeneral_t<Type> >  
 // Numerical Ricker for testing
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_NumRicker_t {
-  Type loga;
-  Type logb;
+   SAMREC_TYPEDEFS(scalartype_);
+  scalartype loga;
+  scalartype logb;
 
-  RF_NumRicker_t(Type loga_, Type logb_) :
+  RF_NumRicker_t(scalartype loga_, scalartype logb_) :
     loga(loga_), logb(logb_) {}
 
   template<class T>
   RF_NumRicker_t(const RF_NumRicker_t<T>& other) :
     loga(other.loga), logb(other.logb) {}
 
+  THIS_RF_TO_AD(NumRicker);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T v = loga + logssb - exp(logb + logssb);
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+  //   T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+  scalartype operator()(const scalartype& logssb){
+    return loga + logssb - exp(logb + logssb);
   }
  
 };
   
-template<class Type>
-struct Rec_NumRicker : RecruitmentNumeric<Type, RF_NumRicker_t<Type> >  {
+template<class scalartype_>
+struct Rec_NumRicker : RecruitmentNumeric<RF_NumRicker_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_NumRicker(Type loga, Type logb) :
-    RecruitmentNumeric<Type, RF_NumRicker_t<Type> >(RF_NumRicker_t<Type>(loga, logb), loga) {};
+  Rec_NumRicker(scalartype loga, scalartype logb) :
+    RecruitmentNumeric<RF_NumRicker_t<scalartype> >(RF_NumRicker_t<scalartype>(loga, logb)) {};
 
   template<class T>
   Rec_NumRicker(const Rec_NumRicker<T>& other) :
-    RecruitmentNumeric<Type, RF_NumRicker_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_NumRicker_t<scalartype> >(other.f) {}
 
+  THIS_REC_TO_AD(NumRicker);
+  
 };
 
 // Numerical Beverton Holt
 
 
-template<class Type>
+template<class scalartype_>
 struct RF_NumBevHolt_t {
-  Type loga;
-  Type logb;
+ SAMREC_TYPEDEFS(scalartype_);
+  scalartype loga;
+  scalartype logb;
 
-  RF_NumBevHolt_t(Type loga_, Type logb_) :
+  RF_NumBevHolt_t(scalartype loga_, scalartype logb_) :
     loga(loga_), logb(logb_) {}
 
   template<class T>
   RF_NumBevHolt_t(const RF_NumBevHolt_t<T>& other) :
     loga(other.loga), logb(other.logb) {}
 
+  THIS_RF_TO_AD(NumBevHolt);
   
-  template <template<class> class V, class T>
-  T operator()(const V<T> &logssb0){
-    T logssb = logssb0(0);
-    T v = loga + logssb - exp(logb + logssb);
-    return v;
+  // template <template<class> class V, class T>
+  // T operator()(const V<T> &logssb0){
+    // T logssb = logssb0(0);
+  // template<class T>
+  // T operator()(const T& logssb){
+
+  scalartype operator()(const scalartype& logssb){
+    return loga + logssb - logspace_add_SAM(scalartype(0.0), logb + logssb);
   }
  
 };
   
-template<class Type>
-struct Rec_NumBevHolt : RecruitmentNumeric<Type, RF_NumBevHolt_t<Type> >  {
+template<class scalartype_>
+struct Rec_NumBevHolt : RecruitmentNumeric<RF_NumBevHolt_t<scalartype_> >  {
+ SAMREC_TYPEDEFS(scalartype_);
 
-  Rec_NumBevHolt(Type loga, Type logb) :
-    RecruitmentNumeric<Type, RF_NumBevHolt_t<Type> >(RF_NumBevHolt_t<Type>(loga, logb), loga) {};
+  Rec_NumBevHolt(scalartype loga, scalartype logb) :
+    RecruitmentNumeric<RF_NumBevHolt_t<scalartype> >(RF_NumBevHolt_t<scalartype>(loga, logb)) {};
 
   template<class T>
   Rec_NumBevHolt(const Rec_NumBevHolt<T>& other) :
-    RecruitmentNumeric<Type, RF_NumBevHolt_t<Type> >(other.f, other.x0) {}
+    RecruitmentNumeric<RF_NumBevHolt_t<scalartype> >(other.f) {}
 
+  THIS_REC_TO_AD(NumBevHolt);
+  
 };
 
 
@@ -1306,89 +1570,89 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
   Recruitment<Type> r;
 
   if(rm == RecruitmentModel::NoRecruit){
-    r = Recruitment<Type>(new Rec_None<Type>());
+    r = Recruitment<Type>("zero",new Rec_None<Type>());
     
 ////////////////////////////////////////// The Beginning //////////////////////////////////////////
     
   }else if(rm == RecruitmentModel::LogRandomWalk){
     if(par.rec_pars.size() != 0)
       Rf_error("The random walk recruitment should not have any parameters.");
-    r = Recruitment<Type>(new Rec_LogRW<Type>());
+    r = Recruitment<Type>("log-random walk",new Rec_LogRW<Type>());
   }else if(rm == RecruitmentModel::Ricker){
     if(par.rec_pars.size() != 2)
       Rf_error("The Ricker recruitment must have two parameters.");
-    r = Recruitment<Type>(new Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)));
+    r = Recruitment<Type>("Ricker",new Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)));
   }else if(rm == RecruitmentModel::BevertonHolt){
     if(par.rec_pars.size() != 2)
       Rf_error("The Beverton Holt recruitment must have two parameters.");
-    r = Recruitment<Type>(new Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
+    r = Recruitment<Type>("Beverton-Holt",new Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
   }else if(rm == RecruitmentModel::ConstantMean){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The constant mean recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>(new Rec_ConstantMean<Type>(par.rec_pars, conf.constRecBreaks));
+    r = Recruitment<Type>("constant mean", new Rec_ConstantMean<Type>(par.rec_pars, conf.constRecBreaks));
   }else if(rm == RecruitmentModel::LogisticHockeyStick){
     if(par.rec_pars.size() != 3)
       Rf_error("The logistic hockey stick recruitment should have three parameters.");
-    r = Recruitment<Type>(new Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+    r = Recruitment<Type>("logistic hockey stick",new Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
   }else if(rm == RecruitmentModel::HockeyStick){
    if(par.rec_pars.size() != 2)
       Rf_error("The hockey stick recruitment should have two parameters.");
-     r = Recruitment<Type>(new Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)));
+   r = Recruitment<Type>("hockey stick",new Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)));
   }else if(rm == RecruitmentModel::LogAR1){
    if(par.rec_pars.size() != 2)
       Rf_error("The log-AR(1) recruitment should have two parameters.");
-    r = Recruitment<Type>(new Rec_LogAR1<Type>(par.rec_pars(0), par.rec_pars(1)));
+   r = Recruitment<Type>("log-AR(1)",new Rec_LogAR1<Type>(par.rec_pars(0), par.rec_pars(1)));
   }else if(rm == RecruitmentModel::BentHyperbola){
    if(par.rec_pars.size() != 3)
       Rf_error("The bent hyperbola recruitment should have three parameters.");
-    r = Recruitment<Type>(new Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+   r = Recruitment<Type>("bent hyperbola",new Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
   }else if(rm == RecruitmentModel::Power_CMP){
    if(par.rec_pars.size() != 2)
       Rf_error("The power law recruitment should have two parameters.");
-    r = Recruitment<Type>(new Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
+   r = Recruitment<Type>("CMP power law",new Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
   }else if(rm == RecruitmentModel::Power_NCMP){
    if(par.rec_pars.size() != 2)
       Rf_error("The power law recruitment should have two parameters.");
-    r = Recruitment<Type>(new Rec_PowerNCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
+   r = Recruitment<Type>("non-CMP power law",new Rec_PowerNCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
 
 //////////////////////////////////////// 3 parameter models ///////////////////////////////////////
     
   }else if(rm == RecruitmentModel::Shepherd){
    if(par.rec_pars.size() != 3)
       Rf_error("The Shepherd recruitment should have three parameters.");
-    r = Recruitment<Type>(new Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+   r = Recruitment<Type>("Shepherd",new Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
   }else if(rm == RecruitmentModel::Hassel_Deriso){
    if(par.rec_pars.size() != 3)
       Rf_error("The Hassel/Deriso recruitment should have three parameters.");
-    r = Recruitment<Type>(new Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+   r = Recruitment<Type>("Hassel/Deriso",new Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
   }else if(rm == RecruitmentModel::SailaLorda){
    if(par.rec_pars.size() != 3)
       Rf_error("The Saila-Lorda recruitment should have three parameters.");
-    r = Recruitment<Type>(new Rec_SailaLorda<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+   r = Recruitment<Type>("Saila-Lorda",new Rec_SailaLorda<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
   }else if(rm == RecruitmentModel::SigmoidalBevertonHolt){
    if(par.rec_pars.size() != 3)
      Rf_error("The sigmoidal Beverton-Holt recruitment should have three parameters.");
-    r = Recruitment<Type>(new Rec_SigmoidalBevHolt<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+   r = Recruitment<Type>("sigmoidal Beverton-Holt",new Rec_SigmoidalBevHolt<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
 
 //////////////////////////////////////// Spline recruitment ///////////////////////////////////////
     
   }else if(rm == RecruitmentModel::Spline_CMP){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>(new Rec_SplineCMP<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+    r = Recruitment<Type>("CMP spline",new Rec_SplineCMP<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
   }else if(rm == RecruitmentModel::Spline_Smooth){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>(new Rec_SplineSmooth<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+    r = Recruitment<Type>("smooth spline",new Rec_SplineSmooth<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
   }else if(rm == RecruitmentModel::Spline_General){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>(new Rec_SplineGeneral<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+    r = Recruitment<Type>("unrestricted spline",new Rec_SplineGeneral<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
 
   }else if(rm == RecruitmentModel::Spline_ConvexCompensatory){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>(new Rec_SplineConvexCompensatory<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+    r = Recruitment<Type>("convex-compensatory spline",new Rec_SplineConvexCompensatory<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
 
 
 //////////////////////// S/(d+S) type Depensatory recruitment models //////////////////////////////
@@ -1396,44 +1660,44 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
   }else if(rm == RecruitmentModel::Depensatory_B_Ricker){
    if(par.rec_pars.size() != 3)
      Rf_error("The depensatory B Ricker recruitment should have three parameters.");
-    r = Recruitment<Type>(Rec_DepensatoryB(Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+   r = Recruitment<Type>("type B depensatory Ricker",Rec_DepensatoryB(Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
   }else if(rm == RecruitmentModel::Depensatory_B_BevertonHolt){
     if(par.rec_pars.size() != 3)
      Rf_error("The depensatory B Beverton-Holt recruitment should have three parameters.");
-    r = Recruitment<Type>(Rec_DepensatoryB(Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+    r = Recruitment<Type>("type B depensatory Beverton-Holt",Rec_DepensatoryB(Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
   }else if(rm == RecruitmentModel::Depensatory_B_LogisticHockeyStick){
      if(par.rec_pars.size() != 4)
      Rf_error("The depensatory B logistic hockey stick recruitment should have four parameters.");
-  r = Recruitment<Type>(Rec_DepensatoryB(Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+     r = Recruitment<Type>("type B depensatory logistic hockey stick",Rec_DepensatoryB(Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
   }else if(rm == RecruitmentModel::Depensatory_B_HockeyStick){
     if(par.rec_pars.size() != 3)
-     Rf_error("The depensatory B hockey stick recruitment should have three parameters.");
-r = Recruitment<Type>(Rec_DepensatoryB(Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+      Rf_error("The depensatory B hockey stick recruitment should have three parameters.");
+    r = Recruitment<Type>("type B depensatory hockey stick",Rec_DepensatoryB(Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
   }else if(rm == RecruitmentModel::Depensatory_B_BentHyperbola){
     if(par.rec_pars.size() != 4)
      Rf_error("The depensatory B bent hyperbola recruitment should have four parameters.");
-    r = Recruitment<Type>(Rec_DepensatoryB(Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+    r = Recruitment<Type>("type B depensatory bent hyperbola",Rec_DepensatoryB(Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
   }else if(rm == RecruitmentModel::Depensatory_B_Power){
     if(par.rec_pars.size() != 3)
      Rf_error("The depensatory B power law recruitment should have three parameters.");
-   r = Recruitment<Type>(Rec_DepensatoryB(Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+    r = Recruitment<Type>("type B depensatory CMP power law",Rec_DepensatoryB(Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
   }else if(rm == RecruitmentModel::Depensatory_B_Shepherd){
     if(par.rec_pars.size() != 4)
       Rf_error("The depensatory B Shepherd recruitment should have four parameters.");
-    r = Recruitment<Type>(Rec_DepensatoryB(Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+    r = Recruitment<Type>("type B depensatory Shepherd",Rec_DepensatoryB(Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
   }else if(rm == RecruitmentModel::Depensatory_B_Hassel_Deriso){
        if(par.rec_pars.size() != 4)
      Rf_error("The depensatory B Hassel/Deriso recruitment should have four parameters.");
-r = Recruitment<Type>(Rec_DepensatoryB(Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+       r = Recruitment<Type>("type B depensatory Hassel/Deriso",Rec_DepensatoryB(Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
   }else if(rm == RecruitmentModel::Depensatory_B_Spline_CMP){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 2 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory B spline recruitment should have two parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>(Rec_DepensatoryB(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type B depensatory CMP spline",Rec_DepensatoryB(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
 
  }else if(rm == RecruitmentModel::Depensatory_B_Spline_ConvexCompensatory){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 2 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory B spline recruitment should have two parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>(Rec_DepensatoryB(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type B depensatory convex compensatory spline",Rec_DepensatoryB(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
 
     
 //////////////////////// 1/(1+exp(-e * (S-d))) type Depensatory recruitment models //////////////////////////////
@@ -1441,34 +1705,34 @@ r = Recruitment<Type>(Rec_DepensatoryB(Rec_HasselDeriso<Type>(par.rec_pars(0), p
   }else if(rm == RecruitmentModel::Depensatory_C_Ricker){
     if(par.rec_pars.size() != 4)
       Rf_error("The depensatory C Ricker recruitment should have four parameters.");
-    r = Recruitment<Type>(Rec_DepensatoryC(Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
+    r = Recruitment<Type>("type C depensatory Ricker",Rec_DepensatoryC(Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
     
   }else if(rm == RecruitmentModel::Depensatory_C_BevertonHolt){
     if(par.rec_pars.size() != 4)
       Rf_error("The depensatory C Beverton-Holt recruitment should have four parameters.");
-    r = Recruitment<Type>(Rec_DepensatoryC(Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
+    r = Recruitment<Type>("type C depensatory Beverton-Holt",Rec_DepensatoryC(Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
 
    }else if(rm == RecruitmentModel::Depensatory_C_Spline_CMP){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 3 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>(Rec_DepensatoryC(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type C depensatory CMP spline",Rec_DepensatoryC(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
 
   }else if(rm == RecruitmentModel::Depensatory_C_Spline_ConvexCompensatory){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 3 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>(Rec_DepensatoryC(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type C depensatory convex compensatory spline",Rec_DepensatoryC(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
 
     
 ///////////////////////////////////////////// For testing /////////////////////////////////////////////
   }else if(rm == RecruitmentModel::Num_Ricker){
     if(par.rec_pars.size() != 2)
       Rf_error("The Numeric Ricker recruitment must have two parameters.");
-    r = Recruitment<Type>(new Rec_NumRicker<Type>(par.rec_pars(0), par.rec_pars(1)));
+    r = Recruitment<Type>("numeric Ricker",new Rec_NumRicker<Type>(par.rec_pars(0), par.rec_pars(1)));
 
   }else if(rm == RecruitmentModel::Num_BevertonHolt){
     if(par.rec_pars.size() != 2)
       Rf_error("The Numeric Beverton Holt recruitment must have two parameters.");
-    r = Recruitment<Type>(new Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
+    r = Recruitment<Type>("numeric Beverton-Holt",new Rec_NumBevHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
 
 ///////////////////////////////////////////// The End /////////////////////////////////////////////
     

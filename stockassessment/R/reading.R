@@ -435,7 +435,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     }
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
-  cutY<-function(x)x[rownames(x)%in%newyear,]
+  cutY<-function(x)x[rownames(x)%in%newyear,,drop=FALSE]
   cutYA<- function(x)x[dimnames(x)[[1]]%in%newyear,,,drop=FALSE]
   attr(dat,'prop.mature')<-cutY(prop.mature)
   attr(dat,'stock.mean.weight')<-cutY(stock.mean.weight)
@@ -533,11 +533,21 @@ refit <- function(fit, newConf, startingValues, ...){
                                    ncol=fit2$data$noYears)
     if(is.null(fit2$data$sumKey))
         fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
+    if(!is.null(fit2$conf$keyCatchWeightMean) && !is.matrix(fit2$conf$keyCatchWeightMean)){
+        fit2$conf$keyCatchWeightMean <- matrix(fit2$conf$keyCatchWeightMean,
+                                               sum(fit2$data$fleetTypes==0),
+                                               diff(range(fit2$data$minAgePerFleet,fit2$data$maxAgePerFleet))+1, byrow=TRUE)
+    }
+     if(!is.null(fit2$conf$keyCatchWeightObsVar) && !is.matrix(fit2$conf$keyCatchWeightObsVar)){
+        fit2$conf$keyCatchWeightObsVar <- matrix(fit2$conf$keyCatchWeightObsVar,
+                                               sum(fit2$data$fleetTypes==0),
+                                               diff(range(fit2$data$minAgePerFleet,fit2$data$maxAgePerFleet))+1, byrow=TRUE)
+    }
     if(!missing(newConf))
         fit2$conf[names(newConf)] <- newConf
     ## Add missing parts from defcon
     dc <- defcon(fit2$data)
-    nm <- intersect(names(dc),setdiff(names(dc),names(fit2$conf)))
+    nm <- setdiff(names(dc),names(fit2$conf))
     fit2$conf[nm] <- dc[nm]
     ## Update parameters
     dp <- defpar(fit2$data,fit2$conf)

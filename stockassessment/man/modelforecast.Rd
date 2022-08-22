@@ -37,6 +37,7 @@ modelforecast(fit, ...)
   hcrConf = numeric(0),
   hcrCurrentSSB = 0,
   progress = TRUE,
+  estimate = median,
   ...
 )
 }
@@ -100,6 +101,8 @@ modelforecast(fit, ...)
 \item{hcrCurrentSSB}{Should not be used. See \link{hcr}.}
 
 \item{progress}{Show progress bar for simulations?}
+
+\item{estimate}{the summary function used (typically mean or median) for simulations}
 }
 \value{
 an object of type samforecast

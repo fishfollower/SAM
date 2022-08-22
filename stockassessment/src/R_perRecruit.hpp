@@ -1,3 +1,13 @@
+// #define WITH_LIBTMB
+// #include <TMB.hpp>
+
+// #include "../inst/include/SAM.hpp"
+
+
+// #include <R.h>
+// #include <Rmath.h>
+// #include <Rinternals.h>
+// #include <R_ext/Rdynload.h>
 
 struct F_dFunctionalSR2 {
   int srmc;
@@ -22,7 +32,55 @@ struct F_dFunctionalSR2 {
   }
 };
 
+int rec_hasEquilibrium(Recruitment<double>& rec){
+    double lse = rec.logSe(0.0);
+    return R_finite(lse);
+};
 
+int rec_isCompensatory(Recruitment<double>& rec){
+  double h = 0.1;
+  double x = -5.0;
+  bool isComp = !rec.isAutoregressive() && !rec.isTimevarying();
+  while(isComp && x < 20){
+    if(rec.dSR(x) >= exp(rec(x,R_NaReal,R_NaReal)-x))
+      isComp = false;
+    x += h;
+  }
+  return isComp;
+};
+
+int rec_hasOvercompensation(Recruitment<double>& rec){
+  double h = 0.01;
+  double x = -5.0;
+  bool isOComp = !rec.isAutoregressive() && !rec.isTimevarying();
+  while(!isOComp && x < 20){
+    if(rec.dSR(x) < 0)
+      isOComp = true;
+    x += h;
+  }
+  return isOComp;
+};
+
+int rec_hasMaxAtFiniteS(Recruitment<double>& rec){
+  return R_finite(rec.logSAtMaxR());
+};
+
+int rec_hasFiniteMax(Recruitment<double>& rec){
+  return R_finite(rec.logMaxR());
+};
+
+int rec_hasFiniteMaxGradient(Recruitment<double>& rec){
+  double g = rec.maxGradient();
+  return R_finite(g) && g < 1.0e8;
+};
+
+int rec_isAutoregressive(Recruitment<double>& rec){
+  return rec.isAutoregressive();
+}
+
+int rec_isTimevarying(Recruitment<double>& rec){
+  return rec.isTimevarying();
+}
 
 extern "C" {
   
@@ -165,14 +223,35 @@ extern "C" {
     vector<double> r = G(x);
  
     // vector<double> r = x;
-    const char *resNms[] = {"logRecruits", "Gradient", ""}; // Must end with ""
+    const char *resNms[] = {"logRecruits", "Gradient","dRdS", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
     SET_VECTOR_ELT(res, 0, asSEXP(v));
     SET_VECTOR_ELT(res, 1, asSEXP(r));
+    SET_VECTOR_ELT(res, 2, asSEXP(rec.dSR(b)));
     UNPROTECT(1);    
     return res;
       
+  }
+  
+  SEXP recruitmentProperties(SEXP tmbdat, SEXP pl){
+    confSet c0(tmbdat);
+    paraSet<double> p0(pl);
+    Recruitment<double> rec = makeRecruitmentFunction(c0,p0);
+    const char *resNms[] = {"name","hasEquilibrium", "isCompensatory", "hasMaxAtFiniteS", "isAutoregressive","isTimevarying","hasOvercompensation","hasFiniteMax","hasFiniteMaxGradient", ""}; // Must end with ""
+    SEXP res;
+    PROTECT(res = Rf_mkNamed(VECSXP, resNms));
+    SET_VECTOR_ELT(res, 0, Rf_mkString(rec.name));
+    SET_VECTOR_ELT(res, 1, Rf_ScalarLogical(rec_hasEquilibrium(rec)));
+    SET_VECTOR_ELT(res, 2, Rf_ScalarLogical(rec_isCompensatory(rec)));
+    SET_VECTOR_ELT(res, 3, Rf_ScalarLogical(rec_hasMaxAtFiniteS(rec)));
+    SET_VECTOR_ELT(res, 4, Rf_ScalarLogical(rec_isAutoregressive(rec)));
+    SET_VECTOR_ELT(res, 5, Rf_ScalarLogical(rec_isTimevarying(rec)));
+    SET_VECTOR_ELT(res, 6, Rf_ScalarLogical(rec_hasOvercompensation(rec))); // Must be same as hasMaxAtFiniteS
+    SET_VECTOR_ELT(res, 7, Rf_ScalarLogical(rec_hasFiniteMax(rec)));
+    SET_VECTOR_ELT(res, 8, Rf_ScalarLogical(rec_hasFiniteMaxGradient(rec)));
+    UNPROTECT(1);
+    return res;
   }
 
 }

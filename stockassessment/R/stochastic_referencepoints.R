@@ -12,6 +12,7 @@
     b <- bitwShiftL(Sys.getpid(),16)
     bitwXor(a,b)
 }
+
 .refpointSMethodParser <- function(x, ...){
     if(length(x) > 1)
         stop("Only one at a time!")
@@ -140,7 +141,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 x3
             }
             fn <- function(x){
-                xx <- trans(x,keepMSY=TRUE)
+                xx <- trans(x, keepMSY=TRUE)
                 p <- predict(CurveFit,as.vector(xx))
                 sum((tail(p,-1) - rep(rp$xVal,each=2) * p[1])^2) - p[1]
             }
@@ -164,8 +165,10 @@ predict.rpscurvefit <- function(x,newF,...){
                 v
             }
             fn <- function(x) -predict(CurveFit,trans(x))
-            startVals <- function() log(Fseq[which.max(pv)])
+            startVals <- function() log(Fseq[which.max(pv)])                        
         }else if(rp$rpType == 4){ ## xdYPR
+            stop("Reference point type not implemented yet")
+            ## Need derivative!
             Crit <- exp(PRvals$logYPR)
             cutfun <- function(x) rep(TRUE,length(x))
             trans <- function(x, report=FALSE, ...){
@@ -174,25 +177,53 @@ predict.rpscurvefit <- function(x,newF,...){
                     names(v) <- paste0(rp$xVal,"dYPR")
                 v
             }
-            fn <- function(x){
+            fn <- function(x, ...){
+                p0 <- predict(CurveFit,1e-4)
                 p <- predict(CurveFit,trans(x))
-                
+                sum((p - rp$xVal * p0)^2)
             }
-            ## startVals <- function() log(Fseq[which.max(pv)])            
+            startVals <- function() sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 5){ ## xSPR
-
+            Crit <- exp(PRvals$logSPR)
+            cutfun <- function(x) rep(TRUE,length(x))
+            trans <- function(x, report=FALSE, ...){
+                v <- exp(x)
+                if(report)
+                    names(v) <- paste0(rp$xVal,"xSPR")
+                v
+            }
+            fn <- function(x, ...){
+                p0 <- predict(CurveFit,1e-4)
+                p <- predict(CurveFit,trans(x))
+                sum((p - rp$xVal * p0)^2)
+            }
+            startVals <- function() sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 6){ ## xB0
-
+            Crit <- exp(PRvals$logSe)
+            cutfun <- function(x) rep(TRUE,length(x))
+            trans <- function(x, report=FALSE, ...){
+                v <- exp(x)
+                if(report)
+                    names(v) <- paste0(rp$xVal,"dYPR")
+                v
+            }
+            fn <- function(x, ...){
+                p0 <- predict(CurveFit,1e-4)
+                p <- predict(CurveFit,trans(x))
+                sum((p - rp$xVal * p0)^2)
+            }
+            startVals <- function() sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 7){ ## MYPYLdiv
-            Arng <- conf$maxAge - conf$minAge + 1
-            v <- PRvals$logYe - log(1.0 + exp(PRvals$logYearsLost - log(Arng)))
-            return(exp(v))
+            stop("Reference point type not implemented yet")
+            ## Arng <- conf$maxAge - conf$minAge + 1
+            ## v <- PRvals$logYe - log(1.0 + exp(PRvals$logYearsLost - log(Arng)))
+            ## return(exp(v))
         }else if(rp$rpType == 8){ ## MYPYLprod
-
+            stop("Reference point type not implemented yet")
         }else if(rp$rpType == 9){ ## MDY
-
+            stop("Reference point type not implemented yet")
         }else if(rp$rpType == 10){ ## Crash
-
+            stop("Reference point type not implemented yet")
         }else if(rp$rpType == 11){ ## Ext
             return((exp(PRvals$logSe) - 1)^2)
         }else if(rp$rpType == 12){ ## Lim
@@ -211,12 +242,16 @@ predict.rpscurvefit <- function(x,newF,...){
         Fseq <- seq(Frng[1],Frng[2],len=200)
         pv <- predict(CurveFit,Fseq)
         opt <- nlminb(startVals(), fn)
-        trans(opt$par, report = TRUE)
+        res <- trans(opt$par, report = TRUE)
+        attr(res,"curve_fit") <- cbind(F=Fseq,Criteria=pv)
+        res
     }
     getDerivedValues <- function(f){
         if(!is.function(MT$derivedSummarizer)){        #Fit
             doOneA <- function(what){
                 Crit <- exp(PRvals[[what]])
+                if(all(is.na(Crit)))
+                   return(NA)
                 cutfun <- function(x) x > max(x) * 0.1
                 Frng <- range(Fvals[cutfun(Crit)])
                 inRng <- function(x,rng) x > rng[1] & x < rng[2]
@@ -234,12 +269,15 @@ predict.rpscurvefit <- function(x,newF,...){
                                                          pl = pl,
                                                          ct = catchType)))[c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost")],
                           exp),
-                          MT$derivedSummarizer))
+                          function(x){ if(all(is.na(x))) return(NA); MT$derivedSummarizer}))
         }else{
             stop("Derived type not implemented")
         }
     }
-    F <- sapply(rpArgs, getOneRP)
+    Forig <- lapply(rpArgs, getOneRP)
+    F <- simplify2array(Forig)
+    Curves <- lapply(Forig, attr, which = "curve_fit")
+    names(Curves) <- names(F)
     D <- sapply(F, getDerivedValues)    
     res <- rbind(logF=unname(F),D)
     colnames(res) <- names(F)
@@ -251,25 +289,26 @@ predict.rpscurvefit <- function(x,newF,...){
     list(Estimates = res,
          ## GraphVals = GraphVals,
          Fvals = Fvals,
-         PRvals = PRvals)
+         PRvals = PRvals,
+         Curves = Curves)
 }
 
-.refpointSGrid <- function(rp, pl, MT, fit){
-    Fvals <- seq(rp$Frange[1], rp$Frange[2],0.02)
-    getC <- function(f){
-        PRvals <- do.call("rbind", replicate(rp$nosim,.perRecruitSR(log(f),
-                                                                    fit=fit,
-                                                                    nYears=rp$nYears,
-                                                                    aveYears = rp$aveYears,
-                                                                    selYears = rp$selYears,
-                                                                    pl = pl,
-                                                                    ct = rp$catchType), simplify=FALSE))
-        exp(PRvals$logYe)
-    }
-    vv <- lapply(Fvals, getC)
+## .refpointSGrid <- function(rp, pl, MT, fit){
+##     Fvals <- seq(rp$Frange[1], rp$Frange[2],0.02)
+##     getC <- function(f){
+##         PRvals <- do.call("rbind", replicate(rp$nosim,.perRecruitSR(log(f),
+##                                                                     fit=fit,
+##                                                                     nYears=rp$nYears,
+##                                                                     aveYears = rp$aveYears,
+##                                                                     selYears = rp$selYears,
+##                                                                     pl = pl,
+##                                                                     ct = rp$catchType), simplify=FALSE))
+##         exp(PRvals$logYe)
+##     }
+##     vv <- lapply(Fvals, getC)
   
   
-}
+## }
 
 .asympSampleParVec <- function(N,fit, boundary = TRUE, returnList = FALSE){
     C <- t(chol(fit$sdrep$cov.fixed))
@@ -373,15 +412,25 @@ stochasticReferencepoints.sam <- function(fit,
        
     ## Get Ye/Re/Se/... (how should they be summarized?)
     ii <- sapply(vv, class) == "try-error"
-    resTabs <- lapply(rownames(vv[!ii][[1]]$Estimates), function(nm){
-        tab <- cbind(v0$Estimate[nm,],t(apply(do.call("rbind",lapply(vv[!ii], function(x) x$Estimates[nm,])),2,quantile, prob = c(0.025,0.975))))
-        colnames(tab) <- c("Estimate","Low","High")
-        tab
-    })
-    names(resTabs) <- rownames(vv[!ii][[1]]$Estimates)
+    if(sum(!ii) > 0){
+        resTabs <- lapply(rownames(vv[!ii][[1]]$Estimates), function(nm){
+            tab <- cbind(v0$Estimate[nm,],t(apply(do.call("rbind",lapply(vv[!ii], function(x) x$Estimates[nm,])),2,quantile, prob = c(0.025,0.975))))
+            colnames(tab) <- c("Estimate","Low","High")
+            tab
+        })
+        names(resTabs) <- rownames(vv[!ii][[1]]$Estimates)
+    }else{
+        warning("Confidence intervals could not be calculated. Try to increase nosim_ci.")
+        resTabs <- lapply(rownames(v0$Estimates), function(nm){
+            tab <- cbind(v0$Estimate[nm,], NA, NA)
+            colnames(tab) <- c("Estimate","Low","High")
+            tab
+        })
+    }
 
     Fseq <- seq(0,2,len=200)
     
+    ## Make output tables
 
       res <- list(tables = list(F = resTabs[["F"]],
                               Yield = resTabs[["Ye"]],
@@ -392,14 +441,15 @@ stochasticReferencepoints.sam <- function(fit,
                               LifeExpectancy = resTabs[["LifeExpectancy"]],
                               LifeYearsLost = resTabs[["YearsLost"]]
                               ),
-                graphs = list(F = v0$Fvals,
-                              Yield = exp(v0$logYe),
-                              YieldPerRecruit = exp(YPRseq),
-                              SpawnersPerRecruit = exp(SPRseq),
-                              Biomass = exp(Bseq),
-                              Recruitment = exp(Rseq),
-                              YearsLost = exp(LLseq),
-                              LifeExpectancy = exp(LEseq)),
+                graphs = list(F = exp(v0$PRvals$logF),
+                              Yield = exp(v0$PRvals$logYe),
+                              YieldPerRecruit = exp(v0$PRvals$logYPR),
+                              SpawnersPerRecruit = exp(v0$PRvals$logSPR),
+                              Biomass = exp(v0$PRvals$logSe),
+                              Recruitment = exp(v0$PRvals$logRe),
+                              YearsLost = exp(v0$PRvals$logYearsLost),
+                              LifeExpectancy = exp(v0$PRvals$logLifeExpectancy)),
+                regression = v0$Curves,
                 ## opt = NA,
                 ## ssdr = sdr,
                 fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
@@ -414,9 +464,7 @@ stochasticReferencepoints.sam <- function(fit,
     class(res) <- "sam_referencepoints"
 
     
-    ## Make output tables
 
-    list(RP = v0,
-         RPsim = vv)
+    res
 }
                              

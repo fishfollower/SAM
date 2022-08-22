@@ -79,11 +79,10 @@ struct MortalitySet {
   // For simulation based forecast
   void updateYear(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int y){
     int nFleet = conf.keyLogFsta.dim(0);
-    int nAge = conf.keyLogFsta.dim(0);
+    int nAge = conf.keyLogFsta.dim(1);
     int nYear = dat.natMor.dim(0);
-    if(y >= nYear || y < 0)
+    if(y > nYear || y < 0)
       Rf_error("MortalitySet.updateYear: Year not in range");
-    
     for(int a = 0; a < nAge; ++a){
       Type newTZ = dat.natMor(y,a);
       for(int f = 0; f < nFleet; ++f){

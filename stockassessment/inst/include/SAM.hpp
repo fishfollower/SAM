@@ -10,6 +10,7 @@
 #include "define.hpp"
 #include "incidence.hpp"
 #include "recruitment.hpp"
+#include "forecast.hpp"
 #include "survival.hpp"
 #include "biopar.hpp"
 #include "toF.hpp"

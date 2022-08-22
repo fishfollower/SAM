@@ -68,7 +68,7 @@ struct SSB2F_QUICK {
   Type rec_mean;
 
   Type f(Type logFScale){
-    Recruitment<Type> recruit = Recruitment<Type>(new Rec_None<Type>());
+    Recruitment<Type> recruit = Recruitment<Type>("zero",new Rec_None<Type>());
     array<Type> lN = logN;
     array<Type> lF = logF;
     lF += logFScale;

@@ -2,8 +2,6 @@
 #ifndef SAM_OBS_HPP
 #define SAM_OBS_HPP
 
-#include <algorithm>
-
 template <class Type>
 matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec){
 
@@ -182,12 +180,26 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
   return buildJac(x,w).determinant();
 }
 
+
+template <class Type>
+Type findLinkV(Type k, int n=0){
+  // small helper function to solve exp(v)-exp(k-v/2)-1=0 for v
+  Type v = log(exp(k)+Type(1));
+  for(int i=0; i<n; ++i){
+    v -= (exp(v)-exp(k-0.5*v)-1.0)/(exp(v)+.5*exp(k-0.5*v));
+  }
+  return v;
+}
+
+
 template <class Type>
 Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF,
 	    Recruitment<Type> &recruit,
 	    MortalitySet<Type>& mort,
 	    //vector<Type> &predObs, vector<Type> &varLogCatch,
-	    data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+	    data_indicator<vector<Type>,Type> &keep,
+	    int reportingLevel,
+	    objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0;
   // Calculate values to report
@@ -231,34 +243,36 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
   vector<Type> fbarL = landFbarFun(dat, conf, logF);
   vector<Type> logfbarL = log(fbarL);
 
-  NOT_SIMULATE_F(of){  
-    vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
-    matrix<Type> logLifeExpectancyAge = lifeexpectancyAge(dat, conf, logF).array().log().matrix();
-    vector<Type> logLifeExpectancyRec = log(lifeexpectancyRec(dat, conf, logF));
-    ADREPORT_F(logLifeExpectancy,of);
-    ADREPORT_F(logLifeExpectancyRec,of);
-    ADREPORT_F(logLifeExpectancyAge,of);
+  if(reportingLevel > 0){
+    NOT_SIMULATE_F(of){  
+      vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
+      matrix<Type> logLifeExpectancyAge = lifeexpectancyAge(dat, conf, logF).array().log().matrix();
+      vector<Type> logLifeExpectancyRec = log(lifeexpectancyRec(dat, conf, logF));
+      ADREPORT_F(logLifeExpectancy,of);
+      ADREPORT_F(logLifeExpectancyRec,of);
+      ADREPORT_F(logLifeExpectancyAge,of);
 
-    vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
-    vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
-    vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
-    ADREPORT_F(logYLTF, of);
-    ADREPORT_F(logYLTM, of);
-    ADREPORT_F(logYNL, of);
+      vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
+      vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
+      vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
+      ADREPORT_F(logYLTF, of);
+      ADREPORT_F(logYLTM, of);
+      ADREPORT_F(logYNL, of);
  
-    vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
-    vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
-    ADREPORT_F(logrmax, of);
-    ADREPORT_F(logGenerationLength, of);
+      vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
+      vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
+      ADREPORT_F(logrmax, of);
+      ADREPORT_F(logGenerationLength, of);
  
-    vector<Type> logYPR = yieldPerRecruit(dat,conf,par,logF, true);
-    vector<Type> logSPR = spawnersPerRecruit(dat,conf,par,logF, true);
-    vector<Type> logSe = equilibriumBiomass(dat,conf,par,logF, true);
-    vector<Type> logB0 = B0(dat,conf,par,logF, true);
-    ADREPORT_F(logYPR, of);
-    ADREPORT_F(logSPR, of);
-    ADREPORT_F(logSe, of);
-    ADREPORT_F(logB0, of);
+      vector<Type> logYPR = yieldPerRecruit(dat,conf,par,logF, true);
+      vector<Type> logSPR = spawnersPerRecruit(dat,conf,par,logF, true);
+      vector<Type> logSe = equilibriumBiomass(dat,conf,par,logF, true);
+      vector<Type> logB0 = B0(dat,conf,par,logF, true);
+      ADREPORT_F(logYPR, of);
+      ADREPORT_F(logSPR, of);
+      ADREPORT_F(logSe, of);
+      ADREPORT_F(logB0, of);
+    }
   }
 
   vector<Type> predObs = predObsFun(dat, conf, par, logN, logF,mort, logssb, logtsb, logfsb, logCatch, logLand);

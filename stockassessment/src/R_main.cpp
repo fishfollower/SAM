@@ -1,5 +1,4 @@
-#define WITH_LIBTMB
-#include <TMB.hpp>
+#include "TMB.h"
 
 #include <R.h>
 #include <Rmath.h>
@@ -24,7 +23,8 @@ extern "C" {
   SEXP splinebasis_bcR(SEXP x, SEXP knots);
   SEXP splinebasis_ibcR(SEXP x, SEXP knots);
   SEXP splinebasis_iibcR(SEXP x, SEXP knots);
-    
+  SEXP recruitmentProperties(SEXP tmbdat, SEXP pl);
+  
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
   static const
@@ -60,6 +60,7 @@ extern "C" {
     CALLDEF(splinebasis_bcR,2),
     CALLDEF(splinebasis_ibcR,2),
     CALLDEF(splinebasis_iibcR,2),
+    CALLDEF(recruitmentProperties,2),
     {NULL,NULL,0}
   };
 
@@ -89,6 +90,7 @@ extern "C" {
     CALLABLE(splinebasis_bcR);
     CALLABLE(splinebasis_ibcR);
     CALLABLE(splinebasis_iibcR);
+    CALLABLE(recruitmentProperties);
  
     R_useDynamicSymbols(info, (Rboolean)FALSE);
   }
