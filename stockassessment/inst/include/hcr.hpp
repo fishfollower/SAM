@@ -24,7 +24,7 @@ Type hcr(Type ssb, vector<Type> hcrConf){
 			       Blow,
 			       Flow,
 			       hcr_min(Ftarget, hcr_max(Flim, Flim + (ssb - Blim) * (Ftarget - Flim) / (Btrigger - Blim))));
-  return hcr_max(log(newF), -30);	  
+  return hcr_max(log(newF), Type(-30.0));	  
 }
 
 template <class Type>
