@@ -4,11 +4,11 @@
 
 template <class Type>
 Type hcr_min(Type a, Type b){
-  return 0.5 * (a + b - sqrt(1e-4 + (a-b) * (a-b)));
+  return 0.5 * (a + b - sqrt((a-b) * (a-b)));
 }
 template <class Type>
 Type hcr_max(Type a, Type b){
-  return 0.5 * (a + b + sqrt(1e-4 + (a-b) * (a-b)));
+  return 0.5 * (a + b + sqrt((a-b) * (a-b)));
 }
 
 template <class Type>
@@ -24,7 +24,7 @@ Type hcr(Type ssb, vector<Type> hcrConf){
 			       Blow,
 			       Flow,
 			       hcr_min(Ftarget, hcr_max(Flim, Flim + (ssb - Blim) * (Ftarget - Flim) / (Btrigger - Blim))));
-  return log(hcr_max(newF, (Type)exp(-10)));	  
+  return hcr_max(log(newF), -30);	  
 }
 
 template <class Type>

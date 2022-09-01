@@ -31,8 +31,8 @@
     if(!is.na(xvalPatterns[[mIndx]][1]) & !is.numeric(xvalPatterns[[mIndx]][1])){
         pp <- xvalPatterns[[mIndx]]
         xVal <- as.numeric(gsub(pp[1], pp[2], tolower(x)))
-    }else if(!is.na(xvalPatterns[[mIndx]][1]) & is.numeric(xvalPatterns[[mIndx]][1])){
-        xVal <- xvalPatters[[mIndx]][1]
+    }else{ # if(!is.na(xvalPatterns[[mIndx]][1]) & is.numeric(xvalPatterns[[mIndx]][1])){
+        xVal <- xvalPatterns[[mIndx]][1]
     }
     c(list(methodType = .refpointSMethodEnum[mIndx],
            xVal = xVal),
