@@ -7,7 +7,7 @@
 \usage{
 sdplot(fit, barcol = NULL, marg = NULL, ylim = NULL, ...)
 
-\method{sdplot}{sam}(fit, barcol = NULL, marg = NULL, ylim = NULL, ...)
+\method{sdplot}{sam}(fit, barcol = NULL, marg = NULL, ylim = NULL, show.rel.w = FALSE, ...)
 }
 \arguments{
 \item{fit}{the object returned from sam.fit}
@@ -19,6 +19,8 @@ sdplot(fit, barcol = NULL, marg = NULL, ylim = NULL, ...)
 \item{ylim}{bounds for y-axis}
 
 \item{...}{extra arguments to plot}
+
+\item{show.rel.w}{plots the relative weight of each observation rather than the sd, estimated as (1/sd^2)/max(1/sd^2)}
 }
 \description{
 Plots the sd of the log observations as estimated in SAM in increasing order
