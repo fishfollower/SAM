@@ -1032,6 +1032,7 @@ dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
 ##' @param barcol color for each fleet and age
 ##' @param marg margin for plot (mar in par())
 ##' @param ylim bounds for y-axis
+##' @param show.rel.w plots the relative weight of each observation rather than the sd, estimated as (1/sd^2)/max(1/sd^2)
 ##' @param ... extra arguments to plot
 ##' @importFrom graphics barplot
 ##' @export
@@ -1041,7 +1042,7 @@ sdplot<-function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
 ##' @rdname sdplot
 ##' @method sdplot sam
 ##' @export
-sdplot.sam <- function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
+sdplot.sam <- function(fit, barcol=NULL, marg=NULL, ylim=NULL, show.rel.w=FALSE, ...){
   cf <- fit$conf$keyVarObs
   fn <- attr(fit$data, "fleetNames")
   ages <- fit$conf$minAge:fit$conf$maxAge
@@ -1053,8 +1054,10 @@ sdplot.sam <- function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
   res<-res[complete.cases(res),]
   o<-order(res$sd)
   res<-res[o,]
+  res$rel.w <- (1/res$sd^2)/max(1/res$sd^2)
   if (missing(barcol)) barcol <- colors()[as.integer(as.factor(res$fleet))*10]
   if (missing(marg)) marg <- c(max(nchar(fn))*0.8,4,2,1)
   par(mar=marg)
-  barplot(res$sd, names.arg=res$name,las=2, col=barcol, ylab="SD", ylim=ylim); box()
+  if(show.rel.w) barplot(res$rel.w, names.arg=res$name,las=2, col=barcol, ylab="Relative weight", ylim=ylim) else barplot(res$sd, names.arg=res$name,las=2, col=barcol, ylab="SD", ylim=ylim)
+  box()
 }
