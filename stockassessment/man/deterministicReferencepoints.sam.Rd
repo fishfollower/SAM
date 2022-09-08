@@ -37,14 +37,13 @@
 
 \item{newton.control}{Control arguments passed to the newton optimizer (See \link[TMB]{newton})}
 
+\item{run}{Run estimation? If false, a list of arguments to MakeADFun is returned.}
+
 \item{...}{other arguments not used}
 }
 \value{
-
+List of estimated reference points
 }
 \description{
 Function to calculate reference points for the embedded deterministic model of a SAM fit
-}
-\author{
-Christoffer Moesgaard Albertsen
 }

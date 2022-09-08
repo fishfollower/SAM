@@ -23,6 +23,3 @@ A spline basis
 \description{
 Double integrated spline basis for use with formula interface
 }
-\author{
-Christoffer Moesgaard Albertsen
-}

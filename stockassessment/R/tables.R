@@ -56,13 +56,14 @@ tableit.samforecast <- function (fit, what, x=fit$data$years, trans=function(x)x
 ##' @details ...
 ##' @export
 lifeexpectancytable <- function(fit, atRecruit=TRUE, ...){
-    UseMethod("lifeexpectancytable")
+     UseMethod("lifeexpectancytable")
 }
 
 ##' @rdname lifeexpectancytable
 ##' @method lifeexpectancytable default
 ##' @export
 lifeexpectancytable.default <- function(fit,atRecruit=TRUE, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
     ret<-tableit(fit, ifelse(atRecruit,"logLifeExpectancyRec","logLifeExpectancy"), trans=exp,...)
     return(ret)
 }
@@ -81,11 +82,12 @@ yearslosttable <- function(fit, cause, ...){
 ##' @method yearslosttable default
 ##' @export
 yearslosttable.default <- function(fit,cause = c("Fishing","Other","LifeExpectancy"), ...){
-      cv <- match.arg(cause)
-      what <- switch(cv,
-                     "Fishing"="logYLTF",
-                     "Other"="logYLTM",
-                     "logYNL")
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    cv <- match.arg(cause)
+    what <- switch(cv,
+                   "Fishing"="logYLTF",
+                   "Other"="logYLTM",
+                   "logYNL")
     ret<-tableit(fit, what=what, trans=exp,...)
     return(ret)
 }
@@ -522,7 +524,8 @@ rmaxtable<-function(fit,...){
 ##' @method rmaxtable default
 ##' @export
 rmaxtable.default <- function(fit,...){
-   ret<-tableit(fit, "logrmax", trans=exp,...)
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    ret<-tableit(fit, "logrmax", trans=exp,...)
    return(ret)
 }
 
@@ -540,8 +543,9 @@ generationlengthtable<-function(fit,...){
 ##' @method generationlengthtable default
 ##' @export
 generationlengthtable.default <- function(fit,...){
-   ret<-tableit(fit, "logGenerationLength", trans=exp,...)
-   return(ret)
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    ret<-tableit(fit, "logGenerationLength", trans=exp,...)
+    return(ret)
 }
 
 
@@ -557,8 +561,9 @@ yprtable<-function(fit,...){
 ##' @method yprtable default
 ##' @export
 yprtable.default <- function(fit,...){
-   ret<-tableit(fit, "logYPR", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
-   return(ret)
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    ret<-tableit(fit, "logYPR", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
+    return(ret)
 }
 
 
@@ -574,7 +579,8 @@ sprtable<-function(fit,...){
 ##' @method sprtable default
 ##' @export
 sprtable.default <- function(fit,...){
-   ret<-tableit(fit, "logSPR", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    ret<-tableit(fit, "logSPR", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
    return(ret)
 }
 
@@ -591,8 +597,9 @@ equilibriumbiomasstable<-function(fit,...){
 ##' @method equilibriumbiomasstable default
 ##' @export
 equilibriumbiomasstable.default <- function(fit,...){
-   ret<-tableit(fit, "logSe", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
-   return(ret)
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    ret<-tableit(fit, "logSe", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
+    return(ret)
 }
 
 
@@ -609,6 +616,7 @@ b0table<-function(fit,...){
 ##' @method b0table default
 ##' @export
 b0table.default <- function(fit,...){
-   ret<-tableit(fit, "logB0", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
-   return(ret)
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    ret<-tableit(fit, "logB0", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)),...)
+    return(ret)
 }

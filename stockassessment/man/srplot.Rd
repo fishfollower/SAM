@@ -16,6 +16,7 @@ srplot(fit, ...)
   xlim,
   ylim,
   add = FALSE,
+  CIlevel = 0.95,
   ...
 )
 }
@@ -37,6 +38,8 @@ srplot(fit, ...)
 \item{ylim}{bounds for y-axis}
 
 \item{add}{false if a new plot should be created}
+
+\item{CIlevel}{Confidence level for error ellipseson stock-recruitment pairs}
 }
 \description{
 Plots the stock recruitment

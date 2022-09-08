@@ -11,6 +11,8 @@ refit(fit, newConf, startingValues, ...)
 
 \item{newConf}{list changes to the configuration}
 
+\item{startingValues}{list of parameter values to use as starting values}
+
 \item{...}{Arguments passed to sam.fit}
 }
 \value{

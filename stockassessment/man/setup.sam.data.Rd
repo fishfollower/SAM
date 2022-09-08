@@ -50,6 +50,8 @@ setup.sam.data(
 \item{recapture}{...}
 
 \item{sum.residual.fleets}{...}
+
+\item{keep.all.ages}{...}
 }
 \description{
 Combine the data sources to SAM readable object

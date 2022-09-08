@@ -26,6 +26,3 @@ gradient vector
 \description{
 Calculate gradient of a function
 }
-\author{
-Christoffer Moesgaard Albertsen
-}

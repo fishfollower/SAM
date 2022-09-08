@@ -113,7 +113,7 @@ fitPenalizedSpline <- function(dat,
     return(F0)
 }
 
-
+##' @importFrom stats dnorm
 stockRecruitmentStartingValues <- function(fit, stockRecruitmentModelCode, constRecBreaks, df = 3, ...){
     ##srAll <- c(1,2,3,60,61,63,64,66,67,68,69,90,91,92,93, 201,202,260,261,264,266,26)
     if(missing(stockRecruitmentModelCode)){
@@ -187,7 +187,6 @@ stockRecruitmentStartingValues <- function(fit, stockRecruitmentModelCode, const
 ##' @return A spline basis
 ##' @importFrom stats quantile
 ##' @importFrom utils head tail
-##' @author Christoffer Moesgaard Albertsen
 ##' @export
 bc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
     if(is.null(knots)){
@@ -237,7 +236,6 @@ makepredictcall.bc <- function (var, call){
 ##' @return A spline basis
 ##' @importFrom stats quantile
 ##' @importFrom utils head tail
-##' @author Christoffer Moesgaard Albertsen
 ##' @export
 ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
     if(any(!is.finite(x)))
@@ -289,7 +287,6 @@ makepredictcall.ibc <- function (var, call){
 ##' @return A spline basis
 ##' @importFrom stats quantile
 ##' @importFrom utils head tail
-##' @author Christoffer Moesgaard Albertsen
 ##' @export
 iibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
     if(is.null(knots)){

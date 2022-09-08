@@ -27,7 +27,7 @@ struct RPD_Base {
     dat(dat_),
     conf(conf_),
     par(par_),
-    rp(rp_){};
+    rp(rp_){}
 
   template<class T>
   RPD_Base(const dataSet<T>& dat_,
@@ -37,7 +37,7 @@ struct RPD_Base {
     dat(dat_),
     conf(conf_),
     par(par_),
-    rp(rp_){};
+    rp(rp_){}
 
   PERREC_t<Type> getPerRec(const Type& logFbar){
     vector<Type> ls = rp.getLogSelectivity();
@@ -48,7 +48,7 @@ struct RPD_Base {
   template<class T>
   vector<T> par2logF(const vector<T>& x){
     return x;
-  };
+  }
 
   virtual Type operator()(const vector<Type>& logFbar) = 0;
   

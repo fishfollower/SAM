@@ -17,6 +17,7 @@ sam.fit(
   ignore.parm.uncertainty = FALSE,
   rel.tol = 1e-10,
   penalizeSpline = FALSE,
+  fullDerived = FALSE,
   ...
 )
 }
@@ -42,6 +43,10 @@ sam.fit(
 \item{ignore.parm.uncertainty}{option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties}
 
 \item{rel.tol}{option passed to stats:::nlminb sets the convergence criteria}
+
+\item{penalizeSpline}{Add penalization to spline recruitment?}
+
+\item{fullDerived}{Report all derived values?}
 
 \item{...}{extra arguments to MakeADFun}
 }
@@ -82,7 +87,7 @@ The model configuration object \code{conf} is a list of different objects defini
 data(nscodData)
 data(nscodConf)
 data(nscodParameters)
-fit <- sam.fit(nscodData, nscodConf, nscodParameters)
+fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 }
 \references{
 Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}

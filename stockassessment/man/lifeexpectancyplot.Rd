@@ -24,6 +24,8 @@ lifeexpectancyplot(fit, atRecruit = TRUE, ...)
 \code{add} logical, plotting is to be added on existing plot \cr
 \code{ci} logical, confidence intervals should be plotted \cr
 \code{cicol} color to plot the confidence polygon}
+
+\item{ylimAdd}{values to add when calculating ylim for the plot}
 }
 \description{
 SAM life expectancy plot

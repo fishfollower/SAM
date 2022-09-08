@@ -106,6 +106,8 @@ runwithout <- function(fit, year, fleet, ...){
     UseMethod("runwithout")
 }
 
+##' @param map map to use
+##' @rdname runwithout
 ##' @method runwithout sam
 ##' @export
 runwithout.sam <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){

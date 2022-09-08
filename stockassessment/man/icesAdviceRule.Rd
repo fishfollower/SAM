@@ -9,9 +9,8 @@ icesAdviceRule(
   Fmsy,
   MSYBtrigger,
   Blim,
-  nYears = 1,
   nosim = 10000,
-  ave.years = max(fit$data$years) + (-4:0),
+  ave.years = max(x$data$years) + (-4:0),
   rec.years = numeric(0),
   preForecast = list(),
   currentSSB = FALSE,
@@ -21,29 +20,38 @@ icesAdviceRule(
 \arguments{
 \item{x}{Fitted assessment model}
 
-\item{Fmsy}{}
+\item{Fmsy}{ICES Fmsy which is used as target F}
 
-\item{MSYBtrigger}{}
+\item{MSYBtrigger}{ICES MSYBtrigger below which F is reduced}
 
-\item{Blim}{}
+\item{Blim}{ICES Blim below which F is set to zero.}
 
-\item{nosim}{}
+\item{nosim}{Number of simulations to do. If NULL a model forecast based on the Laplace approximation is used}
 
-\item{ave.years}{}
+\item{ave.years}{vector of years to average for weights, maturity, M and such}
 
-\item{rec.years}{}
+\item{rec.years}{vector of years to use to resample recruitment from. If an empty vector is given, recruitment is based on the fitted model.}
 
-\item{...}{}
+\item{preForecast}{list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR}
+
+\item{currentSSB}{if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.}
+
+\item{...}{Other arguments passes to hcr}
 }
 \value{
-
+hcr object
 }
 \description{
 Forecast with an ICES advice rule
 }
+\section{Warning}{
+
+The function does not make a short term forecast to see if fishing can continue below Blim.
+}
+
 \references{
 ICES (2021) Advice on fishing opportunities. DOI: 10.17895/ices.advice.7720
 }
-\author{
-Christoffer Moesgaard Albertsen
+\seealso{
+\link{hcr}
 }

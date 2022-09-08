@@ -3,23 +3,11 @@
 ##' @param fit A SAM fit
 ##' @param ... other variables used by the methods
 ##' @seealso modelforecast
+##' @return model forecast using a harvest control rule 
 ##' @export
 hcr <- function(fit, ...){
     UseMethod("hcr")
 }
-
-
-
-##' Harvest control rule forecast
-##'
-##' @param fit A SAM fit
-##' @param ... other variables used by the methods
-##' @seealso modelforecast
-##' @export
-hcr <- function(fit, ...){
-    UseMethod("hcr")
-}
-
 
 
 ##' Harvest control rule forecast
@@ -28,9 +16,10 @@ hcr <- function(fit, ...){
 ##' \deqn{F = \left\{
 ##'               \begin{array}{ll}
 ##'                   F_{cap} & SSB < B_{cap} \\
-##'                   min\left(Ftarget, \max\left( F_{origin}, (SSB - B_{origin}) \cdot (F_{target} - F_{origin}) / (B_{trigger}-B_{origin}) \right)\right) & SSB \ge B_{origin}
+##'                   min\left(F_{target}, \max\left( F_{origin}, (SSB - B_{origin}) \cdot (F_{target} - F_{origin}) / (B_{trigger}-B_{origin}) \right)\right) & SSB \ge B_{cap}
 ##'               \end{array}\right.
 ##' }
+##' If \eqn{B_{trigger} = B_{origin}} and \eqn{SSB \ge B_{cap}}, \eqn{F_{target}} is always returned.
 ##' 
 ##' @param fit A SAM fit
 ##' @param nYears Number of years to forecast
@@ -46,8 +35,7 @@ hcr <- function(fit, ...){
 ##' @param preForecast list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR
 ##' @param currentSSB if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.
 ##' @param ... additional arguments passed to \link{modelforecast}
-##' @return hcr object 
-##' @author Christoffer Moesgaard Albertsen
+##' @return hcr model forecast object 
 ##' @rdname hcr
 ##' @method hcr sam
 ##' @export
@@ -104,17 +92,20 @@ hcr.sam <- function(fit,
 
 ##' Forecast with an ICES advice rule
 ##'
-##' 
+##' @section Warning:
+##' The function does not make a short term forecast to see if fishing can continue below Blim.
 ##' @param x Fitted assessment model
-##' @param Fmsy 
-##' @param MSYBtrigger 
-##' @param Blim 
-##' @param nosim 
-##' @param ave.years 
-##' @param rec.years 
-##' @param ... 
-##' @return 
-##' @author Christoffer Moesgaard Albertsen
+##' @param Fmsy ICES Fmsy which is used as target F
+##' @param MSYBtrigger ICES MSYBtrigger below which F is reduced
+##' @param Blim ICES Blim below which F is set to zero.
+##' @param nosim Number of simulations to do. If NULL a model forecast based on the Laplace approximation is used
+##' @param ave.years vector of years to average for weights, maturity, M and such  
+##' @param rec.years vector of years to use to resample recruitment from. If an empty vector is given, recruitment is based on the fitted model.
+##' @param preForecast list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR
+##' @param currentSSB if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.
+##' @param ... Other arguments passes to hcr
+##' @return hcr object
+##' @seealso \link{hcr}
 ##' @references
 ##' ICES (2021) Advice on fishing opportunities. DOI: 10.17895/ices.advice.7720
 ##'
@@ -123,10 +114,9 @@ icesAdviceRule <- function(x,
                            Fmsy,
                            MSYBtrigger,
                            Blim,
-                           nYears = 1,
                            nosim = 10000,
-                           ave.years = max(fit$data$years)+(-4:0),
-                           rec.years = numeric(0), #max(fit$data$years)+(-9:0),
+                           ave.years = max(x$data$years)+(-4:0),
+                           rec.years = numeric(0), #max(x$data$years)+(-9:0),
                            preForecast = list(),
                            currentSSB = FALSE,
                            ...){

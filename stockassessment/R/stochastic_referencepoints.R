@@ -40,10 +40,10 @@
 }
 
 
-
+##' @importFrom stats model.frame model.matrix terms
 .refpointSCurveFit <- function(F,C,MT){
-    mf <- model.frame(MT$formula, data.frame(F = F))
-    X <- model.matrix(MT$formula,mf)    
+    mf <- stats::model.frame(MT$formula, data.frame(F = F))
+    X <- stats::model.matrix(MT$formula,mf)    
     if(MT$methodType == 0){       # Mean
         Loss <- function(Obs,Pred) (Obs-Pred)^2
     }else if(MT$methodType == 1){       # Quantiles
@@ -58,8 +58,8 @@
         pM <- X2 %*% beta
         sum(Loss(C,pM[]))
     }
-    opt <- nlminb(numeric(ncol(X)), fn, control = list(iter.max=10000,eval.max=10000))
-    attr(opt,"terms") <- terms(mf)
+    opt <- stats::nlminb(numeric(ncol(X)), fn, control = list(iter.max=10000,eval.max=10000))
+    attr(opt,"terms") <- stats::terms(mf)
      class(opt) <- "rpscurvefit"
     opt
 }
@@ -94,11 +94,12 @@ predict.rpscurvefit <- function(x,newF,...){
     diff(y) / diff(x)    
 }
 
+#' @importFrom stats runif predict
 .refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType){
     rfv <- function(n,a,b){
-        u <- runif(n)
-        v1 <- exp(runif(n,log(ifelse(a==0,0.002,a)), log(b)))
-        v2 <- runif(n,a,b)
+        u <- stats::runif(n)
+        v1 <- exp(stats::runif(n,log(ifelse(a==0,0.002,a)), log(b)))
+        v2 <- stats::runif(n,a,b)
         ifelse(u < 0.25, v1, v2)
     }
     Fvals <- sort(rfv(nosim,Frange[1],Frange[2]))
@@ -125,9 +126,15 @@ predict.rpscurvefit <- function(x,newF,...){
         }else if(rp$rpType == 2){ ## MSYRange
             Crit <- exp(PRvals$logYe)
             cutfun <- function(x) x > max(x) * rp$cutoff
-            trans <- function(x, report=FALSE, keepMSY = FALSE, ...){
-                xMSY <- exp(head(x,1))
-                x2 <- matrix(tail(x,-1),2)
+            trans <- function(x, report=FALSE, ...){
+                dots <- list(...)
+                if("keepMSY" %in% names(dots)){
+                    keepMSY <- dots$keepMSY
+                }else{
+                    keepMSY <- FALSE
+                }
+                xMSY <- exp(utils::head(x,1))
+                x2 <- matrix(utils::tail(x,-1),2)
                 x3 <- rbind(xMSY - exp(x2[1,]),
                             xMSY + exp(x2[2,]))
                 if(keepMSY)
@@ -177,7 +184,7 @@ predict.rpscurvefit <- function(x,newF,...){
                     names(v) <- paste0(rp$xVal,"dYPR")
                 v
             }
-            fn <- function(x, ...){
+            fn <- function(x){
                 p0 <- predict(CurveFit,1e-4)
                 p <- predict(CurveFit,trans(x))
                 sum((p - rp$xVal * p0)^2)
@@ -189,10 +196,10 @@ predict.rpscurvefit <- function(x,newF,...){
             trans <- function(x, report=FALSE, ...){
                 v <- exp(x)
                 if(report)
-                    names(v) <- paste0(rp$xVal,"xSPR")
+                    names(v) <- paste0(rp$xVal,"SPR")
                 v
             }
-            fn <- function(x, ...){
+            fn <- function(x){
                 p0 <- predict(CurveFit,1e-4)
                 p <- predict(CurveFit,trans(x))
                 sum((p - rp$xVal * p0)^2)
@@ -204,10 +211,10 @@ predict.rpscurvefit <- function(x,newF,...){
             trans <- function(x, report=FALSE, ...){
                 v <- exp(x)
                 if(report)
-                    names(v) <- paste0(rp$xVal,"dYPR")
+                    names(v) <- paste0(rp$xVal,"B0")
                 v
             }
-            fn <- function(x, ...){
+            fn <- function(x){
                 p0 <- predict(CurveFit,1e-4)
                 p <- predict(CurveFit,trans(x))
                 sum((p - rp$xVal * p0)^2)
@@ -331,8 +338,41 @@ predict.rpscurvefit <- function(x,newF,...){
     }
     replicate(N,doOne(), !returnList)
 }
-
-#' @export
+##' Estimate stochastic reference points
+##'
+##' The function estimates reference points based on stochastic model forecasts.
+##' The following reference points are implemented:
+##' \describe{
+##'    \item{F=x}{F fixed to x, e.g., \code{"F=0.3"} (NOT IMPLEMENTED YET)}
+##'    \item{StatusQuo}{F in the last year of the assessment (NOT IMPLEMENTED YET)}
+##'    \item{StatusQuo-y}{F in the y years before the last in the assessment, e.g., \code{"StatusQuo-1"} (NOT IMPLEMENTED YET)}
+##'    \item{MSY}{F that maximizes yield}
+##'    \item{0.xMSY}{Fs that gives 0.x*100\% of MSY, e.g., \code{"0.95MSY"}}
+##'    \item{Max}{F that maximizes yield per recruit}
+##'    \item{0.xdYPR}{F such that the derivative of yield per recruit is 0.x times the derivative at F=0, e.g., \code{"0.1dYPR"}}
+##'    \item{0.xSPR}{F such that spawners per recruit is 0.x times spawners per recruit at F=0, e.g., \code{"0.35SPR"}}
+##'    \item{0.xB0}{F such that biomass is 0.x times the biomass at F=0, e.g., \code{"0.2B0"}}
+##' }
+##'
+##' Reference points can be estimated using these methods:
+##'
+##' \describe{
+##'    \item{Mean}{Use least squares to estimate mean equilibrium values}
+##'    \item{Q0.x}{Use quantile regression to estimate the 0.x quantile of equilibrium values}
+##'    \item{Median}{Identical to Q0.5}
+##'    \item{Mode}{(NOT IMPLEMENTED YET)}
+##' }
+##'
+##' To estimate median equilibrium yield, as required by ICES, the method "Q0.5" should be used.
+##' 
+##' @examples
+##' \dontrun{
+##'   stochasticReferencepoints(fit, c("MSY","0.95MSY","Max","0.35SPR","0.1dYPR"))
+##' }
+##' @param fit a sam fit
+##' @param referencepoints a character vector of reference points to estimate (see Details)
+##' @param ... Additional arguments passed on
+##' @return sam reference point object
 stochasticReferencepoints <- function(fit,
                                        referencepoints,
                                        ...){
@@ -341,7 +381,25 @@ stochasticReferencepoints <- function(fit,
 
 
 
-#' @export
+##' @param fit a sam fit
+##' @param referencepoints a character vector of reference points to estimate (see Details)
+##' @param method estimation method (See Details)
+##' @param catchType catch type: catch, landing, discard
+##' @param nYears Number of years to forecast
+##' @param Frange Range of F values to consider
+##' @param nosim Number of simulations for estimation
+##' @param aveYears Years to average over for biological input
+##' @param selYears Years to average over for selectivity
+##' @param newton.control List of control parameters for optimization
+##' @param seed Seed for simulations
+##' @param formula Formula to estimate optimization criteria as a function of F
+##' @param nosim_ci Number of simulations for bootstrap confidence intervals
+##' @param derivedSummarizer Function to summarize derived per-recruit values
+##' @param ... additional parameters that can be passed on
+##' @return reference point object
+##' @rdname stochasticReferencepoints
+##' @method stochasticReferencepoints sam
+##' @export
 stochasticReferencepoints.sam <- function(fit,
                                           referencepoints,
                                           method = "Q0.5",

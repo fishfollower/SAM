@@ -114,7 +114,11 @@ plotit(fit, what, ...)
 
 \item{unnamed.basename}{the name to assign an unnamed basefit}
 
-\item{xlim}{...}
+\item{xlim}{xlim for the plot}
+
+\item{ylim}{ylim for the plot}
+
+\item{ylimAdd}{values to add when calculating ylim for the plot}
 }
 \description{
 Plot helper

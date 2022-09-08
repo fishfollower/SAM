@@ -32,7 +32,6 @@ stockRecruitmentModelR <- function(logssb, rec_pars, stockRecruitmentModelCode,
 ##' @param pilty Line type of prediction interval line
 ##' @param ... not used
 ##' @seealso srplot
-##' @author Christoffer Moesgaard Albertsen
 ##' @export
 addRecruitmentCurve <- function(fit,
                                 CI = TRUE,
@@ -48,6 +47,8 @@ addRecruitmentCurve <- function(fit,
 
 ##' @rdname addRecruitmentCurve
 ##' @method addRecruitmentCurve sam
+##' @param year Show recruitment calculated conditional on this year (for recruitment functions that depend on year)
+##' @param lastR Show recruitment calculated conditional on this previous recruitment (for recruitment functions that depend on recruitment the previous year)
 ##' @importFrom utils head
 ##' @export
 addRecruitmentCurve.sam <- function(fit,

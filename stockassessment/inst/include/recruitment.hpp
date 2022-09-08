@@ -638,7 +638,7 @@ struct Rec_ConstantMean : RecruitmentWorker<scalartype_> {
   Rec_ConstantMean(const vectortype& logRv, const vectortype& crb) : RecruitmentWorker<scalartype>(0,1), logRvalue(logRv), constRecBreaks(crb) {};
 
   template<class T>
-  Rec_ConstantMean(const vector<T>& logRv, const vector<T>& crb) : RecruitmentWorker<scalartype>(0,1), logRvalue(logRv), constRecBreaks(crb) {};
+  Rec_ConstantMean(const vector<T>& logRv, const vector<T>& crb) : RecruitmentWorker<scalartype>(0,1), logRvalue(logRv), constRecBreaks(crb) {}
   
   scalartype operator()(scalartype logssb, scalartype lastLogR, scalartype year){
     int usepar=0;

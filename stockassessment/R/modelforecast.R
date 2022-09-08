@@ -42,7 +42,7 @@ modelforecast <- function(fit, ...){
 ##' @seealso forecast
 ##' @importFrom methods formalArgs
 ##' @importFrom stats var
-##' @importFrom utils tail
+##' @importFrom utils tail txtProgressBar setTxtProgressBar
 ##' @rdname modelforecast
 ##' @method modelforecast sam
 ##' @export
@@ -80,8 +80,8 @@ modelforecast.sam <- function(fit,
                      ){
 
     if(progress && !returnObj && !is.null(nosim) && nosim > 0){
-        pb <- txtProgressBar(min = 0, max = nosim+3, style = 3)
-        incpb <- function() setTxtProgressBar(pb, pb$getVal()+1)
+        pb <- utils::txtProgressBar(min = 0, max = nosim+3, style = 3)
+        incpb <- function() utils::setTxtProgressBar(pb, pb$getVal()+1)
     }else{
         incpb <- function(){ return(invisible(NULL)) }
     }

@@ -37,8 +37,8 @@
 // #include "SAM.h"
 #include "../inst/include/SAM.hpp"
 
-#include "R_perRecruit.hpp"
-#include "R_spline.hpp"
+#include "R_perRecruit.h"
+#include "R_spline.h"
 
 template<class Type>
 Type objective_function<Type>::operator() ()

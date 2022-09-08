@@ -4,10 +4,16 @@
 \alias{print.sam_referencepoints}
 \title{Print referencepoint object}
 \usage{
-\method{print}{sam_referencepoints}(x, tables = c("F", "Biomass", "Yield"), digits = 4, format = "f")
+\method{print}{sam_referencepoints}(x, tables = c("F", "Biomass", "Yield"), digits = 4, format = "f", ...)
 }
 \arguments{
 \item{x}{a sam referencepoint object as returned by \code{\link{referencepoints}}}
+
+\item{tables}{tables to print}
+
+\item{digits}{number of digits to print}
+
+\item{format}{printing format for numbers}
 
 \item{...}{extra arguments}
 }

@@ -7,8 +7,6 @@
 \usage{
 hcr(fit, ...)
 
-hcr(fit, ...)
-
 \method{hcr}{sam}(
   fit,
   nYears = 20,
@@ -56,22 +54,20 @@ hcr(fit, ...)
 \item{currentSSB}{if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.}
 }
 \value{
-hcr object
+model forecast using a harvest control rule
+
+hcr model forecast object
 }
 \description{
 The formula below is used to determine a new F based on the previous SSB.
 \deqn{F = \left\{
               \begin{array}{ll}
                   F_{cap} & SSB < B_{cap} \\
-                  min\left(Ftarget, \max\left( F_{origin}, (SSB - B_{origin}) \cdot (F_{target} - F_{origin}) / (B_{trigger}-B_{origin}) \right)\right) & SSB \ge B_{origin}
+                  min\left(F_{target}, \max\left( F_{origin}, (SSB - B_{origin}) \cdot (F_{target} - F_{origin}) / (B_{trigger}-B_{origin}) \right)\right) & SSB \ge B_{cap}
               \end{array}\right.
 }
+If \eqn{B_{trigger} = B_{origin}} and \eqn{SSB \ge B_{cap}}, \eqn{F_{target}} is always returned.
 }
 \seealso{
 modelforecast
-
-modelforecast
-}
-\author{
-Christoffer Moesgaard Albertsen
 }

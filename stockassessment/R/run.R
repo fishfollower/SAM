@@ -10,6 +10,8 @@
 ##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.
 ##' @param ignore.parm.uncertainty option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties
 ##' @param rel.tol option passed to stats:::nlminb sets the convergence criteria
+##' @param penalizeSpline Add penalization to spline recruitment?
+##' @param fullDerived Report all derived values?
 ##' @param ... extra arguments to MakeADFun
 ##' @return an object of class \code{sam}
 ##' @details The model configuration object \code{conf} is a list of different objects defining different parts of the model. The different elements of the list are: 
@@ -46,11 +48,10 @@
 ##' data(nscodData)
 ##' data(nscodConf)
 ##' data(nscodParameters)
-##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
+##' fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 ##' @references
 ##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, penalizeSpline = FALSE, ...){
-    t0 <- Sys.time()    
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, penalizeSpline = FALSE, fullDerived = FALSE, ...){
     if(length(conf$maxAgePlusGroup)==1){
         tmp <- conf$maxAgePlusGroup    
         conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
@@ -85,7 +86,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                    ## intern = intern,
                    DLL = "stockassessment"),
               list(...))
-    args$data$reportingLevel <- 0
+    args$data$reportingLevel <- as.integer(fullDerived)
 
     mapRP <- list(logFScaleMSY = factor(NA),
                   implicitFunctionDelta = factor(NA),
@@ -113,38 +114,30 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
            conf$stockRecruitmentModelCode == 63)
             args$map$rec_pars = factor(c(1,2,NA))
 
-    t1 <- Sys.time()
-    cat(sprintf("Made args: %fs\n",as.numeric(t1-t0,units="secs")))
     obj <- do.call(MakeADFun,args)
-    t2 <- Sys.time()
-    cat(sprintf("Made obj: %fs\n",as.numeric(t2-t1,units="secs")))
     
     ddd <- args
     if(rm.unidentified){
-    gr <- obj$gr()
-    #grNA[abs(grNA)<1.0e-15] <- NA
-    safemap <- obj$env$parList(gr)
-    safemap <- safemap[!names(safemap)%in%ran]
-    safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
-    ## ddd<-args # list(...)
-    if(!is.null(ddd$map)){
-      ddd$map <- c(ddd$map,safemap)
-    }else{
-        ddd$map <- safemap
+        gr <- obj$gr()
+                                        #grNA[abs(grNA)<1.0e-15] <- NA
+        safemap <- obj$env$parList(gr)
+        safemap <- safemap[!names(safemap)%in%ran]
+        safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
+        ## ddd<-args # list(...)
+        if(!is.null(ddd$map)){
+            ddd$map <- c(ddd$map,safemap)
+        }else{
+            ddd$map <- safemap
+        }
+        ## ddd$data <- tmball
+        ## ddd$parameters <- parameters
+        ## ddd$random <- ran
+        ## ddd$DLL <- "stockassessment"    
+        obj <- do.call(MakeADFun,ddd)
+        ## }else{
+        ##   obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
+        ## }
     }
-      ## ddd$data <- tmball
-      ## ddd$parameters <- parameters
-      ## ddd$random <- ran
-    ## ddd$DLL <- "stockassessment"    
-    obj <- do.call(MakeADFun,ddd)
-    ## }else{
-    ##   obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
-    ## }
-  }
-
-  t3 <- Sys.time()
-  cat(sprintf("remove unidentified: %fs\n",as.numeric(t3-t2,units="secs")))
-
   
   lower2<-rep(-Inf,length(obj$par))
   upper2<-rep(Inf,length(obj$par))
@@ -159,9 +152,6 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ##     he <- obj$he
   ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
-
-  t4 <- Sys.time()
-  cat(sprintf("Optimize: %fs\n",as.numeric(t4-t3,units="secs")))
   
   he <- function(par){ optimHess(par, obj$fn, obj$gr) }
   ## }
@@ -177,39 +167,45 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   }
   opt$he <- optimHess(opt$par, obj$fn, obj$gr)
 
-  t5 <- Sys.time()
-  cat(sprintf("Newton steps: %fs\n",as.numeric(t5-t4,units="secs")))
-  rep <- obj$report()
+    repList <- doReporting(obj, opt, ignore.parm.uncertainty)
 
-    t6 <- Sys.time()
-    cat(sprintf("Report: %fs\n",as.numeric(t6-t5,units="secs")))
-    ddd2 <- ddd
-    ddd2$data$reportingLevel <- 1
-    obj$fn(opt$par)
-    ddd2$parameters <- obj$env$parList(par=obj$env$last.par)
-    obj <- do.call(MakeADFun,ddd2)
-    t7 <- Sys.time()
-  cat(sprintf("New obj: %fs\n",as.numeric(t7-t6,units="secs")))
+    ret <- c(repList, list(data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower, hig=upper))
+  attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
+    attr(ret, "Version") <- packageDescription("stockassessment")$Version
+    attr(ret,"call") <- getFullCall()
+  class(ret)<-"sam"
 
-  sdrep <- sdreport(obj,opt$par, opt$he,
-                    ignore.parm.uncertainty = ignore.parm.uncertainty)    
-    obj$env$data$reportingLevel <- 0
-  t8 <- Sys.time()
-  cat(sprintf("Sdreport: %fs\n",as.numeric(t8-t7,units="secs")))
+  return(ret)
+}
 
-  
-  # Last two states
-  idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
-  sdrep$estY <- sdrep$value[idx]
-  sdrep$covY <- sdrep$cov[idx,idx]
+getFullCall <- function(){
+    call <- evalq(match.call(),parent.frame(1))
+    frmls <- evalq(formals(),parent.frame(1))
+    nms <- setdiff(names(frmls),names(call))
+    call[nms] <- frmls[nms]
+    call[names(call) != "..."]
+}
+getCallValue <- function(name, call){
+    if(name %in% names(call))
+        return(call[[name]])
+    stop(sprintf("%s does not appear to be an argument of %s. Try to refit the model to update.",name,as.character(call[1])))
+}
+    
+doReporting <- function(obj, opt, ignore.parm.uncertainty){
+    sdrep <- sdreport(obj,opt$par, opt$he,
+                      ignore.parm.uncertainty = ignore.parm.uncertainty)    
+    ## Last two states
+    idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
+    sdrep$estY <- sdrep$value[idx]
+    sdrep$covY <- sdrep$cov[idx,idx]
 
-  idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
-  sdrep$estYm1 <- sdrep$value[idx]
-  sdrep$covYm1 <- sdrep$cov[idx,idx]
+    idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
+    sdrep$estYm1 <- sdrep$value[idx]
+    sdrep$covYm1 <- sdrep$cov[idx,idx]
 
-  ## rec_pars
-  idx <- which(names(sdrep$value)=="rec_pars")
-  sdrep$covRecPars <- sdrep$cov[idx,idx, drop = FALSE]
+    ## rec_pars
+    idx <- which(names(sdrep$value)=="rec_pars")
+    sdrep$covRecPars <- sdrep$cov[idx,idx, drop = FALSE]
 
     ## S-R pairs
     idx <- names(sdrep$value)%in%c("logssb","logR")
@@ -217,23 +213,38 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     colnames(sdrep$covSRpairs) <- rownames(sdrep$covSRpairs) <- names(sdrep$value)[idx]
     
     
-  pl <- as.list(sdrep,"Est")
-  plsd <- as.list(sdrep,"Std")
+    pl <- as.list(sdrep,"Est")
+    plsd <- as.list(sdrep,"Std")
 
-  sdrep$cov<-NULL # save memory
+    rep <- obj$report()
 
-  ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower, hig=upper)
-  attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
-  attr(ret, "Version") <- packageDescription("stockassessment")$Version
-  class(ret)<-"sam"
-  t9 <- Sys.time()
-  cat(sprintf("Finish: %fs\n",as.numeric(t9-t8,units="secs")))
+    sdrep$cov<-NULL # save memory
+    list(sdrep=sdrep, pl=pl, plsd=plsd, rep = rep)
+}
 
-  return(ret)
+.checkFullDerived <- function(fit) getCallValue("fullDerived",attr(fit,"call"))
+
+##' Update sam fit with additional derived values
+##'
+##' @param fit sam fit returned by sam.fit
+##' @return Updated sam fit
+getAllDerivedValues <- function(fit){
+    if(.checkFullDerived(fit))
+        return(fit)
+    ddd2 <- as.list(fit$obj$env)[formalArgs(TMB::MakeADFun)[formalArgs(TMB::MakeADFun) != "..."]]
+    ddd2$data$reportingLevel <- 1
+    fit$obj$fn(fit$opt$par)
+    ddd2$parameters <- fit$obj$env$parList(par=fit$obj$env$last.par)
+    obj <- do.call(TMB::MakeADFun,ddd2)
+    sdList <- doReporting(obj, fit$opt, getCallValue("ignore.param.uncertainty",attr(fit,"call")))
+    fit[names(sdList)] <- sdList
+    fit$obj <- obj
+    return(fit)
 }
 
 ##' Bounds
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
+##' @param conf model configuration in a format similar to what is returned from the defcon function
 ##' @return a named list
 getLowerBounds<-function(parameters, conf){    
     r <- list(sigmaObsParUS=rep(-10,length(parameters$sigmaObsParUS)))
@@ -244,6 +255,7 @@ getLowerBounds<-function(parameters, conf){
 
 ##' Bounds
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
+##' @param conf model configuration in a format similar to what is returned from the defcon function
 ##' @return a named list
 getUpperBounds<-function(parameters, conf){
     list(sigmaObsParUS=rep(10,length(parameters$sigmaObsParUS)))

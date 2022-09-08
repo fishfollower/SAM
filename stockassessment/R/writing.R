@@ -36,6 +36,21 @@ getFleet <- function(fit, fleet, pred="FALSE"){
   return(tmp)
 }
 
+##' Extract a list of catch fleets
+##'
+##' @param fit A fitted object as returned from sam.fit
+##' @param pred Should it be predicted value, default is observed
+##' @return A list of matrices of observed or predicted values for catch fleets
+##' @export
+getResidualFleets <- function(fit, pred="FALSE"){
+    ii <- which(fit$data$fleetTypes == 0)
+    r <- lapply(ii, getFleet, fit=fit, pred=pred)
+    names(r) <- attr(fit$data,"fleetNames")[ii]
+    return(r)
+}
+
+
+
 ##' Write surveys in ICES/CEFAS data file from a model object  
 ##' @param fit A fitted object as returned from sam.fit
 ##' @param fileout file name or connection
@@ -83,7 +98,7 @@ write.data.files<-function(dat, dir="."){
   write.ices(dat$propM, "pm.dat")
   write.ices(dat$natMor, "nm.dat")
   fit <- list(data=dat)
-  write.ices(getFleet(fit,1), "cn.dat")
+  write.surveys(getResidualFleets(fit), "cn.dat")
   write.surveys(fit, "survey.dat")
   setwd(od)
 }
@@ -112,7 +127,7 @@ read.data.files<-function(dir="."){
     surveys<-read.ices("survey.dat")
 
     dat<-setup.sam.data(surveys=surveys,
-                    residual.fleet=cn,
+                    residual.fleets=cn,
                     prop.mature=mo,
                     stock.mean.weight=sw,
                     catch.mean.weight=cw,
