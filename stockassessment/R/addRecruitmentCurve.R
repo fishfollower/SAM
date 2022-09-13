@@ -5,14 +5,14 @@ logSRR <- function(logssb, rec_pars, stockRecruitmentModelCode,
     N <- length(logssb)
     year <- rep(year, length.out = N)
     lastR <- rep(lastR, length.out = N)
-    .Call("logSRR", logssb, rec_pars, stockRecruitmentModelCode, constRecBreaks, year, lastR)
+    .Call(C_logSRR, logssb, rec_pars, stockRecruitmentModelCode, constRecBreaks, year, lastR)
 }
 
 stockRecruitmentModelR <- function(logssb, rec_pars, stockRecruitmentModelCode,
                                    constRecBreaks = numeric(0), year = NA_real_, lastR = NA_real_){
     if(length(logssb) != 1 || length(year) != 1 || length(lastR) != 1)
         stop("logssb, year, and lastR must be numeric scalars.")
-    v <- .Call("stockRecruitmentModelR", logssb, rec_pars, stockRecruitmentModelCode, constRecBreaks, year, lastR)
+    v <- .Call(C_stockRecruitmentModelR, logssb, rec_pars, stockRecruitmentModelCode, constRecBreaks, year, lastR)
     list(logRecruits = v$logRecruits,
          Gradient_recpars = utils::head(v$Gradient,-1),
          Gradient_logssb = utils::tail(v$Gradient,1))

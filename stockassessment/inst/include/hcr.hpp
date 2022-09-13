@@ -14,17 +14,25 @@ Type hcr_max(Type a, Type b){
 template <class Type>
 Type hcr(Type ssb, vector<Type> hcrConf){
   Type Ftarget = hcrConf(0);
-  Type Flim = hcrConf(1);
-  Type Flow = hcrConf(2);
-  Type Blim = hcrConf(3);
-  Type Blow = hcrConf(4);
+  Type Forigin = hcrConf(1);
+  Type Fcap = hcrConf(2);
+  Type Borigin = hcrConf(3);
+  Type Bcap = hcrConf(4);
   Type Btrigger = hcrConf(5);
 
-  Type newF = CppAD::CondExpLt(ssb,
-			       Blow,
-			       Flow,
-			       hcr_min(Ftarget, hcr_max(Flim, Flim + (ssb - Blim) * (Ftarget - Flim) / (Btrigger - Blim))));
-  return hcr_max(log(newF), Type(-30.0));	  
+  Type newF = Ftarget;
+  if(fabs(Btrigger - Borigin) < 1e-12){
+    newF = CppAD::CondExpLt(ssb,
+			    Bcap,
+			    Fcap,
+			    Ftarget);			    
+  }else{
+    newF = CppAD::CondExpLt(ssb,
+			    Bcap,
+			    Fcap,
+			    hcr_min(Ftarget, hcr_max(Forigin, Forigin + (ssb - Borigin) * (Ftarget - Forigin) / (Btrigger - Borigin))));
+  }
+  return log(newF);	  
 }
 
 template <class Type>

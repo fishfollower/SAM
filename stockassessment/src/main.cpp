@@ -93,6 +93,7 @@ extern "C" {
     CALLABLE(recruitmentProperties);
  
     R_useDynamicSymbols(info, (Rboolean)FALSE);
+    R_forceSymbols(info, (Rboolean)FALSE);
   }
 
 

@@ -199,7 +199,7 @@ bc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = 
             knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
     }
     Aknots <- sort(c(knots,Boundary.knots))
-    v <- .Call("splinebasis_bcR",x,Aknots)
+    v <- .Call(C_splinebasis_bcR,x,Aknots)
     v[is.na(v) | is.nan(v)] <- 0        # Stability issue quick fix (maybe from dnorm?)
     if(intercept)
         v <- cbind(1,v)
@@ -250,7 +250,7 @@ ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept =
             knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2), na.rm=TRUE),-1),-1)
     }
     Aknots <- sort(c(knots,Boundary.knots))
-    v <- .Call("splinebasis_ibcR",x,Aknots)
+    v <- .Call(C_splinebasis_ibcR,x,Aknots)
     if(intercept)
         v <- cbind(1,v)
     a <- list(df = df, knots = if (is.null(knots)) numeric(0L) else knots, 
@@ -299,7 +299,7 @@ iibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept 
             knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
     }
     Aknots <- sort(c(knots,Boundary.knots))
-    v <- .Call("splinebasis_iibcR",x,Aknots)
+    v <- .Call(C_splinebasis_iibcR,x,Aknots)
     if(intercept)
         v <- cbind(1,v)
     a <- list(df = df, knots = if (is.null(knots)) numeric(0L) else knots, 

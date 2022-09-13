@@ -26,6 +26,13 @@ struct MortalitySet {
   array<Type> otherCumulativeIncidence; // age x year x causes
   matrix<Type> ssbSurvival_before;	     // age x year
 
+  MortalitySet() = default;
+  // : totalZ(),
+  // 		   fleetSurvival_before(),
+  // 		   fleetCumulativeIncidence(),
+  // 		   otherCumulativeIncidence(),
+  // 		   ssbSurvival_before() {}
+  
   template<class T>
   MortalitySet(const MortalitySet<T> x) : totalZ(x.totalZ),
 					  fleetSurvival_before(x.fleetSurvival_before),

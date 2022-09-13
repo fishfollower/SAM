@@ -4,7 +4,7 @@
 
 template <class Type>
 Type trans(Type x){
-  return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);
+  return Type(2.0)/(Type(1.0) + exp(-Type(2.0) * x)) - Type(1.0);
 }
 
 template <class Type>
@@ -57,14 +57,15 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   }
   
   fcor.setZero();
-  for(int i=0; i<stateDimF; ++i){
-    fcor(i,i)=1.0;
-  }
+  // for(int i=0; i<stateDimF; ++i){
+  //   fcor(i,i)=1.0;
+  // }
   
   int count=0; //if corFlag varies between 0-2, itrans_rho is shorter than comm fleet length
   for(int f=0;f<noFleets;f++){
     bool nxtPar = false;
     for(int i=0; i<stateDimF; ++i){
+      fcor(i,i)=1.0;
       for(int j=0; j<i; ++j){
         if(statesFleets(i)==f && statesFleets(j)==f){
 	  switch(conf.corFlag(f)){

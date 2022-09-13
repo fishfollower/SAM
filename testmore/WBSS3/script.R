@@ -1,6 +1,3 @@
-# to install the package from the multi branch 
-#devtools::install_github("fishfollower/SAM/stockassessment", ref="multi")
-
 library(stockassessment)
 cn<-read.ices("old/cn.dat")
 cw<-read.ices("old/cw.dat")
@@ -47,8 +44,10 @@ conf<-defcon(dat)
 conf$corFlag<-c(2,1,0,2)
 par<-defpar(dat,conf)
 fit<-sam.fit(dat,conf,par)
-cor<-round(cov2cor(fit$obj$report()$fvar),3)
+corPar <- fit$pl$itrans_rho
+cor<-round(cov2cor(fit$obj$report(fit$obj$env$last.par.best)$fvar),3)
 cat(fit$opt$objective,"\n\n", file="res.out")
+cat(corPar, sep="\n", file="res.out", append=TRUE)
 options(width=1000) 
 cat(capture.output(prmatrix(cor)), sep="\n", file="res.out", append=TRUE)
 cat(capture.output(prmatrix(fbartable(fit))), sep="\n", file="res.out", append=TRUE)

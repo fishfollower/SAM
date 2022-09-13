@@ -82,7 +82,7 @@ hcr.sam <- function(fit,
               Borigin = Borigin,
               Bcap = Bcap,
               Btrigger = Btrigger,
-              hcr = function(ssb) .Call("hcrR", ssb, c(Ftarget[1], Forigin[1], Fcap[1], Borigin[1], Bcap[1], Btrigger[1]), PACKAGE = "stockassessment"),
+              hcr = function(ssb) .Call(C_hcrR, ssb, c(Ftarget[1], Forigin[1], Fcap[1], Borigin[1], Bcap[1], Btrigger[1])),
               forecast = f)
     attr(r,"fit") <- fit
     class(r) <- "hcr"

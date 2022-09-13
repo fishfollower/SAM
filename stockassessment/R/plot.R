@@ -96,8 +96,13 @@ plotit.samforecast <- function(fit, what, x=fit$data$years, ylab=what, xlab="Yea
     thisfit<-attr(fit,"fit")
     xr <- range(thisfit$data$years, xy)
     if(missing(ylim)){
-        v1 <- tableit(fit, what = what, trans = trans)
-        v2 <- tableit(thisfit, what = what, trans = trans)
+        ## if(what == "logCatch"){
+        ##     v1 <- catchtable(fit)
+        ##     v2 <- catchtable(thisfit)
+        ## }else{
+        v1 <- tableit(fit, what = what, trans = trans, x = x[1:(length(x)-drop)])
+        v2 <- tableit(thisfit, what = what, trans = trans, x = x[1:(length(x)-drop)])
+        ## }
         ylim <- range(v1,v2)
     }
     plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,ylim=ylim,...)
@@ -141,7 +146,7 @@ addforecast.samforecast <- function(fit, what, dotcol="black", dotpch=19, dotcex
                         }
                     }
                     )
-    points(y,x[,paste(what,"Estimate", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
+    points(y,x[,paste(what,"median", sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
 }
 
 addforecast.hcr <- function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5),...){
@@ -738,7 +743,7 @@ catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,...){
   if(is.null(drop)){
     drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
   }
-  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop, ...)
   if(obs.show){
     ct <- catchtable(fit, obs.show=TRUE)
     points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
@@ -757,6 +762,7 @@ catchplot.samset <- function(fit, obs.show=TRUE, drop=NULL,...){
   if(is.null(drop)){
     drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
   }
+  catchYears <- as.numeric(rownames(fitlocal$data$catchMeanWeight))
   plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
   if(obs.show){
     ct <- catchtable(fitlocal, obs.show=TRUE)

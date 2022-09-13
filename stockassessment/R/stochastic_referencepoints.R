@@ -78,7 +78,7 @@ predict.rpscurvefit <- function(x,newF,...){
     }else{
         sel <- exp(.logFtoSel(pl$logF, selYears, fit$conf))
     }
-    as.data.frame(.Call("perRecruitSR",
+    as.data.frame(.Call(C_perRecruitSR,
                         logFbar = logf,
                         tmbdat = fit$obj$env$data,
                         pl = pl,

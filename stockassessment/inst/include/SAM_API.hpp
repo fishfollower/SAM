@@ -1,4 +1,3 @@
-#pragma once
 #ifndef SAM_R_API
 #define SAM_R_API
 
@@ -10,8 +9,8 @@
 #define SAM_CALLDEFS							  \
   {"sam_hcr",                   (DL_FUNC) &sam_hcr,                   2}, \
   {"sam_jacobian",              (DL_FUNC) &sam_jacobian,              6}, \
-  {"sam_perRecruit",            (DL_FUNC) &sam_perRecruitR,            7}, \
-  {"sam_stochPerRecruit",       (DL_FUNC) &sam_stochPerRecruitR,       8}, \
+  {"sam_perRecruit",            (DL_FUNC) &sam_perRecruit,            7}, \
+  {"sam_stochPerRecruit",       (DL_FUNC) &sam_stochPerRecruit,       8}, \
   {"sam_stockRecruitmentModel", (DL_FUNC) &sam_stockRecruitmentModel, 3}, \
   {"sam_Se_sbh",                (DL_FUNC) &sam_Se_sbh,                3}, \
   {"sam_Se_sl",                 (DL_FUNC) &sam_Se_sl,                 3}, \
@@ -41,7 +40,7 @@ extern "C" {
     return fp(fn, par, rho, maxit, h, tolerance);
   }
 
-  SEXP sam_perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT){
+  SEXP sam_perRecruit(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT){
     static SEXP(*fp)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP) = (SEXP(*)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP)) R_GetCCallable("stockassessment", "perRecruitR");
     if (fp==NULL){
       Rf_error("perRecruit not found");
@@ -51,7 +50,7 @@ extern "C" {
   }
 
 
-  SEXP sam_stochPerRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
+  SEXP sam_stochPerRecruit(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
     static SEXP(*fp)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP) = (SEXP(*)(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP)) R_GetCCallable("stockassessment", "stochPerRecruitR");
     if (fp==NULL){
       Rf_error("stochPerRecruit not found");

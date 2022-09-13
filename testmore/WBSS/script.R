@@ -1,6 +1,3 @@
-# to install the package from the multi branch 
-#devtools::install_github("fishfollower/SAM/stockassessment", ref="multi")
-
 library(stockassessment)
 cn<-read.ices("old/cn.dat")
 cw<-read.ices("old/cw.dat")

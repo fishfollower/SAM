@@ -64,7 +64,7 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	dat.stockMeanWeight(i,j)=exp(logSW(i,j));
       }
     }
-    //ADREPORT_F(logSW,of);
+    ADREPORT_F(logSW,of);	// Needed for R based forecast
     return nll;
   }
   return Type(0);
@@ -90,7 +90,7 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	}
       }
     }
-    //ADREPORT_F(logCW,of);
+    ADREPORT_F(logCW,of);	// Needed for R based forecast
     return nll;
   }
   return Type(0);
@@ -131,7 +131,7 @@ Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type
 	dat.propMat(i,j)=m;
       }
     }
-    //ADREPORT_F(logitMO,of);
+    ADREPORT_F(logitMO,of);	// Needed for R based forecast
     return nll;
   }
   return Type(0);
@@ -153,7 +153,7 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	dat.natMor(i,j)=exp(logNM(i,j));
       }
     }
-    //ADREPORT_F(logNM,of);
+    ADREPORT_F(logNM,of);	// Needed for R based forecast
     return nll;
   }
   return Type(0);

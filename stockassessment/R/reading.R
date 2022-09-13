@@ -357,7 +357,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   anam2 <- colnames(stock.mean.weight)
   adim2 <- length(anam2)
   fdim <- sum(type==0)
-  fnam <- paste0("Fleet w.o. effort ", 1:fdim)
+  fnam <- name[type==0] #paste0("Fleet w.o. effort ", 1:fdim)
     
   d3verify<-function(X, yd=ydim, ad=adim, fd=fdim, yn=ynam, an=anam, fn=fnam, fill=NULL){
     if(is.null(X)){
@@ -473,7 +473,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
     idxCor=idxCor,
-    aux=do.call(cbind,lapply(dat,as.integer))[,-4],
+    aux=do.call(cbind,lapply(dat[,-4],as.integer)),
     logobs=log(dat[,4]),
     weight=as.numeric(weight),
     propMat=attr(dat,'prop.mature'),

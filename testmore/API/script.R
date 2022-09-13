@@ -1,6 +1,10 @@
 library(stockassessment)
 
 src <- '
+#include <R.h>
+#include <Rmath.h>
+#include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 #include <SAM_API.hpp>
 
 extern "C" {
@@ -53,6 +57,7 @@ cat(is.loaded("addOne","testAPI"), "\n", file = "res.out")
 cat(is.loaded("sam_hcr","testAPI"), "\n", file = "res.out", append = TRUE)
 cat(is.loaded("sam_jacobian","testAPI"), "\n", file = "res.out", append = TRUE)
 cat(is.loaded("sam_perRecruit","testAPI"), "\n", file = "res.out", append = TRUE)
+cat(is.loaded("sam_stochPerRecruit","testAPI"), "\n", file = "res.out", append = TRUE)
 cat(is.loaded("sam_stockRecruitmentModel","testAPI"), "\n", file = "res.out", append = TRUE)
 cat(is.loaded("sam_Se_sbh","testAPI"), "\n", file = "res.out", append = TRUE)
 cat(is.loaded("sam_Se_sl","testAPI"), "\n", file = "res.out", append = TRUE)

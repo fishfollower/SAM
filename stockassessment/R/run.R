@@ -42,7 +42,7 @@
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
 ##' @importFrom utils relist packageDescription
-##' @useDynLib stockassessment
+##' @useDynLib stockassessment, .registration = TRUE, .fixes = "C_"
 ##' @export
 ##' @examples
 ##' data(nscodData)
@@ -153,9 +153,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
   
-  he <- function(par){ optimHess(par, obj$fn, obj$gr) }
-  ## }
-  for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
+    he <- function(par){ optimHess(par, obj$fn, obj$gr) }
+    ## }
+    for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
         atLBound <- (opt$par < (lower2 + sqrt(.Machine$double.eps)))
         atUBound <- (upper2 < (opt$par + sqrt(.Machine$double.eps)))
         atBound <- atLBound | atUBound
@@ -164,21 +164,26 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         opt$par[!atBound] <- opt$par[!atBound]- solve(h[!atBound,!atBound], g[!atBound])
         opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
         opt$objective <- obj$fn(opt$par)
-  }
-  opt$he <- optimHess(opt$par, obj$fn, obj$gr)
+    }
+    opt$he <- optimHess(opt$par, obj$fn, obj$gr)
 
     repList <- doReporting(obj, opt, ignore.parm.uncertainty)
 
     ret <- c(repList, list(data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower, hig=upper))
-  attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
+    attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
     attr(ret, "Version") <- packageDescription("stockassessment")$Version
-    attr(ret,"call") <- getFullCall()
-  class(ret)<-"sam"
+    ## Keep function call
+    call <- match.call()
+    frmls <- formals()
+    nms <- setdiff(names(frmls),names(call))
+    call[nms] <- frmls[nms]
+    attr(ret,"call") <- call[names(call) != "..."]
+    class(ret)<-"sam"
 
-  return(ret)
+    return(ret)
 }
 
-getFullCall <- function(){
+getFullCall <- function(...){
     call <- evalq(match.call(),parent.frame(1))
     frmls <- evalq(formals(),parent.frame(1))
     nms <- setdiff(names(frmls),names(call))

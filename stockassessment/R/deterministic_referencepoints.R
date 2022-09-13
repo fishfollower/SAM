@@ -1,7 +1,7 @@
 
 
 recruitmentProperties <- function(fit){
-    .Call("recruitmentProperties",fit$obj$env$data,fit$pl)
+    .Call(C_recruitmentProperties,fit$obj$env$data,fit$pl)
 }
 
 
@@ -46,7 +46,7 @@ recruitmentProperties <- function(fit){
     }else{
         sel <- exp(.logFtoSel(pl$logF, selYears, fit$conf))
     }
-    as.data.frame(.Call("perRecruitR",
+    as.data.frame(.Call(C_perRecruitR,
                         logFbar = logf,
                         tmbdat = fit$obj$env$data,
                         pl = pl,
