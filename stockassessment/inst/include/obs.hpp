@@ -152,7 +152,7 @@ template<class Type>
 matrix<Type> buildJac(vector<Type> x, vector<Type> w){
   matrix<Type> res(x.size(),x.size()); 
   Type xs = x.sum();
-  Type xsp = pow(xs,Type(2));
+  Type xsp = pow(xs,2);
   for(int i = 0; i < res.rows(); ++i){
     for(int j = 0; j < res.cols(); ++j){
       if(i == j){

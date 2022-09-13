@@ -77,7 +77,7 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 	    nxtPar = true;
 	    break;
 	  case 2:		// AR(1) structure
-	    fcor(j,i)=pow(trans(par.itrans_rho(count)),abs(Type(i-j)));
+	    fcor(j,i)=pow(trans(par.itrans_rho(count)),abs(i-j));
 	    nxtPar = true;
 	    break;
 	    // case 3: separable structure
