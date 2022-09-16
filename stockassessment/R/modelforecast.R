@@ -4,7 +4,7 @@
          Amin = NA_real_,
          Amax = NA_real_,
          fleet = NA_real_,
-         rel = NA_real_,
+         relative = NA_real_,
          cstr = 99,
          target = NA_real_)
 }
@@ -287,7 +287,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         landval <- rep(NA_real_, nYears)
     if(any(!is.na(constraints) & !is.na(landval)))
         warning("landval specified for years with other constraints. Using previously defined constraints.")
-constraints[is.na(constraints) & !is.na(landval)] <- sprintf("L=%f*",landval[is.na(constraints) & !is.na(landval)])
+    constraints[is.na(constraints) & !is.na(landval)] <- sprintf("L=%f",landval[is.na(constraints) & !is.na(landval)])
 
     if(is.null(findMSY))
         findMSY <- rep(NA_real_, nYears)
@@ -417,7 +417,7 @@ constraints[is.na(constraints) & !is.na(landval)] <- sprintf("L=%f*",landval[is.
                                forecastYear = as.numeric(c(rep(0,fit$data$noYears),seq(1,nYears,length=nYears))),
                                FModel = as.numeric(FModel),
                                ##target = as.numeric(target),
-                               constraints = cstr,                               
+                               constraints = list(),# cstr,                               
                                cfg = newton_config,
                                selectivity = as.numeric(customSel),
                                recModel = as.numeric(recModel),

@@ -151,39 +151,12 @@ namespace ConstrainCalculations {
 	  Type LF = dat.landFrac(y,a-conf.minAge,f);
 	  if(LW > 0 && LF > 0){
 	    Type logFI = logv + logF(conf.keyLogFsta(f,a-conf.minAge));
-	    Type lc =  logFI + logN(a-conf.minAge,y) + log(dat.catchMeanWeight(y, a-conf.minAge, f));
+	    Type lc =  log(LF) + logFI + logN(a-conf.minAge,y) + log(LW);
 	    logCat = logspace_add_SAM(logCat, lc);
 	  }
 	}
       }
     }
-    // Type logCat = R_NegInf;
-    // std::vector<int> cFleets = getCatchFleets(dat.fleetTypes);
-    // for(int a=a0; a<=a1; a++){
-    //   Type logZa = log(dat.natMor(y, a-conf.minAge));
-    //   Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
-    //   for(int ii = 0; ii < cFleets.size(); ++ii){
-    // 	int f = cFleets[ii];
-    // 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
-    // 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-conf.minAge)));
-    //   }
-    //   int f0 = 0;
-    //   int f1 = cFleets.size();
-    //   if(fleet >= 0){
-    // 	f0 = fleet;
-    // 	f1 = fleet;
-    //   }
-    //   for(int ii = f0; ii <= f1; ++ii){
-    // 	int f = cFleets[ii];
-    // 	Type LW = dat.landMeanWeight(y, a-conf.minAge, f);
-    // 	Type LF = dat.landFrac(y,a-conf.minAge,f);
-    // 	if(LW > 0 && LF > 0 && conf.keyLogFsta(f,a-conf.minAge) > (-1)){
-    // 	  Type logFI = logv + logF(conf.keyLogFsta(f,a-conf.minAge));
-    // 	  Type lc =  log(LF) + logFI + logN(a-conf.minAge,y) + log(LW);
-    // 	  logCat = logspace_add_SAM(logCat, lc);
-    // 	}
-    //   }
-    // }
     return logCat;
   }
 
@@ -435,7 +408,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 
   
   vector<Type> start(cFleets.size());
-  start.setConstant(0);
+  start.setConstant(log(0.25));
   
   cfg.simplify = false;		// Needed for logspace_add in older versions of TMB
   vector<Type> res = newton::Newton(fc, start, cfg);

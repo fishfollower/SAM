@@ -256,10 +256,10 @@ forecast <- function(fit,
             n <- length(N)
             N <- c(resample(recpool,1),N[-n]*exp(-Z[-n])+c(rep(0,n-2),N[n]*exp(-Z[n])))
             ## Recruitment does not use model prediction, so no effect of logNMeanAssumption
-            if(conf$logNMeanAssumption[2] == 1){ # Mean on natural scale
-                N <- N + c(0,-0.5 * exp(2.0 * par$logSdLogN[conf$keyVarLogN[-1]]))
-            }else if(conf$logNMeanAssumption[2] == 2){ # Mode on natural scale
-                N <- N + c(0,exp(2.0 * par$logSdLogN[conf$keyVarLogN[-1]]))                
+            if(fit$conf$logNMeanAssumption[2] == 1){ # Mean on natural scale
+                N <- N + c(0,-0.5 * exp(2.0 * fit$pl$logSdLogN[conf$keyVarLogN[-1]]))
+            }else if(fit$conf$logNMeanAssumption[2] == 2){ # Mode on natural scale
+                N <- N + c(0,exp(2.0 * fit$pl$logSdLogN[conf$keyVarLogN[-1]]))                
             }
         }
         xx <- rep(NA,length=length(x))
@@ -730,7 +730,7 @@ forecast <- function(fit,
         ## ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
         ## recsim <- exp(sim[,1])
         catchbysim <- apply(sim, 1, function(x)attr(catch(x, nm=nm, cw=cw), "byFleet"))
-        simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y, catchby=catchbysim)
+        simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, catchby=catchbysim,  year=y)
         ## >>>>>>> multi   !!!End of conflict block 2 -- NOT FULLY MERGED!!!
     }
     attr(simlist, "fit")<-fit
