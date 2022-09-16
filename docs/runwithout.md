@@ -12,6 +12,7 @@ runwithout helper function
 
 ```r
 runwithout(fit, year, fleet, ...)
+list(list("runwithout"), list("sam"))(fit, year = NULL, fleet = NULL, map = fit$obj$env$map, ...)
 ```
 
 
@@ -23,7 +24,7 @@ Argument      |Description
 `year`     |     a vector of years to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
 `fleet`     |     a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded
 `...`     |     extra arguments to sam.fit
-`map`     |     map from original fit
+`map`     |     map to use
 
 
 ## Details

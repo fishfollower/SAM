@@ -3,7 +3,7 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.12.0
+Documentation for package ‘stockassessment’ version 0.14.0
 ----------------------------------------------------------
 
 [Package NEWS](../NEWS).
@@ -34,6 +34,9 @@ Help Pages
 | [b0plot.default](b0plot.md)     | SAM equilibrium biomass in the absence of fishing plot |
 | [b0plot.hcr](b0plot.md)         | SAM equilibrium biomass in the absence of fishing plot |
 | [b0plot.samforecast](b0plot.md) | SAM equilibrium biomass in the absence of fishing plot |
+| [b0table](b0table.md)           | B0 biomass table                                       |
+| [b0table.default](b0table.md)   | B0 biomass table                                       |
+| [bc](bc.md)                     | Spline basis for use with formula interface            |
 
 <span id="C">-- C --</span>
 ---------------------------
@@ -41,6 +44,8 @@ Help Pages
 |                                             |                                                                                         |
 |---------------------------------------------|-----------------------------------------------------------------------------------------|
 | [c.sam](c.sam.md)                           | Collect sam objects                                                                     |
+| [catchbyfleetplot](catchbyfleetplot.md)     | SAM catchbyfleet plot                                                                   |
+| [catchbyfleettable](catchbyfleettable.md)   | CatchByFleet table                                                                      |
 | [catchplot](catchplot.md)                   | SAM catch plot                                                                          |
 | [catchplot.hcr](catchplot.md)               | SAM catch plot                                                                          |
 | [catchplot.sam](catchplot.md)               | SAM catch plot                                                                          |
@@ -48,6 +53,7 @@ Help Pages
 | [catchplot.samset](catchplot.md)            | SAM catch plot                                                                          |
 | [catchtable](catchtable.md)                 | Catch table                                                                             |
 | [catchtable.sam](catchtable.md)             | Catch table                                                                             |
+| [caytable](caytable.md)                     | Catch-at-age in numbers table                                                           |
 | [clean.void.catches](clean.void.catches.md) | remove void catches                                                                     |
 | [coef.sam](coef.sam.md)                     | Extract fixed coefficients of sam object                                                |
 | [corplot](corplot.md)                       | Plots between-age correlations by fleet, either estimated or empirical using residuals. |
@@ -58,12 +64,14 @@ Help Pages
 <span id="D">-- D --</span>
 ---------------------------
 
-|                             |                                                                   |
-|-----------------------------|-------------------------------------------------------------------|
-| [dataplot](dataplot.md)     | SAM Data plot                                                     |
-| [dataplot.sam](dataplot.md) | SAM Data plot                                                     |
-| [defcon](defcon.md)         | Setup basic minimal configuration for sam assessment              |
-| [defpar](defpar.md)         | Setup initial values for all model parameters and random effects. |
+|                                                                         |                                                                                          |
+|-------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| [dataplot](dataplot.md)                                                 | SAM Data plot                                                                            |
+| [dataplot.sam](dataplot.md)                                             | SAM Data plot                                                                            |
+| [defcon](defcon.md)                                                     | Setup basic minimal configuration for sam assessment                                     |
+| [defpar](defpar.md)                                                     | Setup initial values for all model parameters and random effects.                        |
+| [deterministicReferencepoints](deterministicReferencepoints.md)         | Function to calculate reference points for the embedded deterministic model of a SAM fit |
+| [deterministicReferencepoints.sam](deterministicReferencepoints.sam.md) | Function to calculate reference points for the embedded deterministic model of a SAM fit |
 
 <span id="E">-- E --</span>
 ---------------------------
@@ -76,6 +84,8 @@ Help Pages
 | [equilibriumbiomassplot.default](equilibriumbiomassplot.md)     | SAM equilibrium biomass plot                                  |
 | [equilibriumbiomassplot.hcr](equilibriumbiomassplot.md)         | SAM equilibrium biomass plot                                  |
 | [equilibriumbiomassplot.samforecast](equilibriumbiomassplot.md) | SAM equilibrium biomass plot                                  |
+| [equilibriumbiomasstable](equilibriumbiomasstable.md)           | equilibrium biomass table                                     |
+| [equilibriumbiomasstable.default](equilibriumbiomasstable.md)   | equilibrium biomass table                                     |
 
 <span id="F">-- F --</span>
 ---------------------------
@@ -111,8 +121,10 @@ Help Pages
 | [generationlengthplot.samforecast](generationlengthplot.md) | SAM generation length plot                                       |
 | [generationlengthtable](generationlengthtable.md)           | Generation length table                                          |
 | [generationlengthtable.default](generationlengthtable.md)   | Generation length table                                          |
+| [getAllDerivedValues](getAllDerivedValues.md)               | Update sam fit with additional derived values                    |
 | [getFleet](getFleet.md)                                     | Extract a fleet observed or predicted value from a fitted object |
 | [getLowerBounds](getLowerBounds.md)                         | Bounds                                                           |
+| [getResidualFleets](getResidualFleets.md)                   | Extract a list of catch fleets                                   |
 | [getUpperBounds](getUpperBounds.md)                         | Bounds                                                           |
 | [grad](grad.md)                                             | Calculate gradient of a function                                 |
 
@@ -127,13 +139,12 @@ Help Pages
 <span id="I">-- I --</span>
 ---------------------------
 
-|                                                         |                                   |
-|---------------------------------------------------------|-----------------------------------|
-| [icesAdviceRule](icesAdviceRule.md)                     | Forecast with an ICES advice rule |
-| [ICESvalues](ICESvalues.md)                             | Function to estimate ICES values  |
-| [ICESvalues.sam](ICESvalues.md)                         | Function to estimate ICES values  |
-| [ICESvalues.sam\_referencepoints](ICESvalues.md)        | Function to estimate ICES values  |
-| [is.whole.positive.number](is.whole.positive.number.md) | Function to test if x is ...      |
+|                                                         |                                                               |
+|---------------------------------------------------------|---------------------------------------------------------------|
+| [ibc](ibc.md)                                           | Integrated spline basis for use with formula interface        |
+| [icesAdviceRule](icesAdviceRule.md)                     | Forecast with an ICES advice rule                             |
+| [iibc](iibc.md)                                         | Double integrated spline basis for use with formula interface |
+| [is.whole.positive.number](is.whole.positive.number.md) | Function to test if x is ...                                  |
 
 <span id="J">-- J --</span>
 ---------------------------
@@ -255,6 +266,8 @@ Help Pages
 | [rectable](rectable.md)                   | Recruit table                                                                     |
 | [rectable.default](rectable.md)           | Recruit table                                                                     |
 | [reduce](reduce.md)                       | reduce helper function to reduce data                                             |
+| [referencepoints](referencepoints.md)     | Estimate reference points                                                         |
+| [referencepoints.sam](referencepoints.md) | Estimate reference points                                                         |
 | [refit](refit.md)                         | Re-fit a model from stockassessment.org                                           |
 | [residuals.sam](residuals.sam.md)         | Extract residuals from sam object                                                 |
 | [retro](retro.md)                         | retro run                                                                         |
@@ -267,34 +280,40 @@ Help Pages
 | [rmaxtable.default](rmaxtable.md)         | rmax table                                                                        |
 | [rmvnorm](rmvnorm.md)                     | rmvnorm helper function to draw multivariate normal samples                       |
 | [runwithout](runwithout.md)               | runwithout helper function                                                        |
+| [runwithout.sam](runwithout.md)           | runwithout helper function                                                        |
 
 <span id="S">-- S --</span>
 ---------------------------
 
-|                                     |                                                                              |
-|-------------------------------------|------------------------------------------------------------------------------|
-| [sam.fit](sam.fit.md)               | Fit SAM model                                                                |
-| [saveConf](saveConf.md)             | Saves a model configuration list to a file                                   |
-| [sdplot](sdplot.md)                 | Plots the sd of the log observations as estimated in SAM in increasing order |
-| [sdplot.sam](sdplot.md)             | Plots the sd of the log observations as estimated in SAM in increasing order |
-| [setS](setS.md)                     | small helper function                                                        |
-| [setSeq](setSeq.md)                 | small helper function                                                        |
-| [setup.sam.data](setup.sam.data.md) | Combine the data sources to SAM readable object                              |
-| [simstudy](simstudy.md)             | Simulate data from fitted model and re-estimate from each run                |
-| [simulate.sam](simulate.sam.md)     | Simulate from a sam object                                                   |
-| [sprplot](sprplot.md)               | SAM SPR plot                                                                 |
-| [sprplot.default](sprplot.md)       | SAM SPR plot                                                                 |
-| [sprplot.hcr](sprplot.md)           | SAM SPR plot                                                                 |
-| [sprplot.samforecast](sprplot.md)   | SAM SPR plot                                                                 |
-| [srplot](srplot.md)                 | Plots the stock recruitment                                                  |
-| [srplot.sam](srplot.md)             | Plots the stock recruitment                                                  |
-| [ssbplot](ssbplot.md)               | SAM SSB plot                                                                 |
-| [ssbplot.default](ssbplot.md)       | SAM SSB plot                                                                 |
-| [ssbplot.hcr](ssbplot.md)           | SAM SSB plot                                                                 |
-| [ssbplot.samforecast](ssbplot.md)   | SAM SSB plot                                                                 |
-| [ssbtable](ssbtable.md)             | SSB table                                                                    |
-| [ssbtable.default](ssbtable.md)     | SSB table                                                                    |
-| [summary.sam](summary.sam.md)       | Summary of sam object                                                        |
+|                                                               |                                                                              |
+|---------------------------------------------------------------|------------------------------------------------------------------------------|
+| [sam.fit](sam.fit.md)                                         | Fit SAM model                                                                |
+| [saveConf](saveConf.md)                                       | Saves a model configuration list to a file                                   |
+| [sdplot](sdplot.md)                                           | Plots the sd of the log observations as estimated in SAM in increasing order |
+| [sdplot.sam](sdplot.md)                                       | Plots the sd of the log observations as estimated in SAM in increasing order |
+| [setS](setS.md)                                               | small helper function                                                        |
+| [setSeq](setSeq.md)                                           | small helper function                                                        |
+| [setup.sam.data](setup.sam.data.md)                           | Combine the data sources to SAM readable object                              |
+| [simstudy](simstudy.md)                                       | Simulate data from fitted model and re-estimate from each run                |
+| [simulate.sam](simulate.sam.md)                               | Simulate from a sam object                                                   |
+| [sprplot](sprplot.md)                                         | SAM SPR plot                                                                 |
+| [sprplot.default](sprplot.md)                                 | SAM SPR plot                                                                 |
+| [sprplot.hcr](sprplot.md)                                     | SAM SPR plot                                                                 |
+| [sprplot.samforecast](sprplot.md)                             | SAM SPR plot                                                                 |
+| [sprtable](sprtable.md)                                       | SPR table                                                                    |
+| [sprtable.default](sprtable.md)                               | SPR table                                                                    |
+| [srplot](srplot.md)                                           | Plots the stock recruitment                                                  |
+| [srplot.sam](srplot.md)                                       | Plots the stock recruitment                                                  |
+| [ssbplot](ssbplot.md)                                         | SAM SSB plot                                                                 |
+| [ssbplot.default](ssbplot.md)                                 | SAM SSB plot                                                                 |
+| [ssbplot.hcr](ssbplot.md)                                     | SAM SSB plot                                                                 |
+| [ssbplot.samforecast](ssbplot.md)                             | SAM SSB plot                                                                 |
+| [ssbtable](ssbtable.md)                                       | SSB table                                                                    |
+| [ssbtable.default](ssbtable.md)                               | SSB table                                                                    |
+| [stochasticReferencepoints](stochasticReferencepoints.md)     | Estimate stochastic reference points                                         |
+| [stochasticReferencepoints.sam](stochasticReferencepoints.md) | Estimate stochastic reference points                                         |
+| [stockassessment-deprecated](stockassessment-deprecated.md)   | Deprecated and defunct functions                                             |
+| [summary.sam](summary.sam.md)                                 | Summary of sam object                                                        |
 
 <span id="T">-- T --</span>
 ---------------------------
@@ -335,3 +354,5 @@ Help Pages
 | [yprplot.default](yprplot.md)                 | SAM YPR plot                   |
 | [yprplot.hcr](yprplot.md)                     | SAM YPR plot                   |
 | [yprplot.samforecast](yprplot.md)             | SAM YPR plot                   |
+| [yprtable](yprtable.md)                       | YPR table                      |
+| [yprtable.default](yprtable.md)               | YPR table                      |

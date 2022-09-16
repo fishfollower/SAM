@@ -14,7 +14,7 @@ Combine the data sources to SAM readable object
 setup.sam.data(
   fleets = NULL,
   surveys = NULL,
-  residual.fleet = NULL,
+  residual.fleets = NULL,
   prop.mature = NULL,
   stock.mean.weight = NULL,
   catch.mean.weight = NULL,
@@ -25,6 +25,7 @@ setup.sam.data(
   prop.m = NULL,
   land.frac = NULL,
   recapture = NULL,
+  sum.residual.fleets = NULL,
   keep.all.ages = FALSE
 )
 ```
@@ -36,7 +37,7 @@ Argument      |Description
 ------------- |----------------
 `fleets`     |     comm fleets vith effort (currently unimplemented)
 `surveys`     |     surveys
-`residual.fleet`     |     total catch minus commercial
+`residual.fleets`     |     fleet, or list of fleets without effort information
 `prop.mature`     |     pm
 `stock.mean.weight`     |     sw
 `catch.mean.weight`     |     cw
@@ -47,6 +48,8 @@ Argument      |Description
 `prop.m`     |     ...
 `land.frac`     |     ...
 `recapture`     |     ...
+`sum.residual.fleets`     |     ...
+`keep.all.ages`     |     ...
 
 
 ## Details

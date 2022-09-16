@@ -1,9 +1,11 @@
-# `catchbyfleettable`: CatchByFleet table
+# `catchbyfleettable`
+
+CatchByFleet table
+
 
 ## Description
 
-
- CatchByFleet table
+CatchByFleet table
 
 
 ## Usage
@@ -17,12 +19,12 @@ catchbyfleettable(fit, obs.show = FALSE)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     object returned from sam.fit
-```obs.show```     |     logical add a column with catch sum of product rowsums(C*W)
+`fit`     |     object returned from sam.fit
+`obs.show`     |     logical add a column with catch sum of product rowsums(C*W)
+
 
 ## Details
 
-
- ...
+...
 
 

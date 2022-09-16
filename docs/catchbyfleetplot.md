@@ -1,9 +1,11 @@
-# `catchbyfleetplot`: SAM catchbyfleet plot
+# `catchbyfleetplot`
+
+SAM catchbyfleet plot
+
 
 ## Description
 
-
- SAM catchbyfleet plot
+SAM catchbyfleet plot
 
 
 ## Usage
@@ -17,13 +19,13 @@ catchbyfleetplot(fit, obs.show = FALSE, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     the object returned from sam.fit
-```obs.show```     |     if observations are to be shown also
-```...```     |     extra arguments transferred to plot
+`fit`     |     the object returned from sam.fit
+`obs.show`     |     if observations are to be shown also
+`...`     |     extra arguments transferred to plot
+
 
 ## Details
 
-
- Plot of estimated (and optionally observed) total catch in weight
+Plot of estimated (and optionally observed) total catch in weight
 
 

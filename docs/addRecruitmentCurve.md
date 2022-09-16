@@ -51,15 +51,12 @@ Argument      |Description
 `picol`     |     Color of prediction interval line
 `pilty`     |     Line type of prediction interval line
 `...`     |     not used
+`year`     |     Show recruitment calculated conditional on this year (for recruitment functions that depend on year)
+`lastR`     |     Show recruitment calculated conditional on this previous recruitment (for recruitment functions that depend on recruitment the previous year)
 
 
 ## Seealso
 
 srplot
-
-
-## Author
-
-Christoffer Moesgaard Albertsen
 
 

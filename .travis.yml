@@ -1,11 +1,6 @@
 language: r
 r:
-<<<<<<< HEAD
   - 3.4
-=======
-  - 3.2
->>>>>>> multi
-##  - release
   - devel
 
 sudo: false

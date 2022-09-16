@@ -7,13 +7,14 @@ Harvest control rule forecast
 
 The formula below is used to determine a new F based on the previous SSB.
  
-$$F = \left\{\begin{array}{ll}F_{cap} & SSB < B_{cap} \\min\left(Ftarget, \max\left( F_{origin}, (SSB - B_{origin}) \cdot (F_{target} - F_{origin}) / (B_{trigger}-B_{origin}) \right)\right) & SSB \ge B_{origin}\end{array}\right.$$
+$$F = \left\{\begin{array}{ll}F_{cap} & SSB < B_{cap} \\min\left(F_{target}, \max\left( F_{origin}, (SSB - B_{origin}) \cdot (F_{target} - F_{origin}) / (B_{trigger}-B_{origin}) \right)\right) & SSB \ge B_{cap}\end{array}\right.$$
+ 
+ If $B_{trigger} = B_{origin}$ and $SSB \ge B_{cap}$ , $F_{target}$ is always returned.
 
 
 ## Usage
 
 ```r
-hcr(fit, ...)
 hcr(fit, ...)
 list(list("hcr"), list("sam"))(
   fit,
@@ -56,18 +57,13 @@ Argument      |Description
 
 ## Value
 
-hcr object
+model forecast using a harvest control rule
+ 
+ hcr model forecast object
 
 
 ## Seealso
 
 modelforecast
- 
- modelforecast
-
-
-## Author
-
-Christoffer Moesgaard Albertsen
 
 

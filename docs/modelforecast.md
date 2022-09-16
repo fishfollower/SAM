@@ -16,6 +16,7 @@ Model based forecast function
 modelforecast(fit, ...)
 list(list("modelforecast"), list("sam"))(
   fit,
+  constraints = NULL,
   fscale = NULL,
   catchval = NULL,
   fval = NULL,
@@ -25,7 +26,7 @@ list(list("modelforecast"), list("sam"))(
   hcr = NULL,
   nosim = NULL,
   year.base = max(fit$data$years),
-  ave.years = max(fit$data$years) + (-4:0),
+  ave.years = c(),
   rec.years = c(),
   label = NULL,
   overwriteSelYears = NULL,
@@ -38,11 +39,14 @@ list(list("modelforecast"), list("sam"))(
   addTSB = FALSE,
   biasCorrect = FALSE,
   returnAllYears = FALSE,
-  useUniroot = FALSE,
   nCatchAverageYears = 1,
   returnObj = FALSE,
   hcrConf = numeric(0),
   hcrCurrentSSB = 0,
+  progress = TRUE,
+  estimate = median,
+  silent = TRUE,
+  newton_config = NULL,
   ...
 )
 ```
@@ -54,10 +58,11 @@ Argument      |Description
 ------------- |----------------
 `fit`     |     an assessment object of type sam, as returned from the function sam.fit
 `...`     |     other variables used by the methods
+`constraints`     |     a character vector of forecast constraint specifications
 `fscale`     |     a vector of f-scales. See details.
 `catchval`     |     a vector of target catches. See details.
 `fval`     |     a vector of target f values. See details.
-`nextssb`     |     a vector target SSB values the following year. See details
+`nextssb`     |     a vector target SSB values the following year. See details.
 `landval`     |     a vector of target catches. See details.
 `findMSY`     |     Should not be used. See [forecastMSY](#forecastmsy) .
 `hcr`     |     Should not be used. See [hcr](#hcr) .
@@ -76,16 +81,21 @@ Argument      |Description
 `addTSB`     |     if TRUE the total stock biomass (TSB) is added
 `biasCorrect`     |     Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).
 `returnAllYears`     |     If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.
-`useUniroot`     |     Use uniroot to find catchval, landval, and nextssb?
 `nCatchAverageYears`     |     Should not be used. See [forecastMSY](#forecastmsy) .
 `returnObj`     |     Only return TMB object?
 `hcrConf`     |     Should not be used. See [hcr](#hcr) .
 `hcrCurrentSSB`     |     Should not be used. See [hcr](#hcr) .
+`progress`     |     Show progress bar for simulations?
+`estimate`     |     the summary function used (typically mean or median) for simulations
+`silent`     |     Passed to MakeADFun. Should the TMB object be silent?
+`newton_config`     |     Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for defaults.
 
 
 ## Details
 
-There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run.
+Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the $log(F)$ process. Therefore, catch constraints are not matched exactly in individual simulations (unlike the forecast function simulations). Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
+ By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
+ Catch scenarios are specified by a vector of target constraints. The first value determines F in the year after the base year.
 
 
 ## Value

@@ -35,8 +35,3 @@ Argument      |Description
 gradient vector
 
 
-## Author
-
-Christoffer Moesgaard Albertsen
-
-

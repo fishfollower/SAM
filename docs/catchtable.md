@@ -20,15 +20,9 @@ list(list("catchtable"), list("sam"))(fit, obs.show = FALSE, ...)
 
 Argument      |Description
 ------------- |----------------
-<<<<<<< HEAD
-`fit`     |     ...
+`fit`     |     object returned from sam.fit
 `obs.show`     |     logical add a column with catch sum of product rowsums(C*W)
 `...`     |     extra arguments not currently used
-=======
-```fit```     |     object returned from sam.fit
-```obs.show```     |     logical add a column with catch sum of product rowsums(C*W)
-```...```     |     extra arguments not currently used
->>>>>>> multi
 
 
 ## Details

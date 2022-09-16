@@ -20,6 +20,7 @@ Fit SAM model
       ignore.parm.uncertainty = FALSE,
       rel.tol = 1e-10,
       penalizeSpline = FALSE,
+      fullDerived = FALSE,
       ...
     )
 
@@ -38,6 +39,8 @@ Fit SAM model
 | `sim.condRE`              | logical with default `TRUE`. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.                                                                                                                                                              |
 | `ignore.parm.uncertainty` | option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties                                                                                                                                                                                                                                |
 | `rel.tol`                 | option passed to stats:::nlminb sets the convergence criteria                                                                                                                                                                                                                                                                               |
+| `penalizeSpline`          | Add penalization to spline recruitment?                                                                                                                                                                                                                                                                                                     |
+| `fullDerived`             | Report all derived values?                                                                                                                                                                                                                                                                                                                  |
 | `...`                     | extra arguments to MakeADFun                                                                                                                                                                                                                                                                                                                |
 
 ### Details
@@ -58,19 +61,20 @@ Is last age group considered a plus group (1 yes, or 0 no).
 $keyLogFsta:  
 A matrix of integers. The number of rows is equal to the number of
 fleets and the number of columns is equal to the number of age classes.
-The matrix describes the coupling of the fishing mortality states
-(normally only first row is used). '-1' is used for entries where no
-fishing mortality applies (e.g. age groups in survey fleets, or
+The matrix describes the coupling of the fishing mortality states (the
+first rows are the catch fleet without effort). '-1' is used for entries
+where no fishing mortality applies (e.g. age groups in survey fleets, or
 unobserved age groups). For the valid entries consecutive integers
 starting at zero must be used, because they are used as indices in the
-corresponding state vector. If the same number is used for two age
-classes, then the fishing mortality for those age classes are assumed
-equal (linked to the same state).
+corresponding state vector. If the same number is used for two fleet-age
+combinations, then the fishing mortality for those are assumed equal
+(linked to the same state).
 
 $corFlag:  
-A single integer to specify the correlation structure of log-scale
+An integer vector to specify the correlation structure of log-scale of
 fishing mortality increments (0 independent, 1 compound symmetry, or 2
-AR(1)).
+AR(1)). The length of the vector is equal to the number of catch fleets
+without effort information.
 
 $keyLogFpar:  
 A matrix of integers. The number of rows is equal to the number of
@@ -237,11 +241,11 @@ an object of class `sam`
 Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of
 reference points in an age-based state-space stock assessment model.
 Fisheries Research, 230, 105618. doi:
-[10.1016/j.fishres.2020.105618](http://doi.org/10.1016/j.fishres.2020.105618)
+[10.1016/j.fishres.2020.105618](https://doi.org/10.1016/j.fishres.2020.105618)
 
 ### Examples
 
     data(nscodData)
     data(nscodConf)
     data(nscodParameters)
-    fit <- sam.fit(nscodData, nscodConf, nscodParameters)
+    fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)

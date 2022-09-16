@@ -20,6 +20,7 @@ getLowerBounds(parameters, conf)
 Argument      |Description
 ------------- |----------------
 `parameters`     |     initial values for the model in a format similar to what is returned from the defpar function
+`conf`     |     model configuration in a format similar to what is returned from the defcon function
 
 
 ## Value

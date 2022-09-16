@@ -12,7 +12,7 @@ F-at-age table
 
 ```r
 faytable(fit, ...)
-list(list("faytable"), list("sam"))(fit, ...)
+list(list("faytable"), list("sam"))(fit, fleet = which(fit$data$fleetTypes == 0), ...)
 ```
 
 
@@ -20,8 +20,9 @@ list(list("faytable"), list("sam"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-`fit`     |     ...
+`fit`     |     a fitted object of class 'sam' as returned from sam.fit
 `...`     |     extra arguments not currently used
+`fleet`     |     the fleet number(s) to return F summed for (default is to return the sum of all residual fleets).
 
 
 ## Details

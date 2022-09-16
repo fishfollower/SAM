@@ -35,8 +35,3 @@ Argument      |Description
 jacobian matrix
 
 
-## Author
-
-Christoffer Moesgaard Albertsen
-
-

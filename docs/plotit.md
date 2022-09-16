@@ -93,7 +93,7 @@ Argument      |Description
 `fit`     |     the fitted object from sam.fit of a set of such fits c(fit1,fit2)
 `what`     |     quoted name of object to extract
 `...`     |     extra arguments transferred to plot
-`x`     |     x-alues
+`x`     |     x-values
 `ylab`     |     label on y-axis
 `xlab`     |     label on x-axis
 `ex`     |     extra y's to make room for
@@ -104,7 +104,9 @@ Argument      |Description
 `addCI`     |     A logical vector indicating if confidence intervals should be plotted for the added fits.
 `drop`     |     number of years to be left unplotted at the end.
 `unnamed.basename`     |     the name to assign an unnamed basefit
-`xlim`     |     ...
+`xlim`     |     xlim for the plot
+`ylim`     |     ylim for the plot
+`ylimAdd`     |     values to add when calculating ylim for the plot
 
 
 ## Details

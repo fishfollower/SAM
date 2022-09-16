@@ -21,6 +21,7 @@ Argument      |Description
 ------------- |----------------
 `fit`     |     a sam fit or the name of a fit from stockassessment.org
 `newConf`     |     list changes to the configuration
+`startingValues`     |     list of parameter values to use as starting values
 `...`     |     Arguments passed to sam.fit
 
 
