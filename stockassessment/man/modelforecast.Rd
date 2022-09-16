@@ -121,7 +121,7 @@ Model based forecast function
 \details{
 Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process. Therefore, catch constraints are not matched exactly in individual simulations (unlike the forecast function simulations). Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
 By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
-Catch scenarios are specified by a vector of target constraints.
+Catch scenarios are specified by a vector of target constraints. The first value determines F in the year after the base year.
 }
 \section{F based constraints}{
 
@@ -142,6 +142,7 @@ If an "*" is added to the target value, the target will be relative to the year 
 
 Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. The format is similar to catch/landing based scenarios. However, fleets have no effect.
 If an "*" is added to the target value, the target will be relative to the year before.
+Note that SSB amd TSB used for catch constraints are at the beginning of the next year to avoid dependence on future F values. Therefore, the values will differ from the output SSB and TSB estimates if propM or propF are not zero.
 }
 
 \section{Combining constraints}{
@@ -160,7 +161,8 @@ Catch constraints specified as specific values are inherently different from cat
 \section{Old specification}{
 
 It is also possible to specify forecast constraints in a way similar to the \link{forecast} function. 
-There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run.
+There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. Unlike the forecast function, no value should be given for the base year.
+Internally, the old specification is translated such that "fval=x" becomes "F=x", "fscale=x" becomes "F=x*", "catchval=x" becomes "C=x", "nextssb=x" becomes "SSB=x", and "landval=x" becomes "L=x".
 }
 
 \section{Forecasts using Laplace approximation or simulations}{
@@ -170,7 +172,7 @@ NA
 \section{Warnings}{
 
 Long term forecasts with random walk recruitment can lead to unstable behaviour and difficulties finding suitable F values for the constraints.
-If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN.
+If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN. Likewise, forecasts leading to high F values in some years may cause problems for the optimization as they will be used as starting values for the next years.
 }
 
 \seealso{
