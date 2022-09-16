@@ -8,7 +8,7 @@
  recplot(fit)                                              01e5b15aad1fa8ff758dc47af1471b17
  catchplot(fit)                                            b27b86b9c53dce0d53911aa5ef4b32c8
  parplot(fit)                                              a5fb4d46f5ce426bde45ec34b99e378c
- srplot(fit)                                               cf9c40588fee47eb32ae3354ae4cd700
+ srplot(fit)                                               9771b06386de4a9027786d7a99b46321
  fitplot(fit)                                              50ba1d196bf7d5ea7beba30ba69d5a23
  dataplot(fit)                                             3eda2d8ad327aae717cdc3382a4a2c35
  fbarplot(retro)                                           1a897a7cff8d18868bf6471deaaa7c8b

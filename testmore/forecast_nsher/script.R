@@ -78,5 +78,3 @@ cat("fmodel tab:\t",paste(all.equal(rep(tail(fbartable(fit)[,1],1),length(target
                      attr(fv,"tab")[-1,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 cat("fmodel tab:\t",paste(all.equal(c(fbartable(fit)[,1],rep(tail(fbartable(fit)[,1],1),length(target))),
                      attr(fv,"fulltab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
-
-
