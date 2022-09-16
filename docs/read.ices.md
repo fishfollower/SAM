@@ -1,9 +1,11 @@
-# `read.ices`: Function to read ICES/CEFAS data files and validate if input makes sense
+# `read.ices`
+
+Function to read ICES/CEFAS data files and validate if input makes sense
+
 
 ## Description
 
-
- Function to read ICES/CEFAS data files and validate if input makes sense
+Function to read ICES/CEFAS data files and validate if input makes sense
 
 
 ## Usage
@@ -17,12 +19,12 @@ read.ices(filen)
 
 Argument      |Description
 ------------- |----------------
-```filen```     |     The filename
+`filen`     |     The filename
+
 
 ## Details
 
-
- First two lines are ignored and can be used for comments.
+First two lines are ignored and can be used for comments.
  Can read formats 1 full, 2 row, 3 scalar, and 5 column
  
  Tests:

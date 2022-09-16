@@ -24,13 +24,14 @@ setS<-function(x){
 ##' @details The configuration returned by defcon is intended as a help to set up a syntactically correct configuration for the sam model. The dimensions are set from the data (years, age-classes, and fleet types available). The configuration is intended to be fairly simplistic in the hope that the model configured will at least converge (not guaranteed). Most importantly: No model validation has been performed, so it should not be assumed that the returned model configuration will result in a sensible assessment of the stock. The actual model configuration is the responsibility of the user.     
 ##' @export
 defcon<-function(dat){
-  fleetTypes <- dat$fleetTypes
-  ages <- do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
-  ages[fleetTypes%in%c(3,5),] <- NA
-  minAge <- min(ages, na.rm=TRUE)
-  maxAge <- max(ages, na.rm=TRUE)
-  ages[is.na(ages)] <- minAge
-  nAges <- maxAge-minAge+1
+    fleetTypes <- dat$fleetTypes    
+    ##ages <- do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
+    ages <- cbind(dat$minAgePerFleet, dat$maxAgePerFleet)    
+    ages[fleetTypes%in%c(3,5),] <- NA
+    minAge <- min(ages, na.rm=TRUE)
+    maxAge <- max(ages, na.rm=TRUE)
+    ages[is.na(ages)] <- minAge
+    nAges <- maxAge-minAge+1
   nFleets <- nrow(ages)
   ret <- list()
   ret$minAge <- minAge
@@ -47,7 +48,7 @@ defcon<-function(dat){
     }
   }  
   ret$keyLogFsta <- x - 1
-  ret$corFlag <- 2
+  ret$corFlag <- rep(2,length(which(fleetTypes==0)))
   x <- matrix(0, nrow=nFleets, ncol=nAges)
   lastMax <- 0
   for(i in 1:nrow(x)){
@@ -78,12 +79,15 @@ defcon<-function(dat){
   }  
   ret$keyVarObs <- x - 1
   ret$obsCorStruct <- factor(rep("ID",nFleets),levels=c("ID","AR","US"))
+  ret$obsCorStruct[fleetTypes==7] <- NA
   ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=nAges-1)
   colnames(ret$keyCorObs)<-paste(minAge:(maxAge-1),(minAge+1):maxAge,sep="-")
   for(i in 1:nrow(x)){
+    if(fleetTypes[i]!=7){
       if(ages[i,1]<ages[i,2]){
         ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-NA
       }
+    }
   }
     
   ret$stockRecruitmentModelCode <- 0
@@ -91,12 +95,13 @@ defcon<-function(dat){
   ret$keyScaledYears <- numeric(0)
   ret$keyParScaledYA <- array(0,c(0,0))
 
-  cs <- colSums(dat$catchMeanWeight, na.rm=TRUE)
-  ii <- min(which(dat$fleetTypes==0))
-  tc <- tapply(dat$logobs[dat$aux[,2]==ii], INDEX=dat$aux[,3][dat$aux[,2]==ii], function(x)sum(x,na.rm=TRUE))
+  cs <- colSums(apply(dat$catchMeanWeight,1:2,median,na.rm=T))
+  ii <- which(dat$fleetTypes==0)
+  tc <- tapply(dat$logobs[dat$aux[,2]%in%ii], INDEX=dat$aux[,3][dat$aux[,2]%in%ii], function(x)sum(x,na.rm=TRUE))
   tc <- tc*cs[names(cs)%in%names(tc)]
   pp <- tc/sum(tc)
   ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
+  ret$fbarRange <- ifelse(is.finite(ret$fbarRange), ret$fbarRange, c(ret$minAge,ret$maxAge))
   ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
   ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
   ret$fixVarToWeight <- 0
@@ -112,19 +117,20 @@ defcon<-function(dat){
     }
   }
   
-  ret$hockeyStickCurve <- 20
+  ## ret$hockeyStickCurve <- 20
   ret$stockWeightModel <- 0
   ret$keyStockWeightMean <- rep(NA_integer_,nAges)
   ret$keyStockWeightObsVar <- rep(NA_integer_,nAges)  
   ret$catchWeightModel <- 0
-  ret$keyCatchWeightMean <- rep(NA_integer_,nAges)
-  ret$keyCatchWeightObsVar <- rep(NA_integer_,nAges)  
+  ret$keyCatchWeightMean <- matrix(NA_integer_,sum(fleetTypes==0),nAges)
+  ret$keyCatchWeightObsVar <- matrix(NA_integer_,sum(fleetTypes==0),nAges)  
   ret$matureModel <- 0
   ret$keyMatureMean <- rep(NA_integer_,nAges)
   ret$mortalityModel <- 0
   ret$keyMortalityMean <- rep(NA_integer_,nAges)
   ret$keyMortalityObsVar <- rep(NA_integer_,nAges)  
-  ret$keyXtraSd<-matrix(NA_integer_, nrow=0, ncol=4)
+    ret$keyXtraSd<-matrix(NA_integer_, nrow=0, ncol=4)
+    ret$logNMeanAssumption <- c(0,0)
   return(ret) 
 }
 
@@ -199,7 +205,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$fracMixF <- "The fraction of t(3) distribution used in logF increment distribution" 
     txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution (for each age group)"
     txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet"
-    txt$constRecBreaks <- "Vector of break years between which recruitment is at constant level. The break year is included in the left interval. (This option is only used in combination with stock-recruitment code 3)"
+    txt$constRecBreaks <- "For stock-recruitment code 3: Vector of break years between which recruitment is at constant level. The break year is included in the left interval. For spline stock-recruitment: Vector of log-ssb knots. (This option is only used in combination with stock-recruitment code 3, 90-92, and 290)"
     txt$predVarObsLink <- "Coupling of parameters used in a prediction-variance link for observations."
     txt$stockWeightModel <- "Integer code describing the treatment of stock weights in the model (0 use as known, 1 use as observations to inform stock weight process (GMRF with cohort and within year correlations))"
     txt$keyStockWeightMean <- "Coupling of stock-weight process mean parameters (not used if stockWeightModel==0)"
@@ -212,7 +218,8 @@ saveConf <- function(x, file="", overwrite=FALSE){
     txt$mortalityModel <- "Integer code describing the treatment of natural mortality in the model (0 use as known, 1 use as observations to inform natural mortality process (GMRF with cohort and within year correlations))"
     txt$MortalityMean <- "Coupling of natural mortality process mean parameters (not used if mortalityModel==0)"
     txt$keyMortalityObsVar <- "Coupling of natural mortality observation variance parameters (not used if mortalityModel==0)"
-    txt$keyXtraSd<-"An integer matrix with 4 columns (fleet year age coupling), which allows additional uncertainty to be estimated for the specified observations" 
+      txt$keyXtraSd<-"An integer matrix with 4 columns (fleet year age coupling), which allows additional uncertainty to be estimated for the specified observations"
+      txt$logNMeanCorrection <- "Flags indicating what the population model should correspond to. 0: Median, 1: Mean, 2: Mode. Two values are are given to differentiate recruitment and other ages."
     nam<-names(x)
     dummy<-lapply(1:length(nam), function(i){
         cat('\n$', file=file, append=TRUE)

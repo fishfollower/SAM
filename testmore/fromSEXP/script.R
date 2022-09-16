@@ -58,7 +58,8 @@ zz <- file(foutp, open = "wt")
 sink(zz, type = "output")
 sink(zz, type ="message")
 TMB::compile(f,
-             CXXFLAGS = paste0("-I", system.file("include", package = "stockassessment")),
+             CXXFLAGS = paste0("-Wno-ignored-attributes -I", system.file("include", package = "stockassessment")),
+             framework="TMBad",
              libinit = FALSE)
 sink(type ="message")
 sink(type = "output")

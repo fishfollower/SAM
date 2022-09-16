@@ -1,7 +1,7 @@
 ##' Plot helper
 ##' @param fit the fitted object from sam.fit of a set of such fits c(fit1,fit2)
 ##' @param what quoted name of object to extract
-##' @param x x-alues
+##' @param x x-values
 ##' @param ylab label on y-axis
 ##' @param xlab label on x-axis
 ##' @param ex extra y's to make room for
@@ -12,7 +12,9 @@
 ##' @param addCI A logical vector indicating if confidence intervals should be plotted for the added fits.  
 ##' @param drop number of years to be left unplotted at the end.
 ##' @param unnamed.basename the name to assign an unnamed basefit 
-##' @param xlim ...
+##' @param xlim xlim for the plot
+##' @param ylim ylim for the plot
+##' @param ylimAdd values to add when calculating ylim for the plot
 ##' @param ... extra arguments transferred to plot
 ##' @importFrom graphics plot polygon grid lines
 ##' @importFrom grDevices gray
@@ -24,7 +26,7 @@ plotit <-function (fit, what,...){
 ##' @method plotit sam
 ##' @export
 plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
-                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,ylim=NULL,ylimAdd=NA,...){
     idx <- names(fit$sdrep$value)==what
     y <- fit$sdrep$value[idx]
     lowhig <- y+fit$sdrep$sd[idx]%o%c(-2,2)
@@ -40,7 +42,12 @@ plotit.sam <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=
     if(add){
       lines(x, trans(y), lwd=3,...)
     }else{
-      plot(x, trans(y), xlab=xlab, ylab=ylab, type="n", lwd=3, xlim=xr, ylim=range(c(trans(lowhig),0,ex)), las=1,...)
+        if(missing(ylim)){
+            yr <- range(c(trans(lowhig),trans(y),0,ex,ylimAdd), na.rm = TRUE)
+        }else{
+            yr <- ylim
+        }
+        plot(x, trans(y), xlab=xlab, ylab=ylab, type="n", lwd=3, xlim=xr, ylim=yr, las=1,...)
       grid(col="black")
       lines(x, trans(y), lwd=3, ...)
     }
@@ -84,11 +91,21 @@ plotit.samset <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", 
 ##' @method plotit samforecast
 ##' @export
 plotit.samforecast <- function(fit, what, x=fit$data$years, ylab=what, xlab="Years", ex=numeric(0), trans=function(x)x, add=FALSE, ci=TRUE, cicol=gray(.5,alpha=.5),
-                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,...){
+                   addCI=NA, drop=0, unnamed.basename="current", xlim=NULL,ylim=NULL,...){
     xy <- unlist(lapply(fit, function(xx) xx$year))
     thisfit<-attr(fit,"fit")
     xr <- range(thisfit$data$years, xy)
-    plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,...)
+    if(missing(ylim)){
+        ## if(what == "logCatch"){
+        ##     v1 <- catchtable(fit)
+        ##     v2 <- catchtable(thisfit)
+        ## }else{
+        v1 <- tableit(fit, what = what, trans = trans, x = x[1:(length(x)-drop)])
+        v2 <- tableit(thisfit, what = what, trans = trans, x = x[1:(length(x)-drop)])
+        ## }
+        ylim <- range(v1,v2)
+    }
+    plotit(thisfit, what=what, ylab=ylab, xlab=xlab, ex=ex, trans=trans, add=add, ci=ci, cicol=cicol, drop=drop, xlim=xr,ylim=ylim,...)
 }
 
 ##' @rdname plotit
@@ -425,6 +442,7 @@ fselectivityplot<-function(fit, cexAge = 1,...){
 ##' @export
 fselectivityplot.sam <- function(fit, cexAge = 1,...){
     fmat<- faytable(fit)
+    fmat[is.na(fmat)] <- 0
     barplot(t(fmat/rowSums(fmat)),border=NA,space=c(0),xlab="Year", main = "Selectivity in F", ...)
     text(1,cumsum(t(fmat/rowSums(fmat))[,1]) - 0.5*t(fmat/rowSums(fmat))[,1] ,label=as.character(1:ncol(fmat)),adj=c(0.0,0.2), cex = cexAge)
 }
@@ -463,6 +481,131 @@ ssbplot.hcr <- function(fit,...){
     plotit(fit, "logssb", ylab="SSB", trans=exp,...)
     addforecast(fit,"ssb")
 }
+
+
+##' SAM life expectancy plot 
+##' @param fit the object returned from sam.fit
+##' @param atRecruit If true, show life expectancy given survival until minAge, otherwise show life expectancy at birth
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of life expectancy 
+##' @export
+lifeexpectancyplot<-function(fit, atRecruit = TRUE, ...){
+    UseMethod("lifeexpectancyplot")
+}
+##' @rdname lifeexpectancyplot
+##' @method lifeexpectancyplot default
+##' @param ylimAdd values to add when calculating ylim for the plot
+##' @export
+lifeexpectancyplot.default <- function(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    if(atRecruit){
+        plotit(fit, "logLifeExpectancyRec", ylab="Life expectancy at recruitment", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
+    }else{
+        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
+    }
+    abline(h = c(fit$conf$maxAge, fit$conf$minAge), col = "darkgrey",lwd=3, lty = 4)
+}
+##' @rdname lifeexpectancyplot
+##' @method lifeexpectancyplot samforecast
+##' @export
+lifeexpectancyplot.samforecast <- function(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge,...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    if(atRecruit){
+        plotit(fit, "logLifeExpectancyRec", ylab="Life expectancy at recruitment", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancyRec")
+    }else{
+        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Cohort", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancy")
+    }
+    abline(h = c(fit$conf$maxAge, fit$conf$minAge), col = "darkgrey",lwd=3, lty = 4)
+}
+
+##' @rdname lifeexpectancyplot
+##' @method lifeexpectancyplot hcr
+##' @export
+lifeexpectancyplot.hcr <- function(fit, atRecruit = TRUE, ylimAdd = fit$conf$maxAge, ...){
+    if(atRecruit){
+        plotit(fit, "logLifeExpectancyRec", ylab="Life expectancy at recruitment", xlab="Year", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancyRec")
+    }else{
+        plotit(fit, "logLifeExpectancy", ylab="Life expectancy at birth", xlab="Cohort", trans=exp, ylimAdd = ylimAdd, ...)
+        addforecast(fit,"logLifeExpectancy")
+    }
+    abline(h = c(fit$conf$maxAge, fit$conf$minAge), col = "darkgrey",lwd=3, lty = 4)
+}
+
+
+##' SAM years lost to fishing plot 
+##' @param fit the object returned from sam.fit
+##' @param cause Fisning, Other, or LifeExpectancy
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of years lost to fishing
+##' @export
+yearslostplot<-function(fit,cause, ...){
+    UseMethod("yearslostplot")
+}
+##' @rdname yearslostplot
+##' @method yearslostplot default
+##' @export
+yearslostplot.default<-function(fit, cause=c("Fishing","Other","LifeExpectancy"), ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    cv <- match.arg(cause)
+    if(cv == "Fishing"){
+        what <- "logYLTF"
+        lab <- sprintf("Life years lost to fishing between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else if(cv == "Other"){
+        what <- "logYLTM"
+        lab <- sprintf("Life years lost to other causes between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else{
+        what <- "logYNL"
+        lab <- sprintf("Temporary life expectancy between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }
+    plotit(fit, what, ylab=lab, xlab="Year", trans=exp,...)
+}
+##' @rdname yearslostplot
+##' @method yearslostplot samforecast
+##' @export
+yearslostplot.samforecast <- function(fit,cause=c("Fishing","Other","LifeExpectancy"), ...){
+   cause <- match.arg(cause)
+    if(cause == "Fishing"){
+        what <- "logYLTF"
+        lab <- sprintf("Life years lost to fishing between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else if(cause == "Other"){
+        what <- "logYLTM"
+        lab <- sprintf("Life years lost to other causes between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else{
+        what <- "logYNL"
+        lab <- sprintf("Temporary life expectancy between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }
+    plotit(fit, what, ylab=lab, xlab="Year", trans=exp,...)
+    addforecast(fit,what)
+}
+
+##' @rdname yearslostplot
+##' @method yearslostplot hcr
+##' @export
+yearslostplot.hcr <- function(fit,cause=c("Fishing","Other","LifeExpectancy"), ...){
+   cause <- match.arg(cause)
+    if(cause == "Fishing"){
+        what <- "logYLTF"
+        lab <- sprintf("Life years lost to fishing between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else if(cause == "Other"){
+        what <- "logYLTM"
+        lab <- sprintf("Life years lost to other causes between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }else{
+        what <- "logYNL"
+        lab <- sprintf("Temporary life expectancy between age %d and %d",fit$conf$minAge,fit$conf$maxAge)
+    }
+    plotit(fit, what, ylab=lab, xlab="Year", trans=exp,...)
+    addforecast(fit,what)
+}
+
 
 ##' SAM TSB plot 
 ##' @param fit the object returned from sam.fit
@@ -569,59 +712,101 @@ recplot.hcr <- function(fit, lagR=FALSE, ...){
 catchplot<-function(fit, obs.show=TRUE, drop=NULL,...){
     UseMethod("catchplot")
 }
+
 ##' @rdname catchplot
-##' @param plot true if catch should be plotted
 ##' @method catchplot sam
 ##' @export
-catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,plot=TRUE,...){
-    if(is.null(drop)){
-        drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
-    }
-    CW <- fit$data$catchMeanWeight
-    CW <- CW[apply(!is.na(CW),1,all),]
-    x <- as.numeric(rownames(CW))
-    obs <- NULL
-    if(plot)
-        plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
-    if(obs.show){
-        aux <- fit$data$aux
-        logobs <- fit$data$logobs
-        .goget <- function(y,a){
-            ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
-            ifelse(length(ret)==0,0,ret)
-        }
-        if(plot)
-            points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
-        obs <- list(x=x,y=rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE))
-    }
-    invisible(list(drop=drop,obs=obs))
+## catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,plot=TRUE,...){
+##     if(is.null(drop)){
+##         drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
+##     }
+##     CW <- fit$data$catchMeanWeight
+##     CW <- CW[apply(!is.na(CW),1,all),]
+##     x <- as.numeric(rownames(CW))
+##     obs <- NULL
+##     if(plot)
+##         plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+##     if(obs.show){
+##         aux <- fit$data$aux
+##         logobs <- fit$data$logobs
+##         .goget <- function(y,a){
+##             ret <- exp(logobs[aux[,"fleet"]==1 & aux[,"year"]==y & aux[,"age"]==a])
+##             ifelse(length(ret)==0,0,ret)
+##         }
+##         if(plot)
+##             points(x, rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE), pch=4, lwd=2, cex=1.2)
+##         obs <- list(x=x,y=rowSums(outer(rownames(CW), colnames(CW), Vectorize(.goget))*CW, na.rm=TRUE))
+##     }
+##     invisible(list(drop=drop,obs=obs))
+## }
+catchplot.sam <- function(fit, obs.show=TRUE, drop=NULL,...){
+  if(is.null(drop)){
+    drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
+  }
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop, ...)
+  if(obs.show){
+    ct <- catchtable(fit, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
+  }
 }
+
 ##' @rdname catchplot
 ##' @method catchplot samset
 ##' @export
 catchplot.samset <- function(fit, obs.show=TRUE, drop=NULL,...){
-    if(!is.null(attr(fit,"fit"))){
-        fitlocal <- attr(fit,"fit")
-    }else{
-        fitlocal <- fit[[1]]
-    }
-    tmp <- catchplot(fitlocal,obs.show,drop,plot=FALSE,...)
-    plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=tmp$drop,...)
-    if(obs.show){
-        points(tmp$obs$x, tmp$obs$y, pch=4, lwd=2, cex=1.2)
-    }
+  if(!is.null(attr(fit,"fit"))){
+    fitlocal <- attr(fit,"fit")
+  }else{
+    fitlocal <- fit[[1]]
+  }
+  if(is.null(drop)){
+    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
+  }
+  catchYears <- as.numeric(rownames(fitlocal$data$catchMeanWeight))
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  if(obs.show){
+    ct <- catchtable(fitlocal, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
+  }
 }
+
 ##' @rdname catchplot
 ##' @method catchplot samforecast
 ##' @export
 catchplot.samforecast <- function(fit, obs.show=TRUE, drop=NULL,...){
-    fitlocal <- attr(fit,"fit")
-    tmp <- catchplot(fitlocal,obs.show,drop,plot=FALSE,...)
-    plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=tmp$drop,...)
-    if(obs.show){
-        points(tmp$obs$x, tmp$obs$y, pch=4, lwd=2, cex=1.2)
-    }
-    addforecast(fit, "catch")
+  fitlocal <- attr(fit,"fit")
+  if(is.null(drop)){
+    drop=max(fitlocal$data$aux[,"year"])-max(fitlocal$data$aux[fitlocal$data$aux[,"fleet"]==1,"year"])
+  }
+  plotit(fit, "logCatch", ylab="Catch", trans=exp, drop=drop,...)
+  if(obs.show){
+    ct <- catchtable(fitlocal, obs.show=TRUE)
+    points(as.integer(rownames(ct)), ct[,"sop.catch"], pch=4, lwd=2, cex=1.2)
+  }
+  addforecast(fit, "catch")
+}
+
+##' SAM catchbyfleet plot 
+##' @param fit the object returned from sam.fit
+##' @param obs.show if observations are to be shown also
+##' @param ... extra arguments transferred to plot
+##' @details Plot of estimated (and optionally observed) total catch in weight  
+##' @importFrom graphics points
+##' @export
+catchbyfleetplot<-function(fit, obs.show=FALSE, ...){
+  colSet = c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499")
+  ciColSet = paste0(colSet,"80")
+  nf <- sum(fit$data$fleetTypes==0)
+  ct <- catchbyfleettable(fit,obs.show=TRUE)
+  x <- as.integer(rownames(ct))
+  matplot(rownames(ct), ct[,1:nf], type="l", lty="solid", lwd=3, ylab="Catch", xlab="Year", col=colSet[1:nf], ylim=range(ct, na.rm=TRUE))
+  for(f in 1:nf){  
+    polygon(c(x,rev(x)), y = c(ct[,nf+f],rev(ct[,2*nf+f])), border = gray(.5,alpha=.5), col = ciColSet[f])
+  }
+  if(obs.show){
+    matplot(rownames(ct), ct[,1:nf+3*nf], cex=1.2, pch=4, lwd=2, add=TRUE, col=colSet[1:nf])
+ }
+ legend("topright", legend=sub("Catch", "", colnames(ct[,1:nf])), col=colSet[1:nf], lty="solid", lwd=3)
 }
 ##' @rdname catchplot
 ##' @method catchplot hcr
@@ -852,29 +1037,53 @@ srplot<-function(fit, ...){
 ##' @param years the plotting symbols are the years
 ##' @param linetype type for the plot (default line)
 ##' @param linecol color of lines between points
+##' @param polycol Inner color of error ellipses
+##' @param polyborder Border color of error ellipses
+##' @param polylty Border line type of error ellipses
+##' @param polylwd Border line width of error ellipses
 ##' @param xlim bounds for x-axis
 ##' @param ylim bounds for y-axis
 ##' @param add false if a new plot should be created
+##' @param CIlevel Confidence level for error ellipses on stock-recruitment pairs
+##' @param addCurve Call addRecruitmentCurve?
 ##' @export
-srplot.sam <- function(fit, textcol="red", years=TRUE, linetype="l", linecol="black", xlim, ylim, add=FALSE, ...){
-  X <- summary(fit)
-  n<-nrow(X)
-  lag <- fit$conf$minAge
-  idxR <- (lag+1):n
-  idxS <- 1:(n-lag)
-  R<-X[idxR,1]
-  S<-X[idxS,4]
-  Rnam<-colnames(X)[1]
-  Snam<-colnames(X)[4]
-  y<-rownames(X)
-  if(add){
-    lines(S,R)
-  }else{
-    if (missing(xlim)) xlim=range(0,S)
-    if (missing(ylim)) ylim=range(0,R)
-    plot(S,R, xlab=Snam, ylab=Rnam, type=linetype, col=linecol, xlim=xlim, ylim=ylim, ...)
-  }
-  if (years) text(S,R, labels=y[idxR], cex=.7, col=textcol )
+srplot.sam <- function(fit, textcol="red", years=TRUE,
+                       linetype="l",
+                       linecol="black",
+                       polycol = do.call("rgb",c(as.list(col2rgb("black")[,1]),list(alpha=.1))),
+                       polyborder = do.call("rgb",c(as.list(col2rgb("black")[,1]),list(alpha=0.3))),
+                       polylty = 3,
+                       polylwd = 1,
+                       xlim, ylim, add=FALSE, CIlevel = 0.95, addCurve = TRUE, ...){
+    X <- summary(fit)
+    n<-nrow(X)
+    lag <- fit$conf$minAge
+    idxR <- (lag+1):n
+    idxS <- 1:(n-lag)
+    R<-X[idxR,1]
+    S<-X[idxS,4]
+    Rnam<-colnames(X)[1]
+    Snam<-colnames(X)[4]
+    y<-rownames(X)
+    makeCIpolygon <- function(i){
+        mu <- c(log(S)[i],log(R)[i])
+        Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
+                                  c(idxS[i], n + idxR[i])]    
+        r <- ellipse::ellipse(Sig,centre=mu, level = CIlevel)
+        list(x = exp(r[,1]), y = exp(r[,2]), col = polycol,border=NA)
+    }
+    pols <- lapply(seq_along(idxR), makeCIpolygon)
+    if(!add){
+      if (missing(xlim)) xlim=range(0,S, unlist(lapply(pols,function(x)x$x)))
+      if (missing(ylim)) ylim=range(0,R, unlist(lapply(pols,function(x)x$y)))
+      plot(S,R, xlab=Snam, ylab=Rnam, type="n", col=linecol, xlim=xlim, ylim=ylim)
+    }
+    invisible(lapply(pols,function(pp) do.call(polygon,pp)))
+    invisible(lapply(pols,function(pp) lines(pp$x,pp$y,col=polyborder,lwd=polylwd,lty=polylty)))
+    if(addCurve)
+        suppressWarnings({addRecruitmentCurve(fit)})
+    lines(S,R, col = linecol, type = linetype, ...)
+    if (years) text(S,R, labels=y[idxR], cex=.7, col=textcol )
 }
 
 ##' Plots fit to data 
@@ -936,7 +1145,6 @@ qtableplot.samqtable<-function(qt,exp=FALSE){
     }
 }
 
-
 ##' SAM Data plot 
 ##' @param fit the object returned from sam.fit
 ##' @param col color to use for each fleet, default is two sequential colors \cr
@@ -990,7 +1198,6 @@ dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
       if(fleet_type[i]==7) fleet_type[i]<-"Sum of fleets"
     }
   }
-
   layout(matrix(c(rep(1,3),2), nrow=1))
   par(oma=c(2,10,2,0),mar=c(0,0,0,0), xpd=NA)
   plot(x=rep(years,(ynum+1) ), y= rep(0:ynum,length(years)), type="n", xlab="", ylab="", yaxt="n")
@@ -1025,8 +1232,6 @@ dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
   mtext(text = "Data type", side=3, line=0.5, at=7/8, outer = TRUE)
 }
 
-
-
 ##' Plots the sd of the log observations as estimated in SAM in increasing order
 ##' @param fit the object returned from sam.fit
 ##' @param barcol color for each fleet and age
@@ -1035,6 +1240,7 @@ dataplot.sam <- function(fit, col=NULL, fleet_type=NULL, fleet_names=NULL){
 ##' @param show.rel.w plots the relative weight of each observation rather than the sd, estimated as (1/sd^2)/max(1/sd^2)
 ##' @param ... extra arguments to plot
 ##' @importFrom graphics barplot
+##' @importFrom grDevices colors
 ##' @export
 sdplot<-function(fit, barcol=NULL, marg=NULL, ylim=NULL, ...){
   UseMethod("sdplot")
@@ -1060,4 +1266,228 @@ sdplot.sam <- function(fit, barcol=NULL, marg=NULL, ylim=NULL, show.rel.w=FALSE,
   par(mar=marg)
   if(show.rel.w) barplot(res$rel.w, names.arg=res$name,las=2, col=barcol, ylab="Relative weight", ylim=ylim) else barplot(res$sd, names.arg=res$name,las=2, col=barcol, ylab="SD", ylim=ylim)
   box()
+}
+
+##' SAM rmax plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of life expectancy 
+##' @export
+rmaxplot<-function(fit, ...){
+    UseMethod("rmaxplot")
+}
+##' @rdname rmaxplot
+##' @method rmaxplot default
+##' @export
+rmaxplot.default <- function(fit, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    plotit(fit, "logrmax", ylab=expression(r[max]), xlab="Year", trans=exp, ...)  
+}
+##' @rdname rmaxplot
+##' @method rmaxplot samforecast
+##' @export
+rmaxplot.samforecast <- function(fit, ...){
+    plotit(fit, "logrmax", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logrmax")
+}
+
+##' @rdname rmaxplot
+##' @method rmaxplot hcr
+##' @export
+rmaxplot.hcr <- function(fit, ...){
+    plotit(fit, "logrmax", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logrmax")
+}
+
+
+##' SAM generation length plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of life expectancy 
+##' @export
+generationlengthplot<-function(fit, ...){
+    UseMethod("generationlengthplot")
+}
+##' @rdname generationlengthplot
+##' @method generationlengthplot default
+##' @export
+generationlengthplot.default <- function(fit, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    plotit(fit, "logGenerationLength", ylab="G", xlab="Year", trans=exp, ...)  
+}
+##' @rdname generationlengthplot
+##' @method generationlengthplot samforecast
+##' @export
+generationlengthplot.samforecast <- function(fit, ...){
+    plotit(fit, "logGenerationLength", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logGenerationLength")
+}
+
+##' @rdname generationlengthplot
+##' @method generationlengthplot hcr
+##' @export
+generationlengthplot.hcr <- function(fit, ...){
+    plotit(fit, "logGenerationLength", ylab=expression(r[max]), xlab="Year", trans=exp, ...)
+    addforecast(fit,"logGenerationLength")
+}
+
+
+
+
+
+##' SAM YPR plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium yield per recruit assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+yprplot<-function(fit, ...){
+    UseMethod("yprplot")
+}
+##' @rdname yprplot
+##' @method yprplot default
+##' @export
+yprplot.default <- function(fit, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp, x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
+}
+##' @rdname yprplot
+##' @method yprplot samforecast
+##' @export
+yprplot.samforecast <- function(fit, ...){
+    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logYPR")
+}
+
+##' @rdname yprplot
+##' @method yprplot hcr
+##' @export
+yprplot.hcr <- function(fit, ...){
+    plotit(fit, "logYPR", ylab="Yield per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logYPR")
+}
+
+
+
+##' SAM SPR plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium spawners per recruit assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+sprplot<-function(fit, ...){
+    UseMethod("sprplot")
+}
+##' @rdname sprplot
+##' @method sprplot default
+##' @export
+sprplot.default <- function(fit, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
+}
+##' @rdname sprplot
+##' @method sprplot samforecast
+##' @export
+sprplot.samforecast <- function(fit, ...){
+    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logSPR")
+}
+
+##' @rdname sprplot
+##' @method sprplot hcr
+##' @export
+sprplot.hcr <- function(fit, ...){
+    plotit(fit, "logSPR", ylab="Spawners per recruit", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logSPR")
+}
+
+
+
+##' SAM equilibrium biomass plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium spawners per recruit assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+equilibriumbiomassplot<-function(fit, ...){
+    UseMethod("equilibriumbiomassplot")
+}
+##' @rdname equilibriumbiomassplot
+##' @method equilibriumbiomassplot default
+##' @export
+equilibriumbiomassplot.default <- function(fit, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
+}
+##' @rdname equilibriumbiomassplot
+##' @method equilibriumbiomassplot samforecast
+##' @export
+equilibriumbiomassplot.samforecast <- function(fit, ...){
+    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logSe")
+}
+
+##' @rdname equilibriumbiomassplot
+##' @method equilibriumbiomassplot hcr
+##' @export
+equilibriumbiomassplot.hcr <- function(fit, ...){
+    plotit(fit, "logSe", ylab="Equilibrium biomass", xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logSe")
+}
+
+
+
+
+##' SAM equilibrium biomass in the absence of fishing plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of deterministic equilibrium biomass in the absence of fishing assuming biological parameters and selectivity for that year remains unchanged in the future.
+##' @export
+b0plot<-function(fit, ...){
+    UseMethod("b0plot")
+}
+##' @rdname b0plot
+##' @method b0plot default
+##' @export
+b0plot.default <- function(fit, ...){
+    if(!.checkFullDerived(fit)) stop("This function needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
+    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp,x=as.numeric(rownames(fit$data$catchMeanWeight)), ...)  
+}
+##' @rdname b0plot
+##' @method b0plot samforecast
+##' @export
+b0plot.samforecast <- function(fit, ...){
+    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logB0")
+}
+
+##' @rdname b0plot
+##' @method b0plot hcr
+##' @export
+b0plot.hcr <- function(fit, ...){
+    plotit(fit, "logB0", ylab=expression(B[0]), xlab="Year", trans=exp,
+           x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
+    addforecast(fit,"logSe")
 }

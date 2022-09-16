@@ -1,9 +1,11 @@
-# `reduce`: reduce helper function to reduce data
+# `reduce`
+
+reduce helper function to reduce data
+
 
 ## Description
 
-
- reduce helper function to reduce data
+reduce helper function to reduce data
 
 
 ## Usage
@@ -17,15 +19,15 @@ reduce(data, year = NULL, fleet = NULL, age = NULL, conf = NULL)
 
 Argument      |Description
 ------------- |----------------
-```data```     |     a data object as returned by the function setup.sam.data
-```year```     |     a vector of years to be excluded.
-```fleet```     |     a vector of fleets to be excluded.
-```age```     |     a vector of ages fleets to be excluded.
-```conf```     |     an optional corresponding configuration to be modified along with the data change. Modified is returned as attribute "conf"
+`data`     |     a data object as returned by the function setup.sam.data
+`year`     |     a vector of years to be excluded.
+`fleet`     |     a vector of fleets to be excluded.
+`age`     |     a vector of ages fleets to be excluded.
+`conf`     |     an optional corresponding configuration to be modified along with the data change. Modified is returned as attribute "conf"
+
 
 ## Details
 
-
- When more than one vector is supplied they need to be of same length, as only the pairs are excluded
+When more than one vector is supplied they need to be of same length, as only the pairs are excluded
 
 

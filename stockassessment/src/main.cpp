@@ -1,5 +1,4 @@
-#define WITH_LIBTMB
-#include <TMB.hpp>
+#include "TMB.h"
 
 #include <R.h>
 #include <Rmath.h>
@@ -10,16 +9,21 @@
 extern "C" {
 #include <R_ext/Rdynload.h>
 
-  SEXP perRecruitR(SEXP Fbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears);
-  SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code);
+  SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT);
+  SEXP perRecruitSR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit);
+  SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
+  SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
   SEXP hcrR(SEXP ssb, SEXP hcrConf);
   SEXP jacobian(SEXP fn, SEXP par, SEXP rho, SEXP maxit, SEXP h, SEXP tolerance);
-  SEXP Se_sbhR(SEXP lambda, SEXP a, SEXP b, SEXP g);
-  SEXP Se_slR(SEXP lambda, SEXP a, SEXP b, SEXP g);
   SEXP bcsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcdsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcisplineR(SEXP x, SEXP knots, SEXP pars);
+  SEXP iibcisplineR(SEXP x, SEXP knots, SEXP pars);
+  SEXP splinebasis_bcR(SEXP x, SEXP knots);
+  SEXP splinebasis_ibcR(SEXP x, SEXP knots);
+  SEXP splinebasis_iibcR(SEXP x, SEXP knots);
+  SEXP recruitmentProperties(SEXP tmbdat, SEXP pl);
   
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
@@ -43,18 +47,25 @@ extern "C" {
     #endif
     
     CALLDEF(perRecruitR,7),
-    CALLDEF(stockRecruitmentModelR,3),
+    CALLDEF(perRecruitSR,8),
+    CALLDEF(stockRecruitmentModelR,6),
+    CALLDEF(logSRR,6),
     CALLDEF(hcrR,2),
     CALLDEF(jacobian,6),
-    CALLDEF(Se_sbhR,4),
-    CALLDEF(Se_slR,4),
     CALLDEF(bcsplineR,3),
     CALLDEF(ibcsplineR,3),
     CALLDEF(ibcdsplineR,3),
     CALLDEF(ibcisplineR,3),
+    CALLDEF(iibcisplineR,3),
+    CALLDEF(splinebasis_bcR,2),
+    CALLDEF(splinebasis_ibcR,2),
+    CALLDEF(splinebasis_iibcR,2),
+    CALLDEF(recruitmentProperties,2),
     {NULL,NULL,0}
   };
 
+#define CALLABLE(name) R_RegisterCCallable("stockassessment", #name, (DL_FUNC) &name)
+  
   void R_init_stockassessment(DllInfo *info)
   {
     /* Register the .C and .Call routines.
@@ -64,7 +75,25 @@ extern "C" {
     R_registerRoutines(info,
 		       NULL, callMethods,
 		       NULL, NULL);
+
+    CALLABLE(hcrR);
+    CALLABLE(jacobian);
+    CALLABLE(perRecruitR);
+    CALLABLE(perRecruitSR);
+    CALLABLE(stockRecruitmentModelR);
+    CALLABLE(logSRR);
+    CALLABLE(bcsplineR);
+    CALLABLE(ibcsplineR);
+    CALLABLE(ibcdsplineR);
+    CALLABLE(ibcisplineR);
+    CALLABLE(iibcisplineR);
+    CALLABLE(splinebasis_bcR);
+    CALLABLE(splinebasis_ibcR);
+    CALLABLE(splinebasis_iibcR);
+    CALLABLE(recruitmentProperties);
+ 
     R_useDynamicSymbols(info, (Rboolean)FALSE);
+    R_forceSymbols(info, (Rboolean)FALSE);
   }
 
 

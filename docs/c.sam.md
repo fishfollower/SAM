@@ -1,9 +1,11 @@
-# `c.sam`: Collect sam objects
+# `c.sam`
+
+Collect sam objects
+
 
 ## Description
 
-
- Collect sam objects
+Collect sam objects
 
 
 ## Usage
@@ -17,11 +19,11 @@ list(list("c"), list("sam"))(...)
 
 Argument      |Description
 ------------- |----------------
-```...```     |     one or more sam fits (as returned from the [`sam.fit`](sam.fit.html) function) to be combined
+`...`     |     one or more sam fits (as returned from the [`sam.fit`](#sam.fit) function) to be combined
+
 
 ## Details
 
-
- ...
+...
 
 

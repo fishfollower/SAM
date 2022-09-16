@@ -31,10 +31,10 @@ testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 
 all:
 	make install
-	make pdf
 
 doc-update: $(PACKAGE)/R/*.R
 	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\")" | $(R) --slave
+	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 	@touch doc-update
 
 vignette-update: vignettes/*.Rnw vignettes/*.Rmd
@@ -51,11 +51,13 @@ build-package: $(TARBALL)
 $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
 	sed s/dummySHA/$(THISSHA)/g description-addon > description-addon-tmp
 	mv $(PACKAGE)/DESCRIPTION old-description
+	sed -i -E '/^(Remote|Github)/d' old-description
 	cat old-description description-addon-tmp > $(PACKAGE)/DESCRIPTION  
 	rm description-addon-tmp
-	$(R) CMD build --resave-data=no $(PACKAGE)
+	$(R) CMD build --no-manual --resave-data=no $(PACKAGE)
 	rm $(PACKAGE)/DESCRIPTION  
 	mv old-description $(PACKAGE)/DESCRIPTION  
+	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 
 install: $(TARBALL)
 	$(R) CMD INSTALL --preclean --html $<
@@ -103,10 +105,11 @@ test:
 updateData: 
 	echo "library(stockassessment); \
 	      source('stockassessment/tests/nscod/script.R', chdir=TRUE, echo=TRUE); \
-	      nscodData <- dat; nscodConf <- conf; nscodParameters <- par; \
+	      attr(par,'what') <- NULL; par$missing <- NULL; \
+              nscodData <- dat; nscodConf <- conf; nscodParameters <- par; \
 	      save(nscodData, file='stockassessment/data/nscodData.RData', version=2); \
 	      save(nscodConf, file='stockassessment/data/nscodConf.RData', version=2); \
-	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData', version=2); " | R --slave
+	      save(nscodParameters, file='stockassessment/data/nscodParameters.RData', version=2); " | $(R) --slave
 
 updateDocs:
 	rm -rf docs
@@ -114,7 +117,7 @@ updateDocs:
 	echo "library(Rd2md); \
 	      fn<-dir('$(PACKAGE)/man'); \
 	      d<-sapply(fn, function(f)Rd2markdown(paste0('$(PACKAGE)/man/',f), sub('Rd','md',paste0('docs/',f))));\
-	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | R --slave
+	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | $(R) --slave
 	R CMD Rdconv -t html $(PACKAGE)/man/sam.fit.Rd -o temp.html
 	sed -i '/page for sam.fit/d' temp.html
 	pandoc temp.html -t markdown_github -o docs/sam.fit.md; rm temp.html;
@@ -165,3 +168,4 @@ webtestone:
 $(testfiles):
 	@$(MAKE) -s webtestone $(@D)
 	@rm -rf $(@D)
+

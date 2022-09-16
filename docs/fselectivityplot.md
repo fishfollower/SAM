@@ -1,9 +1,11 @@
-# `fselectivityplot`: SAM F-selectivity plot
+# `fselectivityplot`
+
+SAM F-selectivity plot
+
 
 ## Description
 
-
- SAM F-selectivity plot
+SAM F-selectivity plot
 
 
 ## Usage
@@ -18,13 +20,13 @@ list(list("fselectivityplot"), list("sam"))(fit, cexAge = 1, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     An object returned from sam.fit
-```cexAge```     |     cex variable giving the size of the age numbers
-```...```     |     extra arguments transferred to barplot and text
+`fit`     |     An object returned from sam.fit
+`cexAge`     |     cex variable giving the size of the age numbers
+`...`     |     extra arguments transferred to barplot and text
+
 
 ## Details
 
-
- Plots selectivity in F.
+Plots selectivity in F.
 
 

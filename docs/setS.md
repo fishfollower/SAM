@@ -1,9 +1,11 @@
-# `setS`: small helper function
+# `setS`
+
+small helper function
+
 
 ## Description
 
-
- small helper function
+small helper function
 
 
 ## Usage
@@ -17,11 +19,11 @@ setS(x)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     vector if indices
+`x`     |     vector if indices
+
 
 ## Details
 
-
- internal
+internal
 
 

@@ -1,4 +1,6 @@
-#include <algorithm>
+#pragma once
+#ifndef SAM_OBS_HPP
+#define SAM_OBS_HPP
 
 template <class Type>
 matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec){
@@ -31,10 +33,85 @@ matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxA
   return ret;
 }
 
+
+
 template <class Type> 
 density::UNSTRUCTURED_CORR_t<Type> getCorrObj(vector<Type> params){
   density::UNSTRUCTURED_CORR_t<Type> ret(params);
   return ret;
+}
+
+
+template <class Type>
+vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par,
+				  objective_function<Type> *of){
+    // setup obs likelihoods
+  vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
+  vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
+  vector< vector<Type> > obsCovScaleVec(dat.noFleets);
+  vector<Type> varLogObs=exp(par.logSdLogObs*Type(2.0));
+  vector<Type> IRARdist(par.transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
+  if(par.transfIRARdist.size()>0) IRARdist=exp(par.transfIRARdist);
+  vector< vector<Type> > sigmaObsParVec(dat.noFleets);
+  vector< matrix<Type> > obsCov(dat.noFleets); // for reporting
+
+ int nfleet = dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
+  int dn=nfleet*(nfleet-1)/2;
+  int from=-dn, to=-1; 
+  for(int f=0; f<dat.noFleets; f++){
+    if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
+    nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+    if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
+    dn = nfleet*(nfleet-1)/2;
+    from=to+1;
+    to=to+dn;
+    vector<Type> tmp(dn);
+    for(int i=from; i<=to; i++) tmp(i-from) = par.sigmaObsParUS(i);
+    sigmaObsParVec(f) = tmp; 
+  }
+
+  for(int f=0; f<dat.noFleets; ++f){
+    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7))){ 
+      int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+      if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
+      matrix<Type> cov(thisdim,thisdim);
+      cov.setZero();
+      if(conf.obsCorStruct(f)==0){//ID (independent)  
+        for(int i=0; i<thisdim; ++i){
+          int aidx = i+dat.minAgePerFleet(f)-conf.minAge;
+  	  cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
+        }
+      } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
+        cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
+	if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
+	  cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
+	}
+
+      } else if(conf.obsCorStruct(f)==2){//(US) unstructured
+        neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
+        matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
+  
+        tmp.setZero();
+        int offset = dat.minAgePerFleet(f)-conf.minAge;
+        obsCovScaleVec(f).resize(tmp.rows());
+        for(int i=0; i<tmp.rows(); i++) {
+	  tmp(i,i) = sqrt(varLogObs(conf.keyVarObs(f,i+offset)));
+	  obsCovScaleVec(f)(i) = tmp(i,i);
+        }
+        cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+      } else { 
+        Rf_error("Unknown obsCorStruct code"); 
+      }
+      nllVec(f).setSigma(cov, Type(conf.fracMixObs(f)));
+      obsCov(f) = cov;
+    }else{
+      matrix<Type> dummy(1,1);
+      dummy(0,0) = R_NaReal;
+      obsCov(f) = dummy;
+    }
+  }
+  REPORT_F(obsCov,of);
+  return nllVec;
 }
 
 template <class Type>
@@ -75,7 +152,7 @@ template<class Type>
 matrix<Type> buildJac(vector<Type> x, vector<Type> w){
   matrix<Type> res(x.size(),x.size()); 
   Type xs = x.sum();
-  Type xsp = pow(xs,Type(2));
+  Type xsp = pow(xs,2);
   for(int i = 0; i < res.rows(); ++i){
     for(int j = 0; j < res.cols(); ++j){
       if(i == j){
@@ -103,32 +180,56 @@ Type jacobianDet(vector<Type> x,vector<Type> w){
   return buildJac(x,w).determinant();
 }
 
+
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF,
+Type findLinkV(Type k, int n=0){
+  // small helper function to solve exp(v)-exp(k-v/2)-1=0 for v
+  Type v = log(exp(k)+Type(1));
+  for(int i=0; i<n; ++i){
+    v -= (exp(v)-exp(k-0.5*v)-1.0)/(exp(v)+.5*exp(k-0.5*v));
+  }
+  return v;
+}
+
+
+template <class Type>
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF,
+	    Recruitment<Type> &recruit,
+	    MortalitySet<Type>& mort,
 	    //vector<Type> &predObs, vector<Type> &varLogCatch,
-	    data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+	    data_indicator<vector<Type>,Type> &keep,
+	    int reportingLevel,
+	    objective_function<Type> *of){
   using CppAD::abs;
   Type nll=0;
-
   // Calculate values to report
-  vector<Type> ssb = ssbFun(dat, conf, logN, logF);
-  vector<Type> logssb = log(ssb);
+  vector<Type> logssb = ssbFun(dat, conf, logN, logF,mort, true);
+  vector<Type> ssb = exp(logssb);
 
-  vector<Type> fsb = fsbFun(dat, conf, logN, logF);
+  vector<Type> fsb = fsbFun(dat, conf, logN, logF,mort);
   vector<Type> logfsb = log(fsb);
 
-  vector<Type> cat = catchFun(dat, conf, logN, logF);
-  vector<Type> logCatch = log(cat);
+  vector<Type> logCatch = catchFun(dat, conf, logN, logF,mort, true);
+  vector<Type> cat = exp(logCatch);
 
-  matrix<Type> catAge = catchFunAge(dat, conf, logN, logF);
-  matrix<Type> logCatchAge = catAge.array().log().matrix();
+  matrix<Type> logCatchAge = catchFunAge(dat, conf, logN, logF,mort, true);
+  matrix<Type> catAge = logCatchAge.array().exp().matrix();
 
-  vector<Type> land = landFun(dat, conf, logN, logF);
+  array<Type> catchByFleet = catchByFleetFun(dat, conf, logN, logF, mort);
+  array<Type> logCatchByFleet(dat.catchMeanWeight.dim(0), conf.keyLogFsta.dim(0));
+
+  for(int i=0; i<logCatchByFleet.dim(0); ++i){
+    for(int j=0; j<logCatchByFleet.dim(1); ++j){
+      logCatchByFleet(i,j)=log(catchByFleet(i,j));
+    }
+  }
+
+  vector<Type> land = landFun(dat, conf, logN, logF, mort);
   vector<Type> logLand = log(land);
 
-  vector<Type> varLogCatch = varLogCatchFun(dat, conf, logN, logF, par);
+  vector<Type> varLogCatch = varLogCatchFun(dat, conf, logN, logF, par, mort);
 
-  vector<Type> varLogLand = varLogLandFun(dat, conf, logN, logF, par);
+  vector<Type> varLogLand = varLogLandFun(dat, conf, logN, logF, par, mort);
 
   vector<Type> tsb = tsbFun(dat, conf, logN);
   vector<Type> logtsb = log(tsb);
@@ -142,19 +243,53 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> fbarL = landFbarFun(dat, conf, logF);
   vector<Type> logfbarL = log(fbarL);
 
-  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, logssb, logtsb, logfsb, logCatch, logLand);
-  
-  // setup obs likelihoods
-  vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
-  vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
-  vector< vector<Type> > obsCovScaleVec(dat.noFleets);
-  vector<Type> varLogObs=exp(par.logSdLogObs*Type(2.0));
-  vector<Type> IRARdist(par.transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
-  if(par.transfIRARdist.size()>0) IRARdist=exp(par.transfIRARdist);
-  vector< vector<Type> > sigmaObsParVec(dat.noFleets);
-  int aidx;
-  vector< matrix<Type> > obsCov(dat.noFleets); // for reporting
+  if(reportingLevel > 0){
+    NOT_SIMULATE_F(of){  
+      vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
+      matrix<Type> logLifeExpectancyAge = lifeexpectancyAge(dat, conf, logF).array().log().matrix();
+      vector<Type> logLifeExpectancyRec = log(lifeexpectancyRec(dat, conf, logF));
+      ADREPORT_F(logLifeExpectancy,of);
+      ADREPORT_F(logLifeExpectancyRec,of);
+      ADREPORT_F(logLifeExpectancyAge,of);
+
+      vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
+      vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
+      vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
+      ADREPORT_F(logYLTF, of);
+      ADREPORT_F(logYLTM, of);
+      ADREPORT_F(logYNL, of);
  
+      vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
+      vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
+      ADREPORT_F(logrmax, of);
+      ADREPORT_F(logGenerationLength, of);
+ 
+      vector<Type> logYPR = yieldPerRecruit(dat,conf,par,logF, true);
+      vector<Type> logSPR = spawnersPerRecruit(dat,conf,par,logF, true);
+      vector<Type> logSe = equilibriumBiomass(dat,conf,par,logF, true);
+      vector<Type> logB0 = B0(dat,conf,par,logF, true);
+      ADREPORT_F(logYPR, of);
+      ADREPORT_F(logSPR, of);
+      ADREPORT_F(logSe, of);
+      ADREPORT_F(logB0, of);
+    }
+  }
+
+  vector<Type> predObs = predObsFun(dat, conf, par, logN, logF,mort, logssb, logtsb, logfsb, logCatch, logLand);
+
+  vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
+
+  // // setup obs likelihoods
+  // vector< MVMIX_t<Type> >  nllVec(dat.noFleets);
+  // vector< density::UNSTRUCTURED_CORR_t<Type> > neg_log_densityObsUnstruc(dat.noFleets);
+  // vector< vector<Type> > obsCovScaleVec(dat.noFleets);
+  // vector<Type> varLogObs=exp(par.logSdLogObs*Type(2.0));
+  // vector<Type> IRARdist(par.transfIRARdist.size()); //[ d_1, d_2, ...,d_N-1 ]
+  // if(par.transfIRARdist.size()>0) IRARdist=exp(par.transfIRARdist);
+  // vector< vector<Type> > sigmaObsParVec(dat.noFleets);
+  // int aidx;
+  // vector< matrix<Type> > obsCov(dat.noFleets); // for reporting
+  
   vector<Type> recapturePhi(par.logitRecapturePhi.size());
   vector<Type> recapturePhiVec(dat.nobs);
   vector<Type> logitRecapturePhiVec(dat.nobs);
@@ -168,123 +303,180 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
     }
   }
 
-  int nfleet = dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
-  int dn=nfleet*(nfleet-1)/2;
-  int from=-dn, to=-1; 
-  for(int f=0; f<dat.noFleets; f++){
-    if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
-    nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
-    if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
-    dn = nfleet*(nfleet-1)/2;
-    from=to+1;
-    to=to+dn;
-    vector<Type> tmp(dn);
-    for(int i=from; i<=to; i++) tmp(i-from) = par.sigmaObsParUS(i);
-    sigmaObsParVec(f) = tmp; 
-  }
+  // int nfleet = dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
+  // int dn=nfleet*(nfleet-1)/2;
+  // int from=-dn, to=-1; 
+  // for(int f=0; f<dat.noFleets; f++){
+  //   if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
+  //   nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+  //   if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
+  //   dn = nfleet*(nfleet-1)/2;
+  //   from=to+1;
+  //   to=to+dn;
+  //   vector<Type> tmp(dn);
+  //   for(int i=from; i<=to; i++) tmp(i-from) = par.sigmaObsParUS(i);
+  //   sigmaObsParVec(f) = tmp; 
+  // }
 
-  for(int f=0; f<dat.noFleets; ++f){
-    if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
-      int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
-      if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
-      matrix<Type> cov(thisdim,thisdim);
-      cov.setZero();
-      if(conf.obsCorStruct(f)==0){//ID (independent)  
-        for(int i=0; i<thisdim; ++i){
-          aidx = i+dat.minAgePerFleet(f)-conf.minAge;
-  	  cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
-        }
-      } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
-        cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
-	if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
-	  cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
-	}
+  // for(int f=0; f<dat.noFleets; ++f){
+  //   if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7))){ 
+  //     int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+  //     if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
+  //     matrix<Type> cov(thisdim,thisdim);
+  //     cov.setZero();
+  //     if(conf.obsCorStruct(f)==0){//ID (independent)  
+  //       for(int i=0; i<thisdim; ++i){
+  //         aidx = i+dat.minAgePerFleet(f)-conf.minAge;
+  // 	  cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
+  //       }
+  //     } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
+  //       cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
+  // 	if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
+  // 	  cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
+  // 	}
 
-      } else if(conf.obsCorStruct(f)==2){//(US) unstructured
-        neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
-        matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
+  //     } else if(conf.obsCorStruct(f)==2){//(US) unstructured
+  //       neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
+  //       matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
   
-        tmp.setZero();
-        int offset = dat.minAgePerFleet(f)-conf.minAge;
-        obsCovScaleVec(f).resize(tmp.rows());
-        for(int i=0; i<tmp.rows(); i++) {
-	  tmp(i,i) = sqrt(varLogObs(conf.keyVarObs(f,i+offset)));
-	  obsCovScaleVec(f)(i) = tmp(i,i);
-        }
-        cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
-      } else { 
-        Rf_error("Unkown obsCorStruct code"); 
-      }
-      nllVec(f).setSigma(cov, Type(conf.fracMixObs(f)));
-      obsCov(f) = cov;
-    }else{
-      matrix<Type> dummy(1,1);
-      dummy(0,0) = R_NaReal;
-      obsCov(f) = dummy;
-    }
-  }
+  //       tmp.setZero();
+  //       int offset = dat.minAgePerFleet(f)-conf.minAge;
+  //       obsCovScaleVec(f).resize(tmp.rows());
+  //       for(int i=0; i<tmp.rows(); i++) {
+  // 	  tmp(i,i) = sqrt(varLogObs(conf.keyVarObs(f,i+offset)));
+  // 	  obsCovScaleVec(f)(i) = tmp(i,i);
+  //       }
+  //       cov  = tmp*matrix<Type>(neg_log_densityObsUnstruc(f).cov()*tmp);
+  //     } else { error("Unkown obsCorStruct code"); }
+  //       nllVec(f).setSigma(cov);
+  //       obsCov(f) = cov;
+  //   }else{
+  //     matrix<Type> dummy(1,1);
+  //     dummy(0,0) = R_NaReal;
+  //     obsCov(f) = dummy;
+  //   }
+  // }
+  // for(int f=0; f<dat.noFleets; ++f){ // separate loop to insure other fleet's cov has been setup 
+  //   if(dat.fleetTypes(f)==7){ 
+  //     int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+  //     matrix<Type> cov(thisdim,thisdim);
+  //     cov.setIdentity(); // place holder
+  //     nllVec(f).setSigma(cov);
+  //     obsCov(f) = cov;
+  //   }
+  // }
+
   //eval likelihood 
   for(int y=0;y<dat.noYears;y++){
     int totalParKey = 0;
     for(int f=0;f<dat.noFleets;f++){
-      if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){ 
+      if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){
         if(!isNAINT(dat.idx1(f,y))){
           int idxfrom=dat.idx1(f,y);
           int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
 
+          // ----------------if sum fleet need to update covariance matrix
+          if(dat.fleetTypes(f)==7){
+            //array<Type> totF=totFFun(conf, logF);             
+            //Type zz=0;
+            int thisDim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+            int Nparts=0;
+            int offset=0;
+            int setoff=0;
+            for(int ff=0; ff<dat.noFleets; ++ff){
+              if(dat.sumKey(f,ff)==1){++Nparts;}
+            }
+            matrix<Type> muMat(thisDim,Nparts);
+            vector<Type> muSum(thisDim);
+            muMat.setZero();
+            muSum.setZero();
+            matrix<Type> VV(thisDim*Nparts,thisDim*Nparts);
+            VV.setZero();
+            matrix<Type> G(thisDim*Nparts,thisDim); // Gradient 
+            G.setZero();
+            matrix<Type> combiCov(thisDim,thisDim); 
+            combiCov.setZero();
+            int element=-1;
+            for(int ff=0; ff<dat.noFleets; ++ff){
+              if(dat.sumKey(f,ff)==1){
+                ++element; 
+                for(int aa=dat.minAgePerFleet(ff); aa<=dat.maxAgePerFleet(ff); ++aa){
+                  //zz = mort.totalZ(aa-conf.minAge, y); //dat.natMor(y,aa-conf.minAge)+totF(aa-conf.minAge,y);
+		  Type ci = mort.fleetCumulativeIncidence(aa-conf.minAge,y,ff);
+                  muMat(aa-dat.minAgePerFleet(f),element)= exp(logN(aa-conf.minAge,y)) * ci; //exp(logN(aa-conf.minAge,y)-log(zz)+log(1-exp(-zz))+logF(conf.keyLogFsta(ff,aa-conf.minAge),y));
+                  muSum(aa-dat.minAgePerFleet(f)) += muMat(aa-dat.minAgePerFleet(f),element);
+                }
+                offset=dat.minAgePerFleet(ff)-dat.minAgePerFleet(f);
+                setoff=dat.maxAgePerFleet(f)-dat.maxAgePerFleet(ff);
+                VV.block(thisDim*element+offset,thisDim*element+offset,thisDim-offset-setoff,thisDim-offset-setoff)=nllVec(ff).cov(); // possibly too simple 
+              }
+            }
+            element=-1;
+            for(int ff=0; ff<dat.noFleets; ++ff){
+              if(dat.sumKey(f,ff)==1){
+                ++element;
+                for(int aa=0; aa<thisDim; ++aa){
+                  G(aa+element*thisDim,aa) = muMat(aa,element)/muSum(aa);
+                } 
+              }
+            }
+            REPORT_F(VV,of);
+            combiCov = G.transpose()*VV*G;
+            nllVec(f).setSigma(combiCov);
+          }
+          // ----------------updating of covariance matrix done
           vector<Type> currentVar=nllVec(f).cov().diagonal();
           vector<Type> sqrtW(currentVar.size());
 
-  	      switch(conf.obsLikelihoodFlag(f)){
-    	      case 0: // (LN) log-Normal distribution
-              
-              for(int idxV=0; idxV<currentVar.size(); ++idxV){
-                if(isNA(dat.weight(idxfrom+idxV))){
-                  sqrtW(idxV)=Type(1.0);
-                  int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
-                  if(conf.predVarObsLink(f,a)>(-1)){
-                    sqrtW(idxV) = sqrt(findLinkV(par.logSdLogObs(conf.keyVarObs(f,a))+(exp(par.predVarObs(conf.predVarObsLink(f,a))) -Type(1))*predObs(idxfrom+idxV))/currentVar(idxV));
-                  }
-		  for(int idxXtraSd=0; idxXtraSd<(conf.keyXtraSd).rows(); ++idxXtraSd){
-		    int realfleet=f+1;
-		    int realyear=y+CppAD::Integer(min(dat.years));
-		    int realage=dat.aux(idxfrom+idxV,2);		    
-		    vector<int> fyac=conf.keyXtraSd.row(idxXtraSd);
-		    if((realfleet==fyac(0))&&(realyear==fyac(1))&&(realage==fyac(2))){
-                      sqrtW(idxV)=exp(par.logXtraSd(fyac(3)));
-		      break;
-		    }
+	  switch(conf.obsLikelihoodFlag(f)){
+	  case 0: // (LN) log-Normal distribution
+	    for(int idxV=0; idxV<currentVar.size(); ++idxV){
+	      if(isNA(dat.weight(idxfrom+idxV))){
+		sqrtW(idxV)=Type(1.0);
+		int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
+		if(conf.predVarObsLink(f,a)>(-1)){
+		  sqrtW(idxV) = sqrt(findLinkV(par.logSdLogObs(conf.keyVarObs(f,a))+(exp(par.predVarObs(conf.predVarObsLink(f,a))) -Type(1))*predObs(idxfrom+idxV))/currentVar(idxV));
+		}
+		for(int idxXtraSd=0; idxXtraSd<(conf.keyXtraSd).rows(); ++idxXtraSd){
+		  int realfleet=f+1;
+		  int realyear=y+CppAD::Integer(min(dat.years));
+		  int realage=dat.aux(idxfrom+idxV,2);		    
+		  vector<int> fyac=conf.keyXtraSd.row(idxXtraSd);
+		  if((realfleet==fyac(0))&&(realyear==fyac(1))&&(realage==fyac(2))){
+		    sqrtW(idxV)=exp(par.logXtraSd(fyac(3)));
+		    break;
 		  }
-                }else{
-                  if(conf.fixVarToWeight==1){
-                    sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
-                  }else{
-                    sqrtW(idxV)=sqrt(Type(1)/dat.weight(idxfrom+idxV));
-                  }
-                }
-              }
-              if(isNAINT(dat.idxCor(f,y))){
-      	        nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
-                nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
-      	        SIMULATE_F(of){
-    	            dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
-  	            }
-  	          }else{
-  	            int thisdim=currentVar.size();
-  	            matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
-  	            matrix<Type> thiscov(thisdim,thisdim);
-  	            for(int r=0;r<thisdim;++r){
-  	              for(int c=0;c<thisdim;++c){
-  	                thiscov(r,c)=thiscor(r,c)*sqrt(currentVar(r)*currentVar(c));
-  	              }
-	      } 
+		}
+	      }else{
+		if(conf.fixVarToWeight==1){
+		  sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
+		}else{
+		  sqrtW(idxV)=sqrt(Type(1)/dat.weight(idxfrom+idxV));
+		}
+	      }
+	    }
+	    if(isNAINT(dat.idxCor(f,y))){
+	      nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
+	      nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
+	      SIMULATE_F(of){
+		dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+	      }
+	    }else{
+	      int thisdim=currentVar.size();
+	      matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
+	      matrix<Type> thiscov(thisdim,thisdim);
+	      for(int r=0;r<thisdim;++r){
+		for(int c=0;c<thisdim;++c){
+		  thiscov(r,c)=thiscor(r,c)*sqrt(currentVar(r)*currentVar(c));
+		}
+	      }
 	      MVMIX_t<Type> thisnll(thiscov,Type(conf.fracMixObs(f)));
 	      nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
 	      nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 	      SIMULATE_F(of){
-	        dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
+		dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
 	      }
-            }
+	    }
 	    break;
 	  case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
 	    nll +=  nllVec(f)(addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
@@ -310,8 +502,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	    Rf_error("Unknown obsLikelihoodFlag");
 	  }
         }
-      }else{ //dat.fleetTypes(f)==5
-        if(dat.fleetTypes(f)==5){
+      }else if(dat.fleetTypes(f)==5){
           if(!isNAINT(dat.idx1(f,y))){    
             for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
               //nll += -keep(i)*dnbinom(dat.logobs(i),predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i),true);
@@ -319,12 +510,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
 	      Type log_var_minus_mu = log_mu - logitRecapturePhiVec(i);	      
 	      nll += -keep(i)*dnbinom_robust(dat.logobs(i),log_mu,log_var_minus_mu,true);
               SIMULATE_F(of){
-	              dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
+		dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
               }
             }
           }
-        }else{
-          if(dat.fleetTypes(f)==3){
+      }else if(dat.fleetTypes(f)==3){
             Type sd=0;
             if(!isNAINT(dat.idx1(f,y))){
               for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
@@ -339,15 +529,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
                 }  
                 nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
                 SIMULATE_F(of){
-  	              dat.logobs(i) = rnorm(predObs(i),sd);
+		  dat.logobs(i) = rnorm(predObs(i),sd);
                 }
               }
             }    
-          }
-        }   
+      }else{
+	Rf_error("Fleet type not implemented");
       }   
-    }  
-  }
+    }   
+  }  
 
   SIMULATE_F(of) {
     REPORT_F(logF,of);
@@ -356,17 +546,18 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
     REPORT_F(logobs,of);
   }
 
-  REPORT_F(obsCov,of);
+  // REPORT_F(obsCov,of);
   REPORT_F(predObs,of);
   ADREPORT_F(logssb,of);
   ADREPORT_F(logfbar,of);
   ADREPORT_F(logCatch,of);
+  ADREPORT_F(logCatchByFleet,of);
   ADREPORT_F(logLand,of);
   ADREPORT_F(logtsb,of);
 
   // Additional forecast quantities
-  if(dat.forecast.nYears > 0){
-    vector<Type> dis = disFun(dat, conf, logN, logF);
+  if(forecast.nYears > 0){
+    vector<Type> dis = disFun(dat, conf, logN, logF, mort);
     vector<Type> logDis = log(dis);
     
     vector<Type> landFbar = landFbarFun(dat, conf, logF);
@@ -375,20 +566,27 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
     vector<Type> disFbar = disFbarFun(dat, conf, logF);
     vector<Type> logdisfbar = log(disFbar);
 
+    matrix<Type> logFbarByFleet = fbarByFleet(conf, logF, true);
+    
     ADREPORT_F(logDis,of);
     ADREPORT_F(loglandfbar,of);
-    ADREPORT_F(logdisfbar,of);      
-    SIMULATE_F(of) {
+    ADREPORT_F(logdisfbar,of);
+    ADREPORT_F(logCatchAge, of);
+    ADREPORT_F(logFbarByFleet, of);
+    
+    // SIMULATE_F(of) {
       //if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
 	REPORT_F(logssb,of);
 	REPORT_F(logfbar,of);
 	REPORT_F(logfbarL,of);
 	REPORT_F(logCatch,of);
 	REPORT_F(logCatchAge,of);
+	REPORT_F(logCatchByFleet,of);
+	REPORT_F(logFbarByFleet, of);
 	REPORT_F(logLand,of);
 	REPORT_F(logtsb,of);      
 	//}
-    }
+    // }
   }
 
   vector<Type> logLagR(logR.size());
@@ -410,22 +608,23 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
   vector<Type> beforeLastLogF = logF.col(timeSteps-2);
   ADREPORT_F(beforeLastLogF,of);  
 
-  if(dat.forecast.nYears > 0 && dat.forecast.FModel(dat.forecast.FModel.size()-1) == dat.forecast.findMSY){
+  if(forecast.nYears > 0 && forecast.FModel(forecast.FModel.size()-1) == forecast.findMSY){
     
-    int catchYears = std::min((int)asDouble(dat.forecast.nYears),dat.forecast.nCatchAverageYears);
+    int catchYears = std::min((int)asDouble(forecast.nYears),forecast.nCatchAverageYears);
     Type catchSum = sum((vector<Type>)cat.tail(catchYears)) / (Type)catchYears;
     nll -= par.implicitFunctionDelta * log(catchSum);    
     // Calculate Fmsy
-    Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - dat.forecast.nYears - 1);
+    Type logFMSY = par.logFScaleMSY + logfbar(timeSteps - forecast.nYears - 1);
     ADREPORT_F(logFMSY, of);
 
     // Output stock status - Positive is good for the stock
-    Type logFstatus = logFMSY - logfbar(timeSteps - dat.forecast.nYears - 1);
-    Type logSSBstatus = logssb(timeSteps - dat.forecast.nYears - 1) - logssb(timeSteps - 1);
+    Type logFstatus = logFMSY - logfbar(timeSteps - forecast.nYears - 1);
+    Type logSSBstatus = logssb(timeSteps - forecast.nYears - 1) - logssb(timeSteps - 1);
     ADREPORT_F(logFstatus, of);
     ADREPORT_F(logSSBstatus, of);    
   }
 
-  
   return nll;
 }
+
+#endif

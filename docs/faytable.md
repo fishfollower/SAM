@@ -1,9 +1,11 @@
-# `faytable`: F-at-age table
+# `faytable`
+
+F-at-age table
+
 
 ## Description
 
-
- F-at-age table
+F-at-age table
 
 
 ## Usage
@@ -18,12 +20,12 @@ list(list("faytable"), list("sam"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
-```...```     |     extra arguments not currently used
+`fit`     |     ...
+`...`     |     extra arguments not currently used
+
 
 ## Details
 
-
- ...
+...
 
 

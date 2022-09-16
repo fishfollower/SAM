@@ -1,9 +1,11 @@
-# `simstudy`: Simulate data from fitted model and re-estimate from each run
+# `simstudy`
+
+Simulate data from fitted model and re-estimate from each run
+
 
 ## Description
 
-
- Simulate data from fitted model and re-estimate from each run
+Simulate data from fitted model and re-estimate from each run
 
 
 ## Usage
@@ -17,7 +19,8 @@ simstudy(fit, nsim, ncores = detectCores())
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     a fitted model returned from sam.fit
-```nsim```     |     number of simulations
-```ncores```     |     number of cores to be used
+`fit`     |     a fitted model returned from sam.fit
+`nsim`     |     number of simulations
+`ncores`     |     number of cores to be used
+
 

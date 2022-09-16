@@ -55,6 +55,3 @@ Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference poi
 \seealso{
 \link{forecast} \link{referencepoints}
 }
-\author{
-Christoffer Moesgaard Albertsen
-}

@@ -1,6 +1,10 @@
+#pragma once
+#ifndef SAM_F_HPP
+#define SAM_F_HPP
+
 template <class Type>
 Type trans(Type x){
-  return Type(2)/(Type(1) + exp(-Type(2) * x)) - Type(1);
+  return Type(2.0)/(Type(1.0) + exp(-Type(2.0) * x)) - Type(1.0);
 }
 
 template <class Type>
@@ -23,75 +27,112 @@ Type jacobiUVtrans( array<Type> logF){
   }
   A/=nc;
   
-  return nr*log(CppAD::abs(A.determinant()));
+  return nr*log(fabs(A.determinant()));
 }
 
 template<class Type>
 matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF){
-  using CppAD::abs;
+  // using CppAD::abs;
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
+  int noFleets=conf.keyLogFsta.dim[0];
   int stateDimN=conf.keyLogFsta.dim[1];
   vector<Type> sdLogFsta=exp(par.logSdLogFsta);
   array<Type> resF(stateDimF,timeSteps-1);
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
-
-  if(conf.corFlag==0){
-    fcor.setZero();
+  vector<Type> statesFleets(stateDimF);
+  
+  //Fill statesFleets:
+  for(int f=0; f<noFleets;f++){
+    for(int i=0;i<stateDimF;i++){
+      for(int j=0;j<stateDimN;j++){
+	if(conf.keyLogFsta(f,j)==i){
+	  statesFleets(i)=f;
+	  break;
+	}  
+      }
+    }
+  }
+  
+  fcor.setZero();
+  // for(int i=0; i<stateDimF; ++i){
+  //   fcor(i,i)=1.0;
+  // }
+  
+  int count=0; //if corFlag varies between 0-2, itrans_rho is shorter than comm fleet length
+  for(int f=0;f<noFleets;f++){
+    bool nxtPar = false;
+    for(int i=0; i<stateDimF; ++i){
+      fcor(i,i)=1.0;
+      for(int j=0; j<i; ++j){
+        if(statesFleets(i)==f && statesFleets(j)==f){
+	  switch(conf.corFlag(f)){
+	  case 0:		// Independent
+	    fcor(j,i) = 0.0;
+	    break;
+	  case 1:		// Compound symmetry
+	    fcor(j,i)=trans(par.itrans_rho(count));
+	    nxtPar = true;
+	    break;
+	  case 2:		// AR(1) structure
+	    fcor(j,i)=pow(trans(par.itrans_rho(count)),abs(i-j));
+	    nxtPar = true;
+	    break;
+	    // case 3: separable structure
+	  case 4:		// (almost) Perfect correlation
+            fcor(j,i)= 0.99;
+	    break;
+	  default:
+	    Rf_error("F correlation not implemented");
+	    break;
+	  }
+	  fcor(i,j) = fcor(j,i);
+        }
+      }
+    }
+    if(nxtPar)
+      count++;
   }
 
   for(int i=0; i<stateDimF; ++i){
-    fcor(i,i)=1.0;
-  }
-
-  if(conf.corFlag==1){
-    for(int i=0; i<stateDimF; ++i){
-      for(int j=0; j<i; ++j){
-        fcor(i,j)=trans(par.itrans_rho(0));
-        fcor(j,i)=fcor(i,j);
+    bool stop = false;
+    int ff = 0;
+    int j = 0;
+    for(ff=0; ff<noFleets; ff++){
+      for(j=0; j<stateDimN; j++){
+        if(conf.keyLogFsta(ff,j)==i){
+          stop=true;
+          break;
+        } 
       }
-    } 
-  }
-
-  if(conf.corFlag==2){
-    for(int i=0; i<stateDimF; ++i){
-      for(int j=0; j<i; ++j){
-        fcor(i,j)=pow(trans(par.itrans_rho(0)),abs(Type(i-j)));
-        fcor(j,i)=fcor(i,j);
-      }
-    } 
-  }
-
-  int i,j;
-  for(i=0; i<stateDimF; ++i){
-    for(j=0; j<stateDimN; ++j){
-      if(conf.keyLogFsta(0,j)==i)break;
+      if(stop)break;
     }
-    fsd(i)=sdLogFsta(conf.keyVarF(0,j));
+    fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
   }
  
-  for(i=0; i<stateDimF; ++i){
-    for(j=0; j<stateDimF; ++j){
+  for(int i=0; i<stateDimF; ++i){
+    for(int j=0; j<stateDimF; ++j){
       fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
     }
   }
   return fvar;
-};
+}
 
 template <class Type>
-Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   Type nll=0; 
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
-  int stateDimN=conf.keyLogFsta.dim[1];
+  // int stateDimN=conf.keyLogFsta.dim[1];
   vector<Type> sdLogFsta=exp(par.logSdLogFsta);
   array<Type> resF(stateDimF,timeSteps-1);
 
   
-  if(conf.corFlag==3){
-    return(nllFseparable(dat, conf, par, logF, keep ,of));
+  if(conf.corFlag(0)==3){
+    // Only works for one catch fleet!
+    return(nllFseparable(dat, conf, par, forecast, logF, keep ,of));
   }
  
   //density::MVNORM_t<Type> neg_log_densityF(fvar);
@@ -104,16 +145,16 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   for(int i=1;i<timeSteps;i++){
     resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
 
-    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+    if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
       // Forecast
-      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
-      Type timeScale = dat.forecast.forecastCalculatedLogSdCorrection(forecastIndex);
+      int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+      Type timeScale = forecast.forecastCalculatedLogSdCorrection(forecastIndex);
 
-      nll += neg_log_densityF((logF.col(i) - (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
+      nll += neg_log_densityF((logF.col(i) - (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
 
       SIMULATE_F(of){
-    	if(dat.forecast.simFlag(0) == 0){
-    	  logF.col(i) = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
+    	if(forecast.simFlag(0) == 0){
+    	  logF.col(i) = (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
     	}
       }
     }else{
@@ -134,13 +175,14 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   if(conf.resFlag==1){
     ADREPORT_F(resF,of);
   }
+  REPORT_F(fvar,of);
   return nll;
 }
 
 
 
 template <class Type>
-Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
@@ -164,10 +206,10 @@ Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<
   vector<Type> logV(timeSteps);
   logV.setZero();
   for(int i=0; i<timeSteps; ++i){
-    if(dat.forecast.nYears > 0 && dat.forecast.forecastYear(i) > 0){
+    if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
       Rf_warning("Forecast with separable F is experimental");
-      int forecastIndex = CppAD::Integer(dat.forecast.forecastYear(i))-1;
-      vector<Type> logFtmp = (vector<Type>)dat.forecast.forecastCalculatedMedian.col(forecastIndex);
+      int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+      vector<Type> logFtmp = (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex);
       logV(i)=(logFtmp).mean();
       for(int j=0; j<stateDimF-1; ++j){
 	logU(i,j)=logFtmp(j)-logV(i);
@@ -220,3 +262,4 @@ Type nllFseparable(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<
 }
 
 
+#endif

@@ -1,9 +1,11 @@
-# `ssbtable`: SSB table
+# `ssbtable`
+
+SSB table
+
 
 ## Description
 
-
- SSB table
+SSB table
 
 
 ## Usage
@@ -18,12 +20,12 @@ list(list("ssbtable"), list("default"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
-```...```     |     extra arguments not currently used
+`fit`     |     ...
+`...`     |     extra arguments not currently used
+
 
 ## Details
 
-
- ...
+...
 
 

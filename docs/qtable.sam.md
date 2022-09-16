@@ -1,9 +1,11 @@
-# `qtable.sam`: table of survey catchabilities
+# `qtable.sam`
+
+table of survey catchabilities
+
 
 ## Description
 
-
- table of survey catchabilities
+table of survey catchabilities
 
 
 ## Usage
@@ -17,6 +19,7 @@ list(list("qtable"), list("sam"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     A sam fit as returned from the sam.fit function
-```...```     |     extra arguments not currently used
+`fit`     |     A sam fit as returned from the sam.fit function
+`...`     |     extra arguments not currently used
+
 

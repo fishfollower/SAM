@@ -26,6 +26,3 @@ jacobian matrix
 \description{
 Calculate jacobian of a function
 }
-\author{
-Christoffer Moesgaard Albertsen
-}

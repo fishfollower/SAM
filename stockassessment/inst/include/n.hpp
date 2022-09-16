@@ -1,7 +1,11 @@
+#pragma once
+#ifndef SAM_N_HPP
+#define SAM_N_HPP
+
 template <class Type>
 matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF){
   int stateDimN=logN.dim[0];
-  int timeSteps=logN.dim[1];
+  // int timeSteps=logN.dim[1];
   matrix<Type> nvar(stateDimN,stateDimN);
   vector<Type> varLogN=exp(par.logSdLogN*Type(2.0));
   for(int i=0; i<stateDimN; ++i){
@@ -13,7 +17,7 @@ matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 }
 
 template <class Type>
-Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){ 
+Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
   Type nll=0;
   int stateDimN=logN.dim[0];
   int timeSteps=logN.dim[1];
@@ -33,22 +37,26 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
   matrix<Type> LN = lltCovN.matrixL();
   matrix<Type> LinvN = LN.inverse();
 
-  for(int i = 1; i < timeSteps; ++i){ 
-    vector<Type> predN = predNFun(dat,conf,par,logN,logF,i);
-    if(dat.forecast.nYears > 0 &&
-       dat.forecast.forecastYear(i) > 0 &&
-       dat.forecast.recModel(CppAD::Integer(dat.forecast.forecastYear(i))-1) != dat.forecast.asRecModel){
+  matrix<Type> pn(stateDimN,timeSteps);
+  pn.setZero();
+  
+  for(int i = 1; i < timeSteps; ++i){
+    vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort, i);
+    pn.col(i) = predN;
+    if(forecast.nYears > 0 &&
+       forecast.forecastYear(i) > 0 &&
+       forecast.recModel(CppAD::Integer(forecast.forecastYear(i))-1) != forecast.asRecModel){
       // Forecast
       vector<Type> Nscale(logN.rows());
       Nscale.setZero();
       Nscale += 1.0;
-      Nscale(0) = sqrt(dat.forecast.logRecruitmentVar) / sqrt(nvar(0,0));
+      Nscale(0) = sqrt(forecast.logRecruitmentVar) / sqrt(nvar(0,0));
       vector<Type> predNTmp = predN;
-      predNTmp(0) = dat.forecast.logRecruitmentMedian;
+      predNTmp(0) = forecast.logRecruitmentMedian;
       // MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
       nll+=neg_log_densityN((logN.col(i)-predNTmp) / Nscale) + (log(Nscale)).sum();
       SIMULATE_F(of){
-    	if(dat.forecast.simFlag(1) == 0){
+    	if(forecast.simFlag(1) == 0){
     	  logN.col(i) = predNTmp + neg_log_densityN.simulate() * Nscale;
     	}
       }
@@ -56,15 +64,24 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
       nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
       SIMULATE_F(of){
-    	if(dat.forecast.nYears > 0 &&
-    	   dat.forecast.forecastYear(i) > 0){
+    	if(forecast.nYears > 0 &&
+    	   forecast.forecastYear(i) > 0){
     	  // In forecast
-    	  if(dat.forecast.simFlag(1)==0){
-    	    logN.col(i) = predN + neg_log_densityN.simulate();
+    	  if(forecast.simFlag(1)==0){
+    	    vector<Type> noiseN = neg_log_densityN.simulate();
+    	    logN.col(i) = predN + noiseN;
+	    if(conf.minAge == 0){
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,mort,i)(0) + noiseN(0);
+	    }
     	  }
     	}else{
     	  if(conf.simFlag(1)==0){
-    	    logN.col(i) = predN + neg_log_densityN.simulate();
+	    vector<Type> noiseN = neg_log_densityN.simulate();
+    	    logN.col(i) = predN + noiseN;
+	    // Handle recruitment if minAge == 0, assuming propMat(-,0)=0
+	    if(conf.minAge == 0){
+	      logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,mort,i)(0) + noiseN(0);
+	    }
     	  }
     	}
       }
@@ -77,5 +94,9 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
     Type huge = 10;
     for (int i = 0; i < stateDimN; i++) nll -= dnorm(logN(i, 0), Type(0), huge, true);  
   } 
+  REPORT_F(nvar,of);
+  REPORT_F(pn,of);
   return nll;
 }
+
+#endif

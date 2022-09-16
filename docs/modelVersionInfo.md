@@ -1,9 +1,11 @@
-# `modelVersionInfo`: Description of model
+# `modelVersionInfo`
+
+Description of model
+
 
 ## Description
 
-
- Description of model
+Description of model
 
 
 ## Usage
@@ -17,12 +19,12 @@ modelVersionInfo(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     returned object from sam.fit
-```...```     |     Additional parameters to be passed to ...
+`fit`     |     returned object from sam.fit
+`...`     |     Additional parameters to be passed to ...
+
 
 ## Details
 
-
- Writes a string to install the version of the package which was used to run the model.
+Writes a string to install the version of the package which was used to run the model.
 
 

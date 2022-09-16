@@ -26,6 +26,8 @@ addRecruitmentCurve(
   PI = FALSE,
   picol = rgb(0.6, 0, 0),
   pilty = 2,
+  year = NA_real_,
+  lastR = NA_real_,
   ...
 )
 }
@@ -47,13 +49,14 @@ addRecruitmentCurve(
 \item{pilty}{Line type of prediction interval line}
 
 \item{...}{not used}
+
+\item{year}{Show recruitment calculated conditional on this year (for recruitment functions that depend on year)}
+
+\item{lastR}{Show recruitment calculated conditional on this previous recruitment (for recruitment functions that depend on recruitment the previous year)}
 }
 \description{
 Add stock-recruitment curve to srplot
 }
 \seealso{
 srplot
-}
-\author{
-Christoffer Moesgaard Albertsen
 }

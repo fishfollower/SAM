@@ -50,8 +50,8 @@ conf$keyStockWeightMean<-0:5
 conf$keyStockWeightObsVar<-rep(0,6)
 
 conf$catchWeightModel<-1
-conf$keyCatchWeightMean<-0:5
-conf$keyCatchWeightObsVar<-rep(0,6)
+conf$keyCatchWeightMean[1,]<-0:5
+conf$keyCatchWeightObsVar[1,]<-rep(0,6)
 
 conf$matureModel<-1
 conf$keyMatureMean<-0:5

@@ -1,9 +1,11 @@
-# `fbartable`: Fbar table
+# `fbartable`
+
+Fbar table
+
 
 ## Description
 
-
- Fbar table
+Fbar table
 
 
 ## Usage
@@ -18,12 +20,12 @@ list(list("fbartable"), list("default"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
-```...```     |     extra arguments not currently used
+`fit`     |     ...
+`...`     |     extra arguments not currently used
+
 
 ## Details
 
-
- ...
+...
 
 

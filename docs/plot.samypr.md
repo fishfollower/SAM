@@ -1,9 +1,11 @@
-# `plot.samypr`: Plot sam object
+# `plot.samypr`
+
+Plot sam object
+
 
 ## Description
 
-
- Plot sam object
+Plot sam object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("plot"), list("samypr"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     ...
-```...```     |     extra arguments
+`x`     |     ...
+`...`     |     extra arguments
+
 
 ## Details
 
-
- ...
+...
 
 

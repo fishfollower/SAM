@@ -1,9 +1,11 @@
-# `logLik.sam`: Log likelihood of sam object
+# `logLik.sam`
+
+Log likelihood of sam object
+
 
 ## Description
 
-
- Log likelihood of sam object
+Log likelihood of sam object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("logLik"), list("sam"))(object, ...)
 
 Argument      |Description
 ------------- |----------------
-```object```     |     sam fitted object as returned from the [`sam.fit`](sam.fit.html) function
-```...```     |     extra arguments
+`object`     |     sam fitted object as returned from the [`sam.fit`](#sam.fit) function
+`...`     |     extra arguments
+
 
 ## Details
 
-
- log likelihood of a sam model run
+log likelihood of a sam model run
 
 

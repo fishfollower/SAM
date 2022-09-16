@@ -1,17 +1,16 @@
-# `nscodConf`: 
- nscodConf
+# `nscodConf`
+
+nscodConf
 
 
 ## Description
 
-
- nscodConf
+nscodConf
 
 
 ## Format
 
-
- The format is:
+The format is:
  $ minAge
  $ maxAge
  $ maxAgePlusGroup
@@ -32,25 +31,25 @@
 ## Usage
 
 ```r
-data("nscodConf")```
+data("nscodConf")
+```
 
 
 ## Details
 
-
- ...
+...
 
 
 ## References
 
-
- ...
+...
 
 
 ## Examples
 
-```r 
- data(nscodConf)
- ## maybe str(nscodConf) ; plot(nscodConf) ...
- ``` 
+```r
+data(nscodConf)
+## maybe str(nscodConf) ; plot(nscodConf) ...
+```
+
 

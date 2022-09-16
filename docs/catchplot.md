@@ -1,19 +1,28 @@
-# `catchplot`: SAM catch plot
+# `catchplot`
+
+SAM catch plot
+
 
 ## Description
 
-
- SAM catch plot
+SAM catch plot
 
 
 ## Usage
 
 ```r
 catchplot(fit, obs.show = TRUE, drop = NULL, ...)
-list(list("catchplot"), list("sam"))(fit, obs.show = TRUE, drop = NULL,
-  plot = TRUE, ...)
+<<<<<<< HEAD
+list(list("catchplot"), list("sam"))(fit, obs.show = TRUE, drop = NULL, plot = TRUE, ...)
 list(list("catchplot"), list("samset"))(fit, obs.show = TRUE, drop = NULL, ...)
 list(list("catchplot"), list("samforecast"))(fit, obs.show = TRUE, drop = NULL, ...)
+list(list("catchplot"), list("hcr"))(fit, obs.show = TRUE, drop = NULL, ...)
+=======
+list(list("catchplot"), list("sam"))(fit, obs.show = TRUE, drop = NULL, plot = TRUE,
+  ...)
+list(list("catchplot"), list("samset"))(fit, obs.show = TRUE, drop = NULL, ...)
+list(list("catchplot"), list("samforecast"))(fit, obs.show = TRUE, drop = NULL, ...)
+>>>>>>> multi
 ```
 
 
@@ -21,15 +30,23 @@ list(list("catchplot"), list("samforecast"))(fit, obs.show = TRUE, drop = NULL, 
 
 Argument      |Description
 ------------- |----------------
+<<<<<<< HEAD
+`fit`     |     the object returned from sam.fit
+`obs.show`     |     if observations are to be shown also
+`drop`     |     number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information
+`...`     |     extra arguments transferred to plot including the following: list()  `add` logical, plotting is to be added on existing plot list()  `ci` logical, confidence intervals should be plotted list()  `cicol` color to plot the confidence polygon
+`plot`     |     true if catch should be plotted
+=======
 ```fit```     |     the object returned from sam.fit
 ```obs.show```     |     if observations are to be shown also
 ```drop```     |     number of years to be left unplotted at the end. Default (NULL) is to not show years at the end with no catch information
 ```...```     |     extra arguments transferred to plot including the following: list()  `add` logical, plotting is to be added on existing plot list()  `ci` logical, confidence intervals should be plotted list()  `cicol` color to plot the confidence polygon
 ```plot```     |     true if catch should be plotted
+>>>>>>> multi
+
 
 ## Details
 
-
- Plot of estimated (and optionally observed) total catch in weight
+Plot of estimated (and optionally observed) total catch in weight
 
 

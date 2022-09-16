@@ -4,7 +4,7 @@
 // Mollie Brooks <molbr@aqua.dtu.dk>,
 // and Christoffer Moesgaard Albertsen <cmoe@aqua.dtu.dk>.
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //   * Redistributions of source code must retain the above copyright
@@ -31,13 +31,19 @@
 
 // R_init_stockassessment is now defined in main.cpp
 //#define TMB_LIB_INIT R_init_stockassessment
-#include <TMB.hpp>
+//#define TMB_SAFEBOUNDS
+#define TMB_MAX_ORDER 4
+#include "TMB.h"
+// #include "SAM.h"
 #include "../inst/include/SAM.hpp"
+
+#include "perRecruit.h"
+#include "spline.h"
 
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
-  using CppAD::abs;
+
   dataSet<Type> dataset;
   DATA_INTEGER(noFleets); dataset.noFleets=noFleets; 
   DATA_IVECTOR(fleetTypes); dataset.fleetTypes=fleetTypes;    
@@ -64,15 +70,17 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
-  DATA_STRUCT(forecast, forecastSet); dataset.forecast = forecast;
-  DATA_STRUCT(referencepoint, referencepointSet); dataset.referencepoint = referencepoint;
-    
+  DATA_IARRAY(sumKey); dataset.sumKey=sumKey; 
+
+  DATA_STRUCT(forecast, forecastSet);
+  DATA_STRUCT(referencepoints, referencepointList);
+
   confSet confset;
   DATA_INTEGER(minAge); confset.minAge=minAge; 
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
   DATA_IVECTOR(maxAgePlusGroup); confset.maxAgePlusGroup=maxAgePlusGroup; 
   DATA_IARRAY(keyLogFsta); confset.keyLogFsta=keyLogFsta; 
-  DATA_INTEGER(corFlag); confset.corFlag=corFlag; 
+  DATA_IVECTOR(corFlag); confset.corFlag=corFlag; 
   DATA_IARRAY(keyLogFpar); confset.keyLogFpar=keyLogFpar; 
   DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
   DATA_IARRAY(keyVarF); confset.keyVarF=keyVarF; 
@@ -108,15 +116,18 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyStockWeightMean); confset.keyStockWeightMean=keyStockWeightMean;
   DATA_IVECTOR(keyStockWeightObsVar); confset.keyStockWeightObsVar=keyStockWeightObsVar; 
   DATA_INTEGER(catchWeightModel); confset.catchWeightModel=catchWeightModel;
-  DATA_IVECTOR(keyCatchWeightMean); confset.keyCatchWeightMean=keyCatchWeightMean;
-  DATA_IVECTOR(keyCatchWeightObsVar); confset.keyCatchWeightObsVar=keyCatchWeightObsVar; 
+  DATA_IMATRIX(keyCatchWeightMean); confset.keyCatchWeightMean=keyCatchWeightMean;
+  DATA_IMATRIX(keyCatchWeightObsVar); confset.keyCatchWeightObsVar=keyCatchWeightObsVar; 
   DATA_INTEGER(matureModel); confset.matureModel=matureModel;
   DATA_IVECTOR(keyMatureMean); confset.keyMatureMean=keyMatureMean;
   DATA_INTEGER(mortalityModel); confset.mortalityModel=mortalityModel;
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
-  
+  DATA_IVECTOR(logNMeanAssumption); confset.logNMeanAssumption=logNMeanAssumption;
+
+  DATA_INTEGER(reportingLevel);
+
   paraSet<Type> paraset;
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
@@ -159,14 +170,19 @@ Type objective_function<Type>::operator() ()
   PARAMETER(implicitFunctionDelta); paraset.implicitFunctionDelta = implicitFunctionDelta;
 
   // YPR reference points
-  PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
-  PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
-  PARAMETER(logScaleF01); paraset.logScaleF01 = logScaleF01;
-  PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
-  PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
-  PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
-  PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
-  PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
+  // PARAMETER(logScaleFmsy); paraset.logScaleFmsy = logScaleFmsy;
+  // PARAMETER(logScaleFmypyl); paraset.logScaleFmypyl = logScaleFmypyl;
+  // PARAMETER(logScaleFmdy); paraset.logScaleFmdy = logScaleFmdy;
+  // PARAMETER(logScaleFmax); paraset.logScaleFmax = logScaleFmax;
+  // PARAMETER_VECTOR(logScaleFxdYPR); paraset.logScaleFxdYPR = logScaleFxdYPR;
+  // PARAMETER_VECTOR(logScaleFxB0); paraset.logScaleFxB0 = logScaleFxB0;
+  // PARAMETER(logScaleFcrash); paraset.logScaleFcrash = logScaleFcrash;
+  // PARAMETER(logScaleFext); paraset.logScaleFext = logScaleFext;
+  // PARAMETER_VECTOR(logScaleFxPercent); paraset.logScaleFxPercent = logScaleFxPercent;
+  // PARAMETER(logScaleFlim); paraset.logScaleFlim = logScaleFlim;
+  // PARAMETER_MATRIX(logScaleFmsyRange); paraset.logScaleFmsyRange = logScaleFmsyRange;
+
+  PARAMETER(splinePenalty); paraset.splinePenalty = splinePenalty;
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
@@ -175,7 +191,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logitMO);
   PARAMETER_ARRAY(logNM);    
   PARAMETER_VECTOR(missing);
-  
+ 
   // patch missing 
   int idxmis=0; 
   for(int i=0;i<nobs;i++){
@@ -183,27 +199,34 @@ Type objective_function<Type>::operator() ()
       dataset.logobs(i)=missing(idxmis++);
     }    
   }
-  
+
+  Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
+
   Type ans=0; //negative log-likelihood
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
     for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
-  } 
+  }
+  ans += nllSplinePenalty(dataset, confset, paraset, this);
 
-  prepareForForecast(dataset, confset, paraset, logF, logN);
-  dataset.forecast.calculateForecast(logF,logN, dataset, confset, paraset);    
-  ans += nllF(dataset, confset, paraset, logF, keep, this);
+  prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
+  
   ans += nllSW(logSW, dataset, confset, paraset, this);
   ans += nllCW(logCW, dataset, confset, paraset, this);
   ans += nllMO(logitMO, dataset, confset, paraset, this);
-  ans += nllNM(logNM, dataset, confset, paraset, this);      
-  ans += nllN(dataset, confset, paraset, logN, logF, keep, this);
-  forecastSimulation(dataset, confset, paraset, logN, logF, this);
+  ans += nllNM(logNM, dataset, confset, paraset, this);
 
-  ans += nllObs(dataset, confset, paraset, logN, logF, keep,  this);
+  MortalitySet<Type> mort(dataset, confset, paraset, logF);
+  forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
 
-  ans += nllReferencepoints(dataset, confset, paraset, logN, logF, this);
-        
+  ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
+  ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
+  forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit,mort, this);
+
+  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep,reportingLevel, this);
+
+  reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
+
   return ans;
 }

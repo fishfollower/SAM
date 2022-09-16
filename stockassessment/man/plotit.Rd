@@ -25,6 +25,8 @@ plotit(fit, what, ...)
   drop = 0,
   unnamed.basename = "current",
   xlim = NULL,
+  ylim = NULL,
+  ylimAdd = NA,
   ...
 )
 
@@ -61,6 +63,7 @@ plotit(fit, what, ...)
   drop = 0,
   unnamed.basename = "current",
   xlim = NULL,
+  ylim = NULL,
   ...
 )
 
@@ -89,7 +92,7 @@ plotit(fit, what, ...)
 
 \item{...}{extra arguments transferred to plot}
 
-\item{x}{x-alues}
+\item{x}{x-values}
 
 \item{ylab}{label on y-axis}
 
@@ -111,7 +114,11 @@ plotit(fit, what, ...)
 
 \item{unnamed.basename}{the name to assign an unnamed basefit}
 
-\item{xlim}{...}
+\item{xlim}{xlim for the plot}
+
+\item{ylim}{ylim for the plot}
+
+\item{ylimAdd}{values to add when calculating ylim for the plot}
 }
 \description{
 Plot helper

@@ -1,9 +1,11 @@
-# `partable`: parameter table
+# `partable`
+
+parameter table
+
 
 ## Description
 
-
- parameter table
+parameter table
 
 
 ## Usage
@@ -18,12 +20,12 @@ list(list("partable"), list("sam"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
-```...```     |     extra arguments not currently used
+`fit`     |     ...
+`...`     |     extra arguments not currently used
+
 
 ## Details
 
-
- ...
+...
 
 

@@ -1,4 +1,25 @@
 
+
+logSRR <- function(logssb, rec_pars, stockRecruitmentModelCode,
+                   constRecBreaks = numeric(0), year = NA_real_, lastR = NA_real_){
+    N <- length(logssb)
+    year <- rep(year, length.out = N)
+    lastR <- rep(lastR, length.out = N)
+    .Call(C_logSRR, logssb, rec_pars, stockRecruitmentModelCode, constRecBreaks, year, lastR)
+}
+
+stockRecruitmentModelR <- function(logssb, rec_pars, stockRecruitmentModelCode,
+                                   constRecBreaks = numeric(0), year = NA_real_, lastR = NA_real_){
+    if(length(logssb) != 1 || length(year) != 1 || length(lastR) != 1)
+        stop("logssb, year, and lastR must be numeric scalars.")
+    v <- .Call(C_stockRecruitmentModelR, logssb, rec_pars, stockRecruitmentModelCode, constRecBreaks, year, lastR)
+    list(logRecruits = v$logRecruits,
+         Gradient_recpars = utils::head(v$Gradient,-1),
+         Gradient_logssb = utils::tail(v$Gradient,1))
+}
+
+
+
 ##' Add stock-recruitment curve to srplot
 ##'
 ##' @param fit Object to show SR-curve for
@@ -11,7 +32,6 @@
 ##' @param pilty Line type of prediction interval line
 ##' @param ... not used
 ##' @seealso srplot
-##' @author Christoffer Moesgaard Albertsen
 ##' @export
 addRecruitmentCurve <- function(fit,
                                 CI = TRUE,
@@ -27,6 +47,8 @@ addRecruitmentCurve <- function(fit,
 
 ##' @rdname addRecruitmentCurve
 ##' @method addRecruitmentCurve sam
+##' @param year Show recruitment calculated conditional on this year (for recruitment functions that depend on year)
+##' @param lastR Show recruitment calculated conditional on this previous recruitment (for recruitment functions that depend on recruitment the previous year)
 ##' @importFrom utils head
 ##' @export
 addRecruitmentCurve.sam <- function(fit,
@@ -37,12 +59,15 @@ addRecruitmentCurve.sam <- function(fit,
                     PI = FALSE,
                     picol = rgb(0.6,0,0),
                     pilty = 2,
+                    year = NA_real_,
+                    lastR = NA_real_,
                     ...){
        X <- summary(fit)
        R <- X[, 1]
        S <- X[, 4]
-       cf <- fit$sdrep$cov.fixed
-       covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
+       ## cf <- fit$sdrep$cov.fixed
+       ## covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
+       covEst <- fit$sdrep$covRecPars
        m <- fit$obj$env$map$rec_pars
        if(is.null(m)){
            covar <- covEst
@@ -51,70 +76,21 @@ addRecruitmentCurve.sam <- function(fit,
            covar[is.na(covar)] <- 0
        }
 
-       if(fit$conf$stockRecruitmentModelCode %in% c(0, 3)){
-           warning("addRecruitmentCurve is not implemented for this recruitment type.")
+       if(fit$conf$stockRecruitmentModelCode %in% c(-2, -1, 0, 3, 62)){
+           warning("addRecruitmentCurve is not intended for time series models.")
        }
-       
-       srfit <- function(ssb, year = NA){
-           if(fit$conf$stockRecruitmentModelCode %in% c(0)){
-               val <- NA
-               valsd <- NA
-               pisig <- NA
-           }else if(fit$conf$stockRecruitmentModelCode %in% c(3)){
-               if(is.na(year) && length(year) == 1)
-                   stop("A single year must be given")
-               indx <- cut(year,c(-Inf,fit$conf$constRecBreaks,Inf))
-               val <- fit$pl$rec_pars[indx]
-               g <- matrix(0,1,nlevels(indx))
-               g[1,indx] <- 1
-               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
-               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
-           }else if(fit$conf$stockRecruitmentModelCode %in% c(62)){
-               val <- (fit$pl$rec_pars[1])
-               g <- matrix(c(1, 0),1)
-               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
-               rho <- 2 / ( 1 + exp( -fit$pl$rec_pars[2] ) ) - 1
-               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1]) / sqrt(1 - rho)
-           }else if(fit$conf$stockRecruitmentModelCode %in% c(90,91,92)){
-               if(fit$conf$stockRecruitmentModelCode == 90){
-                   srfun <- function(par){
-                       v <- log(ssb) + .Call("ibcdsplineR",
-                                             log(ssb),
-                                             fit$conf$constRecBreaks,
-                                             par)
-                       v
-                   }
-               }else if(fit$conf$stockRecruitmentModelCode == 91){
-                   srfun <- function(par){
-                       v <- log(ssb) + .Call("ibcsplineR",
-                                             log(ssb),
-                                             fit$conf$constRecBreaks,
-                                             par)
-                       v
-                   }
-               }else{
-                   srfun <- function(par){
-                       v <- log(ssb) + .Call("bcsplineR",
-                                             log(ssb),
-                                             fit$conf$constRecBreaks,
-                                             par)
-                       v
-                   }
-               }
-               val <- srfun(fit$pl$rec_pars)
-               g <- matrix(grad(srfun, fit$pl$rec_pars),1)
-               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
-               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
-           }else{
-               v <- .Call("stockRecruitmentModelR",
-                          ssb,
-                          fit$pl$rec_pars,
-                          fit$conf$stockRecruitmentModelCode)
-               val <- log(v$Recruits)
-               g <- matrix(utils::head((1/v$Recruits) * v$Gradient,-1), 1)
-               valsd <- as.vector(sqrt(g %*% covar %*% t(g)))
-               pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
-           }
+
+       srfit <- function(logssb, year = NA_real_, lastR = NA_real_){
+           v <- stockRecruitmentModelR(logssb,
+                                       fit$pl$rec_pars,
+                                       fit$conf$stockRecruitmentModelCode,
+                                       fit$conf$constRecBreaks,
+                                       year,
+                                       lastR)
+           val <- v$logRecruits
+           g <- matrix(v$Gradient_recpars, ncol = 1)
+           valsd <- as.vector(sqrt(t(g) %*% covar %*% g))
+           pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
            res <- exp(val)
            attr(res,"ci_low") <- exp(val - 2 * valsd)
            attr(res,"ci_high") <- exp(val + 2 * valsd)
@@ -122,7 +98,7 @@ addRecruitmentCurve.sam <- function(fit,
            attr(res,"pi_high") <- exp(val + 2 * pisig)
            return(res)
        }
-
+       
        getSSBtab <- function(x, year = NA) {
            tmp <- srfit(x, year)
            c(Estimate = as.vector(tmp),
@@ -135,23 +111,15 @@ addRecruitmentCurve.sam <- function(fit,
 
 
        if(plot){
-           ssbMax <- max(c(max(S), par("usr")[2]))
+           ssbMax <- par("usr")[2]
        }else{
            ssbMax <- max(S)
        }
        ssb <- seq(1e-5,
                   ssbMax, ## max(S),
                   len = 2000)
-       if(fit$conf$stockRecruitmentModelCode == 3){
-           brks <- c(min(fit$data$years),ceiling(fit$conf$constRecBreaks),max(fit$data$years))
-           labels <- levels(cut(0,brks,dig.lab=4))
-           mid <- head(brks,-1) + diff(brks)/2
-           tabList <- lapply(as.list(mid), function(y) sapply(ssb,getSSBtab, year = y))
-           names(tabList) <- labels
-       }else{
-           tabList <- list(sapply(ssb, getSSBtab))
-       }
-
+       tabList <- list(sapply(log(ssb), getSSBtab))
+       
        transp <- Vectorize(function(col){
            arg <- as.list(grDevices::col2rgb(col,TRUE)[,1])
            arg$alpha <- 0.1 * 255
@@ -168,7 +136,7 @@ addRecruitmentCurve.sam <- function(fit,
                            col = ifelse(length(tabList) == 1,cicol,transp(i)),
                            border = NA)
                    }
-           if(fit$conf$stockRecruitmentModelCode %in% c(90,91,92))
+           if(fit$conf$stockRecruitmentModelCode %in% c(90,91,92,93,290,293))
                abline(v = exp(fit$conf$constRecBreaks), col = "grey")
            for(i in 1:length(tabList))
                lines(ssb,tabList[[i]]["Estimate",], col = ifelse(length(tabList) == 1,col,i), lwd = 3)

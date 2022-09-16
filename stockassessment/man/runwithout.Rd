@@ -2,9 +2,12 @@
 % Please edit documentation in R/retro.R
 \name{runwithout}
 \alias{runwithout}
+\alias{runwithout.sam}
 \title{runwithout helper function}
 \usage{
-runwithout(fit, year = NULL, fleet = NULL, map = fit$obj$env$map, ...)
+runwithout(fit, year, fleet, ...)
+
+\method{runwithout}{sam}(fit, year = NULL, fleet = NULL, map = fit$obj$env$map, ...)
 }
 \arguments{
 \item{fit}{a fitted model object as returned from sam.fit}
@@ -13,9 +16,9 @@ runwithout(fit, year = NULL, fleet = NULL, map = fit$obj$env$map, ...)
 
 \item{fleet}{a vector of fleets to be excluded.  When both fleet and year are supplied they need to be of same length, as only the pairs are excluded}
 
-\item{map}{map from original fit}
-
 \item{...}{extra arguments to sam.fit}
+
+\item{map}{map to use}
 }
 \description{
 runwithout helper function

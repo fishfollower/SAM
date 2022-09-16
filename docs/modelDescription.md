@@ -1,9 +1,11 @@
-# `modelDescription`: Description of model
+# `modelDescription`
+
+Description of model
+
 
 ## Description
 
-
- Description of model
+Description of model
 
 
 ## Usage
@@ -17,12 +19,12 @@ modelDescription(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     returned object from sam.fit
-```...```     |     Additional parameters to be passed to ...
+`fit`     |     returned object from sam.fit
+`...`     |     Additional parameters to be passed to ...
+
 
 ## Details
 
-
- ...
+...
 
 

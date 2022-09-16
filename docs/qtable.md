@@ -1,9 +1,11 @@
-# `qtable`: table of survey catchabilities
+# `qtable`
+
+table of survey catchabilities
+
 
 ## Description
 
-
- table of survey catchabilities
+table of survey catchabilities
 
 
 ## Usage
@@ -17,12 +19,12 @@ qtable(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
-```...```     |     extra arguments not currently used
+`fit`     |     ...
+`...`     |     extra arguments not currently used
+
 
 ## Details
 
-
- ...
+...
 
 
