@@ -1,4 +1,3 @@
-
 // Forward declarations
 template <class Type>
 Type hcr(Type ssb, vector<Type> hcrConf);
@@ -14,18 +13,17 @@ template<class Type>
 Type catch2F(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w);
 // 
 
-
-
 template <class Type>
 struct forecastSet {
 
   enum FModelType {
 		   asFModel,
-		   useFscale,
-		   useFval,
-		   useCatchval,
-		   useNextssb,
-		   useLandval,
+		   // useFscale,
+		   // useFval,
+		   // useCatchval,
+		   // useNextssb,
+		   // useLandval,
+		   constrainedF,
 		   findMSY,
 		   HCR,
 		   customHCR
@@ -46,14 +44,15 @@ struct forecastSet {
   vector<int> aveYears;
   vector<Type> forecastYear;
   vector<FModelType> FModel;
-  vector<Type> target;
+  // vector<Type> target;
+  vector<FConstraintList<Type> > constraints;
+  newton::newton_config cfg;
   vector<Type> selectivity;
   vector<recModelType> recModel;
   Type logRecruitmentMedian;
   Type logRecruitmentVar;
   vector<FSdTimeScaleModel> fsdTimeScaleModel;
   vector<int> simFlag;
-  int uniroot;
   vector<Type> hcrConf;
   int hcrCurrentSSB;
 
@@ -126,54 +125,57 @@ struct forecastSet {
       forecastCalculatedLogSdCorrection(i) = 1.0;
       forecastCalculatedMedian.col(i) = logF.col(indx - 1);
       break;
-    case useFscale: // target is an F scale of previous F
-      if(i == 0){
-	forecastCalculatedMedian.col(i) = log(target(i)) + log(initialFbar) + log(sel);
-      }else{
-	forecastCalculatedMedian.col(i) = log(target(i)) + (vector<Type>)forecastCalculatedMedian.col(i-1);
-      }
+    case constrainedF:
+      forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),lastShortLogF,logN,indx, cfg);    
       break;
-    case useFval: // target is F value	
-      forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
-      break;
-    case useCatchval: // target is a catch value in weight
-      calcF = catch2F_quick((Type)target(i),
-			      exp(lastFullLogF),
-			      (vector<Type>)dat.natMor.matrix().row(indx),
-			      exp((vector<Type>)logN.col(indx)),
-			      (vector<Type>)dat.catchMeanWeight.matrix().row(indx));
-      if(i == 0){
-	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
-      }else{
-	forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
-      }
-      break;
-    case useNextssb:
-      calcF = ssb2F_quick((Type)target(i),
-			  log(sel), //lastShortLogF,
-			  dat,
-			  conf,
-			  par,
-			  logF,
-			  logN,
-			  mort,
-			  indx,
-			  logRecruitmentMedian);
-      forecastCalculatedMedian.col(i) = log(calcF) + log(sel);
-      break;
-    case useLandval:
-  	calcF = landing2F_quick((Type)target(i),
-				exp(lastFullLogF),
-				(vector<Type>)dat.natMor.matrix().row(indx),
-				exp((vector<Type>)logN.col(indx)),
-				(vector<Type>)dat.landMeanWeight.matrix().row(indx),
-				(vector<Type>)dat.landFrac.matrix().row(indx));
-      if(i == 0){
-	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
-      }else{
-	forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
-      }
-      break;
+    // case useFscale: // target is an F scale of previous F
+    //   if(i == 0){
+    // 	forecastCalculatedMedian.col(i) = log(target(i)) + log(initialFbar) + log(sel);
+    //   }else{
+    // 	forecastCalculatedMedian.col(i) = log(target(i)) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+    //   }
+    //   break;
+    // case useFval: // target is F value	
+    //   forecastCalculatedMedian.col(i) = log(target(i)) + log(sel);
+    //   break;
+    // case useCatchval: // target is a catch value in weight
+    //   calcF = catch2F_quick((Type)target(i),
+    // 			      exp(lastFullLogF),
+    // 			      (vector<Type>)dat.natMor.matrix().row(indx),
+    // 			      exp((vector<Type>)logN.col(indx)),
+    // 			      (vector<Type>)dat.catchMeanWeight.matrix().row(indx));
+    //   if(i == 0){
+    // 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
+    //   }else{
+    // 	forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+    //   }
+    //   break;
+    // case useNextssb:
+    //   calcF = ssb2F_quick((Type)target(i),
+    // 			  log(sel), //lastShortLogF,
+    // 			  dat,
+    // 			  conf,
+    // 			  par,
+    // 			  logF,
+    // 			  logN,
+    // 			  mort,
+    // 			  indx,
+    // 			  logRecruitmentMedian);
+    //   forecastCalculatedMedian.col(i) = log(calcF) + log(sel);
+    //   break;
+    // case useLandval:
+    // 	calcF = landing2F_quick((Type)target(i),
+    // 				exp(lastFullLogF),
+    // 				(vector<Type>)dat.natMor.matrix().row(indx),
+    // 				exp((vector<Type>)logN.col(indx)),
+    // 				(vector<Type>)dat.landMeanWeight.matrix().row(indx),
+    // 				(vector<Type>)dat.landFrac.matrix().row(indx));
+    //   if(i == 0){
+    // 	forecastCalculatedMedian.col(i) = log(calcF) + log(initialFbar) + log(sel);
+    //   }else{
+    // 	forecastCalculatedMedian.col(i) = log(calcF) + (vector<Type>)forecastCalculatedMedian.col(i-1);
+    //   }
+    //   break;
     case findMSY:
       forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel); // 
       break;
@@ -200,15 +202,16 @@ struct forecastSet {
 			nCatchAverageYears(0),
 			aveYears(0),
 			forecastYear(0),
-			FModel(0),
-			target(0),
-			selectivity(0),
+		  FModel(0),
+			// target(0),
+		  constraints(0),
+		  cfg(),
+		  selectivity(0),
 			recModel(0),
 			logRecruitmentMedian(0),
 			logRecruitmentVar(0),
 			fsdTimeScaleModel(0),
 			simFlag(0),
-			uniroot(0),
 			hcrConf(0),
 			hcrCurrentSSB(0),
 			forecastCalculatedMedian(0,0),
@@ -229,7 +232,6 @@ struct forecastSet {
 		      // 	logRecruitmentVar(0),
 		      // 	fsdTimeScaleModel(static_cast<FSdTimeScaleModel>(0)),
 		      // 	simFlag(0),
-		      // 	uniroot(0),
 		      // 	hcrConf(0),
 		      // 	hcrCurrentSSB(0),
 		      // 	forecastCalculatedMedian(0,0),
@@ -246,14 +248,15 @@ struct forecastSet {
       aveYears = vector<int>(0);
       forecastYear = vector<Type>(0);
       FModel = vector<FModelType>(0);
-      target = vector<Type>(0);
+      // target = vector<Type>(0);
+      constraints = vector<FConstraintList<Type> >(0);
+      cfg = newton::newton_config();
       selectivity = vector<Type>(0);
       recModel = vector<recModelType>(0);
       logRecruitmentMedian = 0;
       logRecruitmentVar = 0;
       fsdTimeScaleModel = vector<FSdTimeScaleModel>(0);
       simFlag = vector<int>(0);
-      uniroot = 0;
       hcrConf = vector<Type>(0);
       hcrCurrentSSB = 0;
       forecastCalculatedMedian = matrix<Type>(0,0);
@@ -273,7 +276,15 @@ struct forecastSet {
 	FModel(i) = static_cast<FModelType>(FModelTmp(i));
       // Fval = asVector<Type>(getListElement(x,"Fval"));
       // Fscale = asVector<Type>(getListElement(x,"Fscale"));
-      target = asVector<Type>(getListElement(x,"target"));
+      // target = asVector<Type>(getListElement(x,"target"));
+      SEXP ctmp = PROTECT(getListElement(x,"constraints"));
+      constraints = vector<FConstraintList<Type> >(Rf_length(ctmp));
+      for(int i = 0; i < Rf_length(ctmp); ++i){
+	SEXP tmp = VECTOR_ELT(ctmp, i);
+	constraints(i) = FConstraintList<Type>(tmp);
+      }
+      UNPROTECT(1);
+      cfg = newton::newton_config(getListElement(x,"cfg"));
       selectivity = asVector<Type>(getListElement(x,"selectivity"));
       vector<int> recModelTmp = asVector<int>(getListElement(x,"recModel"));
       recModel = vector<recModelType>(recModelTmp.size());
@@ -286,7 +297,6 @@ struct forecastSet {
       for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
 	fsdTimeScaleModel(i) = static_cast<FSdTimeScaleModel>(fsdTimeScaleModelTmp(i));
       simFlag = asVector<int>(getListElement(x,"simFlag"));
-      uniroot = (int)*REAL(getListElement(x,"uniroot"));
       hcrConf = asVector<Type>(getListElement(x,"hcrConf"));
       hcrCurrentSSB = Rf_asInteger(getListElement(x,"hcrCurrentSSB"));
     }
@@ -298,14 +308,15 @@ struct forecastSet {
 					 aveYears(x.aveYears),
 					 forecastYear(x.forecastYear),
 					 FModel(x.FModel),
-					 target(x.target),
+					 // target(x.target),
+					 constraints(x.constraints),
+					 cfg(x.cfg),
 					 selectivity(x.selectivity),
 					 recModel(x.recModel),
 					 logRecruitmentMedian(x.logRecruitmentMedian),
 					 logRecruitmentVar(x.logRecruitmentVar),
 					 fsdTimeScaleModel(x.fsdTimeScaleModel),
 					 simFlag(x.simFlag),
-					 uniroot(x.uniroot),
 					 hcrConf(x.hcrConf),
 					 hcrCurrentSSB(x.hcrCurrentSSB),
 					 forecastCalculatedMedian(x-forecastCalculatedMedian),

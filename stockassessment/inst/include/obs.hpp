@@ -566,20 +566,27 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
     vector<Type> disFbar = disFbarFun(dat, conf, logF);
     vector<Type> logdisfbar = log(disFbar);
 
+    matrix<Type> logFbarByFleet = fbarByFleet(conf, logF, true);
+    
     ADREPORT_F(logDis,of);
     ADREPORT_F(loglandfbar,of);
-    ADREPORT_F(logdisfbar,of);      
-    SIMULATE_F(of) {
+    ADREPORT_F(logdisfbar,of);
+    ADREPORT_F(logCatchAge, of);
+    ADREPORT_F(logFbarByFleet, of);
+    
+    // SIMULATE_F(of) {
       //if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
 	REPORT_F(logssb,of);
 	REPORT_F(logfbar,of);
 	REPORT_F(logfbarL,of);
 	REPORT_F(logCatch,of);
 	REPORT_F(logCatchAge,of);
+	REPORT_F(logCatchByFleet,of);
+	REPORT_F(logFbarByFleet, of);
 	REPORT_F(logLand,of);
 	REPORT_F(logtsb,of);      
 	//}
-    }
+    // }
   }
 
   vector<Type> logLagR(logR.size());

@@ -284,6 +284,7 @@ namespace referencepoints_helper {
       return f.par2logF(x);
     };
     vector<Type> optimize(vector<Type> logF0){
+      cfg.simplify = false;	// Needed in older versions of TMB for logspace_add
       return newton::Newton(f,logF0, cfg);
     }  
   };

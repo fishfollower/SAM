@@ -27,12 +27,12 @@ Type jacobiUVtrans( array<Type> logF){
   }
   A/=nc;
   
-  return nr*log(CppAD::abs(A.determinant()));
+  return nr*log(fabs(A.determinant()));
 }
 
 template<class Type>
 matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF){
-  using CppAD::abs;
+  // using CppAD::abs;
   int stateDimF=logF.dim[0];
   int timeSteps=logF.dim[1];
   int noFleets=conf.keyLogFsta.dim[0];

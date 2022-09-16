@@ -32,7 +32,7 @@
 // R_init_stockassessment is now defined in main.cpp
 //#define TMB_LIB_INIT R_init_stockassessment
 //#define TMB_SAFEBOUNDS
-// #define TMB_MAX_ORDER 4
+#define TMB_MAX_ORDER 4
 #include "TMB.h"
 // #include "SAM.h"
 #include "../inst/include/SAM.hpp"
@@ -124,7 +124,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
-  DATA_IVECTOR(logNMeanCorrection); confset.logNMeanCorrection=logNMeanCorrection;
+  DATA_IVECTOR(logNMeanAssumption); confset.logNMeanAssumption=logNMeanAssumption;
 
   DATA_INTEGER(reportingLevel);
 

@@ -74,8 +74,8 @@ forecast <- function(fit,
                      ave.years=max(fit$data$years)+(-4:0),
                      rec.years=max(fit$data$years)+(-9:0),
                      label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE,  customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), useCWmodel=(fit$conf$catchWeightModel==1), useMOmodel=(fit$conf$matureModel==1), useNMmodel=(fit$conf$mortalityModel==1), savesim=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
-    if(sum(fit$data$fleetTypes==0) > 1)
-        stop("Forecast for multi fleet models not implemented yet")
+    ## if(sum(fit$data$fleetTypes==0) > 1)
+    ##     stop("Forecast for multi fleet models not implemented yet")
 
 
     idxN <- 1:nrow(fit$rep$nvar)
@@ -255,6 +255,12 @@ forecast <- function(fit,
             Z <- F+nm
             n <- length(N)
             N <- c(resample(recpool,1),N[-n]*exp(-Z[-n])+c(rep(0,n-2),N[n]*exp(-Z[n])))
+            ## Recruitment does not use model prediction, so no effect of logNMeanAssumption
+            if(conf$logNMeanAssumption[2] == 1){ # Mean on natural scale
+                N <- N + c(0,-0.5 * exp(2.0 * par$logSdLogN[conf$keyVarLogN[-1]]))
+            }else if(conf$logNMeanAssumption[2] == 2){ # Mode on natural scale
+                N <- N + c(0,exp(2.0 * par$logSdLogN[conf$keyVarLogN[-1]]))                
+            }
         }
         xx <- rep(NA,length=length(x))
         xx[idxN] <- log(N)
@@ -585,60 +591,62 @@ forecast <- function(fit,
                 return(nextssb[i+1]-median(simnextssb))
             }
             ff <- uniroot(fun, c(0,100))$root
-            ## ======= !!!From multi -- NOT FULLY MERGED!!!
-            ##     if(any(!is.na(cf.cv.keep.cv[i+1,]))){
-            ##       cfcv <- cf.cv.keep.cv[i+1,]  
-            ##       cf <- cfcv[1:noCatchFleets]
-            ##       cv <- cfcv[1:noCatchFleets+noCatchFleets]
-            ##       cfcvtcv<-c(cfcv,catchval[i+1])
-            ##       ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
-            ##       theta <- rep(1,length(ii)+1)
-            ##       if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.cv")
-            ##       lsfun <- function(logth) {
-            ##         th<-exp(logth)
-            ##         s <- rep(NA, noCatchFleets)
-            ##         s[ii] <- th[1:length(ii)]
-            ##         s[-ii] <- th[length(ii) + 1]
-            ##         simtmp <<- t(apply(sim, 1, scaleFbyFleet, scale = s))
-            ##         cvfun <- function(x) {
-            ##           tcv <- catch(x, nm = nm, cw = cw)
-            ##           cv <- attr(tcv, "byFleet")
-            ##           return(cv)
-            ##         }
-            ##         simcat <- apply(simtmp, 1, cvfun)
-            ##         medcv <- apply(simcat, 1, estimate)
-            ##         med <- c(medcv/sum(medcv), medcv, estimate(apply(simcat, 2, sum)))
-            ##         return(-sum(dnorm(log(cfcvtcv), log(med), sd=1 ,log=TRUE), na.rm = TRUE))
-            ##       }
-            ##       ff <- nlminb(log(theta), lsfun)
-            ##       sim <- simtmp
-            ##     }
+            sim <- simtmp
+        }
+        ## ======= !!!From multi -- NOT FULLY MERGED!!!
+        if(any(!is.na(cf.cv.keep.cv[i+1,]))){
+            cfcv <- cf.cv.keep.cv[i+1,]  
+            cf <- cfcv[1:noCatchFleets]
+            cv <- cfcv[1:noCatchFleets+noCatchFleets]
+            cfcvtcv<-c(cfcv,catchval[i+1])
+            ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
+            theta <- rep(1,length(ii)+1)
+            if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.cv")
+            lsfun <- function(logth) {
+                th<-exp(logth)
+                s <- rep(NA, noCatchFleets)
+                s[ii] <- th[1:length(ii)]
+                s[-ii] <- th[length(ii) + 1]
+                simtmp <<- t(apply(sim, 1, scaleFbyFleet, scale = s))
+                cvfun <- function(x) {
+                    tcv <- catch(x, nm = nm, cw = cw)
+                    cv <- attr(tcv, "byFleet")
+                    return(cv)
+                }
+                simcat <- apply(simtmp, 1, cvfun)
+                medcv <- apply(simcat, 1, estimate)
+                med <- c(medcv/sum(medcv), medcv, estimate(apply(simcat, 2, sum)))
+                return(-sum(dnorm(log(cfcvtcv), log(med), sd=1 ,log=TRUE), na.rm = TRUE))
+            }
+            ff <- nlminb(log(theta), lsfun)
+            sim <- simtmp
+        }
 
-            ##     if(any(!is.na(cf.cv.keep.fv[i+1,]))){
-            ##       cfcv <- cf.cv.keep.fv[i+1,]  
-            ##       cf <- cfcv[1:noCatchFleets]
-            ##       cv <- cfcv[1:noCatchFleets+noCatchFleets]
-            ##       cfcvtfv<-c(cfcv,fval[i+1])
-            ##       ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
-            ##       theta <- rep(1,length(ii)+1)
-            ##       if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.fv")
-            ##       lsfun <- function(th){
-            ##         s <- rep(NA,noCatchFleets)
-            ##         s[ii] <- th[1:length(ii)]
-            ##         s[-ii] <- th[length(ii)+1]
-            ##         simtmp <<- t(apply(sim, 1, scaleFbyFleet, scale=s))
-            ##         cvfun <- function(x){
-            ##           tcv <- catch(x,nm=nm,cw=cw)
-            ##           cv <- attr(tcv,"byFleet")
-            ##           return(cv)
-            ##         }
-            ##         simcat <- apply(simtmp, 1, cvfun)
-            ##         simfbar <- apply(simtmp, 1, fbar)
-            ##         medcv <- apply(simcat,1,estimate)
-            ##         med <- c((medcv-cf.keep.fv.offset[i+1,])/sum(medcv),medcv,estimate(simfbar))
-            ##         return(sum(((cfcvtfv-med)/cfcvtfv)^2, na.rm=TRUE))
-            ##       }
-            ##       ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
+        if(any(!is.na(cf.cv.keep.fv[i+1,]))){
+            cfcv <- cf.cv.keep.fv[i+1,]  
+            cf <- cfcv[1:noCatchFleets]
+            cv <- cfcv[1:noCatchFleets+noCatchFleets]
+            cfcvtfv<-c(cfcv,fval[i+1])
+            ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
+            theta <- rep(1,length(ii)+1)
+            if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.fv")
+            lsfun <- function(th){
+                s <- rep(NA,noCatchFleets)
+                s[ii] <- th[1:length(ii)]
+                s[-ii] <- th[length(ii)+1]
+                simtmp <<- t(apply(sim, 1, scaleFbyFleet, scale=s))
+                cvfun <- function(x){
+                    tcv <- catch(x,nm=nm,cw=cw)
+                    cv <- attr(tcv,"byFleet")
+                    return(cv)
+                }
+                simcat <- apply(simtmp, 1, cvfun)
+                simfbar <- apply(simtmp, 1, fbar)
+                medcv <- apply(simcat,1,estimate)
+                med <- c((medcv-cf.keep.fv.offset[i+1,])/sum(medcv),medcv,estimate(simfbar))
+                return(sum(((cfcvtfv-med)/cfcvtfv)^2, na.rm=TRUE))
+            }
+            ff <- nlminb(theta,lsfun, lower=0.001, upper=1000)
             ## >>>>>>> multi  !!!End of conflict block 1 -- NOT FULLY MERGED!!!
             sim <- simtmp
         }
@@ -714,15 +722,15 @@ forecast <- function(fit,
         if(!missing(customWeights)){
             cwFsim <- apply(sim, 1, getCWF, w=customWeights)
         }
-        simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim,
-                               cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, year=y)
+        ## simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim,
+        ##                        cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, year=y)
         ## =======   !!!From multi -- NOT FULLY MERGED!!!
-        ##     fbarbyfleetsim <- apply(sim, 1, fbarbyfleet)
-        ##     catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
-        ##     ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
-        ##     recsim <- exp(sim[,1])
-        ##     catchbysim <- apply(sim, 1, function(x)attr(catch(x, nm=nm, cw=cw), "byFleet"))
-        ##     simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y, catchby=catchbysim)
+        fbarbyfleetsim <- apply(sim, 1, fbarbyfleet)
+        ## catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
+        ## ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
+        ## recsim <- exp(sim[,1])
+        catchbysim <- apply(sim, 1, function(x)attr(catch(x, nm=nm, cw=cw), "byFleet"))
+        simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, year=y, catchby=catchbysim)
         ## >>>>>>> multi   !!!End of conflict block 2 -- NOT FULLY MERGED!!!
     }
     attr(simlist, "fit")<-fit
@@ -769,28 +777,28 @@ forecast <- function(fit,
     attr(simlist, "label") <- label
     attr(simlist, "caytable")<-caytable    
     ## =======   !!!From multi -- NOT FULLY MERGED!!!
-    ##   if(sum(fit$data$fleetTypes==0)==1){
-    ##     catchby <- catch
-    ##   }else{
-    ##     catchby <- round(do.call(rbind, lapply(simlist,function(xx)as.vector(apply(xx$catchby,1,collect)))))
-    ##   }
-    ##   if(sum(fit$data$fleetTypes == 0) == 1) {
-    ##     fbarby <- fbar
-    ##   }
-    ##   else{
-    ##     fbarby <- round(do.call(rbind, lapply(simlist, function(xx) as.vector(apply(xx$fbarbyfleet, 1, collect)))),3)
-    ##   }
+    if(sum(fit$data$fleetTypes==0)==1){
+        catchby <- catch
+    }else{
+        catchby <- round(do.call(rbind, lapply(simlist,function(xx)as.vector(apply(xx$catchby,1,collect)))))
+    }
+    if(sum(fit$data$fleetTypes == 0) == 1) {
+        fbarby <- fbar
+    }
+    else{
+        fbarby <- round(do.call(rbind, lapply(simlist, function(xx) as.vector(apply(xx$fbarbyfleet, 1, collect)))),3)
+    }
     ##   tab <- cbind(fbar, rec, ssb, catch)
     ##   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
-    ##   rownames(catchby) <- rownames(tab)
-    ##   rownames(fbarby) <- rownames(tab)
-    ##   nam <- c("Estimate","low","high")
+      rownames(catchby) <- rownames(tab)
+      rownames(fbarby) <- rownames(tab)
+      nam <- c("median","low","high")
     ##   colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
-    ##   colnames(catchby) <- paste0(rep(paste0("F",1:sum(fit$data$fleetTypes==0),":"), each=length(nam)), nam)
-    ##   colnames(fbarby) <- paste0(rep(paste0("F", 1:sum(fit$data$fleetTypes == 0), ":"), each = length(nam)), nam)
+      colnames(catchby) <- paste0(rep(paste0("F",1:sum(fit$data$fleetTypes==0),":"), each=length(nam)), nam)
+      colnames(fbarby) <- paste0(rep(paste0("F", 1:sum(fit$data$fleetTypes == 0), ":"), each = length(nam)), nam)
     ##   attr(simlist, "tab") <- tab
-    ##   attr(simlist, "catchby") <- catchby
-    ##   attr(simlist, "fbarby") <- fbarby
+      attr(simlist, "catchby") <- catchby
+      attr(simlist, "fbarby") <- fbarby
     ##   shorttab <- t(tab[,grep("Estimate",colnames(tab))])
     ##   rownames(shorttab) <- sub(":Estimate","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
     ##   attr(simlist, "shorttab") <- shorttab

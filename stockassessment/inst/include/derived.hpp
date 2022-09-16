@@ -38,7 +38,7 @@ Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &log
       // 	}
       // }
       Type lssbNew = logN(j,i) + log(mort.ssbSurvival_before(j,i)) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));
-      logssb = logspace_add2(logssb, lssbNew);
+      logssb = logspace_add_SAM(logssb, lssbNew);
     }
   }
   if(give_log)
@@ -58,28 +58,6 @@ vector<Type> ssbFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
   return ssb;
 }
 
-// #ifdef TMBAD_FRAMEWORK
-// THIS IS NOT WORKING
-// template <class Type>
-// matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
-//   int len=dat.catchMeanWeight.dim(0);
-//   matrix<Type> cat(conf.maxAge - conf.minAge + 1, len);
-//   cat.setConstant(R_NegInf);
-//   for(int y=0;y<len;y++){
-//     for(int a=conf.minAge;a<=conf.maxAge;a++){  
-//       Type logz=log(dat.natMor(y,a-conf.minAge) + 1e-12);
-//       if(conf.keyLogFsta(0,a-conf.minAge)>(-1)){
-//         logz = logspace_add2(logz, logF(conf.keyLogFsta(0,a-conf.minAge),y));
-// 	Type tmp = logF(conf.keyLogFsta(0,a-conf.minAge),y) - logz + logN(a-conf.minAge,y) + log(1.0 - exp(-exp(logz))) + log(dat.catchMeanWeight(y,a-conf.minAge) + 1e-12);
-// 	cat(a-conf.minAge, y) = logspace_add2(cat(a-conf.minAge, y), tmp);
-//       }
-//     }
-//   }
-//   if(give_log)
-//     return cat;
-//   return cat.array().exp().matrix();
-// }
-// #else
 template <class Type>
 matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, bool give_log = false){
   int len=dat.landFrac.dim(0);
@@ -131,23 +109,7 @@ array<Type> catchByFleetFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
   return cat;
 }
 
-// #endif
 
-// #ifdef TMBAD_FRAMEWORK
-// THIS IS NOT WORKING
-// template <class Type>
-// vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, bool give_log = false){
-//   matrix<Type> cat = catchFunAge(dat,conf,logN,logF, true);
-//   vector<Type> catY(cat.cols());
-//   catY.setConstant(R_NegInf);
-//   for(int i = 0; i < cat.cols(); ++i)
-//     for(int j = 0; j < cat.rows(); ++j)
-//       catY(i) = logspace_add2(catY(i), cat(j,i));
-//   if(give_log)
-//     return catY;
-//   return exp(catY);
-// }
-// #else
 template <class Type>
 vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF,MortalitySet<Type>& mort, bool give_log = false){
   matrix<Type> cat = catchFunAge(dat,conf,logN,logF,mort, give_log);
@@ -156,7 +118,7 @@ vector<Type> catchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, arra
     catY.setConstant(R_NegInf);
     for(int i = 0; i < cat.cols(); ++i)
       for(int j = 0; j < cat.rows(); ++j)
-	catY(i) = logspace_add2(catY(i), cat(j,i));
+	catY(i) = logspace_add_SAM(catY(i), cat(j,i));
     return catY;
   }
   vector<Type> catY(cat.cols());
@@ -352,23 +314,6 @@ vector<Type> rFun(array<Type> &logN){
   return R;
 }
 
-// #ifdef TMBAD_FRAMEWORK
-// template <class Type>
-// vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
-//   int timeSteps=logF.dim[1];
-//   vector<Type> fbar(timeSteps);
-//   fbar.setConstant(R_NegInf);
-//   for(int y=0;y<timeSteps;y++){  
-//     for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){
-//       fbar(y) = logspace_add2(fbar(y), logF(conf.keyLogFsta(0,a-conf.minAge),y));
-//     }
-//     fbar(y) -= log(Type(conf.fbarRange(1)-conf.fbarRange(0)+1));
-//   }
-//   if(give_log)
-//     return fbar;
-//   return exp(fbar);
-// }
-// #else
 template<class Type>
 Type fbari(confSet &conf, array<Type> &logF, int i, bool give_log = false){
   Type fbar = 0.0;
@@ -392,6 +337,35 @@ vector<Type> fbarFun(confSet &conf, array<Type> &logF, bool give_log = false){
   return res;
 }
 // #endif
+
+template<class Type>
+vector<Type> fbarByFleeti(confSet &conf, array<Type> &logF, int i, bool give_log = false){
+  vector<Type> fbar(conf.keyLogFsta.dim[0]);
+  fbar.setZero();
+  for(int f = 0; f < fbar.size(); ++f){
+    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
+      if(conf.keyLogFsta(f,a-conf.minAge)>(-1)){
+	fbar(f) += exp(logF(conf.keyLogFsta(f,a-conf.minAge),i));
+      }
+    }
+    fbar(f)/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1.0);
+  }
+  if(give_log)
+    return (vector<Type>)fbar.log();
+  return fbar;
+}
+template <class Type>
+matrix<Type> fbarByFleet(confSet &conf, array<Type> &logF, bool give_log = false){
+  int timeSteps=logF.dim[1];
+  matrix<Type> res(conf.keyLogFsta.dim[0], timeSteps);
+  res.setZero();
+  for(int y=0;y<timeSteps;y++){  
+    res.col(y) = fbarByFleeti(conf, logF, y, give_log);
+  }
+  return res;
+}
+// #endif
+
 
 template <class Type>
 vector<Type> landFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF){

@@ -235,10 +235,6 @@ predict.rpscurvefit <- function(x,newF,...){
             return((exp(PRvals$logSe) - 1)^2)
         }else if(rp$rpType == 12){ ## Lim
             stop("Reference point type not implemented yet")
-        }else if(rp$rpType == 101){ ## MSYBtrigger
-            stop("Reference point type not implemented yet")
-        }else if(rp$rpType == 102){ ## Fpa
-            stop("Reference point type not implemented yet")
         }else{
             stop("Reference point type not implemented")
         }

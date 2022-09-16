@@ -142,7 +142,7 @@ Type logspace_add3(Type logx, Type logy){
 }
 
 #ifndef logspace_add_SAM 
-#define logspace_add_SAM logspace_add
+#define logspace_add_SAM logspace_add2
 #endif
 
 template<class Type>
@@ -155,7 +155,7 @@ Type logspace_sub3(Type logx, Type logy){
 }
 
 #ifndef logspace_sub_SAM
-#define logspace_sub_SAM logspace_sub
+#define logspace_sub_SAM logspace_sub2
 #endif
 
 

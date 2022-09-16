@@ -1037,12 +1037,24 @@ srplot<-function(fit, ...){
 ##' @param years the plotting symbols are the years
 ##' @param linetype type for the plot (default line)
 ##' @param linecol color of lines between points
+##' @param polycol Inner color of error ellipses
+##' @param polyborder Border color of error ellipses
+##' @param polylty Border line type of error ellipses
+##' @param polylwd Border line width of error ellipses
 ##' @param xlim bounds for x-axis
 ##' @param ylim bounds for y-axis
 ##' @param add false if a new plot should be created
-##' @param CIlevel Confidence level for error ellipseson stock-recruitment pairs
+##' @param CIlevel Confidence level for error ellipses on stock-recruitment pairs
+##' @param addCurve Call addRecruitmentCurve?
 ##' @export
-srplot.sam <- function(fit, textcol="red", years=TRUE, linetype="l", linecol="black", xlim, ylim, add=FALSE, CIlevel = 0.95, ...){
+srplot.sam <- function(fit, textcol="red", years=TRUE,
+                       linetype="l",
+                       linecol="black",
+                       polycol = do.call("rgb",c(as.list(col2rgb("black")[,1]),list(alpha=.1))),
+                       polyborder = do.call("rgb",c(as.list(col2rgb("black")[,1]),list(alpha=0.3))),
+                       polylty = 3,
+                       polylwd = 1,
+                       xlim, ylim, add=FALSE, CIlevel = 0.95, addCurve = TRUE, ...){
     X <- summary(fit)
     n<-nrow(X)
     lag <- fit$conf$minAge
@@ -1058,17 +1070,20 @@ srplot.sam <- function(fit, textcol="red", years=TRUE, linetype="l", linecol="bl
         Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
                                   c(idxS[i], n + idxR[i])]    
         r <- ellipse::ellipse(Sig,centre=mu, level = CIlevel)
-        list(x = exp(r[,1]), y = exp(r[,2]), col = do.call("rgb",c(as.list(col2rgb(linecol)[,1]),list(alpha=0.1))), border = do.call("rgb",c(as.list(col2rgb(linecol)[,1]),list(alpha=0.3))), lty = 3)
+        list(x = exp(r[,1]), y = exp(r[,2]), col = polycol,border=NA)
     }
-  pols <- lapply(seq_along(idxR), makeCIpolygon)
-  if(!add){
+    pols <- lapply(seq_along(idxR), makeCIpolygon)
+    if(!add){
       if (missing(xlim)) xlim=range(0,S, unlist(lapply(pols,function(x)x$x)))
       if (missing(ylim)) ylim=range(0,R, unlist(lapply(pols,function(x)x$y)))
       plot(S,R, xlab=Snam, ylab=Rnam, type="n", col=linecol, xlim=xlim, ylim=ylim)
-  }
-  invisible(lapply(pols,function(pp) do.call(polygon,pp)))
-  lines(S,R, col = linecol, type = linetype, ...)
-  if (years) text(S,R, labels=y[idxR], cex=.7, col=textcol )
+    }
+    invisible(lapply(pols,function(pp) do.call(polygon,pp)))
+    invisible(lapply(pols,function(pp) lines(pp$x,pp$y,col=polyborder,lwd=polylwd,lty=polylty)))
+    if(addCurve)
+        suppressWarnings({addRecruitmentCurve(fit)})
+    lines(S,R, col = linecol, type = linetype, ...)
+    if (years) text(S,R, labels=y[idxR], cex=.7, col=textcol )
 }
 
 ##' Plots fit to data 

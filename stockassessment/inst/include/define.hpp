@@ -8,67 +8,6 @@
 
 #define SAM_ASSERT(x,msg) if(!(x)) Rf_error(msg);
 
-
-// #ifndef TMBAD_FRAMEWORK
-// #ifndef CPPAD_FRAMEWORK
-// #define CPPAD_FRAMEWORK
-// #endif
-// #endif
-
-
-// int SEXP2intSAM(SEXP x, int x0 = 0){
-//   if(!Rf_isNull(x)){
-//     return Rf_asInteger(x);
-//   }
-//   return x0; 
-// }
-
-
-
-// template <class Type>
-// vector<Type> SEXP2vecSAM(SEXP x){
-//   if(!Rf_isNull(x)){
-//     return asVector<Type>(x);
-//   }
-//   return vector<Type>(0); 
-// }
-
-// template <class Type>
-// Type SEXP2scalarSAM(SEXP x, Type x0){
-//   if(!Rf_isNull(x)){
-//     return (Type)Rf_asReal(x);
-//   }
-//   return x0; 
-// }
-
-// template<class Type>
-// Type logspace_sum(vector<Type> logx){
-//   Type r = R_NegInf;
-//   for(int i = 0; i < logx.size(); ++i)
-//     r = logspace_add(r, logx(i));
-//   return r;
-// }
-
-
-// template <class Type>
-// struct forecastSet;
-
-// template <class Type>
-// struct dataSet;
-
-// struct confSet;
-
-// template <class Type>
-// struct paraSet;
-
-// template <class Type>
-// struct Recruitment;
-
-// template <class Type>
-// struct MortalitySet;
-
-
-
 #define REPORT_F(name,F)					\
   if(isDouble<Type>::value && F->current_parallel_region<0) {	\
     Rf_defineVar(Rf_install(#name),					\
@@ -247,7 +186,7 @@ struct confSet{
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
   matrix<int> keyXtraSd;
-  vector<int> logNMeanCorrection;
+  vector<int> logNMeanAssumption;
 
   confSet() = default;
 
@@ -292,7 +231,7 @@ struct confSet{
     keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean"));
     keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
     keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
-    logNMeanCorrection = asVector<int>(getListElement(x,"logNMeanCorrection"));
+    logNMeanAssumption = asVector<int>(getListElement(x,"logNMeanAssumption"));
   }
 
   confSet(const confSet &other) :
@@ -335,7 +274,7 @@ struct confSet{
     keyMortalityMean(other.keyMortalityMean),
     keyMortalityObsVar(other.keyMortalityObsVar),
     keyXtraSd(other.keyXtraSd),
-    logNMeanCorrection(other.logNMeanCorrection)
+    logNMeanAssumption(other.logNMeanAssumption)
   {}
   
 };
