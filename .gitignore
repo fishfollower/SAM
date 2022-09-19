@@ -8,3 +8,6 @@
 **/.*
 install
 doc-update
+stockassessment/config.log
+stockassessment/config.status
+stockassessment/src/Makevars

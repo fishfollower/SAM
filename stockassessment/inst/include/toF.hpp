@@ -40,7 +40,7 @@ struct FConstraint {
 					 fleet(x.fleet),
 					 relative(x.relative),
 					 cstr(x.cstr),
-					 target(x.target) {};  
+					 target(x.target) {}
 };
 
 template<class Type>
@@ -55,7 +55,7 @@ struct FConstraintList : vector<FConstraint<Type> > {
   }
   template<class T>
   FConstraintList(const FConstraintList<T>& other) : vector<FConstraint<Type> >(other.size()) {
-    for(int i = 0; i < other.size(); ++i)
+    for(int i = 0; i < (int)other.size(); ++i)
       (*this)(i) = FConstraint<T>(other(i));
   }
   
@@ -72,21 +72,20 @@ namespace ConstrainCalculations {
   // Newton approach
 
 
-  std::vector<int> getCatchFleets(vector<int> fleetTypes){
+  vector<int> getCatchFleets(vector<int> fleetTypes){
     std::vector<int> r;
-    for(int i = 0; i < fleetTypes.size(); ++i)
+    for(int i = 0; i < (int)fleetTypes.size(); ++i)
       if(fleetTypes(i) == 0)
 	r.push_back(i);
-    return r;
+    return vector<int>(r);
   };
   
   template<class Type>
-  vector<Type> getFleetLogFbar(dataSet<Type>& dat, confSet& conf, vector<Type>& logF, int a0, int a1){
-    std::vector<int> cFleets = getCatchFleets(dat.fleetTypes);
+  vector<Type> getFleetLogFbar(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, vector<Type>& logF, int a0, int a1){
     vector<Type> fbar(cFleets.size());
     fbar.setConstant(0.0);
     for(int i = 0; i < cFleets.size(); ++i){
-      int f = cFleets[i];
+      int f = cFleets(i);
       for(int a=a0; a<=a1; a++){
 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
 	  fbar(i) += exp(logF(conf.keyLogFsta(f,a-conf.minAge)));
@@ -97,13 +96,12 @@ namespace ConstrainCalculations {
   };
 
   template<class Type>
-  Type getFleetCatch(dataSet<Type>& dat, confSet& conf, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
+  Type getFleetCatch(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
     Type logCat = R_NegInf;
-    std::vector<int> cFleets = getCatchFleets(dat.fleetTypes);
     for(int a=a0; a<=a1; a++){
       Type logZa = log(dat.natMor(y, a-conf.minAge));
       for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets[ii];
+	int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-conf.minAge)));
       }
@@ -115,7 +113,7 @@ namespace ConstrainCalculations {
 	f1 = fleet;
       }
     for(int ii = f0; ii <= f1; ++ii){
-	int f = cFleets[ii];
+      int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
 	  Type logFI = logv + logF(conf.keyLogFsta(f,a-conf.minAge));
 	  Type lc =  logFI + logN(a-conf.minAge,y) + log(dat.catchMeanWeight(y, a-conf.minAge, f));
@@ -127,13 +125,12 @@ namespace ConstrainCalculations {
   }
   
   template<class Type>
-  Type getFleetLanding(dataSet<Type>& dat, confSet& conf, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
-        Type logCat = R_NegInf;
-    std::vector<int> cFleets = getCatchFleets(dat.fleetTypes);
+  Type getFleetLanding(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
+    Type logCat = R_NegInf;
     for(int a=a0; a<=a1; a++){
       Type logZa = log(dat.natMor(y, a-conf.minAge));
       for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets[ii];
+	int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-conf.minAge)));
       }
@@ -145,7 +142,7 @@ namespace ConstrainCalculations {
 	f1 = fleet;
       }
     for(int ii = f0; ii <= f1; ++ii){
-	int f = cFleets[ii];	
+      int f = cFleets(ii);	
 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
 	  Type LW = dat.landMeanWeight(y, a-conf.minAge, f);
 	  Type LF = dat.landFrac(y,a-conf.minAge,f);
@@ -162,9 +159,8 @@ namespace ConstrainCalculations {
 
   // Begining of next year
   template<class Type>
-  Type getSSB(dataSet<Type>& dat, confSet& conf, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
+  Type getSSB(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
     // Current SSB for recruitment
-    std::vector<int> cFleets = getCatchFleets(dat.fleetTypes);
     int yn = std::min(y+1, dat.propMat.dim[0]-1);
     Type logThisSSB = R_NegInf;
     int ys = std::max(yn-conf.minAge, 0); // Year of birth for predicted logN
@@ -179,9 +175,8 @@ namespace ConstrainCalculations {
     //// Middle
     for(int a = 1; a < logNp.size(); ++a){
       Type logZa = log(dat.natMor(y, a-1));
-      Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
       for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets[ii];
+	int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a-1) > (-1))
 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-1)));
       }     
@@ -191,10 +186,9 @@ namespace ConstrainCalculations {
     if(conf.maxAgePlusGroup(0)==1){
       int a = logNp.size()-1;
       Type v1 = logNp(a);
-   Type logZa = log(dat.natMor(y, a));
-      Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
+      Type logZa = log(dat.natMor(y, a));
       for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets[ii];
+	int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a) > (-1))
 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a)));
       }
@@ -218,9 +212,8 @@ namespace ConstrainCalculations {
 
   // Begining of next year
   template<class Type>
-  Type getTSB(dataSet<Type>& dat, confSet& conf, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
+  Type getTSB(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
     // Current SSB for recruitment
-    std::vector<int> cFleets = getCatchFleets(dat.fleetTypes);
     int yn = std::min(y+1, dat.propMat.dim[0]-1);
     Type logThisSSB = R_NegInf;
     int ys = std::max(yn-conf.minAge, 0); // Year of birth for predicted logN
@@ -235,9 +228,8 @@ namespace ConstrainCalculations {
     //// Middle
     for(int a = 1; a < logNp.size(); ++a){
       Type logZa = log(dat.natMor(y, a-1));
-      Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
       for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets[ii];
+	int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a-1) > (-1))
 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-1)));
       }     
@@ -247,10 +239,9 @@ namespace ConstrainCalculations {
     if(conf.maxAgePlusGroup(0)==1){
       int a = logNp.size()-1;
       Type v1 = logNp(a);
-   Type logZa = log(dat.natMor(y, a));
-      Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
+      Type logZa = log(dat.natMor(y, a));
       for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets[ii];
+	int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a) > (-1))
 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a)));
       }
@@ -275,6 +266,7 @@ namespace ConstrainCalculations {
   struct ForecastF {
     dataSet<ad> dat;
     confSet conf;
+    vector<int> cFleets;
     Recruitment<ad> recruit;
     FConstraintList<ad> cstrs;
     vector<ad> lastLogF;
@@ -289,12 +281,11 @@ namespace ConstrainCalculations {
       // matrix<ad> logF = toFleetMatrix(dat, conf, lastLogF, logFs);
 
       vector<ad> newLogF = lastLogF;// - lastLogFbar;
-      std::vector<int> cFleets = getCatchFleets(dat.fleetTypes);
- 
+   
       vector<bool> done(newLogF.size());
       done.setConstant(false);
       for(int i = 0; i < cFleets.size(); ++i){
-	int f = cFleets[i];
+	int f = cFleets(i);
 	for(int a = 0; a < conf.keyLogFsta.dim(1); ++a){
 	  int indx = conf.keyLogFsta(f,a);
 	  if(indx > (-1) && !done(indx)){
@@ -310,10 +301,10 @@ namespace ConstrainCalculations {
 	  continue;
 	}
 	// Previous F values
-	vector<ad> lastFleetLogFbar = getFleetLogFbar(dat, conf, lastLogF, cstr.Amin, cstr.Amax);
+	vector<ad> lastFleetLogFbar = getFleetLogFbar(dat, conf, cFleets, lastLogF, cstr.Amin, cstr.Amax);
 	ad lastLogFbar = logspace_sum(lastFleetLogFbar);
 	// New F values
-	vector<ad> fleetLogFbar = getFleetLogFbar(dat, conf, newLogF, cstr.Amin, cstr.Amax);
+	vector<ad> fleetLogFbar = getFleetLogFbar(dat, conf, cFleets, newLogF, cstr.Amin, cstr.Amax);
 	ad logFbar = logspace_sum(fleetLogFbar);
 	// Add constraint
 
@@ -335,10 +326,10 @@ namespace ConstrainCalculations {
 
 	}else if(cstr.cstr == ConstraintType::Constrain_Catch){
 
-	  ad logC = getFleetCatch(dat, conf, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	  ad logC = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	  ad trgt = cstr.target;
 	  if(cstr.relative){
-	    ad logCL = getFleetCatch(dat, conf, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
+	    ad logCL = getFleetCatch(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
 	    trgt += logCL;
 	  }
 	  ad tmp = logC - trgt;
@@ -346,22 +337,22 @@ namespace ConstrainCalculations {
 
 	}else if(cstr.cstr == ConstraintType::Constrain_SSB){
 	  
-	  ad logB = getSSB(dat,conf, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+	  ad logB = getSSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
 	  ad tmp = logB - cstr.target;
 	  kappa += tmp * tmp;
 	  
 	}else if(cstr.cstr == ConstraintType::Constrain_TSB){
 	  
-	  ad logB = getTSB(dat,conf, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+	  ad logB = getTSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
 	  ad tmp = logB - cstr.target;
 	  kappa += tmp * tmp;
 	  
 	}else if(cstr.cstr == ConstraintType::Constrain_Landing){
 
-	  ad logL = getFleetLanding(dat, conf, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	  ad logL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	  ad trgt = cstr.target;
 	  if(cstr.relative){
-	    ad logLL = getFleetLanding(dat, conf, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
+	    ad logLL = getFleetLanding(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
 	    trgt += logLL;
 	  }
 	  ad tmp = logL - trgt;
@@ -397,9 +388,9 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   paraSet<TMBad::ad_aug> parad(par);
   Recruitment<TMBad::ad_aug> recruit = makeRecruitmentFunction(conf,parad);
 
-  std::vector<int> cFleets = ConstrainCalculations::getCatchFleets(dat.fleetTypes);
+  vector<int> cFleets = ConstrainCalculations::getCatchFleets(dat.fleetTypes);
 
-  ConstrainCalculations::ForecastF fc = {dat, conf, recruit, cstrs, lastLogF, logN, y};
+  ConstrainCalculations::ForecastF fc = {dat, conf, cFleets, recruit, cstrs, lastLogF, logN, y};
 
   
   vector<Type> start(cFleets.size());
@@ -412,7 +403,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   vector<bool> done(newLogF.size());
   done.setConstant(false);
   for(int i = 0; i < cFleets.size(); ++i){
-    int f = cFleets[i];
+    int f = cFleets(i);
     for(int a = 0; a < conf.keyLogFsta.dim(1); ++a){
       int indx = conf.keyLogFsta(f,a);
       if(indx > (-1) && !done(indx)){

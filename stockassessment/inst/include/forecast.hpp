@@ -1,16 +1,16 @@
 // Forward declarations
 template <class Type>
 Type hcr(Type ssb, vector<Type> hcrConf);
-template<class Type>
-Type ssb2F_quick(Type ssbval, vector<Type> logFlast, dataSet<Type> dat, confSet conf, paraSet<Type> par, array<Type> logF, array<Type> logN, int i, Type rec_mean);
-template<class Type>
-Type landing2F_quick(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w, vector<Type> frac);
-template<class Type>
-Type catch2F_quick(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w);
-template<class Type>
-Type landing2F(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w, vector<Type> frac);
-template<class Type>
-Type catch2F(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w);
+// template<class Type>
+// Type ssb2F_quick(Type ssbval, vector<Type> logFlast, dataSet<Type> dat, confSet conf, paraSet<Type> par, array<Type> logF, array<Type> logN, int i, Type rec_mean);
+// template<class Type>
+// Type landing2F_quick(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w, vector<Type> frac);
+// template<class Type>
+// Type catch2F_quick(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w);
+// template<class Type>
+// Type landing2F(Type landingval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w, vector<Type> frac);
+// template<class Type>
+// Type catch2F(Type catchval, vector<Type> lastF, vector<Type> M, vector<Type> N, vector<Type> w);
 // 
 
 template <class Type>
@@ -84,7 +84,7 @@ struct forecastSet {
     Type lastSSB = ssbi(dat, conf, logN, logF, mort, indx-1);
     // Assuming F before spawning is zero
     Type thisSSB = ssbi(dat, conf, logN, logF, mort, indx);
-    Type calcF = 0.0;
+    // Type calcF = 0.0;
 
     vector<Type> lastShortLogF(logF.rows());
     if(i == 0){
