@@ -6,7 +6,8 @@ THISSHA := $(shell git log -1 --format="%H")
 TARBALL := $(PACKAGE)_$(VERSION).tar.gz
 ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
-CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/inst/include/*.hpp
+CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/src/*.h $(PACKAGE)/inst/include/*.hpp
+R_FILES := $(PACKAGE)/R/*.R
 
 SUBDIRS := $(wildcard testmore/*/.)
 
@@ -32,7 +33,10 @@ testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 all:
 	make install
 
-doc-update: $(PACKAGE)/R/*.R
+$(PACKAGE)/configure:  $(PACKAGE)/configure.ac
+	cd $(PACKAGE) && autoconf
+
+doc-update: $(R_FILES)
 	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\")" | $(R) --slave
 	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 	@touch doc-update
@@ -44,11 +48,11 @@ vignette-update: vignettes/*.Rnw vignettes/*.Rmd
 	cd vignettes; rm -f *.{log,aux,out,tex}
 
 namespace-update :: $(PACKAGE)/NAMESPACE
-$(PACKAGE)/NAMESPACE: $(PACKAGE)/R/*.R
+$(PACKAGE)/NAMESPACE: $(R_FILES)
 	echo "library(roxygen2);roxygenize(\"$(PACKAGE)\")" | $(R) --slave
 
 build-package: $(TARBALL)
-$(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R
+$(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R $(PACKAGE)/configure
 	sed s/dummySHA/$(THISSHA)/g description-addon > description-addon-tmp
 	mv $(PACKAGE)/DESCRIPTION old-description
 	sed -i -E '/^(Remote|Github)/d' old-description
@@ -63,14 +67,14 @@ install: $(TARBALL)
 	$(R) CMD INSTALL --preclean --html $<
 	@touch $@
 
-qi:
+qi:	$(PACKAGE)/configure
 	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp')" | $(R) --slave
 	$(R) CMD INSTALL $(PACKAGE)
 
-quick-install: $(PACKAGE)/src/stockassessment.so
+quick-install: $(CPP_SRC) $(PACKAGE)/configure $(R_FILES)
 	$(R) CMD INSTALL $(PACKAGE)
 
-$(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp $(CPP_SRC)
+$(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp $(CPP_SRC) $(PACKAGE)/configure
 	touch $(PACKAGE)/src/stockassessment.cpp
 	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp','-O0 -g', libinit=FALSE)" | $(R) --slave
 

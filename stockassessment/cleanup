@@ -1,0 +1,3 @@
+#!/bin/sh
+
+rm -rf config.log config.status src/Makevars autom4te.cache
