@@ -641,7 +641,7 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
 	Rf_error("Referencepoint StatusQuo must have at least one xVal");
       vector<Type> logFsq(rps.xVal.size());
       for(int xi = 0; xi < rps.xVal.size(); ++xi)
-	logFsq(xi) = fbari(conf, logF, logF.cols()-1 - CppAD::Integer(rps.xVal(xi)), true);
+	logFsq(xi) = fbari(dat,conf, logF, logF.cols()-1 - CppAD::Integer(rps.xVal(xi)), true);
       rp = Referencepoint_D<Type>("StatusQuo",i,logFsq, new RefPointD_FixedF<Type>(dat,conf,par,rps));
     }else if(rpt  == ReferencePointDeterministic::MSY){
       rp = Referencepoint_D<Type>("MSY",i,rps.logF0, new RefPointD_MSY<Type>(dat,conf,par,rps, cfg));

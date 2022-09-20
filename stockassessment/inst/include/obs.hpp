@@ -237,7 +237,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
   vector<Type> R = rFun(logN);
   vector<Type> logR = log(R);  
 
-  vector<Type> fbar = fbarFun(conf, logF);
+  vector<Type> fbar = fbarFun(dat,conf, logF);
   vector<Type> logfbar = log(fbar);
 
   vector<Type> fbarL = landFbarFun(dat, conf, logF);
@@ -377,7 +377,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 
           // ----------------if sum fleet need to update covariance matrix
           if(dat.fleetTypes(f)==7){
-            //array<Type> totF=totFFun(conf, logF);             
+            //array<Type> totF=totFFun(dat,conf, logF);             
             //Type zz=0;
             int thisDim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
             int Nparts=0;

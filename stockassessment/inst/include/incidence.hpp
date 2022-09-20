@@ -41,7 +41,7 @@ struct MortalitySet {
 					  ssbSurvival_before(x.ssbSurvival_before) {}
   
   MortalitySet(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF) :
-    totalZ(totFFun(conf,logF).matrix()),
+    totalZ(totFFun(dat,conf,logF).matrix()),
     fleetSurvival_before(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
     fleetCumulativeIncidence(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
     otherCumulativeIncidence(conf.keyLogFsta.dim(1), dat.natMor.dim(0), 1),

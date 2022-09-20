@@ -5,7 +5,7 @@
 template <class Type>
 vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, int i){
   int stateDimN=logN.dim[0];
-  //array<Type> totF=totFFun(conf, logF);
+  //array<Type> totF=totFFun(dat,conf, logF);
   vector<Type> predN(stateDimN);
   //predN.setZero();
   predN.setConstant(R_NegInf);
@@ -20,7 +20,7 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   Type lastLogR = R_NaReal;
   if(i > 0)
     lastLogR = logN(0,i-1);    
-  predN(0) = recruit(logThisSSB, lastLogR, dat.years(i));
+  predN(0) = recruit(logThisSSB, lastLogR, dat.years(0) + i); // dat.years(0) + i is needed for forecast
 
   switch(conf.logNMeanAssumption(0)){
   case 0:			// Median on natural scale

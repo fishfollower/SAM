@@ -205,6 +205,16 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       tagv1 = dat.aux(i,5);
       tagv2 = dat.aux(i,6);
     }
+    int y = dat.aux(i,0)-dat.aux(0,0);
+    Type lfsb = R_NaReal;
+    if(y < logfsb.size())
+      lfsb = logfsb(y);
+    Type lctch = R_NaReal;
+    if(y < logCatch.size())
+      lctch = logCatch(y);
+    Type lland = R_NaReal;
+    if(y < logLand.size())
+      lland = logLand(y);
     pred(i) = predOneObs(dat.aux(i,1), // Fleet
 			 dat.fleetTypes(dat.aux(i,1)-1), // FleetType
 			 dat.aux(i,2),	      // Age
@@ -216,11 +226,11 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 			 logF,
 			 logN,
 			 mort,
-			 logssb(dat.aux(i,0)-dat.aux(0,0)),
+			 logssb(y),
 			 logtsb(dat.aux(i,0)-dat.aux(0,0)),
-			 logfsb(dat.aux(i,0)-dat.aux(0,0)),
-			 logCatch(dat.aux(i,0)-dat.aux(0,0)),
-			 logLand(dat.aux(i,0)-dat.aux(0,0)),
+			 lfsb,
+			 lctch,
+			 lland,
 			 tagv1,
 			 tagv2,	     
 			 releaseSurvivalVec(i) // releaseSurvival

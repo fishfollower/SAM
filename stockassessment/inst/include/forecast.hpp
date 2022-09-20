@@ -328,7 +328,6 @@ struct forecastSet {
 };
 
 
-
 template <class Type>
 void extendArray_2D(array<Type>& x, int nModelYears, int nForecastYears, vector<int> aveYears, bool keepModelYears = true){
   vector<int> dim = x.dim;
@@ -457,7 +456,7 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
   extendArray(dat.propF, nMYears, nFYears, aveYears);
   // propM
   extendArray(dat.propM, nMYears, nFYears, aveYears);
-
+  
   // Prepare forecastCalculated...
   forecast.forecastCalculatedMedian = matrix<Type>(logF.rows(), nFYears);
   forecast.forecastCalculatedMedian.setZero();
@@ -468,7 +467,7 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
   int fbarFirst = conf.fbarRange(0) - conf.minAge;
   int fbarLast = conf.fbarRange(1) - conf.minAge;
   forecast.initialFbar = 0.0;
-  array<Type> totF = totFFun(conf, logF);
+  array<Type> totF = totFFun(dat,conf, logF);
   for(int a = fbarFirst; a <= fbarLast; ++a){  
     //forecast.initialFbar += exp(logF(conf.keyLogFsta(0,a),forecast.forecastYear.size() - nFYears - 1));
     forecast.initialFbar += totF(a,forecast.forecastYear.size() - nFYears - 1);
