@@ -126,7 +126,7 @@ Catch scenarios are specified by a vector of target constraints. The first value
 \section{F based constraints}{
 
 Forecasts for F values are specified by the format "F[f,a0-a1]=x" where f is the residual catch fleet and a0-a1 is an age range. For example, "F[2,2-4]=0.3" specifies that the average F for the second fleet over ages 2-4 should be 0.3.
-If an "*" is added to the target value, the target will be relative to the year before. For example, "F[2,2-4]=0.9*" specifies that the average F for the second fleet over ages 2-4 should be 90% of the year before.
+If an "*" is added to the target value, the target will be relative to the year before. For example, "F[2,2-4]=0.9*" specifies that the average F for the second fleet over ages 2-4 should be 90% of the year before. Further, the target for a fleet can be relative to the total by adding "*F" or to another fleet by adding "*F[f]" where f is the fleet number. The same age range will always be used.
 If the fleet is omitted (e.g., F[2-4]), the target is for the total F.
 If the age range is omitted (e.g., F[2]), the fbar range of the model is used.
 Likewise, both fleet and age range can be omited (e.g., F=0.3) to specify a value for total F with the range used in the model.
@@ -136,6 +136,7 @@ Likewise, both fleet and age range can be omited (e.g., F=0.3) to specify a valu
 
 Forecasts for catch and landing values are specified by the format "C[f,a0-a1]=x" for catch and "L[f,a0-a1]" for landings. If the age range is omitted, all modelled ages are used. Otherwise, the format is similar to F based scenarios.
 If an "*" is added to the target value, the target will be relative to the year before.
+Further, the catch target for a fleet can be relative to the total by adding "*C" or to another fleet by adding "*C[f]" where f is the fleet number. The same age range will always be used. Likewise, relative landing targets can be specified using "*", "*L", or "*L[f]" for targets relative to last year, the total, or fleet f, respectively.
 }
 
 \section{SSB/TSB at the beginning of next year based constraints}{

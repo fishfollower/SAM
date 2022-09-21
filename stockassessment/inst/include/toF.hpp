@@ -19,7 +19,7 @@ struct FConstraint {
   int Amin;
   int Amax;
   int fleet;
-  bool relative;
+  int relative; 		// -3: Absolute; -2: relative to last year; -1: relative to total; >=0: relative to fleet #
   ConstraintType cstr;
   Type target;
 
@@ -29,7 +29,7 @@ struct FConstraint {
     Amin = (int)*REAL(getListElement(x,"Amin"));
     Amax = (int)*REAL(getListElement(x,"Amax"));
     fleet = (int)*REAL(getListElement(x,"fleet"));
-    relative = (bool)*REAL(getListElement(x,"relative"));
+    relative = (int)*REAL(getListElement(x,"relative"));
     cstr = static_cast<ConstraintType>((int)*REAL(getListElement(x,"cstr")));
     target = (Type)*REAL(getListElement(x,"target"));
   };
@@ -98,14 +98,19 @@ namespace ConstrainCalculations {
   template<class Type>
   Type getFleetCatch(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
     Type logCat = R_NegInf;
+    // Type cat = 0.0;
     for(int a=a0; a<=a1; a++){
       Type logZa = log(dat.natMor(y, a-conf.minAge));
+      // Type Za = dat.natMor(y, a-conf.minAge);
       for(int ii = 0; ii < cFleets.size(); ++ii){
 	int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
+	if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
+	  // Za += exp(logF(conf.keyLogFsta(f,a-conf.minAge)));
 	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-conf.minAge)));
+	}
       }
       Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
+      // Type v = (1.0 - exp(-Za)) / Za;
       int f0 = 0;
       int f1 = cFleets.size()-1;
       if(fleet > (-1)){
@@ -116,11 +121,15 @@ namespace ConstrainCalculations {
       int f = cFleets(ii);
 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
 	  Type logFI = logv + logF(conf.keyLogFsta(f,a-conf.minAge));
+	  // Type FI = v * exp(logF(conf.keyLogFsta(f,a-conf.minAge)));
+	  // Type cc = FI * exp(logN(a-conf.minAge,y)) * dat.catchMeanWeight(y, a-conf.minAge, f);
 	  Type lc =  logFI + logN(a-conf.minAge,y) + log(dat.catchMeanWeight(y, a-conf.minAge, f));
 	  logCat = logspace_add_SAM(logCat, lc);
+	  // cat += cc;
 	}
       }
     }
+    // return log(cat);
     return logCat;
   }
   
@@ -263,6 +272,18 @@ namespace ConstrainCalculations {
   
   typedef TMBad::ad_aug ad;
 
+#define RELATIVE_CONSTRAINTS(LAST,TOTAL,FLEET)				\
+  if(cstr.relative == -3){						\
+  }else if(cstr.relative == -2){					\
+    LAST								\
+  }else if(cstr.relative == -1){					\
+    TOTAL								\
+  }else if(cstr.relative >= 0 && cstr.relative < cFleets.size() && cstr.relative != cstr.fleet){ \
+    FLEET								\
+      }else{								\
+    Rf_error("Wrong relative constraint code");				\
+  }							 
+  
   struct ForecastF {
     dataSet<ad> dat;
     confSet conf;
@@ -280,7 +301,7 @@ namespace ConstrainCalculations {
       // vector<ad> llfs = (vector<ad>)(lastLogF - lastLFB);
       // matrix<ad> logF = toFleetMatrix(dat, conf, lastLogF, logFs);
 
-      vector<ad> newLogF = lastLogF;// - lastLogFbar;
+      vector<ad> newLogF = lastLogF;
    
       vector<bool> done(newLogF.size());
       done.setConstant(false);
@@ -312,15 +333,31 @@ namespace ConstrainCalculations {
 
 	  if(cstr.fleet == (-1)){	// Total F
 	    ad trgt = cstr.target;
-	    if(cstr.relative)
-	      trgt += lastLogFbar;
+	    RELATIVE_CONSTRAINTS(
+				 // Last year
+				 trgt += lastLogFbar;
+				 ,
+				 // Total
+				 Rf_error("A total F constraint can only be relative to last year");
+				 ,
+				 // Fleet
+				 Rf_error("A total F constraint can only be relative to last year");
+				 )
 	    ad tmp = logFbar - trgt;
 	    kappa += tmp * tmp;
 	  }else{
 	    ad trgt = cstr.target;
-	    if(cstr.relative)
-	      trgt += lastFleetLogFbar(cstr.fleet);
-	    ad tmp = fleetLogFbar(cstr.fleet) - trgt;
+	    RELATIVE_CONSTRAINTS(
+				 // Last year
+				 trgt += lastFleetLogFbar(cstr.fleet);
+				 ,
+				 // Total
+				 trgt += logFbar;
+				 ,
+				 // Fleet
+				 trgt += fleetLogFbar(cstr.relative);
+				 )
+	      ad tmp = fleetLogFbar(cstr.fleet) - trgt;
 	    kappa += tmp * tmp;
 	  }
 
@@ -328,22 +365,31 @@ namespace ConstrainCalculations {
 
 	  ad logC = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	  ad trgt = cstr.target;
-	  if(cstr.relative){
-	    ad logCL = getFleetCatch(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
-	    trgt += logCL;
-	  }
+	  RELATIVE_CONSTRAINTS(
+			       // Last year
+			       ad logCL = getFleetCatch(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
+			       trgt += logCL;
+			       ,
+			       // Total
+			       ad logCL = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, -1);
+			       trgt += logCL;
+			       ,
+			       // Fleet
+			       ad logCL = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+			       trgt += logCL;
+			       )	
 	  ad tmp = logC - trgt;
 	  kappa += tmp * tmp;
 
 	}else if(cstr.cstr == ConstraintType::Constrain_SSB){
-	  
-	  ad logB = getSSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+	  SAM_ASSERT(cstr.relative <= -2, "SSB constraints can only be relative to last year");
+	  ad logB = getSSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative == (-2));
 	  ad tmp = logB - cstr.target;
 	  kappa += tmp * tmp;
 	  
 	}else if(cstr.cstr == ConstraintType::Constrain_TSB){
-	  
-	  ad logB = getTSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+	  SAM_ASSERT(cstr.relative <= -2, "TSB constraints can only be relative to last year");
+	  ad logB = getTSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative == (-2));
 	  ad tmp = logB - cstr.target;
 	  kappa += tmp * tmp;
 	  
@@ -351,17 +397,27 @@ namespace ConstrainCalculations {
 
 	  ad logL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	  ad trgt = cstr.target;
-	  if(cstr.relative){
-	    ad logLL = getFleetLanding(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
-	    trgt += logLL;
-	  }
+	  RELATIVE_CONSTRAINTS(
+			       // Last year
+			       ad logLL = getFleetLanding(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
+			       trgt += logLL;
+			       ,
+			       // Total
+			       ad logLL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, -1);
+			       trgt += logLL;
+			       ,
+			       // Fleet
+			       ad logLL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+			       trgt += logLL;
+			       )	
 	  ad tmp = logL - trgt;
 	  kappa += tmp * tmp;
 
 	}else if(cstr.cstr == ConstraintType::Constrain_KeepRelF){
 
-	  SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total")
-	  ad tmp = (lastFleetLogFbar(cstr.fleet) - lastFleetLogFbar(CppAD::Integer(cstr.target))) - (fleetLogFbar(cstr.fleet) - fleetLogFbar(CppAD::Integer(cstr.target)));
+	  SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total");
+	  SAM_ASSERT(cstr.relative >= 0 && cstr.fleet != cstr.relative, "Keep relative can only be used relative to other fleets in same year");
+	  ad tmp = (lastFleetLogFbar(cstr.fleet) - lastFleetLogFbar(cstr.relative)) - (fleetLogFbar(cstr.fleet) - fleetLogFbar(cstr.relative));
 	  kappa += tmp * tmp;	  
 	}else{
 	  Rf_error("Constraint type not implemented");
@@ -374,6 +430,26 @@ namespace ConstrainCalculations {
 
 };				// End of namespace
 
+
+// vector<double> tryStart(ConstrainCalculations::ForecastF fc,
+// 			vector<double> start,
+// 			int n){
+//   int i = 0;
+//   vector<double> r(start);
+//   double v = R_PosInf;
+//   while(i++ < n){
+//     vector<double> test(start);
+//     for(int j = 0; j < test.size(); ++j)
+//       test(j) += Rf_runif(-1.0,1.0);
+//     vector<TMBad::ad_aug> t2(test);
+//     double v2 = asDouble(fc(t2));
+//     if(R_finite(v2) && v2 < v){
+//       v = v2;
+//       r = test;
+//     }
+//   }
+//   return r;
+// }
 
 template<class Type>
 vector<Type> calculateNewFVec(dataSet<Type>& dat,
@@ -393,10 +469,12 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   ConstrainCalculations::ForecastF fc = {dat, conf, cFleets, recruit, cstrs, lastLogF, logN, y};
 
   
+  // vector<double> s0(cFleets.size());
+  // s0.setConstant(0);
+  // vector<Type> start(tryStart(fc,s0,200));
   vector<Type> start(cFleets.size());
-  start.setConstant(log(0.25));
+  start.setConstant(0.0);
   
-  cfg.simplify = false;		// Needed for logspace_add in older versions of TMB
   vector<Type> res = newton::Newton(fc, start, cfg);
   vector<Type> newLogF = lastLogF;// - lastLogFbar;
 

@@ -10,19 +10,40 @@
     list()
 }
 
+.parseRel <- function(type,s){
+    if(s == ""){                        #Absolute value
+        return(-3)
+    }
+    if(s == "*")                      #Relative to last year
+        return(-2)
+    ## Check relative to same type of value
+    if(as.character(type) != gsub("(\\*)(F|C|SSB|TSB|L)(.*)","\\2",s))
+        stop(sprintf("%s values can only be relative to %s values",as.character(type),as.character(type)))
+    ## Find relative type
+    if(grepl("^\\*(F|C|SSB|TSB|L)$",s)){ #Relative to total
+        return(-1)
+    }else if(grepl("^\\*(F|C|SSB|TSB|L)(\\[[[:digit:]]+\\])$",s)){
+        return(as.numeric(gsub("(^\\*(F|C|SSB|TSB|L))(\\[)([[:digit:]]+)(\\]$)","\\4",s))-1)
+    }
+    stop("Wrong specification of relative value. Relative values can only specify a fleet")
+}
+
 .parseForecast <- function(s, FbarRange, fleetTypes, ageRange){
     nCF <- sum(fleetTypes == 0)
     ## Split constraints
     sL <- strsplit(s,"[[:space:]]*&+[[:space:]]*")
     forecastEnum <- c("F","C","SSB","TSB","L","KeepRelF")
     parseOne <- function(ss){
-        frmt <- "(F|C|SSB|TSB|L)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]*)(\\*)?"
+        frmt <- "(F|C|SSB|TSB|L)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]*)(\\*.*)?"
         type <- factor(gsub(frmt,"\\1",ss),forecastEnum)
         spec <- gsub(frmt,"\\2",ss)
         target <- log(as.numeric(gsub(frmt,"\\4",ss)))
         if(is.na(target))
             stop("wrong specification of forecast target")
-        rel <- as.numeric(gsub(frmt,"\\5",ss) != "")
+        rel <- .parseRel(type,gsub(frmt,"\\5",ss))
+        if(is.na(rel) || !is.numeric(rel) || rel < -3){
+            stop("wrong specification of relative value")
+        }
 
         if(spec == ""){                 # Not specified
             Amin <- as.numeric(ifelse(type=="F",FbarRange[1],ageRange[1]))
@@ -51,6 +72,10 @@
             stop("Specified ages not in age range of model")
         if(fleet >= nCF)
             stop("fleet number is too high")
+        if(rel >= nCF)
+            stop("relative fleet number is too high")
+        if(rel == fleet)
+            stop("A fleet cannot be relative to itself")
         v <- list(specification = ss,
                   Amin = Amin,
                   Amax = Amax,
@@ -73,9 +98,9 @@
              Amin = FbarRange[1],
              Amax = FbarRange[2],
              fleet = as.numeric(f1)-1,
-             relative = 0,
+             relative = as.numeric(f2)-1,
              cstr = as.numeric(factor("KeepRelF",forecastEnum))-1,
-             target = as.numeric(f2)-1)  
+             target = 0)  
     }
     cToAdd <- lapply(ft,function(x){
         ii <- unname(which(x[-1]==0))
@@ -132,7 +157,7 @@ modelforecast <- function(fit, ...){
 ##' @param progress Show progress bar for simulations?
 ##' @param estimate the summary function used (typically mean or median) for simulations
 ##' @param silent Passed to MakeADFun. Should the TMB object be silent?
-##' @param newton_config Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for defaults.
+##' @param newton_config Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.
 ##' @details
 ##' Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process. Therefore, catch constraints are not matched exactly in individual simulations (unlike the forecast function simulations). Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
 ##' By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
@@ -140,7 +165,7 @@ modelforecast <- function(fit, ...){
 ##'
 ##' @section F based constraints:
 ##' Forecasts for F values are specified by the format "F[f,a0-a1]=x" where f is the residual catch fleet and a0-a1 is an age range. For example, "F[2,2-4]=0.3" specifies that the average F for the second fleet over ages 2-4 should be 0.3.
-##' If an "*" is added to the target value, the target will be relative to the year before. For example, "F[2,2-4]=0.9*" specifies that the average F for the second fleet over ages 2-4 should be 90% of the year before.
+##' If an "*" is added to the target value, the target will be relative to the year before. For example, "F[2,2-4]=0.9*" specifies that the average F for the second fleet over ages 2-4 should be 90% of the year before. Further, the target for a fleet can be relative to the total by adding "*F" or to another fleet by adding "*F[f]" where f is the fleet number. The same age range will always be used.
 ##' If the fleet is omitted (e.g., F[2-4]), the target is for the total F.
 ##' If the age range is omitted (e.g., F[2]), the fbar range of the model is used.
 ##' Likewise, both fleet and age range can be omited (e.g., F=0.3) to specify a value for total F with the range used in the model.
@@ -148,6 +173,7 @@ modelforecast <- function(fit, ...){
 ##' @section Catch/Landing based constraints:
 ##' Forecasts for catch and landing values are specified by the format "C[f,a0-a1]=x" for catch and "L[f,a0-a1]" for landings. If the age range is omitted, all modelled ages are used. Otherwise, the format is similar to F based scenarios.
 ##' If an "*" is added to the target value, the target will be relative to the year before.
+##' Further, the catch target for a fleet can be relative to the total by adding "*C" or to another fleet by adding "*C[f]" where f is the fleet number. The same age range will always be used. Likewise, relative landing targets can be specified using "*", "*L", or "*L[f]" for targets relative to last year, the total, or fleet f, respectively.
 ##'
 ##' @section SSB/TSB at the beginning of next year based constraints:
 ##' Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. The format is similar to catch/landing based scenarios. However, fleets have no effect.
@@ -174,6 +200,7 @@ modelforecast <- function(fit, ...){
 ##' @section Warnings:
 ##' Long term forecasts with random walk recruitment can lead to unstable behaviour and difficulties finding suitable F values for the constraints.
 ##' If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN. Likewise, forecasts leading to high F values in some years may cause problems for the optimization as they will be used as starting values for the next years.
+##' Since the model works on log space, all target values should be strictly positive. Values too close to zero may cause problems.
 ##'
 ##'
 ##' 
@@ -500,7 +527,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                    rec = sapply(simvals,function(x) exp(x$logN[1,ii])),
                                    cwF = rep(NA, nosim),
                                    catchatage = do.call("cbind",lapply(simvals,function(x) exp(x$logCatchAge[,ii]))),
-                                   catchbyfleet = do.call("cbind",lapply(simvals,function(x) exp(x$logCatchByFleet[ii,fleetHasF,drop=FALSE]))),
+                                   catchbyfleet = do.call("cbind",lapply(simvals,function(x) t(exp(x$logCatchByFleet[ii,fleetHasF,drop=FALSE])))),
                                    fbarbyfleet = do.call("cbind",lapply(simvals,function(x) exp(x$logFbarByFleet[fleetHasF,ii,drop=FALSE]))),
                                    land = sapply(simvals,function(x) exp(x$logLand[ii])),
                                    fbarL = sapply(simvals,function(x) exp(x$logfbarL[ii])),
@@ -525,7 +552,9 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         caytable<-round(do.call(rbind, lapply(simlist, function(xx)apply(xx$catchatage,1,collect))))
         cbftable<-round(do.call(rbind, lapply(simlist, function(xx)apply(xx$catchbyfleet,1,collect))))
         fbftable<-round(do.call(rbind, lapply(simlist, function(xx)apply(xx$fbarbyfleet,1,collect))),3)
-        colnames(cbftable) <- colnames(fbftable) <- attr(fit$data,"fleetNames")[fleetHasF]
+        colnames(fbftable) <- attr(fit$data,"fleetNames")[fleetHasF]
+        colnames(cbftable) <- attr(fit$data,"fleetNames")[fleetHasF]
+
         tab <- cbind(fbar,rec,ssb,catch)
         if(splitLD){
             tab<-cbind(tab,fbarL,fbar-fbarL,land,catch-land)

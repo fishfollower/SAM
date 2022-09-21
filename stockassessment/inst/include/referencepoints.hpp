@@ -284,7 +284,7 @@ namespace referencepoints_helper {
       return f.par2logF(x);
     };
     vector<Type> optimize(vector<Type> logF0){
-      cfg.simplify = false;	// Needed in older versions of TMB for logspace_add
+      // cfg.simplify = false;	// Needed in older versions of TMB for logspace_add
       return newton::Newton(f,logF0, cfg);
     }  
   };
@@ -623,7 +623,7 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
 
   using namespace referencepoints_helper;
   newton::newton_config cfg = referencepoints.cfg;
-  cfg.simplify = false; 	// Needed for logspace_add
+  // cfg.simplify = false; 	// Needed for logspace_add
   
   // Report reference points
   for(int i = 0; i < referencepoints.size(); ++i){

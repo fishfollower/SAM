@@ -309,7 +309,7 @@ struct RecruitmentNumeric : RecruitmentWorker<typename Functor::scalartype> {
     WrapEquiS<Functor> fx(f,logLambda);//(f.to_ad(), TMBad::ad_aug(logLambda));
     vectortype x0v(1); x0v(0) = 20.0;
     newton::newton_config cfg;
-    cfg.simplify = false;
+    // cfg.simplify = false;
     cfg.on_failure_return_nan = false;
     auto fx_ad = fx.to_ad();
     vectortype v = newton::Newton(fx_ad,x0v,cfg);
@@ -326,7 +326,7 @@ struct RecruitmentNumeric : RecruitmentWorker<typename Functor::scalartype> {
     vectortype x0v(1); x0v(0) = 20.0;
     auto fx_ad = fx.to_ad();
     newton::newton_config cfg;
-    cfg.simplify = false;
+    // cfg.simplify = false;
     cfg.on_failure_return_nan = false;
     vectortype v = newton::Newton(fx_ad,x0v);  
     return v(0);
@@ -340,7 +340,7 @@ struct RecruitmentNumeric : RecruitmentWorker<typename Functor::scalartype> {
     vectortype x0v(1); x0v(0) = 0.0;
     auto fx_ad = fx.to_ad();
     newton::newton_config cfg;
-    cfg.simplify = false;
+    // cfg.simplify = false;
     cfg.on_failure_return_nan = false;
     vectortype v = newton::Newton(fx_ad,x0v);      
     return dSR(v(0));

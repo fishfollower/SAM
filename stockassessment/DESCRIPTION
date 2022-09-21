@@ -19,9 +19,9 @@ Author: Anders Nielsen [aut, cre],
 Maintainer: Anders Nielsen <an@aqua.dtu.dk>	    
 Description: Fitting SAM...
 License: GPL-2
-Depends: R (>= 3.4.0)
+Depends: R (>= 3.6.2)
 Imports: TMB, ellipse, methods, stats, utils, grDevices, graphics, Matrix
-LinkingTo: TMB (>= 1.8.0), RcppEigen
+LinkingTo: TMB (>= 1.9.1), RcppEigen
 SystemRequirements: C++14
 Encoding: UTF-8
 URL: https://github.com/fishfollower/SAM
