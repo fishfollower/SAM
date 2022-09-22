@@ -56,7 +56,7 @@ struct FConstraintList : vector<FConstraint<Type> > {
   template<class T>
   FConstraintList(const FConstraintList<T>& other) : vector<FConstraint<Type> >(other.size()) {
     for(int i = 0; i < (int)other.size(); ++i)
-      (*this)(i) = FConstraint<T>(other(i));
+      (*this)(i) = FConstraint<Type>(other(i));
   }
   
 };
