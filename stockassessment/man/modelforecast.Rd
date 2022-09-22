@@ -108,7 +108,7 @@ modelforecast(fit, ...)
 
 \item{silent}{Passed to MakeADFun. Should the TMB object be silent?}
 
-\item{newton_config}{Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for defaults.}
+\item{newton_config}{Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.}
 }
 \value{
 an object of type samforecast
@@ -174,6 +174,7 @@ NA
 
 Long term forecasts with random walk recruitment can lead to unstable behaviour and difficulties finding suitable F values for the constraints.
 If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN. Likewise, forecasts leading to high F values in some years may cause problems for the optimization as they will be used as starting values for the next years.
+Since the model works on log space, all target values should be strictly positive. Values too close to zero may cause problems.
 }
 
 \seealso{

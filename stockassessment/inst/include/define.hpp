@@ -33,7 +33,7 @@ struct listMatrixFromR : vector<matrix<Type> > {
   template<class T>
   listMatrixFromR(const listMatrixFromR<T>& other) : vector<matrix<Type> >(other.size()) {
     for(int i = 0; i < other.size(); ++i)
-      (*this)(i) = matrix<T>(other(i));
+      (*this)(i) = matrix<Type>(other(i));
   }
 };
 
