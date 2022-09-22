@@ -222,16 +222,22 @@ forecast <- function(fit,
     
     getN <- function(x){
         idx <- fit$conf$keyLogFsta[1,]+1
-        nsize <- length(idx)
+        nsize <- length(idx)        
         ret <- exp(x[1:nsize])
         ret
     }
 
     getState <- function(N,F){
-        k <- fit$conf$keyLogFsta[1,]
-        F <- F[k>=0]
-        k <- !duplicated(k[k>=0]) 
-        x <- log(c(N,F[k]))
+        fbf <- fbf <- attr(getF(est),"byFleet")
+        ka <- which(fit$conf$keyLogFsta>(-1),TRUE)
+        Findx <- apply(ka, 1, function(j) fit$conf$keyLogFsta[j[1],j[2]])
+        F <- apply(ka, 1, function(j) fbf[j[2],j[1]])
+        F_unique_ordered <- unname(unlist(lapply(split(F,Findx),unique)))
+        names(F_unique_ordered) <- rep("lastLogF",length(F_unique_ordered))
+        ## k <- fit$conf$keyLogFsta[1,]
+        ## F <- F[k>=0]
+        ## k <- !duplicated(k[k>=0]) 
+        x <- log(c(N,F_unique_ordered))
         x
     }    
 
@@ -411,9 +417,9 @@ forecast <- function(fit,
             if(!is.null(overwriteSelYears)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
             if(!is.null(customSel)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
             
-            if(fit$conf$corFlag <3){
+            if(all(fit$conf$corFlag <3)){
                 sim <- sim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
-            }else if(fit$conf$corFlag ==3){
+            }else if(length(fit$conf$corFlag)==1 && fit$conf$corFlag[1] ==3){
                 k<-fit$conf$keyLogFsta[1,]
                 k <- unique(k[k >= 0] + 1)
                 nF <- length(k)

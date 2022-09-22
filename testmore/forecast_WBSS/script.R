@@ -79,3 +79,7 @@ Ftab <- attr(v,"fbarby")
 FtabMed <- Ftab[rownames(Ftab) %in% "median",]
 FtabRel <- FtabMed[-1,] / FtabMed[1,][col(FtabMed[-1,])]
 cat(checkNum(as.vector(FtabRel[]),FtabRel[1]),"\n", file="res.out", append=TRUE)
+
+
+v <- forecast(fit, fscale = c(1,rep(NA,5)), fval = c(NA,rep(0.31,5)))
+cat(checkNum(tail(fbartable(v)[,1],-1),0.31),"\n", file="res.out", append=TRUE)

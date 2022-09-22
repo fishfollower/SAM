@@ -135,7 +135,7 @@ modelforecast <- function(fit, ...){
 ##' @param landval a vector of target catches. See details.   
 ##' @param findMSY Should not be used. See \link{forecastMSY}.
 ##' @param hcr Should not be used. See \link{hcr}.
-##' @param nosim number of simulations. Not used.
+##' @param nosim number of simulations. If 0, the Laplace approximation is used for forecasting.
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
 ##' @param rec.years vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.
@@ -221,7 +221,7 @@ modelforecast.sam <- function(fit,
                               landval = NULL,
                               findMSY = NULL,
                               hcr = NULL,
-                              nosim = NULL,
+                              nosim = 1000,
                               year.base = max(fit$data$years),
                               ave.years = c(),
                               rec.years = c(), #max(fit$data$years)+(-9:0),
