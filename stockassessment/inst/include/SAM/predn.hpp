@@ -1,9 +1,10 @@
-#pragma once
-#ifndef SAM_PREDN_HPP
-#define SAM_PREDN_HPP
+SAM_DEPENDS(define)
+SAM_DEPENDS(incidence)
+SAM_DEPENDS(recruitment)
+SAM_DEPENDS(derived)
 
 template <class Type>
-vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, int i){
+vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, int i)SOURCE({
   int stateDimN=logN.dim[0];
   //array<Type> totF=totFFun(dat,conf, logF);
   vector<Type> predN(stateDimN);
@@ -64,7 +65,7 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   }
   
   return predN;  
-}
+  });
 
-#endif
-
+SAM_SPECIALIZATION(vector<double> predNFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, int));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> predNFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, int));

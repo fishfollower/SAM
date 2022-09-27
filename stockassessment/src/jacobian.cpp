@@ -1,5 +1,5 @@
 #define WITH_LIBTMB
-#include <TMB.hpp>
+#include "TMB.h"
 
 #include <R.h>
 #include <Rmath.h>

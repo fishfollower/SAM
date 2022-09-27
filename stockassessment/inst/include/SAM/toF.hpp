@@ -1,8 +1,9 @@
-#pragma once
-#ifndef SAM_TOF_HPP
-#define SAM_TOF_HPP
+SAM_DEPENDS(define)
+SAM_DEPENDS(logspace)
+SAM_DEPENDS(recruitment)
+SAM_DEPENDS(convenience)
 
-
+HEADER(
 enum ConstraintType {
 		     Constrain_Fbar,
 		     Constrain_Catch,
@@ -23,26 +24,39 @@ struct FConstraint {
   ConstraintType cstr;
   Type target;
 
-  FConstraint() = default;
+  inline FConstraint() = default;
 
-  FConstraint(SEXP x){
-    Amin = (int)*REAL(getListElement(x,"Amin"));
-    Amax = (int)*REAL(getListElement(x,"Amax"));
-    fleet = (int)*REAL(getListElement(x,"fleet"));
-    relative = (int)*REAL(getListElement(x,"relative"));
-    cstr = static_cast<ConstraintType>((int)*REAL(getListElement(x,"cstr")));
-    target = (Type)*REAL(getListElement(x,"target"));
-  };
+  FConstraint(SEXP x);
 
   template<class T>
-  FConstraint(const FConstraint<T>& x) : Amin(x.Amin),
+  inline FConstraint(const FConstraint<T>& x) : Amin(x.Amin),
 					 Amax(x.Amax),
 					 fleet(x.fleet),
 					 relative(x.relative),
 					 cstr(x.cstr),
 					 target(x.target) {}
 };
+       )
 
+SOURCE(
+	 template<class Type>
+	 FConstraint<Type>::FConstraint(SEXP x){
+	   Amin = (int)*REAL(getListElement(x,"Amin"));
+	   Amax = (int)*REAL(getListElement(x,"Amax"));
+	   fleet = (int)*REAL(getListElement(x,"fleet"));
+	   relative = (int)*REAL(getListElement(x,"relative"));
+	   cstr = static_cast<ConstraintType>((int)*REAL(getListElement(x,"cstr")));
+	   target = (Type)*REAL(getListElement(x,"target"));
+	 }
+	 );
+
+SAM_SPECIALIZATION(struct FConstraint<double>);
+SAM_SPECIALIZATION(struct FConstraint<TMBad::ad_aug>);
+
+SAM_SPECIALIZATION(struct vector<FConstraint<double> >);
+SAM_SPECIALIZATION(struct vector<FConstraint<TMBad::ad_aug> >);
+
+HEADER(
 template<class Type>
 struct FConstraintList : vector<FConstraint<Type> > {
   FConstraintList() : vector<FConstraint<Type> >() {};
@@ -57,28 +71,16 @@ struct FConstraintList : vector<FConstraint<Type> > {
   FConstraintList(const FConstraintList<T>& other) : vector<FConstraint<Type> >(other.size()) {
     for(int i = 0; i < (int)other.size(); ++i)
       (*this)(i) = FConstraint<Type>(other(i));
-  }
-  
+  }  
 };
+       )
 
 
 
-
+#ifndef WITH_SAM_LIB
 namespace ConstrainCalculations {
 
 
-
- 
-  // Newton approach
-
-
-  vector<int> getCatchFleets(vector<int> fleetTypes){
-    std::vector<int> r;
-    for(int i = 0; i < (int)fleetTypes.size(); ++i)
-      if(fleetTypes(i) == 0)
-	r.push_back(i);
-    return vector<int>(r);
-  };
   
   template<class Type>
   vector<Type> getFleetLogFbar(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, vector<Type>& logF, int a0, int a1){
@@ -94,6 +96,11 @@ namespace ConstrainCalculations {
     }
     return log(fbar);
   };
+
+  
+  SAM_SPECIALIZATION(vector<double> getFleetLogFbar(dataSet<double>&, confSet&, vector<int>&, vector<double>&, int, int));
+  SAM_SPECIALIZATION(vector<TMBad::ad_aug> getFleetLogFbar(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, vector<TMBad::ad_aug>&, int, int));
+  
 
   template<class Type>
   Type getFleetCatch(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
@@ -133,6 +140,9 @@ namespace ConstrainCalculations {
     return logCat;
   }
   
+  SAM_SPECIALIZATION(double getFleetCatch(dataSet<double>&, confSet&, vector<int>&, array<double>&, vector<double>&, int, int, int, int));
+  SAM_SPECIALIZATION(TMBad::ad_aug getFleetCatch(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, int));
+  
   template<class Type>
   Type getFleetLanding(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
     Type logCat = R_NegInf;
@@ -166,6 +176,9 @@ namespace ConstrainCalculations {
     return logCat;
   }
 
+  SAM_SPECIALIZATION(double getFleetLanding(dataSet<double>&, confSet&, vector<int>&, array<double>&, vector<double>&, int, int, int, int));
+  SAM_SPECIALIZATION(TMBad::ad_aug getFleetLanding(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, int));
+  
   // Begining of next year
   template<class Type>
   Type getSSB(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
@@ -219,6 +232,10 @@ namespace ConstrainCalculations {
     return logssb;    
   };
 
+   SAM_SPECIALIZATION(double getSSB(dataSet<double>&, confSet&, vector<int>&, Recruitment<double>&, array<double>&, vector<double>&, int, int, int, bool));
+  SAM_SPECIALIZATION(TMBad::ad_aug getSSB(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, Recruitment<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, bool));
+  
+
   // Begining of next year
   template<class Type>
   Type getTSB(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
@@ -269,6 +286,9 @@ namespace ConstrainCalculations {
       return logtsb - lltsb;
     return logtsb;
   };
+
+  SAM_SPECIALIZATION(double getTSB(dataSet<double>&, confSet&, vector<int>&, Recruitment<double>&, array<double>&, vector<double>&, int, int, int, bool));
+  SAM_SPECIALIZATION(TMBad::ad_aug getTSB(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, Recruitment<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, bool));
   
   typedef TMBad::ad_aug ad;
 
@@ -429,7 +449,7 @@ namespace ConstrainCalculations {
   };
 
 };				// End of namespace
-
+#endif
 
 // vector<double> tryStart(ConstrainCalculations::ForecastF fc,
 // 			vector<double> start,
@@ -459,12 +479,12 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 			      vector<Type>& lastLogF,
 			      array<Type>& logN,
 			      int y,
-			      newton::newton_config& cfg){
+			      newton::newton_config& cfg)SOURCE({
 
   paraSet<TMBad::ad_aug> parad(par);
   Recruitment<TMBad::ad_aug> recruit = makeRecruitmentFunction(conf,parad);
 
-  vector<int> cFleets = ConstrainCalculations::getCatchFleets(dat.fleetTypes);
+  vector<int> cFleets = getCatchFleets(dat.fleetTypes);
 
   ConstrainCalculations::ForecastF fc = {dat, conf, cFleets, recruit, cstrs, lastLogF, logN, y};
 
@@ -491,7 +511,8 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
     }
   }
   return newLogF;
-}
+				})
 
+SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, vector<double>&, array<double>&, int, newton::newton_config&));
+  SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, newton::newton_config&));
 
-#endif

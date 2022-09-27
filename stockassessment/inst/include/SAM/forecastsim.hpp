@@ -1,42 +1,15 @@
-#pragma once
-#ifndef SAM_HCR_HPP
-#define SAM_HCR_HPP
+SAM_DEPENDS(define)
+SAM_DEPENDS(recruitment)
+SAM_DEPENDS(incidence)
+SAM_DEPENDS(mvmix)
+SAM_DEPENDS(derived)
+SAM_DEPENDS(f)
+SAM_DEPENDS(predn)
+SAM_DEPENDS(n)
+
 
 template <class Type>
-Type hcr_min(Type a, Type b){
-  return 0.5 * (a + b - sqrt((a-b) * (a-b)));
-}
-template <class Type>
-Type hcr_max(Type a, Type b){
-  return 0.5 * (a + b + sqrt((a-b) * (a-b)));
-}
-
-template <class Type>
-Type hcr(Type ssb, vector<Type> hcrConf){
-  Type Ftarget = hcrConf(0);
-  Type Forigin = hcrConf(1);
-  Type Fcap = hcrConf(2);
-  Type Borigin = hcrConf(3);
-  Type Bcap = hcrConf(4);
-  Type Btrigger = hcrConf(5);
-
-  Type newF = Ftarget;
-  if(fabs(Btrigger - Borigin) < 1e-12){
-    newF = CppAD::CondExpLt(ssb,
-			    Bcap,
-			    Fcap,
-			    Ftarget);			    
-  }else{
-    newF = CppAD::CondExpLt(ssb,
-			    Bcap,
-			    Fcap,
-			    hcr_min(Ftarget, hcr_max(Forigin, Forigin + (ssb - Borigin) * (Ftarget - Forigin) / (Btrigger - Borigin))));
-  }
-  return log(newF);	  
-}
-
-template <class Type>
-void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, Recruitment<Type> recruit, MortalitySet<Type>& mort, objective_function<Type> *of){
+void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, Recruitment<Type>& recruit, MortalitySet<Type>& mort, objective_function<Type> *of)SOURCE({
   // Only for forecast simulation
   if(forecast.nYears == 0 || !(isDouble<Type>::value) || !(of->do_simulate))
     return;
@@ -88,7 +61,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
     }
   }
   return;
-}
+})
 
-
-#endif
+SAM_SPECIALIZATION(void forecastSimulation(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(void forecastSimulation(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

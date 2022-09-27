@@ -1,9 +1,12 @@
-#pragma once
-#ifndef SAM_N_HPP
-#define SAM_N_HPP
+SAM_DEPENDS(define)
+SAM_DEPENDS(incidence)
+SAM_DEPENDS(mvmix)
+SAM_DEPENDS(predn)
+SAM_DEPENDS(forecast)
+
 
 template <class Type>
-matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF){
+matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF)SOURCE({
   int stateDimN=logN.dim[0];
   // int timeSteps=logN.dim[1];
   matrix<Type> nvar(stateDimN,stateDimN);
@@ -14,10 +17,14 @@ matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     }
   }
   return nvar;
-}
+  });
+
+SAM_SPECIALIZATION(matrix<double> get_nvar(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&));
+SAM_SPECIALIZATION(matrix<TMBad::ad_aug> get_nvar(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
+  
 
 template <class Type>
-Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
   Type nll=0;
   int stateDimN=logN.dim[0];
   int timeSteps=logN.dim[1];
@@ -33,7 +40,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
   vector<Type> fracMixN(conf.fracMixN.size());
   for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
   MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
-  Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovN(nvar);
+  LLT< Matrix<Type, Dynamic, Dynamic> > lltCovN(nvar);
   matrix<Type> LN = lltCovN.matrixL();
   matrix<Type> LinvN = LN.inverse();
 
@@ -97,6 +104,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
   REPORT_F(nvar,of);
   REPORT_F(pn,of);
   return nll;
-}
+  });
 
-#endif
+SAM_SPECIALIZATION(double nllN(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, data_indicator<vector<double>,double>&, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllN(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

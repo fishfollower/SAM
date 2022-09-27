@@ -1,6 +1,7 @@
-#pragma once
-#ifndef SAM_PREDOBS_HPP
-#define SAM_PREDOBS_HPP
+SAM_DEPENDS(convenience)
+SAM_DEPENDS(define)
+SAM_DEPENDS(incidence)
+
 
 template<class Type>
 Type predOneObs(int fleet,	// obs.aux(i,1)
@@ -22,7 +23,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		Type tagv1,	     // dat.aux(i,5)
 		Type tagv2,	     // dat.aux(i,6)
 		Type releaseSurvival // releaseSurvivalVec(i)
-		){
+		)SOURCE({
   int f, ft, a, y, yy, scaleIdx, ma, pg;  // a is no longer just ages, but an attribute (e.g. age or length) 
   y=year - minYear;
   f=fleet;
@@ -175,11 +176,14 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
       break;
     }
     return pred;
-}
+		  });
+
+SAM_SPECIALIZATION(double predOneObs(int, int,int,int,int,dataSet<double>&,confSet&,paraSet<double>&,array<double>&, array<double>&,MortalitySet<double>&,double,double,double,double,double,double,double,double));
+SAM_SPECIALIZATION(TMBad::ad_aug predOneObs(int, int,int,int,int,dataSet<TMBad::ad_aug>&,confSet&,paraSet<TMBad::ad_aug>&,array<TMBad::ad_aug>&, array<TMBad::ad_aug>&,MortalitySet<TMBad::ad_aug>&,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug));
 
 
 template <class Type>
-vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand){
+vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand)SOURCE({
   vector<Type> pred(dat.nobs);
   pred.setConstant(R_NegInf);
 
@@ -239,6 +243,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
   }
 
   return pred;
-}
+  });
 
-#endif
+SAM_SPECIALIZATION(vector<double> predObsFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> predObsFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&));

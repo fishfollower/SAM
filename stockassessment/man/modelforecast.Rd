@@ -17,7 +17,7 @@ modelforecast(fit, ...)
   landval = NULL,
   findMSY = NULL,
   hcr = NULL,
-  nosim = NULL,
+  nosim = 1000,
   year.base = max(fit$data$years),
   ave.years = c(),
   rec.years = c(),
@@ -64,7 +64,7 @@ modelforecast(fit, ...)
 
 \item{hcr}{Should not be used. See \link{hcr}.}
 
-\item{nosim}{number of simulations. Not used.}
+\item{nosim}{number of simulations. If 0, the Laplace approximation is used for forecasting.}
 
 \item{year.base}{starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before}
 

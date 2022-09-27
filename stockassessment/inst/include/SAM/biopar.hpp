@@ -1,9 +1,9 @@
-#pragma once
-#ifndef SAM_BIOPAR_HPP
-#define SAM_BIOPAR_HPP
+SAM_DEPENDS(convenience)
+SAM_DEPENDS(define)
+
 
 template <class Type>
-Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, vector<Type> logPhi, Type logSdP){
+Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, vector<Type> logPhi, Type logSdP)SOURCE({
     int nrow=P.dim[0];
     int ncol=P.dim[1];
     int n=nrow*ncol;
@@ -46,33 +46,36 @@ Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, 
     
     using namespace density;
     return SCALE(GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
-}
+});
 
-
+SAM_SPECIALIZATION(double nllBioProcess(array<double>, vector<double>, vector<int>, vector<double>, double));
+SAM_SPECIALIZATION(TMBad::ad_aug nllBioProcess(array<TMBad::ad_aug>, vector<TMBad::ad_aug>, vector<int>, vector<TMBad::ad_aug>, TMBad::ad_aug));
 
 template <class Type>
-Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
-  if(conf.stockWeightModel==1){
-    Type nll=0;
-    array<Type> sw=dat.stockMeanWeight;
-    nll += nllBioProcess(logSW, par.meanLogSW, conf.keyStockWeightMean, par.logPhiSW, par.logSdProcLogSW(0));
-    for(int i=0; i<sw.dim[0]; ++i){
-      for(int j=0; j<sw.dim[1]; ++j){
-        if(!isNA(sw(i,j))){
-          nll += -dnorm(log(sw(i,j)),logSW(i,j),exp(par.logSdLogSW(conf.keyStockWeightObsVar(j))),true);
-        }
-	dat.stockMeanWeight(i,j)=exp(logSW(i,j));
+Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE({
+    if(conf.stockWeightModel==1){
+      Type nll=0;
+      array<Type> sw=dat.stockMeanWeight;
+      nll += nllBioProcess(logSW, par.meanLogSW, conf.keyStockWeightMean, par.logPhiSW, par.logSdProcLogSW(0));
+      for(int i=0; i<sw.dim[0]; ++i){
+	for(int j=0; j<sw.dim[1]; ++j){
+	  if(!isNA(sw(i,j))){
+	    nll += -dnorm(log(sw(i,j)),logSW(i,j),exp(par.logSdLogSW(conf.keyStockWeightObsVar(j))),true);
+	  }
+	  dat.stockMeanWeight(i,j)=exp(logSW(i,j));
+	}
       }
+      ADREPORT_F(logSW,of);	// Needed for R based forecast
+      return nll;
     }
-    ADREPORT_F(logSW,of);	// Needed for R based forecast
-    return nll;
-  }
-  return Type(0);
-}
+    return Type(0);
+  } );
 
+SAM_SPECIALIZATION(double nllSW(array<double>&, dataSet<double>&, confSet&, paraSet<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllSW(array<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
 
 template <class Type>
-Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
+Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE( {
   if(conf.catchWeightModel==1){
     Type nll=0;
     array<Type> cw=dat.catchMeanWeight;
@@ -94,18 +97,15 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
     return nll;
   }
   return Type(0);
-}
+  } );
 
 
-template<class Type>
-Type squash(Type u){
-  Type eps = 1.0e-6;
-  u = (1.0 - eps) * (u - .5) + .5;
-  return u;
-}
+SAM_SPECIALIZATION(double nllCW(array<double>&, dataSet<double>&, confSet&, paraSet<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllCW(array<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
+
 
 template <class Type>
-Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
+  Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE({
   if(conf.matureModel==1){
     Type nll=0;
     array<Type> mo=dat.propMat;
@@ -135,12 +135,15 @@ Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type
     return nll;
   }
   return Type(0);
-}
+    } )
 
+
+SAM_SPECIALIZATION(double nllMO(array<double>&, dataSet<double>&, confSet&, paraSet<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllMO(array<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
 
 
 template <class Type>
-Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of){
+Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE({
   if(conf.mortalityModel==1){
     Type nll=0;
     array<Type> nm=dat.natMor;
@@ -157,6 +160,8 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
     return nll;
   }
   return Type(0);
-}
+  })
 
-#endif
+
+SAM_SPECIALIZATION(double nllNM(array<double>&, dataSet<double>&, confSet&, paraSet<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllNM(array<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

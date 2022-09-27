@@ -1,15 +1,18 @@
-#pragma once
-#ifndef SAM_RECRUITMENT_HPP
-#define SAM_RECRUITMENT_HPP
+SAM_DEPENDS(spline)
+SAM_DEPENDS(define)
+SAM_DEPENDS(logspace)
+
 
 #include <memory>
 
-#define SAMREC_TYPEDEFS(scalartype_)			\
-public:						\
-typedef scalartype_ scalartype;			\
-typedef vector<scalartype> vectortype;		\
-typedef matrix<scalartype> matrixtype;		\
-typedef array<scalartype> arraytype
+#define SAMREC_TYPEDEFS(scalartype_)		\
+  public:					\
+  typedef scalartype_ scalartype;		\
+  typedef vector<scalartype> vectortype;	\
+  typedef matrix<scalartype> matrixtype;	\
+  typedef array<scalartype> arraytype
+
+// #endif
 
 /*
 Depensatory_A_%s models:
@@ -25,64 +28,22 @@ R^B_%s(S) = R_%s(S) / (1 + exp(-l * (S-d)))
 
  */
 
-
-
-enum RecruitmentModel {
-		       ICESforecast = -2,
-		       NoRecruit = -1,
-		       LogRandomWalk = 0,
-		       Ricker = 1,
-		       BevertonHolt = 2,
-		       ConstantMean = 3,
-		       LogisticHockeyStick = 60,
-		       HockeyStick = 61,
-		       LogAR1 = 62,
-		       BentHyperbola = 63,
-		       Power_CMP = 64,
-		       Power_NCMP = 65,
-		       Shepherd = 66,
-		       Hassel_Deriso = 67,
-		       SailaLorda = 68,
-		       SigmoidalBevertonHolt = 69,
-		       Spline_CMP = 90,
-		       Spline_Smooth = 91,
-		       Spline_General = 92,
-		       Spline_ConvexCompensatory = 93,
-		       Depensatory_B_Ricker = 201,
-		       Depensatory_B_BevertonHolt = 202,
-		       Depensatory_B_LogisticHockeyStick = 260,
-		       Depensatory_B_HockeyStick = 261,
-		       Depensatory_B_BentHyperbola = 263,
-		       Depensatory_B_Power = 264,
-		       Depensatory_B_Shepherd = 266,
-		       Depensatory_B_Hassel_Deriso = 267,
-		       Depensatory_B_Spline_CMP = 290,
-		       Depensatory_B_Spline_ConvexCompensatory = 293,
-		       Depensatory_C_Ricker = 401,
-		       Depensatory_C_BevertonHolt = 402,
-		       Depensatory_C_Spline_CMP = 490,
-		       Depensatory_C_Spline_ConvexCompensatory = 493,
-		       Num_Ricker = 991,
-		       Num_BevertonHolt = 992
-		    
-};
-
-
+HEADER(
 template<class Type>
 struct RecruitmentWorker {
 
   int isAutoregressive;
   int isTimevarying;
 
-  RecruitmentWorker() : isAutoregressive(0), isTimevarying(0) {}
-  RecruitmentWorker(int isA, int isT) : isAutoregressive(isA), isTimevarying(isT) {}
+  RecruitmentWorker(): isAutoregressive(0), isTimevarying(0) {};
+  RecruitmentWorker(int isA, int isT): isAutoregressive(isA), isTimevarying(isT) {};
   
   // Stock recruitment function logR = f(logssb)
   virtual Type operator()(Type logssb, Type lastLogR, Type year) = 0;
 
   Type R(Type logssb, Type lastLogR, Type year){
-    return exp(operator()(logssb, lastLogR, year));
-  }
+	   return exp(operator()(logssb, lastLogR, year));
+	 };
 
   // Deterministic equilibrium biomass for lambda = 1/SPR
   virtual Type logSe(Type logLambda) = 0;
@@ -95,8 +56,31 @@ struct RecruitmentWorker {
 
   virtual ~RecruitmentWorker() {};
 
-};
+});
 
+// SOURCE(
+// 	 template<class Type>
+// 	 RecruitmentWorker<Type>::RecruitmentWorker() : isAutoregressive(0), isTimevarying(0) {}
+// 	 );
+
+// SOURCE(
+// 	 template<class Type>
+// 	 RecruitmentWorker<Type>::RecruitmentWorker(int isA, int isT) : isAutoregressive(isA), isTimevarying(isT) {}
+// 	 );
+
+
+// SOURCE(
+// 	 template<class Type>
+// 	 Type RecruitmentWorker<Type>::R(Type logssb, Type lastLogR, Type year){
+// 	   return exp(operator()(logssb, lastLogR, year));
+// 	 }
+// 	 )
+
+
+// SAM_SPECIALIZATION(struct RecruitmentWorker<double>);
+// SAM_SPECIALIZATION(struct RecruitmentWorker<TMBad::ad_aug>);
+
+HEADER(
 template<class Type>
 struct Recruitment {
 public:
@@ -138,7 +122,56 @@ public:
     return ptr->maxGradient();
   }
 
-};
+});
+
+SAM_SPECIALIZATION(struct Recruitment<double>);
+SAM_SPECIALIZATION(struct Recruitment<TMBad::ad_aug>);
+
+
+
+#ifndef WITH_SAM_LIB
+
+namespace RecruitmentConvenience {
+
+  enum RecruitmentModel {
+			 ICESforecast = -2,
+			 NoRecruit = -1,
+			 LogRandomWalk = 0,
+			 Ricker = 1,
+			 BevertonHolt = 2,
+			 ConstantMean = 3,
+			 LogisticHockeyStick = 60,
+			 HockeyStick = 61,
+			 LogAR1 = 62,
+			 BentHyperbola = 63,
+			 Power_CMP = 64,
+			 Power_NCMP = 65,
+			 Shepherd = 66,
+			 Hassel_Deriso = 67,
+			 SailaLorda = 68,
+			 SigmoidalBevertonHolt = 69,
+			 Spline_CMP = 90,
+			 Spline_Smooth = 91,
+			 Spline_General = 92,
+			 Spline_ConvexCompensatory = 93,
+			 Depensatory_B_Ricker = 201,
+			 Depensatory_B_BevertonHolt = 202,
+			 Depensatory_B_LogisticHockeyStick = 260,
+			 Depensatory_B_HockeyStick = 261,
+			 Depensatory_B_BentHyperbola = 263,
+			 Depensatory_B_Power = 264,
+			 Depensatory_B_Shepherd = 266,
+			 Depensatory_B_Hassel_Deriso = 267,
+			 Depensatory_B_Spline_CMP = 290,
+			 Depensatory_B_Spline_ConvexCompensatory = 293,
+			 Depensatory_C_Ricker = 401,
+			 Depensatory_C_BevertonHolt = 402,
+			 Depensatory_C_Spline_CMP = 490,
+			 Depensatory_C_Spline_ConvexCompensatory = 493,
+			 Num_Ricker = 991,
+			 Num_BevertonHolt = 992
+		    
+  };
 
 template<class Functor>
 struct WrapSR {
@@ -478,6 +511,10 @@ struct Rec_ICESforecast : RecruitmentWorker<scalartype_> {
 
 };
 
+  
+  template struct Rec_ICESforecast<double>;
+  template struct Rec_ICESforecast<TMBad::ad_aug>;
+
 
 // Recruitment function -1
 // No recruitment
@@ -511,6 +548,11 @@ struct Rec_None : RecruitmentWorker<scalartype_> {
 
 };
 
+
+  template struct Rec_None<double>;
+  template struct Rec_None<TMBad::ad_aug>;
+
+
 // Recruitment function 0
 // Random walk
 template<class scalartype_>
@@ -542,6 +584,10 @@ struct Rec_LogRW : RecruitmentWorker<scalartype_> {
   }
 
 };
+
+  template struct Rec_LogRW<double>;
+  template struct Rec_LogRW<TMBad::ad_aug>;
+
 
 // Recruitment function 1
 // Ricker
@@ -587,6 +633,10 @@ struct Rec_Ricker : RecruitmentWorker<scalartype_> {
   
 };
 
+  template struct Rec_Ricker<double>;
+  template struct Rec_Ricker<TMBad::ad_aug>;
+
+
 
 // Recruitment function 2
 // Beverton Holt
@@ -629,6 +679,10 @@ struct Rec_BevertonHolt : RecruitmentWorker<scalartype_> {
   }
 
 };
+
+  template struct Rec_BevertonHolt<double>;
+  template struct Rec_BevertonHolt<TMBad::ad_aug>;
+
 
 // Recruitment function 3
 // Constant mean
@@ -674,6 +728,8 @@ struct Rec_ConstantMean : RecruitmentWorker<scalartype_> {
 
 };
 
+  template struct Rec_ConstantMean<double>;
+  template struct Rec_ConstantMean<TMBad::ad_aug>;
 
 
 // Recruitment function 60
@@ -895,6 +951,10 @@ struct RF_BentHyperbola_t {
   }
  
 };
+
+  template struct RF_BentHyperbola_t<double>;
+  template struct RF_BentHyperbola_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_BentHyperbola : RecruitmentNumeric<RF_BentHyperbola_t<scalartype_> >  {
@@ -911,6 +971,9 @@ struct Rec_BentHyperbola : RecruitmentNumeric<RF_BentHyperbola_t<scalartype_> > 
   
 };
 
+
+  template struct Rec_BentHyperbola<double>;
+  template struct Rec_BentHyperbola<TMBad::ad_aug>;
 
 
 
@@ -953,6 +1016,11 @@ struct RF_PowerCMP_t {
 
  
 };
+
+  
+  template struct RF_PowerCMP_t<double>;
+  template struct RF_PowerCMP_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_PowerCMP : RecruitmentNumeric<RF_PowerCMP_t<scalartype_> >  {
@@ -969,6 +1037,9 @@ struct Rec_PowerCMP : RecruitmentNumeric<RF_PowerCMP_t<scalartype_> >  {
   
 };
 
+
+  template struct Rec_PowerCMP<double>;
+  template struct Rec_PowerCMP<TMBad::ad_aug>;
 
 
 // Recruitment function 65
@@ -1008,6 +1079,11 @@ struct RF_PowerNCMP_t {
   }
  
 };
+
+  
+  template struct RF_PowerNCMP_t<double>;
+  template struct RF_PowerNCMP_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_PowerNCMP : RecruitmentNumeric<RF_PowerNCMP_t<scalartype_> >  {
@@ -1024,6 +1100,10 @@ struct Rec_PowerNCMP : RecruitmentNumeric<RF_PowerNCMP_t<scalartype_> >  {
 
 };
 
+
+
+  template struct Rec_PowerNCMP<double>;
+  template struct Rec_PowerNCMP<TMBad::ad_aug>;
 
 
 // Recruitment function 66
@@ -1068,6 +1148,10 @@ struct RF_Shepherd_t {
   }
  
 };
+
+  template struct RF_Shepherd_t<double>;
+  template struct RF_Shepherd_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_Shepherd : RecruitmentNumeric<RF_Shepherd_t<scalartype_> >  {
@@ -1084,6 +1168,10 @@ struct Rec_Shepherd : RecruitmentNumeric<RF_Shepherd_t<scalartype_> >  {
   
 };
 
+
+
+  template struct Rec_Shepherd<double>;
+  template struct Rec_Shepherd<TMBad::ad_aug>;
 
 
 
@@ -1130,6 +1218,12 @@ struct RF_HasselDeriso_t {
   }
  
 };
+
+
+
+  template struct RF_HasselDeriso_t<double>;
+  template struct RF_HasselDeriso_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_HasselDeriso : RecruitmentNumeric<RF_HasselDeriso_t<scalartype_> >  {
@@ -1146,6 +1240,10 @@ struct Rec_HasselDeriso : RecruitmentNumeric<RF_HasselDeriso_t<scalartype_> >  {
   
 };
 
+
+
+  template struct Rec_HasselDeriso<double>;
+  template struct Rec_HasselDeriso<TMBad::ad_aug>;
 
 
 
@@ -1186,6 +1284,12 @@ struct RF_SailaLorda_t {
   }
  
 };
+
+
+  template struct RF_SailaLorda_t<double>;
+  template struct RF_SailaLorda_t<TMBad::ad_aug>;
+
+
   
 template<class scalartype_>
 struct Rec_SailaLorda : RecruitmentNumeric<RF_SailaLorda_t<scalartype_> >  {
@@ -1201,6 +1305,10 @@ struct Rec_SailaLorda : RecruitmentNumeric<RF_SailaLorda_t<scalartype_> >  {
   THIS_REC_TO_AD(SailaLorda);
   
 };
+
+
+  template struct Rec_SailaLorda<double>;
+  template struct Rec_SailaLorda<TMBad::ad_aug>;
 
 
 
@@ -1243,6 +1351,12 @@ struct RF_SigmoidalBevHolt_t {
   }
  
 };
+
+  
+  template struct RF_SigmoidalBevHolt_t<double>;
+  template struct RF_SigmoidalBevHolt_t<TMBad::ad_aug>;
+
+
   
 template<class scalartype_>
 struct Rec_SigmoidalBevHolt : RecruitmentNumeric<RF_SigmoidalBevHolt_t<scalartype_> >  {
@@ -1261,6 +1375,8 @@ struct Rec_SigmoidalBevHolt : RecruitmentNumeric<RF_SigmoidalBevHolt_t<scalartyp
 };
 
 
+  template struct Rec_SigmoidalBevHolt<double>;
+  template struct Rec_SigmoidalBevHolt<TMBad::ad_aug>;
 
 
 // Recruitment function 90
@@ -1299,6 +1415,10 @@ struct RF_SplineCMP_t {
   }
  
 };
+
+  template struct RF_SplineCMP_t<double>;
+  template struct RF_SplineCMP_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_SplineCMP : RecruitmentNumeric<RF_SplineCMP_t<scalartype_> >  {
@@ -1316,7 +1436,10 @@ struct Rec_SplineCMP : RecruitmentNumeric<RF_SplineCMP_t<scalartype_> >  {
   
 };
 
+  template struct Rec_SplineCMP<double>;
+  template struct Rec_SplineCMP<TMBad::ad_aug>;
 
+  
 template<class scalartype_>
 struct RF_SplineConvexCompensatory_t {
  SAMREC_TYPEDEFS(scalartype_);
@@ -1345,6 +1468,10 @@ struct RF_SplineConvexCompensatory_t {
   }
  
 };
+
+  template struct RF_SplineConvexCompensatory_t<double>;
+  template struct RF_SplineConvexCompensatory_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_SplineConvexCompensatory : RecruitmentNumeric<RF_SplineConvexCompensatory_t<scalartype_> >  {
@@ -1361,6 +1488,8 @@ struct Rec_SplineConvexCompensatory : RecruitmentNumeric<RF_SplineConvexCompensa
   
 };
 
+  template struct Rec_SplineConvexCompensatory<double>;
+  template struct Rec_SplineConvexCompensatory<TMBad::ad_aug>;
 
 
 
@@ -1401,6 +1530,10 @@ struct RF_SplineSmooth_t {
   }
  
 };
+
+  template struct RF_SplineSmooth_t<double>;
+  template struct RF_SplineSmooth_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_SplineSmooth : RecruitmentNumeric<RF_SplineSmooth_t<scalartype_> >  {
@@ -1416,6 +1549,9 @@ struct Rec_SplineSmooth : RecruitmentNumeric<RF_SplineSmooth_t<scalartype_> >  {
   THIS_REC_TO_AD(SplineSmooth);
   
 };
+
+  template struct Rec_SplineSmooth<double>;
+  template struct Rec_SplineSmooth<TMBad::ad_aug>;
 
 
 // Recruitment function 92
@@ -1456,6 +1592,10 @@ THIS_RF_TO_AD(SplineGeneral);
   }
  
 };
+
+  template struct RF_SplineGeneral_t<double>;
+  template struct RF_SplineGeneral_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_SplineGeneral : RecruitmentNumeric<RF_SplineGeneral_t<scalartype_> >  {
@@ -1470,6 +1610,10 @@ struct Rec_SplineGeneral : RecruitmentNumeric<RF_SplineGeneral_t<scalartype_> > 
 
   THIS_REC_TO_AD(SplineGeneral);
 };
+
+  
+  template struct Rec_SplineGeneral<double>;
+  template struct Rec_SplineGeneral<TMBad::ad_aug>;
 
 
 
@@ -1503,6 +1647,11 @@ struct RF_NumRicker_t {
   }
  
 };
+
+  
+  template struct RF_NumRicker_t<double>;
+  template struct RF_NumRicker_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_NumRicker : RecruitmentNumeric<RF_NumRicker_t<scalartype_> >  {
@@ -1519,6 +1668,10 @@ struct Rec_NumRicker : RecruitmentNumeric<RF_NumRicker_t<scalartype_> >  {
   
 };
 
+  template struct Rec_NumRicker<double>;
+  template struct Rec_NumRicker<TMBad::ad_aug>;
+
+  
 // Numerical Beverton Holt
 
 
@@ -1548,6 +1701,10 @@ struct RF_NumBevHolt_t {
   }
  
 };
+
+  template struct RF_NumBevHolt_t<double>;
+  template struct RF_NumBevHolt_t<TMBad::ad_aug>;
+
   
 template<class scalartype_>
 struct Rec_NumBevHolt : RecruitmentNumeric<RF_NumBevHolt_t<scalartype_> >  {
@@ -1564,179 +1721,183 @@ struct Rec_NumBevHolt : RecruitmentNumeric<RF_NumBevHolt_t<scalartype_> >  {
   
 };
 
+  template struct Rec_NumBevHolt<double>;
+  template struct Rec_NumBevHolt<TMBad::ad_aug>;
 
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Type>
-Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Type>& par){
-  RecruitmentModel rm = static_cast<RecruitmentModel>(conf.stockRecruitmentModelCode);
+Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Type>& par)SOURCE({
+  RecruitmentConvenience::RecruitmentModel rm = static_cast<RecruitmentConvenience::RecruitmentModel>(conf.stockRecruitmentModelCode);
   Recruitment<Type> r;
 
-  if(rm == RecruitmentModel::NoRecruit){
-    r = Recruitment<Type>("zero",new Rec_None<Type>());
+  if(rm == RecruitmentConvenience::RecruitmentModel::NoRecruit){
+    r = Recruitment<Type>("zero",new RecruitmentConvenience::Rec_None<Type>());
     
 ////////////////////////////////////////// The Beginning //////////////////////////////////////////
     
-  }else if(rm == RecruitmentModel::LogRandomWalk){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::LogRandomWalk){
     if(par.rec_pars.size() != 0)
       Rf_error("The random walk recruitment should not have any parameters.");
-    r = Recruitment<Type>("log-random walk",new Rec_LogRW<Type>());
-  }else if(rm == RecruitmentModel::Ricker){
+    r = Recruitment<Type>("log-random walk",new RecruitmentConvenience::Rec_LogRW<Type>());
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Ricker){
     if(par.rec_pars.size() != 2)
       Rf_error("The Ricker recruitment must have two parameters.");
-    r = Recruitment<Type>("Ricker",new Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)));
-  }else if(rm == RecruitmentModel::BevertonHolt){
+    r = Recruitment<Type>("Ricker",new RecruitmentConvenience::Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::BevertonHolt){
     if(par.rec_pars.size() != 2)
       Rf_error("The Beverton Holt recruitment must have two parameters.");
-    r = Recruitment<Type>("Beverton-Holt",new Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
-  }else if(rm == RecruitmentModel::ConstantMean){
+    r = Recruitment<Type>("Beverton-Holt",new RecruitmentConvenience::Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::ConstantMean){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The constant mean recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>("constant mean", new Rec_ConstantMean<Type>(par.rec_pars, conf.constRecBreaks));
-  }else if(rm == RecruitmentModel::LogisticHockeyStick){
+    r = Recruitment<Type>("constant mean", new RecruitmentConvenience::Rec_ConstantMean<Type>(par.rec_pars, conf.constRecBreaks));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::LogisticHockeyStick){
     if(par.rec_pars.size() != 3)
       Rf_error("The logistic hockey stick recruitment should have three parameters.");
-    r = Recruitment<Type>("logistic hockey stick",new Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::HockeyStick){
+    r = Recruitment<Type>("logistic hockey stick",new RecruitmentConvenience::Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::HockeyStick){
    if(par.rec_pars.size() != 2)
       Rf_error("The hockey stick recruitment should have two parameters.");
-   r = Recruitment<Type>("hockey stick",new Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)));
-  }else if(rm == RecruitmentModel::LogAR1){
+   r = Recruitment<Type>("hockey stick",new RecruitmentConvenience::Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::LogAR1){
    if(par.rec_pars.size() != 2)
       Rf_error("The log-AR(1) recruitment should have two parameters.");
-   r = Recruitment<Type>("log-AR(1)",new Rec_LogAR1<Type>(par.rec_pars(0), par.rec_pars(1)));
-  }else if(rm == RecruitmentModel::BentHyperbola){
+   r = Recruitment<Type>("log-AR(1)",new RecruitmentConvenience::Rec_LogAR1<Type>(par.rec_pars(0), par.rec_pars(1)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::BentHyperbola){
    if(par.rec_pars.size() != 3)
       Rf_error("The bent hyperbola recruitment should have three parameters.");
-   r = Recruitment<Type>("bent hyperbola",new Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::Power_CMP){
+   r = Recruitment<Type>("bent hyperbola",new RecruitmentConvenience::Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Power_CMP){
    if(par.rec_pars.size() != 2)
       Rf_error("The power law recruitment should have two parameters.");
-   r = Recruitment<Type>("CMP power law",new Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
-  }else if(rm == RecruitmentModel::Power_NCMP){
+   r = Recruitment<Type>("CMP power law",new RecruitmentConvenience::Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Power_NCMP){
    if(par.rec_pars.size() != 2)
       Rf_error("The power law recruitment should have two parameters.");
-   r = Recruitment<Type>("non-CMP power law",new Rec_PowerNCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
+   r = Recruitment<Type>("non-CMP power law",new RecruitmentConvenience::Rec_PowerNCMP<Type>(par.rec_pars(0), par.rec_pars(1)));
 
 //////////////////////////////////////// 3 parameter models ///////////////////////////////////////
     
-  }else if(rm == RecruitmentModel::Shepherd){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Shepherd){
    if(par.rec_pars.size() != 3)
       Rf_error("The Shepherd recruitment should have three parameters.");
-   r = Recruitment<Type>("Shepherd",new Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::Hassel_Deriso){
+   r = Recruitment<Type>("Shepherd",new RecruitmentConvenience::Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Hassel_Deriso){
    if(par.rec_pars.size() != 3)
       Rf_error("The Hassel/Deriso recruitment should have three parameters.");
-   r = Recruitment<Type>("Hassel/Deriso",new Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::SailaLorda){
+   r = Recruitment<Type>("Hassel/Deriso",new RecruitmentConvenience::Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::SailaLorda){
    if(par.rec_pars.size() != 3)
       Rf_error("The Saila-Lorda recruitment should have three parameters.");
-   r = Recruitment<Type>("Saila-Lorda",new Rec_SailaLorda<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::SigmoidalBevertonHolt){
+   r = Recruitment<Type>("Saila-Lorda",new RecruitmentConvenience::Rec_SailaLorda<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::SigmoidalBevertonHolt){
    if(par.rec_pars.size() != 3)
      Rf_error("The sigmoidal Beverton-Holt recruitment should have three parameters.");
-   r = Recruitment<Type>("sigmoidal Beverton-Holt",new Rec_SigmoidalBevHolt<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
+   r = Recruitment<Type>("sigmoidal Beverton-Holt",new RecruitmentConvenience::Rec_SigmoidalBevHolt<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
 
 //////////////////////////////////////// Spline recruitment ///////////////////////////////////////
     
-  }else if(rm == RecruitmentModel::Spline_CMP){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Spline_CMP){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>("CMP spline",new Rec_SplineCMP<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
-  }else if(rm == RecruitmentModel::Spline_Smooth){
+    r = Recruitment<Type>("CMP spline",new RecruitmentConvenience::Rec_SplineCMP<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Spline_Smooth){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>("smooth spline",new Rec_SplineSmooth<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
-  }else if(rm == RecruitmentModel::Spline_General){
+    r = Recruitment<Type>("smooth spline",new RecruitmentConvenience::Rec_SplineSmooth<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Spline_General){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>("unrestricted spline",new Rec_SplineGeneral<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+    r = Recruitment<Type>("unrestricted spline",new RecruitmentConvenience::Rec_SplineGeneral<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
 
-  }else if(rm == RecruitmentModel::Spline_ConvexCompensatory){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Spline_ConvexCompensatory){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
       Rf_error("The spline recruitment should have one more parameter than constRecBreaks.");
-    r = Recruitment<Type>("convex-compensatory spline",new Rec_SplineConvexCompensatory<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
+    r = Recruitment<Type>("convex-compensatory spline",new RecruitmentConvenience::Rec_SplineConvexCompensatory<Type>(par.rec_pars, conf.constRecBreaks.template cast<Type>()));
 
 
 //////////////////////// S/(d+S) type Depensatory recruitment models //////////////////////////////
 
-  }else if(rm == RecruitmentModel::Depensatory_B_Ricker){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_Ricker){
    if(par.rec_pars.size() != 3)
      Rf_error("The depensatory B Ricker recruitment should have three parameters.");
-   r = Recruitment<Type>("type B depensatory Ricker",Rec_DepensatoryB(Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::Depensatory_B_BevertonHolt){
+   r = Recruitment<Type>("type B depensatory Ricker",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_BevertonHolt){
     if(par.rec_pars.size() != 3)
      Rf_error("The depensatory B Beverton-Holt recruitment should have three parameters.");
-    r = Recruitment<Type>("type B depensatory Beverton-Holt",Rec_DepensatoryB(Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::Depensatory_B_LogisticHockeyStick){
+    r = Recruitment<Type>("type B depensatory Beverton-Holt",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_LogisticHockeyStick){
      if(par.rec_pars.size() != 4)
      Rf_error("The depensatory B logistic hockey stick recruitment should have four parameters.");
-     r = Recruitment<Type>("type B depensatory logistic hockey stick",Rec_DepensatoryB(Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
-  }else if(rm == RecruitmentModel::Depensatory_B_HockeyStick){
+     r = Recruitment<Type>("type B depensatory logistic hockey stick",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_LogisticHockeyStick<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_HockeyStick){
     if(par.rec_pars.size() != 3)
       Rf_error("The depensatory B hockey stick recruitment should have three parameters.");
-    r = Recruitment<Type>("type B depensatory hockey stick",Rec_DepensatoryB(Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::Depensatory_B_BentHyperbola){
+    r = Recruitment<Type>("type B depensatory hockey stick",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_HockeyStick<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_BentHyperbola){
     if(par.rec_pars.size() != 4)
      Rf_error("The depensatory B bent hyperbola recruitment should have four parameters.");
-    r = Recruitment<Type>("type B depensatory bent hyperbola",Rec_DepensatoryB(Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
-  }else if(rm == RecruitmentModel::Depensatory_B_Power){
+    r = Recruitment<Type>("type B depensatory bent hyperbola",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_BentHyperbola<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_Power){
     if(par.rec_pars.size() != 3)
      Rf_error("The depensatory B power law recruitment should have three parameters.");
-    r = Recruitment<Type>("type B depensatory CMP power law",Rec_DepensatoryB(Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
-  }else if(rm == RecruitmentModel::Depensatory_B_Shepherd){
+    r = Recruitment<Type>("type B depensatory CMP power law",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_PowerCMP<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_Shepherd){
     if(par.rec_pars.size() != 4)
       Rf_error("The depensatory B Shepherd recruitment should have four parameters.");
-    r = Recruitment<Type>("type B depensatory Shepherd",Rec_DepensatoryB(Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
-  }else if(rm == RecruitmentModel::Depensatory_B_Hassel_Deriso){
+    r = Recruitment<Type>("type B depensatory Shepherd",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_Shepherd<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_Hassel_Deriso){
        if(par.rec_pars.size() != 4)
      Rf_error("The depensatory B Hassel/Deriso recruitment should have four parameters.");
-       r = Recruitment<Type>("type B depensatory Hassel/Deriso",Rec_DepensatoryB(Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
-  }else if(rm == RecruitmentModel::Depensatory_B_Spline_CMP){
+       r = Recruitment<Type>("type B depensatory Hassel/Deriso",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_HasselDeriso<Type>(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_Spline_CMP){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 2 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory B spline recruitment should have two parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>("type B depensatory CMP spline",Rec_DepensatoryB(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type B depensatory CMP spline",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
 
- }else if(rm == RecruitmentModel::Depensatory_B_Spline_ConvexCompensatory){
+ }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_Spline_ConvexCompensatory){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 2 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory B spline recruitment should have two parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>("type B depensatory convex compensatory spline",Rec_DepensatoryB(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type B depensatory convex compensatory spline",RecruitmentConvenience::Rec_DepensatoryB(RecruitmentConvenience::Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-1), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-1)));
 
     
 //////////////////////// 1/(1+exp(-e * (S-d))) type Depensatory recruitment models //////////////////////////////
 
-  }else if(rm == RecruitmentModel::Depensatory_C_Ricker){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_C_Ricker){
     if(par.rec_pars.size() != 4)
       Rf_error("The depensatory C Ricker recruitment should have four parameters.");
-    r = Recruitment<Type>("type C depensatory Ricker",Rec_DepensatoryC(Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
+    r = Recruitment<Type>("type C depensatory Ricker",RecruitmentConvenience::Rec_DepensatoryC(RecruitmentConvenience::Rec_Ricker<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
     
-  }else if(rm == RecruitmentModel::Depensatory_C_BevertonHolt){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_C_BevertonHolt){
     if(par.rec_pars.size() != 4)
       Rf_error("The depensatory C Beverton-Holt recruitment should have four parameters.");
-    r = Recruitment<Type>("type C depensatory Beverton-Holt",Rec_DepensatoryC(Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
+    r = Recruitment<Type>("type C depensatory Beverton-Holt",RecruitmentConvenience::Rec_DepensatoryC(RecruitmentConvenience::Rec_BevertonHolt<Type>(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
 
-   }else if(rm == RecruitmentModel::Depensatory_C_Spline_CMP){
+   }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_C_Spline_CMP){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 3 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>("type C depensatory CMP spline",Rec_DepensatoryC(Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type C depensatory CMP spline",RecruitmentConvenience::Rec_DepensatoryC(RecruitmentConvenience::Rec_SplineCMP<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
 
-  }else if(rm == RecruitmentModel::Depensatory_C_Spline_ConvexCompensatory){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_C_Spline_ConvexCompensatory){
     if(par.rec_pars.size() != conf.constRecBreaks.size() + 3 && conf.constRecBreaks.size() >= 3)
       Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");
-    r = Recruitment<Type>("type C depensatory convex compensatory spline",Rec_DepensatoryC(Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
+    r = Recruitment<Type>("type C depensatory convex compensatory spline",RecruitmentConvenience::Rec_DepensatoryC(RecruitmentConvenience::Rec_SplineConvexCompensatory<Type>(par.rec_pars.segment(0,par.rec_pars.size()-2), conf.constRecBreaks),par.rec_pars(par.rec_pars.size()-2),par.rec_pars(par.rec_pars.size()-1)));
 
     
 ///////////////////////////////////////////// For testing /////////////////////////////////////////////
-  }else if(rm == RecruitmentModel::Num_Ricker){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Num_Ricker){
     if(par.rec_pars.size() != 2)
       Rf_error("The Numeric Ricker recruitment must have two parameters.");
-    r = Recruitment<Type>("numeric Ricker",new Rec_NumRicker<Type>(par.rec_pars(0), par.rec_pars(1)));
+    r = Recruitment<Type>("numeric Ricker",new RecruitmentConvenience::Rec_NumRicker<Type>(par.rec_pars(0), par.rec_pars(1)));
 
-  }else if(rm == RecruitmentModel::Num_BevertonHolt){
+  }else if(rm == RecruitmentConvenience::RecruitmentModel::Num_BevertonHolt){
     if(par.rec_pars.size() != 2)
       Rf_error("The Numeric Beverton Holt recruitment must have two parameters.");
-    r = Recruitment<Type>("numeric Beverton-Holt",new Rec_NumBevHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
+    r = Recruitment<Type>("numeric Beverton-Holt",new RecruitmentConvenience::Rec_NumBevHolt<Type>(par.rec_pars(0), par.rec_pars(1)));
 
 ///////////////////////////////////////////// The End /////////////////////////////////////////////
     
@@ -1746,8 +1907,10 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
 
   return r;
   
-}
+  });
+
+SAM_SPECIALIZATION(Recruitment<double> makeRecruitmentFunction<double>(const confSet&,const paraSet<double>&));
+SAM_SPECIALIZATION(Recruitment<TMBad::ad_aug> makeRecruitmentFunction<TMBad::ad_aug>(const confSet&,const paraSet<TMBad::ad_aug>&));
 
   
-  
-#endif
+ 

@@ -6,8 +6,11 @@
 #include "rec_atomic.hpp"
 // #include "zeroin.hpp"
 #include "pnorm.hpp"
+#include "convenience.hpp"
 #include "spline.hpp"
 #include "define.hpp"
+#include "refpointset.hpp"
+#include "mvmix.hpp"
 #include "incidence.hpp"
 #include "recruitment.hpp"
 #include "toF.hpp"
@@ -25,7 +28,6 @@
 // #include "perRecruit.hpp"
 // #include "perRecruit_stochastic.hpp"
 #include "referencepoints.hpp"
-#include "hcr.hpp"
 #include "splinePenalty.hpp"
 
 #endif

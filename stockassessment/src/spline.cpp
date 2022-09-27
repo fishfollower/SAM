@@ -1,6 +1,11 @@
 // #define WITH_LIBTMB
 // #include <TMB.hpp>
 // #include "../inst/include/SAM.hpp"
+// #include "TMB.h"
+
+#define WITH_SAM_LIB
+#include "SAM.h"
+
 
 
 matrix<double> splinebasis_bc(vector<double> x,

@@ -1,7 +1,9 @@
-#pragma once
-#ifndef SAM_SPLINE_HPP
-#define SAM_SPLINE_HPP
+SAM_DEPENDS(pnorm)
+SAM_DEPENDS(logspace)
 
+#ifndef WITH_SAM_LIB
+
+//#include <tiny_ad/tiny_ad/tiny_ad.hpp>
 
 namespace spline_atomic {
 
@@ -24,7 +26,7 @@ namespace spline_atomic {
     Float operator() (Float u) {
       Float a = 1.0 + 0.5 * (gam + sqrt(gam * gam));
       Float b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
-      Float lpv = pnorm_atomic::pnorm1_1x(u,Float(1.0), Float(1.0));
+      Float lpv = pnorm_atomic::pnorm1_1x(u,Float(1.0), Float(1.0)); //log(pnorm_approx(u)); //
       Float lGa = a * lpv;
       return 1.0 - exp(b * atomic::robust_utils::logspace_sub(Float(0.0),lGa));
     }
@@ -74,49 +76,54 @@ namespace spline_atomic {
   
 }
 
+#endif
 
 
 namespace spline_helper {
 
  template<class Type>
- Type ipkwnorm(Type x, Type mu, Type sd, Type gam, double x0) {
+ Type ipkwnorm(Type x, Type mu, Type sd, Type gam, double x0) SOURCE({
     vector<Type> args(4); // Last index reserved for derivative order
     args << (x - mu) / sd, gam, (Type)(x0), 0;
     return spline_atomic::fun_ipkwnorm1(CppAD::vector<Type>(args))[0] * sd;
-  }
+   });
   
-  template<class Type>
-  Type softmax(Type x, Type y, Type k = 1.0){
-    return logspace_add_SAM(k * x, k * y) / k;
-  }
-
+  SAM_SPECIALIZATION(double ipkwnorm(double,double,double,double,double));
+  SAM_SPECIALIZATION(TMBad::ad_aug ipkwnorm(TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,double));
   
   // Kumaraswamy-normal (Kw-normal) density function with special choice of a and b
   template<class Type>
-  Type dkwnorm(Type x, Type mu, Type sig, Type gam, bool give_log = false){
+  Type dkwnorm(Type x, Type mu, Type sig, Type gam, bool give_log DEFARG(= false))SOURCE({
     Type a = 1.0 + 0.5 * (gam + sqrt(gam * gam));
     Type b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
-    Type lpv = pnorm5(x,mu,sig,Type(1.0), Type(1.0));
+    Type lpv = pnorm5(x,mu,sig,1, 1); // log(pnorm(x,mu,sig));
     Type lGa = a * lpv;
     Type log_res = log(a) + log(b) + dnorm(x,mu,sig, true) + (a-1.0) * lpv + (b-1.0) * logspace_sub_SAM(Type(0.0),(Type)lGa);
      if(give_log)
       return log_res;
     return exp(log_res);
-  }
+    })
+
+  SAM_SPECIALIZATION(double dkwnorm(double,double,double,double,bool));
+  SAM_SPECIALIZATION(TMBad::ad_aug dkwnorm(TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,bool));
 
   // Kumaraswamy-normal (Kw-normal) distribution function with special choice of a and b
   template<class Type>
-  Type pkwnorm(Type x, Type mu, Type sig, Type gam){
+  Type pkwnorm(Type x, Type mu, Type sig, Type gam)SOURCE({
     Type a = 1.0 + 0.5 * (gam + sqrt(gam * gam));
     Type b = 1.0 - 0.5 * (gam - sqrt(gam * gam));
-    Type lpv = pnorm5(x,mu,sig,Type(1.0), Type(1.0));
+    Type lpv = pnorm5(x,mu,sig,1, 1); // log(pnorm(x,mu,sig)); //
     Type lGa = a * lpv;
     // Type lr = logspace_sub(Type(0.0), (Type)(b * logspace_sub(Type(0.0),lGa)));
     return 1.0 - exp(b * logspace_sub_SAM(Type(0.0),lGa));
-  }
+    });
+
+  SAM_SPECIALIZATION(double pkwnorm(double,double,double,double));
+  SAM_SPECIALIZATION(TMBad::ad_aug pkwnorm(TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug));
+
   
   template<class Type>
-  matrix<Type> getSigAndGam(vector<Type> knots){
+  matrix<Type> getSigAndGam(vector<Type> knots)SOURCE({
     // if(CppAD::Variable(knots(0)))
     //   Rf_error("Knots can not be parameters");
     if(knots.size() < 3)
@@ -152,12 +159,16 @@ namespace spline_helper {
       res(knots.size()-1,1) = -res(knots.size()-1,0);
     }
     return res;
-  }
+    });
+
+  SAM_SPECIALIZATION(matrix<double> getSigAndGam(vector<double>));
+  SAM_SPECIALIZATION(matrix<TMBad::ad_aug> getSigAndGam(vector<TMBad::ad_aug>));
 }
-  
+
+
 // Spline using Kw-normal density as basis functions
 template<class Type>
-Type bcspline(Type x, vector<Type> knots, vector<Type> pars){
+Type bcspline(Type x, vector<Type> knots, vector<Type> pars)SOURCE({
   // Type x0 = CppAD::CondExpLt(x, knots(0), knots(0),
   // 			     CppAD::CondExpGt(x, knots(knots.size()-1),
   // 					      knots(knots.size()-1),
@@ -174,11 +185,14 @@ Type bcspline(Type x, vector<Type> knots, vector<Type> pars){
   Type t1 = 0.0; //2.5 * spline_helper::softmax(x - knots(knots.size() - 1),(Type)0,(Type)100.0);
   // Type t2 = 0.1 * spline_helper::softmax(knots(0) - x,(Type)0,(Type)100.0);
   return res - t1;// + t2 ;
-}
+  })
+
+  SAM_SPECIALIZATION(double bcspline(double, vector<double>, vector<double>));
+SAM_SPECIALIZATION(TMBad::ad_aug bcspline(TMBad::ad_aug, vector<TMBad::ad_aug>, vector<TMBad::ad_aug>));
 
 // Integrated spline using Kw-normal density as basis functions
 template<class Type>
-Type ibcspline(Type x, vector<Type> knots, vector<Type> pars){
+Type ibcspline(Type x, vector<Type> knots, vector<Type> pars)SOURCE({
   // if(knots.size() + 1 != pars.size())
   //   Rf_error("Pars must have one more element than knots");
   // Type x0 = CppAD::CondExpLt(x, knots(0), knots(0),
@@ -198,12 +212,15 @@ Type ibcspline(Type x, vector<Type> knots, vector<Type> pars){
   Type t1 = 0.0; //2.5 * spline_helper::softmax(x - knots(knots.size() - 1),(Type)0,(Type)100.0);
   //Type t2 = 0.1 * spline_helper::softmax(knots(0) - x,(Type)0,(Type)100.0);
   return res - t1; // + t2 ;
-}
+  })
+
+  SAM_SPECIALIZATION(double ibcspline(double, vector<double>, vector<double>));
+SAM_SPECIALIZATION(TMBad::ad_aug ibcspline(TMBad::ad_aug, vector<TMBad::ad_aug>, vector<TMBad::ad_aug>));
 
 // Monotonically non-increasing spline using Kw-nomal as basis functions
 // Has an extra parameter to allow positive value at left bound
 template<class Type>
-Type ibcdspline(Type x, vector<Type> knots, vector<Type> pars){
+Type ibcdspline(Type x, vector<Type> knots, vector<Type> pars)SOURCE({
   if(knots.size() + 1 != pars.size())
     Rf_error("Pars must have one more element than knots");
   vector<Type> p2(pars.size() - 1);
@@ -212,12 +229,15 @@ Type ibcdspline(Type x, vector<Type> knots, vector<Type> pars){
     p2(i) = -exp(pars(i));
   Type r = ibcspline(x, knots, p2);
   return r + pars(pars.size()-1);
-}
+  })
+
+  SAM_SPECIALIZATION(double ibcdspline(double, vector<double>, vector<double>));
+SAM_SPECIALIZATION(TMBad::ad_aug ibcdspline(TMBad::ad_aug, vector<TMBad::ad_aug>, vector<TMBad::ad_aug>));
 
 // Monotonically non-decreasing spline using Kw-nomal as basis functions
 // Has an extra parameter to allow negative value at left bound
 template<class Type>
-Type ibcispline(Type x, vector<Type> knots, vector<Type> pars){
+Type ibcispline(Type x, vector<Type> knots, vector<Type> pars)SOURCE({
   if(knots.size() + 1 != pars.size())
     Rf_error("Pars must have one more element than knots");
   vector<Type> p2(pars.size() - 1);
@@ -226,12 +246,15 @@ Type ibcispline(Type x, vector<Type> knots, vector<Type> pars){
     p2(i) = exp(pars(i));
   Type r = ibcspline(x, knots, p2);
   return r + pars(pars.size()-1);
-}
+  })
+
+  SAM_SPECIALIZATION(double ibcispline(double, vector<double>, vector<double>));
+SAM_SPECIALIZATION(TMBad::ad_aug ibcispline(TMBad::ad_aug, vector<TMBad::ad_aug>, vector<TMBad::ad_aug>));
 
 
 // Integrated integrated spline using Kw-normal density as basis functions
 template<class Type>
-Type iibcspline(Type x, vector<Type> knots, vector<Type> pars){
+Type iibcspline(Type x, vector<Type> knots, vector<Type> pars)SOURCE({
   // Type x0 = CppAD::CondExpLt(x, knots(0), knots(0),
   // 			     CppAD::CondExpGt(x, knots(knots.size()-1),
   // 					      knots(knots.size()-1),
@@ -249,14 +272,15 @@ Type iibcspline(Type x, vector<Type> knots, vector<Type> pars){
   //Type t1 = 2.5 * spline_helper::softmax(0.5*x*x - knots(knots.size() - 1),(Type)0,(Type)100.0);
   //Type t2 = 0.1 * spline_helper::softmax(knots(0) - x,(Type)0,(Type)100.0);
   return res;// - t1; // + t2 ;
-}
+  })
 
-
+  SAM_SPECIALIZATION(double iibcspline(double, vector<double>, vector<double>));
+SAM_SPECIALIZATION(TMBad::ad_aug iibcspline(TMBad::ad_aug, vector<TMBad::ad_aug>, vector<TMBad::ad_aug>));
 
 // Monotonically non-decreasing negative spline using Kw-nomal as basis functions
 // Has an extra parameter to allow negative value at left bound
 template<class Type>
-Type iibcispline(Type x, vector<Type> knots, vector<Type> pars){
+Type iibcispline(Type x, vector<Type> knots, vector<Type> pars)SOURCE({
   if(knots.size() + 1 != pars.size())
     Rf_error("Pars must have one more element than knots");
   vector<Type> p2(pars.size() - 1);
@@ -268,8 +292,8 @@ Type iibcispline(Type x, vector<Type> knots, vector<Type> pars){
   }
   Type r = iibcspline(x, knots, p2);
   return r - p2s * x + pars(pars.size()-1);
-}
+  })
+  
+  SAM_SPECIALIZATION(double iibcispline(double, vector<double>, vector<double>));
+SAM_SPECIALIZATION(TMBad::ad_aug iibcispline(TMBad::ad_aug, vector<TMBad::ad_aug>, vector<TMBad::ad_aug>));
 
-
-
-#endif

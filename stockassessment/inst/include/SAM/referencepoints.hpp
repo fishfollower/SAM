@@ -1,6 +1,8 @@
-#pragma once
-#ifndef SAM_REFERENCEPOINT_HPP
-#define SAM_REFERENCEPOINT_HPP
+SAM_DEPENDS(define)
+SAM_DEPENDS(recruitment)
+SAM_DEPENDS(refpointset)
+SAM_DEPENDS(derived)
+SAM_DEPENDS(equilibrium)
 
 #include <memory>
 
@@ -8,6 +10,9 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// Deterministic /////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifndef WITH_SAM_LIB
+namespace referencepoints_helper {
 
 // Deterministic Reference point functors
 template<class Type>
@@ -196,7 +201,6 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-namespace referencepoints_helper {
 
   // Enum of implemented reference points
   enum ReferencePointDeterministic {
@@ -612,11 +616,13 @@ namespace referencepoints_helper {
 
 }
 
+#endif
+
 /////////////////////////////// Function to call from main program ////////////////////////////////
 
 
 template<class Type>
-void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, referencepointList<Type> &referencepoints, objective_function<Type> *of){
+void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, referencepointList<Type> &referencepoints, objective_function<Type> *of)SOURCE({
   
   if(referencepoints.size() == 0)
     return;
@@ -677,13 +683,7 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
   // Report relative reference points
  
     return;
-}
+})
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////// Stochastic //////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-#endif
+SAM_SPECIALIZATION(void reportDeterministicReferencePoints(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, Recruitment<double>&, referencepointList<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(void reportDeterministicReferencePoints(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, referencepointList<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

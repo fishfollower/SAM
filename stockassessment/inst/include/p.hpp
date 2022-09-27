@@ -1,9 +1,7 @@
-#pragma once
-#ifndef SAM_P_HPP
-#define SAM_P_HPP
+SAM_DEPENDS(define)
 
 template <class Type>
-Type nllP(confSet &conf, paraSet<Type> &par, array<Type> &logP, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of){
+Type nllP(confSet &conf, paraSet<Type> &par, array<Type> &logP, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
 
  Type nll=0; 
   int stateDimP=logP.dim[0];
@@ -42,8 +40,8 @@ Type nllP(confSet &conf, paraSet<Type> &par, array<Type> &logP, data_indicator<v
 
 
 
-  density::MVNORM_t<Type> neg_log_densityP(pvar);
-  Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovP(pvar);
+  MVNORM_t<Type> neg_log_densityP(pvar);
+  LLT< Matrix<Type, Dynamic, Dynamic> > lltCovP(pvar);
   matrix<Type> LP = lltCovP.matrixL();
   matrix<Type> LinvP = LP.inverse();
 
@@ -68,10 +66,7 @@ Type nllP(confSet &conf, paraSet<Type> &par, array<Type> &logP, data_indicator<v
   REPORT_F(pvar,of);
   
   return nll;
-}
+  })
 
-
-
-
-  
-#endif
+SAM_SPECIALIZATION(double nllP(confSet&, paraSet<double>&, array<double>&, data_indicator<vector<double>,double>&, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllP(confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

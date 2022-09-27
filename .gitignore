@@ -11,3 +11,5 @@ doc-update
 stockassessment/config.log
 stockassessment/config.status
 stockassessment/src/Makevars
+stockassessment/src/A_*
+stockassessment/src/SAM.h

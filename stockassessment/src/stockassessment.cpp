@@ -32,13 +32,12 @@
 // R_init_stockassessment is now defined in main.cpp
 //#define TMB_LIB_INIT R_init_stockassessment
 //#define TMB_SAFEBOUNDS
-#define TMB_MAX_ORDER 4
-#include "TMB.h"
-// #include "SAM.h"
-#include "../inst/include/SAM.hpp"
+// #define TMB_MAX_ORDER 4
+// #include "TMB.h"
 
-#include "perRecruit.h"
-#include "spline.h"
+#define WITH_SAM_LIB
+#include "SAM.h"
+
 
 template<class Type>
 Type objective_function<Type>::operator() ()

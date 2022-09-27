@@ -1,6 +1,3 @@
-#pragma once
-#ifndef SAM_PNORM_HPP
-#define SAM_PNORM_HPP
 
 /*
  *  Mathlib : A C Library of Special Functions
@@ -65,8 +62,10 @@
  * Modified 2019 Christoffer Moesgaard Albertsen
  */
 
+
 namespace pnorm_atomic {
 
+#ifndef WITH_SAM_LIB
 
   template<class T> int R_finite(T x) { return std::isfinite(asDouble(x)); }
   template<class T> int isnan(T x) { return std::isnan(asDouble(x)); }
@@ -350,30 +349,46 @@ namespace pnorm_atomic {
 
   // TMB_BIND_ATOMIC(pnorm5_2,11100,pnorm5_1(x[0], x[1], x[2], x[3], x[4]))  
 
+#endif
+  
   template<class Float>
   Float pnorm1_1x(Float x, Float lower_tail, Float log_p)
-  {
+    SOURCE({
     return pnorm5_raw(x,Float(0.0),Float(1.0),lower_tail,log_p);
-  }
+      });
 
+  SAM_SPECIALIZATION(double pnorm1_1x(double, double, double));
+  
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<1, 2, double> pnorm1_1x(atomic::tiny_ad::variable<1, 2, double>,atomic::tiny_ad::variable<1, 2, double>,atomic::tiny_ad::variable<1, 2, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<2, 2, double> pnorm1_1x(atomic::tiny_ad::variable<2, 2, double>,atomic::tiny_ad::variable<2, 2, double>,atomic::tiny_ad::variable<2, 2, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<3, 2, double> pnorm1_1x(atomic::tiny_ad::variable<3, 2, double>,atomic::tiny_ad::variable<3, 2, double>,atomic::tiny_ad::variable<3, 2, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<4, 2, double> pnorm1_1x(atomic::tiny_ad::variable<4, 2, double>,atomic::tiny_ad::variable<4, 2, double>,atomic::tiny_ad::variable<4, 2, double>));
+
+    
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<1, 3, double> pnorm1_1x(atomic::tiny_ad::variable<1, 3, double>,atomic::tiny_ad::variable<1, 3, double>,atomic::tiny_ad::variable<1, 3, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<2, 3, double> pnorm1_1x(atomic::tiny_ad::variable<2, 3, double>,atomic::tiny_ad::variable<2, 3, double>,atomic::tiny_ad::variable<2, 3, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<3, 3, double> pnorm1_1x(atomic::tiny_ad::variable<3, 3, double>,atomic::tiny_ad::variable<3, 3, double>,atomic::tiny_ad::variable<3, 3, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<4, 3, double> pnorm1_1x(atomic::tiny_ad::variable<4, 3, double>,atomic::tiny_ad::variable<4, 3, double>,atomic::tiny_ad::variable<4, 3, double>));
+
+#ifndef WITH_SAM_LIB
   TMB_BIND_ATOMIC(pnorm1_2x,100,pnorm1_1x(x[0], x[1], x[2]))  
-
+#endif
   
 }
 
 
-
 template<class Type>
-Type pnorm5(Type x, Type mu, Type sigma, Type lower_tail, Type log_p){
+Type pnorm5(Type x, Type mu, Type sigma, int lower_tail, int log_p)SOURCE({
   CppAD::vector<Type> tx(4);
   tx[0] = (x-mu) / sigma;
   // tx[1] = mu;
   // tx[2] = sigma;
-  tx[1] = lower_tail;
-  tx[2] = log_p;
+  tx[1] = (Type)lower_tail;
+  tx[2] = (Type)log_p;
   tx[3] = 0; // extra argument for derivative order
   Type res = pnorm_atomic::pnorm1_2x(tx)[0];
   return res;
-}
+  })
 
-#endif
+SAM_SPECIALIZATION(double pnorm5(double, double, double, int, int));
+SAM_SPECIALIZATION(TMBad::ad_aug pnorm5(TMBad::ad_aug, TMBad::ad_aug, TMBad::ad_aug, int, int));
