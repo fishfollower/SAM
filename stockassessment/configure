@@ -617,6 +617,7 @@ PACKAGE_URL=''
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+DBG
 CXX14PICFLAGS
 CXX14
 OBJEXT
@@ -668,6 +669,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+enable_debug
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1291,6 +1293,12 @@ if test -n "$ac_init_help"; then
      short | recursive ) echo "Configuration of stockassessment 0.12.0:";;
    esac
   cat <<\_ACEOF
+
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+"Set -g -O0 as compiler flags"
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -2691,6 +2699,15 @@ fi
 printf "%s\n" "$as_me: CXX14: ${CXX14}" >&6;}
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: CXX14PICFLAGS: ${CXX14PICFLAGS}" >&5
 printf "%s\n" "$as_me: CXX14PICFLAGS: ${CXX14PICFLAGS}" >&6;}
+
+# Check whether --enable-debug was given.
+if test ${enable_debug+y}
+then :
+  enableval=$enable_debug; DBG="-g -O0"
+else $as_nop
+  DBG=""
+fi
+
 
 
 

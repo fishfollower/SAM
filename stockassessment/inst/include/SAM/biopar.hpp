@@ -44,8 +44,7 @@ Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, 
     I.setIdentity();
     matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
     
-    using namespace density;
-    return SCALE(GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
+    return density::SCALE(density::GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
 });
 
 SAM_SPECIALIZATION(double nllBioProcess(array<double>, vector<double>, vector<int>, vector<double>, double));

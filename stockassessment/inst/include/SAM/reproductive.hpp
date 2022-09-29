@@ -6,12 +6,12 @@ SAM_DEPENDS(recruitment)
 namespace reproductive_fun {
 
   template<class Type>
-  SparseMatrix<Type> Leslie_i(dataSet<Type> &dat, confSet &conf, paraSet<Type>& par, Recruitment<Type>& recruit, int y){
+  Eigen::SparseMatrix<Type> Leslie_i(dataSet<Type> &dat, confSet &conf, paraSet<Type>& par, Recruitment<Type>& recruit, int y){
   
     Type max_dSR = recruit.maxGradient(); // For ricker and BH
     int nAges = conf.maxAge - conf.minAge + 1;
 
-    typedef Triplet<Type> T;
+    typedef Eigen::Triplet<Type> T;
     std::vector<T> tripletList;  
     tripletList.reserve(nAges + (nAges-1));
     // Fecundity in first row
@@ -29,13 +29,13 @@ namespace reproductive_fun {
       Type Mi = dat.natMor(y,nAges-1);
       tripletList.push_back(T(nAges-1,nAges-1,exp(-Mi)));
     }
-    SparseMatrix<Type> m(nAges,nAges);
+    Eigen::SparseMatrix<Type> m(nAges,nAges);
     m.setFromTriplets(tripletList.begin(), tripletList.end());
     return m;
   }
 
-  SAM_SPECIALIZATION(SparseMatrix<double> Leslie_i(dataSet<double>&, confSet&, paraSet<double>&, Recruitment<double>&, int));
-  SAM_SPECIALIZATION(SparseMatrix<TMBad::ad_aug> Leslie_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, int));
+  SAM_SPECIALIZATION(Eigen::SparseMatrix<double> Leslie_i(dataSet<double>&, confSet&, paraSet<double>&, Recruitment<double>&, int));
+  SAM_SPECIALIZATION(Eigen::SparseMatrix<TMBad::ad_aug> Leslie_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, int));
 
   template<class Type>
   Type norm2(vector<Type> x){
@@ -49,7 +49,7 @@ namespace reproductive_fun {
   SAM_SPECIALIZATION(TMBad::ad_aug norm2(vector<TMBad::ad_aug> x));
 
   template<class Type>
-  Type maxEigenValue(SparseMatrix<Type> A){
+  Type maxEigenValue(Eigen::SparseMatrix<Type> A){
     // Power iteration with fixed number of iterations
     // Assuming A is square
     vector<Type> b(A.cols());
@@ -62,8 +62,8 @@ namespace reproductive_fun {
     return (b * v).sum();
   }
 
-  SAM_SPECIALIZATION(double maxEigenValue(SparseMatrix<double> x));
-  SAM_SPECIALIZATION(TMBad::ad_aug maxEigenValue(SparseMatrix<TMBad::ad_aug> x));
+  SAM_SPECIALIZATION(double maxEigenValue(Eigen::SparseMatrix<double> x));
+  SAM_SPECIALIZATION(TMBad::ad_aug maxEigenValue(Eigen::SparseMatrix<TMBad::ad_aug> x));
 
 
   template<class Type>

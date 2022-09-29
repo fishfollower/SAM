@@ -44,13 +44,13 @@ using Eigen::Triplet;
 using Eigen::LLT;
 using Eigen::Dynamic;
 
-TMB_SPEC(class SparseMatrix<double>);
-TMB_SPEC(class SparseMatrix<TMBad::ad_aug>);
-TMB_SPEC(class Triplet<double>);
-TMB_SPEC(class Triplet<TMBad::ad_aug>);
+TMB_SPEC(class Eigen::SparseMatrix<double>);
+TMB_SPEC(class Eigen::SparseMatrix<TMBad::ad_aug>);
+TMB_SPEC(class Eigen::Triplet<double>);
+TMB_SPEC(class Eigen::Triplet<TMBad::ad_aug>);
 /* Specific from Eigen */
-TMB_SPEC(class LLT< Matrix<double, Dynamic, Dynamic> >);
-TMB_SPEC(class LLT< Matrix<TMBad::ad_aug, Dynamic, Dynamic> >);
+TMB_SPEC(class Eigen::LLT< Matrix<double, Eigen::Dynamic, Eigen::Dynamic> >);
+TMB_SPEC(class Eigen::LLT< Matrix<TMBad::ad_aug, Eigen::Dynamic, Eigen::Dynamic> >);
 
 
 /* Specific from TMB */
@@ -59,31 +59,31 @@ using density::GMRF_t;
 using density::SCALE_t;
 using density::UNSTRUCTURED_CORR_t;
 
-TMB_SPEC(class MVNORM_t<double >);
-TMB_SPEC(class MVNORM_t<TMBad::ad_aug >);
+TMB_SPEC(class density::MVNORM_t<double >);
+TMB_SPEC(class density::MVNORM_t<TMBad::ad_aug >);
 
-TMB_SPEC(class GMRF_t<double >);
-TMB_SPEC(class GMRF_t<TMBad::ad_aug >);
+TMB_SPEC(class density::GMRF_t<double >);
+TMB_SPEC(class density::GMRF_t<TMBad::ad_aug >);
 
-TMB_SPEC(class SCALE_t<GMRF_t<double > >);
-TMB_SPEC(class SCALE_t<GMRF_t<TMBad::ad_aug > >);
+TMB_SPEC(class density::SCALE_t<GMRF_t<double > >);
+TMB_SPEC(class density::SCALE_t<GMRF_t<TMBad::ad_aug > >);
 
 TMB_SPEC(class UNSTRUCTURED_CORR_t<double>);
 TMB_SPEC(class UNSTRUCTURED_CORR_t<TMBad::ad_aug>);
 
-TMB_SPEC(struct vector<matrix<double> >);
-TMB_SPEC(struct vector<matrix<TMBad::ad_aug> >);
-TMB_SPEC(struct vector<int>);
-TMB_SPEC(struct vector<double>);
-TMB_SPEC(struct vector<TMBad::ad_aug>);
+TMB_SPEC(struct tmbutils::vector<matrix<double> >);
+TMB_SPEC(struct tmbutils::vector<matrix<TMBad::ad_aug> >);
+TMB_SPEC(struct tmbutils::vector<int>);
+TMB_SPEC(struct tmbutils::vector<double>);
+TMB_SPEC(struct tmbutils::vector<TMBad::ad_aug>);
 
-TMB_SPEC(struct array<int>);
-TMB_SPEC(struct array<double>);
-TMB_SPEC(struct array<TMBad::ad_aug>);
+TMB_SPEC(struct tmbutils::array<int>);
+TMB_SPEC(struct tmbutils::array<double>);
+TMB_SPEC(struct tmbutils::array<TMBad::ad_aug>);
 
-TMB_SPEC(struct matrix<int>);
-TMB_SPEC(struct matrix<double>);
-TMB_SPEC(struct matrix<TMBad::ad_aug>);
+TMB_SPEC(struct tmbutils::matrix<int>);
+TMB_SPEC(struct tmbutils::matrix<double>);
+TMB_SPEC(struct tmbutils::matrix<TMBad::ad_aug>);
 
 TMB_SPEC(struct data_indicator<vector<double>,double>);
 TMB_SPEC(struct data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>);

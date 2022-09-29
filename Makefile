@@ -6,7 +6,7 @@ THISSHA := $(shell git log -1 --format="%H")
 TARBALL := $(PACKAGE)_$(VERSION).tar.gz
 ZIPFILE := =$(PACKAGE)_$(VERSION).zip
 
-CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/src/*.h $(PACKAGE)/inst/include/*.hpp
+CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/src/*.h $(PACKAGE)/inst/include/*.hpp $(PACKAGE)/inst/include/SAM/*.hpp
 R_FILES := $(PACKAGE)/R/*.R
 
 SUBDIRS := $(wildcard testmore/*/.)
@@ -99,6 +99,7 @@ ex-test:
 	echo "library(stockassessment); example(sam.fit)" | $(R) --slave
 
 clean:
+	cd $(PACKAGE) && ./cleanup && cd ..
 	rm -f install doc-update $(TARBALL) $(PACKAGE).pdf $(PACKAGE)/src/*.so $(PACKAGE)/src/*.o
 	rm -rf $(PACKAGE).Rcheck
 	rm -f stockassessment/vignettes/stockassessment.{aux,log,out,pdf,tex}

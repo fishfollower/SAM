@@ -214,8 +214,8 @@ SOURCE(
 	 )
 
 
-SAM_SPECIALIZATION(struct vector<referencepointSet<double> >);
-SAM_SPECIALIZATION(struct vector<referencepointSet<TMBad::ad_aug> >);
+SAM_SPECIALIZATION(struct tmbutils::vector<referencepointSet<double> >);
+SAM_SPECIALIZATION(struct tmbutils::vector<referencepointSet<TMBad::ad_aug> >);
 
 SAM_SPECIALIZATION(struct referencepointList<double>);
 SAM_SPECIALIZATION(struct referencepointList<TMBad::ad_aug>);

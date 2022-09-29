@@ -131,8 +131,8 @@ SOURCE(
 SAM_SPECIALIZATION(struct MVMIX_t<double>);
 SAM_SPECIALIZATION(struct MVMIX_t<TMBad::ad_aug>);
 
-SAM_SPECIALIZATION(struct vector<MVMIX_t<double> >);
-SAM_SPECIALIZATION(struct vector<MVMIX_t<TMBad::ad_aug> >);
+SAM_SPECIALIZATION(struct tmbutils::vector<MVMIX_t<double> >);
+SAM_SPECIALIZATION(struct tmbutils::vector<MVMIX_t<TMBad::ad_aug> >);
 
 template <class Type>
 MVMIX_t<Type> MVMIX(matrix<Type> Sigma, Type p1)SOURCE({

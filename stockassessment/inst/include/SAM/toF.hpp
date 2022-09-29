@@ -53,8 +53,8 @@ SOURCE(
 SAM_SPECIALIZATION(struct FConstraint<double>);
 SAM_SPECIALIZATION(struct FConstraint<TMBad::ad_aug>);
 
-SAM_SPECIALIZATION(struct vector<FConstraint<double> >);
-SAM_SPECIALIZATION(struct vector<FConstraint<TMBad::ad_aug> >);
+SAM_SPECIALIZATION(struct tmbutils::vector<FConstraint<double> >);
+SAM_SPECIALIZATION(struct tmbutils::vector<FConstraint<TMBad::ad_aug> >);
 
 HEADER(
 template<class Type>
@@ -480,7 +480,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 			      array<Type>& logN,
 			      int y,
 			      newton::newton_config& cfg)SOURCE({
-
+  
   paraSet<TMBad::ad_aug> parad(par);
   Recruitment<TMBad::ad_aug> recruit = makeRecruitmentFunction(conf,parad);
 

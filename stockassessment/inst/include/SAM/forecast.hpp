@@ -254,7 +254,6 @@ SOURCE(
 	   if(nYears == 0){ // no forecast
 	     return;
 	   }
-
 	   int indx = forecastYear.size() - nYears + i;    
 	   Type y = forecastYear(indx);    
 	   Type lastSSB = ssbi(dat, conf, logN, logF, mort, indx-1);

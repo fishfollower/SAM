@@ -80,7 +80,7 @@ namespace f_fun {
 
     SigmaU.diagonal() = sdU*sdU;
   
-    MVNORM_t<Type> nldens(SigmaU);
+    density::MVNORM_t<Type> nldens(SigmaU);
     for(int y=1; y<timeSteps; ++y){
       vector<Type> diff=vector<Type>(logU.row(y))-rhoU*vector<Type>(logU.row(y-1))- par.sepFalpha.segment(0,par.sepFalpha.size()-1);
       nll += nldens(diff);

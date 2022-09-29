@@ -35,9 +35,12 @@ fi
 AC_MSG_NOTICE([CXX14: ${CXX14}])
 AC_MSG_NOTICE([CXX14PICFLAGS: ${CXX14PICFLAGS}])
 
+AC_ARG_ENABLE(debug,"Set -g -O0 as compiler flags",[DBG="-g -O0"],[DBG=""])
+AC_ARG_DISABLE(units,"Disable compilation units and use header only library",[HEADER_ONLY="yes"],[HEADER_ONLY="no"])
 
 AC_SUBST(CXX14)
 AC_SUBST(CXX14PICFLAGS)
+AC_SUBST(DBG)
 AC_CONFIG_FILES([src/Makevars])
 
 

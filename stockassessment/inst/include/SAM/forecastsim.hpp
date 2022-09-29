@@ -57,7 +57,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
       logN.col(indx) = predN + noiseN;
       if(conf.minAge == 0 &&
 	 forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.asRecModel)
-	logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,mort,i)(0) + noiseN(0);
+	logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,mort,indx)(0) + noiseN(0);
     }
   }
   return;

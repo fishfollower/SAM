@@ -221,7 +221,7 @@ modelforecast.sam <- function(fit,
                               landval = NULL,
                               findMSY = NULL,
                               hcr = NULL,
-                              nosim = 1000,
+                              nosim = 0,
                               year.base = max(fit$data$years),
                               ave.years = c(),
                               rec.years = c(), #max(fit$data$years)+(-9:0),
@@ -589,7 +589,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         class(simlist) <- "samforecast"
         ## Done with reporting
         incpb()
-        close(pb)
+        if(progress)
+            close(pb)
         return(simlist)
     }else{
         invisible(obj$fn(fit$opt$par))

@@ -46,13 +46,13 @@ SAM_SPECIALIZATION(matrix<TMBad::ad_aug> setupVarCovMatrix(int, int, int, int, v
 
 
 template <class Type> 
-UNSTRUCTURED_CORR_t<Type> getCorrObj(vector<Type> params)SOURCE({
-    UNSTRUCTURED_CORR_t<Type> ret(params);
+density::UNSTRUCTURED_CORR_t<Type> getCorrObj(vector<Type> params)SOURCE({
+    density::UNSTRUCTURED_CORR_t<Type> ret(params);
     return ret;
   });
 
-SAM_SPECIALIZATION(UNSTRUCTURED_CORR_t<double> getCorrObj(vector<double>));
-SAM_SPECIALIZATION(UNSTRUCTURED_CORR_t<TMBad::ad_aug> getCorrObj(vector<TMBad::ad_aug>));
+SAM_SPECIALIZATION(density::UNSTRUCTURED_CORR_t<double> getCorrObj(vector<double>));
+SAM_SPECIALIZATION(density::UNSTRUCTURED_CORR_t<TMBad::ad_aug> getCorrObj(vector<TMBad::ad_aug>));
 
   
 
