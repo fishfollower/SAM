@@ -3,44 +3,57 @@ AC_INIT([stockassessment],[pkgversion],[an@aqua.dtu.dk])
 
 AC_MSG_NOTICE([${PACKAGE_NAME}: ${PACKAGE_VERSION}])
 
-: ${R_HOME=`R RHOME`}
-if test -z "${R_HOME}"; then
-  echo "could not determine R_HOME"
-  exit 1
-fi
-CXX=`"${R_HOME}/bin/R" CMD config CXX`
-if test -z "$CXX"; then
-  AC_MSG_ERROR([No C++ compiler is available])
-fi
-CXX14=`"${R_HOME}/bin/R" CMD config CXX14`
-CXX14PICFLAGS=`"${R_HOME}/bin/R" CMD config CXX14PICFLAGS`
-AC_LANG(C++)
+dnl : ${R_HOME=`R RHOME`}
+dnl if test -z "${R_HOME}"; then
+dnl   echo "could not determine R_HOME"
+dnl   exit 1
+dnl fi
+dnl CXX=`"${R_HOME}/bin/R" CMD config CXX`
+dnl if test -z "$CXX"; then
+dnl   AC_MSG_ERROR([No C++ compiler is available])
+dnl fi
+dnl CXX14=`"${R_HOME}/bin/R" CMD config CXX14`
+dnl CXX14PICFLAGS=`"${R_HOME}/bin/R" CMD config CXX14PICFLAGS`
+dnl AC_LANG(C++)
 
-AC_MSG_NOTICE([CXX: ${CXX}])
-AC_MSG_NOTICE([CXX14: ${CXX14}])
-AC_MSG_NOTICE([CXX14PICFLAGS: ${CXX14PICFLAGS}])
+dnl AC_MSG_NOTICE([CXX: ${CXX}])
+dnl AC_MSG_NOTICE([CXX14: ${CXX14}])
+dnl AC_MSG_NOTICE([CXX14PICFLAGS: ${CXX14PICFLAGS}])
 
-if test -z "${CXX14}"; then
-   AC_MSG_NOTICE([CXX14 is empty. Trying CXX])
-   	save_CXXFLAGS="$CXXFLAGS"
-	CXXFLAGS="$CXXFLAGS -std=c++14 -fpic"
-	AC_MSG_NOTICE([Trying CXXFLAGS: ${CXXFLAGS}])
-	pushdef(prog, [int main(){}])
-	flag_test=0
-	AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [CXX14=$CXX; CXX14PICFLAGS=-fpic],[AC_MSG_FAILURE([Compier with C++14 support is needed])])
-	popdef([prog])
-	CXXFLAGS="$save_CXXFLAGS"
-fi
+dnl if test -z "${CXX14}"; then
+dnl    AC_MSG_NOTICE([CXX14 is empty. Trying CXX])
+dnl    	save_CXXFLAGS="$CXXFLAGS"
+dnl 	CXXFLAGS="$CXXFLAGS -std=c++14 -fpic"
+dnl 	AC_MSG_NOTICE([Trying CXXFLAGS: ${CXXFLAGS}])
+dnl 	pushdef(prog, [int main(){}])
+dnl 	flag_test=0
+dnl 	AC_COMPILE_IFELSE([AC_LANG_SOURCE([prog])], [CXX14=$CXX; CXX14PICFLAGS=-fpic],[AC_MSG_FAILURE([Compier with C++14 support is needed])])
+dnl 	popdef([prog])
+dnl 	CXXFLAGS="$save_CXXFLAGS"
+dnl fi
 
-AC_MSG_NOTICE([CXX14: ${CXX14}])
-AC_MSG_NOTICE([CXX14PICFLAGS: ${CXX14PICFLAGS}])
+dnl AC_MSG_NOTICE([CXX14: ${CXX14}])
+dnl AC_MSG_NOTICE([CXX14PICFLAGS: ${CXX14PICFLAGS}])
 
-AC_ARG_ENABLE(debug,"Set -g -O0 as compiler flags",[DBG="-g -O0"],[DBG=""])
-AC_ARG_DISABLE(units,"Disable compilation units and use header only library",[HEADER_ONLY="yes"],[HEADER_ONLY="no"])
+AC_ARG_ENABLE(debug,
+	AS_HELP_STRING([--enable-debug],[Add debug flags. Note: flags set in a personal Makevars file have precedence]),
+	[AS_IF([test $enableval = "no"],[DBG=""],[DBG="-g -O0 -Wall -Wpedantic"]); AC_MSG_NOTICE([Debug flags: ${DBG}])],
+	[DBG=""])
+
+AC_ARG_ENABLE(compileunits,
+	AS_HELP_STRING([--disable-compileunits],[Compile with header only library instead of using compilation units.]),
+	[AS_IF([test $enableval = "yes"],[HEADERONLY="yes"],[HEADERONLY="no"])],
+	[HEADERONLY="no"])
+
+AS_IF([test ${HEADERONLY} = "yes"],[AC_MSG_NOTICE([Compiling using header only library])],[AC_MSG_NOTICE([Compiling using compilation units])])
+
+
+
 
 AC_SUBST(CXX14)
 AC_SUBST(CXX14PICFLAGS)
 AC_SUBST(DBG)
+AC_SUBST(HEADERONLY)
 AC_CONFIG_FILES([src/Makevars])
 
 

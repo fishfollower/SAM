@@ -47,9 +47,9 @@ tol <- 1e-6
 target <- c(0.9,0.9,0.9,1.1,1.1,1.1,1,1,1)
 fv <- modelforecast(fit, fscale = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 0)
 cat("fscale tab:\t",paste(all.equal(tail(fbartable(fit)[,1],1) * cumprod(c(1,target)),
-                     attr(fv,"tab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out")
+                     attr(fv,"tab")[,"fbar:mostLikelyTrajectory"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out")
 cat("fscale fulltab:\t",paste(all.equal(c(head(fbartable(fit)[,1],-1),tail(fbartable(fit)[,1],1) * cumprod(c(1,target))),
-                                        attr(fv,"fulltab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE)
+                                        attr(fv,"fulltab")[,"fbar:mostLikelyTrajectory"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE)
 
 ## Test no error
 fvs <- modelforecast(fit, fscale = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 100, progress=FALSE)
@@ -58,9 +58,9 @@ fvs <- modelforecast(fit, fscale = target, biasCorrect = FALSE,ave.years = max(f
 target <- c(0.1,0.2,0.3,0.1)
 fv <- modelforecast(fit, fval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 0)
 cat("fval tab:\t",paste(all.equal(c(tail(fbartable(fit)[,1],1), target),
-                 attr(fv,"tab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol)),"\n", file="res.out", append = TRUE) 
+                 attr(fv,"tab")[,"fbar:mostLikelyTrajectory"], check.attributes = FALSE, tolerance = tol)),"\n", file="res.out", append = TRUE) 
 cat("fval fulltab:\t",paste(all.equal(c(head(fbartable(fit)[,1],-1),tail(fbartable(fit)[,1],1), target),
-                     attr(fv,"fulltab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE)
+                     attr(fv,"fulltab")[,"fbar:mostLikelyTrajectory"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE)
 
 fvs <- modelforecast(fit, fval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 100, progress=FALSE)
 
@@ -68,9 +68,9 @@ fvs <- modelforecast(fit, fval = target, biasCorrect = FALSE,ave.years = max(fit
 target <- round(c(0.5,0.3) * mean(tail(rep(catchtable(fit)[,1],4))))
 fv <- modelforecast(fit, catchval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 0)
 cat("catchval tab:\t",paste(all.equal(target,
-                     round(attr(fv,"tab")[-1,"catch:median"]), check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
+                     round(attr(fv,"tab")[-1,"catch:mostLikelyTrajectory"]), check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 cat("catchval fulltab:\t",paste(all.equal(head(catchtable(fit)[,1],-1),
-                     attr(fv,"fulltab")[1:(nrow(catchtable(fit))-1),"catch:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE)
+                     attr(fv,"fulltab")[1:(nrow(catchtable(fit))-1),"catch:mostLikelyTrajectory"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE)
 
 fvs <- modelforecast(fit, catchval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 100, progress=FALSE)
 
@@ -78,7 +78,7 @@ fvs <- modelforecast(fit, catchval = target, biasCorrect = FALSE,ave.years = max
 target <- round(c(0.1,0.1)*mean(tail(rep(catchtable(fit)[,1],4))))
 fv <- modelforecast(fit, landval=target, biasCorrect = FALSE, splitLD = TRUE,ave.years = max(fit$data$years)+(-4:0), rec.years = max(fit$data$years)+(-4:0), nosim = 0)
 cat("landval tab:\t",paste(all.equal(target,
-                     round(attr(fv,"tab")[-1,"Land:median"]), check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
+                     round(attr(fv,"tab")[-1,"Land:mostLikelyTrajectory"]), check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 
 fvs <- modelforecast(fit, landval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 100, progress=FALSE)
 
@@ -86,8 +86,8 @@ fvs <- modelforecast(fit, landval = target, biasCorrect = FALSE,ave.years = max(
 target <- rep(NA,5)
 fv <- modelforecast(fit, landval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 0)
 cat("fmodel tab:\t",paste(all.equal(rep(tail(fbartable(fit)[,1],1),length(target)),
-                     attr(fv,"tab")[-1,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
+                     attr(fv,"tab")[-1,"fbar:mostLikelyTrajectory"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 cat("fmodel tab:\t",paste(all.equal(c(fbartable(fit)[,1],rep(tail(fbartable(fit)[,1],1),length(target))),
-                     attr(fv,"fulltab")[,"fbar:median"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
+                     attr(fv,"fulltab")[,"fbar:mostLikelyTrajectory"], check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 
 fvs <- modelforecast(fit, landval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 100, progress=FALSE)

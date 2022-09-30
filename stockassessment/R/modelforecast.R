@@ -247,6 +247,13 @@ modelforecast.sam <- function(fit,
                               ...
                               ){
 
+    if(!is.null(nosim) && nosim > 0){ 
+        estimateLabel <- deparse1(substitute(estimate))
+    }else{
+        estimateLabel <- "mostLikelyTrajectory"
+    }
+ 
+    
     if(progress && !returnObj && !is.null(nosim) && nosim > 0){
         pb <- utils::txtProgressBar(min = 0, max = nosim+3, style = 3)
         incpb <- function() utils::setTxtProgressBar(pb, pb$getVal()+1)
@@ -539,8 +546,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         ## Similar to stockassessment::forecast
         collect <- function(x){
             est <- estimate(x)
-            quan <- quantile(x, c(.025,.975), na.rm = TRUE)
-            c(median=est, low=quan[1], high=quan[2])
+            quan <- unname(quantile(x, c(.025,.975), na.rm = TRUE))
+            v <- c(estimate=est, low=quan[1], high=quan[2])
+            names(v)  <- c(estimateLabel, "low","high")
+            v
         }
         fbar <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbar))),3)
         fbarL <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbarL))),3)  
@@ -564,7 +573,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         }
         ## if(!missing(customWeights)) tab <- cbind(tab,cwF=round(do.call(rbind, lapply(simlist, function(xx)collect(xx$cwF))),3))
         rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
-        nam <- c("median","low","high")
+        nam <- c(estimateLabel,"low","high")
         basename<-c("fbar:","rec:","ssb:","catch:")
         if(splitLD){
             basename<-c(basename,"fbarL:","fbarD:","Land:","Discard:")    
@@ -578,8 +587,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         colnames(tab)<-paste0(rep(basename, each=length(nam)), nam)
         
         attr(simlist, "tab")<-tab
-        shorttab<-t(tab[,grep("median",colnames(tab))])
-        rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
+        shorttab<-t(tab[,grep(estimateLabel,colnames(tab))])
+        rownames(shorttab)<-sub(paste0(":",estimateLabel),"",paste0(label,if(!is.null(label))":",rownames(shorttab)))
         attr(simlist, "shorttab")<-shorttab
         attr(simlist, "label") <- label
         attr(simlist, "caytable")<-caytable        
@@ -654,7 +663,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         fullTable <- tab
         tab <- tab[as.numeric(rownames(tab)) %in% futureYears, , drop = FALSE]
         
-        nam <- c("median","low","high")
+        nam <- c(estimateLabel,"low","high")
         basename<-c("fbar:","rec:","ssb:","catch:")
         if(splitLD){
             basename<-c(basename,"fbarL:","fbarD:","Land:","Discard:")    
@@ -670,8 +679,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         if(returnAllYears || !biasCorrect)
             colnames(fullTable) <- colnames(tab)
         attr(simlist, "tab")<-tab
-        shorttab<-t(tab[,grep("median",colnames(tab))])
-        rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
+        shorttab<-t(tab[,grep(estimateLabel,colnames(tab))])
+        rownames(shorttab)<-sub(paste0(":",estimateLabel),"",paste0(label,if(!is.null(label))":",rownames(shorttab)))
 
         ## Make caycbftable and fbftable
 #### cay
@@ -690,8 +699,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             v <- t(fbfvec[ii[,yy],,drop=FALSE])
         }))
         #### dimnames
-        rownames(caytable) <- rep(c("median","low","high"), length.out = nrow(caytable))
-        rownames(cbftable) <- rownames(fbftable) <- rep(c("median","low","high"), length.out = nrow(cbftable))
+        rownames(caytable) <- rep(c(estimateLabel,"low","high"), length.out = nrow(caytable))
+        rownames(cbftable) <- rownames(fbftable) <- rep(c(estimateLabel,"low","high"), length.out = nrow(cbftable))
         colnames(cbftable) <- colnames(fbftable) <- attr(fit$data,"fleetNames")[fleetHasF]
         colnames(caytable) <- seq(fit$conf$minAge,fit$conf$maxAge,1)
 

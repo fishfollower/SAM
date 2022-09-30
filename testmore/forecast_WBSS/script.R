@@ -64,7 +64,7 @@ v <- modelforecast(fit,rep("F=0.31 & C[1]=6142 & C[4]=0.5*C & C[3]=1",5),
 
 cat(checkNum(tail(fbartable(v)[,1],-1),0.31),"\n", file="res.out", append=TRUE)
 Ctab <- attr(v,"catchby")
-CtabMed <- Ctab[rownames(Ctab) %in% "median",]
+CtabMed <- Ctab[rownames(Ctab) %in% "mostLikelyTrajectory",]
 CtabRel <- CtabMed / rowSums(CtabMed)[row(CtabMed)]
 cat(checkNum(CtabMed[-1,1],6142),"\n", file="res.out", append=TRUE)
 cat(checkNum(CtabMed[-1,3],1),"\n", file="res.out", append=TRUE)
@@ -76,7 +76,7 @@ v <- modelforecast(fit,rep("F=0.2",5),
                    nosim = 0, newton_config=list(grad_tol=1e-7))
 cat(checkNum(tail(fbartable(v)[,1],-1),0.2),"\n", file="res.out", append=TRUE)
 Ftab <- attr(v,"fbarby")
-FtabMed <- Ftab[rownames(Ftab) %in% "median",]
+FtabMed <- Ftab[rownames(Ftab) %in% "mostLikelyTrajectory",]
 FtabRel <- FtabMed[-1,] / FtabMed[1,][col(FtabMed[-1,])]
 cat(checkNum(as.vector(FtabRel[]),FtabRel[1]),"\n", file="res.out", append=TRUE)
 

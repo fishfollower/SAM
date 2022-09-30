@@ -77,7 +77,7 @@ forecast <- function(fit,
     ## if(sum(fit$data$fleetTypes==0) > 1)
     ##     stop("Forecast for multi fleet models not implemented yet")
 
-
+    estimateLabel <- deparse1(substitute(estimate))
     idxN <- 1:nrow(fit$rep$nvar)
     
     idxF <- 1:nrow(fit$rep$fvar)+nrow(fit$rep$nvar)
@@ -464,7 +464,7 @@ forecast <- function(fit,
 
         if(!is.na(cwF[i+1])){
             if(missing(customWeights))stop("customWeights must be supplied when using the cwF option")  
-            curcwF<-median(apply(sim, 1, getCWF, w=customWeights))
+            curcwF<-estimate(apply(sim, 1, getCWF, w=customWeights))
             adj<-cwF[i+1]/curcwF
             sim<-t(apply(sim, 1, scaleF, scale=adj))    
         }
@@ -492,7 +492,7 @@ forecast <- function(fit,
                 }else{ 
                     simcat<-apply(simtmp, 1, catch, nm=nm, cw=cw)
                 }
-                return(catchval[i+1]-median(simcat))
+                return(catchval[i+1]-estimate(simcat))
             }
             ff <- uniroot(fun, c(0,100))$root
             sim <- simtmp
@@ -539,7 +539,7 @@ forecast <- function(fit,
                 }else{
                     simcat<-apply(simtmp, 1, catchFrac, nm=nm, w=lw, frac=lf)
                 }
-                return(landval[i+1]-median(simcat))
+                return(landval[i+1]-estimate(simcat))
             }
             ff <- uniroot(fun, c(0,100))$root
             sim <- simtmp
@@ -594,7 +594,7 @@ forecast <- function(fit,
                 }else{
                     simnextssb <- apply(simsim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
                 }
-                return(nextssb[i+1]-median(simnextssb))
+                return(nextssb[i+1]-estimate(simnextssb))
             }
             ff <- uniroot(fun, c(0,100))$root
             sim <- simtmp
@@ -764,7 +764,7 @@ forecast <- function(fit,
     }
     if(!missing(customWeights)) tab <- cbind(tab,cwF=round(do.call(rbind, lapply(simlist, function(xx)collect(xx$cwF))),3))
     rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
-    nam <- c("median","low","high")
+    nam <- c(estimateLabel,"low","high")
     basename<-c("fbar:","rec:","ssb:","catch:")
     if(splitLD){
         basename<-c(basename,"fbarL:","fbarD:","Land:","Discard:")    
@@ -777,8 +777,8 @@ forecast <- function(fit,
     }
     colnames(tab)<-paste0(rep(basename, each=length(nam)), nam)
     attr(simlist, "tab")<-tab
-    shorttab<-t(tab[,grep("median",colnames(tab))])
-    rownames(shorttab)<-sub(":median","",paste0(label,if(!is.null(label))":",rownames(shorttab)))
+    shorttab<-t(tab[,grep(estimateLabel,colnames(tab))])
+    rownames(shorttab)<-sub(paste0(":",estimateLabel),"",paste0(label,if(!is.null(label))":",rownames(shorttab)))
     attr(simlist, "shorttab")<-shorttab
     attr(simlist, "label") <- label
     attr(simlist, "caytable")<-caytable    
@@ -798,7 +798,7 @@ forecast <- function(fit,
     ##   rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
       rownames(catchby) <- rownames(tab)
       rownames(fbarby) <- rownames(tab)
-      nam <- c("median","low","high")
+      nam <- c(estimateLabel,"low","high")
     ##   colnames(tab) <- paste0(rep(c("fbar:","rec:","ssb:","catch:"), each=length(nam)), nam)
       colnames(catchby) <- paste0(rep(paste0("F",1:sum(fit$data$fleetTypes==0),":"), each=length(nam)), nam)
       colnames(fbarby) <- paste0(rep(paste0("F", 1:sum(fit$data$fleetTypes == 0), ":"), each = length(nam)), nam)

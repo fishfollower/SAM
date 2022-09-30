@@ -68,8 +68,8 @@ TMB_SPEC(class density::GMRF_t<TMBad::ad_aug >);
 TMB_SPEC(class density::SCALE_t<GMRF_t<double > >);
 TMB_SPEC(class density::SCALE_t<GMRF_t<TMBad::ad_aug > >);
 
-TMB_SPEC(class UNSTRUCTURED_CORR_t<double>);
-TMB_SPEC(class UNSTRUCTURED_CORR_t<TMBad::ad_aug>);
+TMB_SPEC(class density::UNSTRUCTURED_CORR_t<double>);
+TMB_SPEC(class density::UNSTRUCTURED_CORR_t<TMBad::ad_aug>);
 
 TMB_SPEC(struct tmbutils::vector<matrix<double> >);
 TMB_SPEC(struct tmbutils::vector<matrix<TMBad::ad_aug> >);
