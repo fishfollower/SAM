@@ -1,7 +1,6 @@
 HEADERONLY = @HEADERONLY@
 PKG_CPPFLAGS = -DTMBAD_FRAMEWORK -DTMB_EIGEN_DISABLE_WARNINGS -DTMB_SAFEBOUNDS
 PKG_CXXFLAGS = @DBG@
-CXX_STD = CXX14
 
 SAM_FILES_IN = $(wildcard ../inst/include/SAM/*.hpp)
 SAM_SRC = $(patsubst ../inst/include/SAM/%, A_%, $(SAM_FILES_IN:.hpp=.cpp))
