@@ -2,6 +2,7 @@ SAM_DEPENDS(define)
 SAM_DEPENDS(logspace)
 SAM_DEPENDS(recruitment)
 SAM_DEPENDS(convenience)
+SAM_DEPENDS(newton)
 
 HEADER(
 enum ConstraintType {
@@ -304,7 +305,7 @@ namespace ConstrainCalculations {
     Rf_error("Wrong relative constraint code");				\
   }							 
   
-  struct ForecastF {
+  struct ForecastF : NewtonFunctor {
     dataSet<ad> dat;
     confSet conf;
     vector<int> cFleets;
@@ -313,6 +314,8 @@ namespace ConstrainCalculations {
     vector<ad> lastLogF;
     array<ad> logN;
     int y;
+
+    ForecastF(dataSet<ad> dat_, confSet conf_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, vector<ad> lastLogF_, array<ad> logN_, int y_) : dat(dat_), conf(conf_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), lastLogF(lastLogF_), logN(logN_), y(y_) {};
 
     ad operator()(const vector<ad>& logFs){
       ad kappa = 0.0;
@@ -486,8 +489,8 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 
   vector<int> cFleets = getCatchFleets(dat.fleetTypes);
 
-  ConstrainCalculations::ForecastF fc = {dat, conf, cFleets, recruit, cstrs, lastLogF, logN, y};
-
+  // Should be deleted by NewtonWrapper
+  std::shared_ptr<NewtonFunctor> p_fc(new ConstrainCalculations::ForecastF(dat,conf,cFleets,recruit,cstrs,lastLogF,logN,y));
   
   // vector<double> s0(cFleets.size());
   // s0.setConstant(0);
@@ -495,7 +498,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   vector<Type> start(cFleets.size());
   start.setConstant(0.0);
   
-  vector<Type> res = newton::Newton(fc, start, cfg);
+  vector<Type> res = SAM_Newton(p_fc, start, cfg);
   vector<Type> newLogF = lastLogF;// - lastLogFbar;
 
   vector<bool> done(newLogF.size());

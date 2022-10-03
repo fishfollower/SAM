@@ -7,6 +7,10 @@ SAM_DEPENDS(equilibrium)
 #include <memory>
 
 
+// (1) Let RPD_Base be derived from NewtonWrapper (✓)
+// (2) Use shared_ptr<RPD_Base>
+// (3) Use static_pointer_cast<NewtonFunctor, RPD_Base> when passing to SAM_Newton
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// Deterministic /////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,7 +20,7 @@ namespace referencepoints_helper {
 
 // Deterministic Reference point functors
 template<class Type>
-struct RPD_Base {
+struct RPD_Base : NewtonFunctor {
 
   dataSet<Type> dat;
   confSet conf;
