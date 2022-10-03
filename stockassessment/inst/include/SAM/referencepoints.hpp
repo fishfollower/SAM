@@ -3,13 +3,10 @@ SAM_DEPENDS(recruitment)
 SAM_DEPENDS(refpointset)
 SAM_DEPENDS(derived)
 SAM_DEPENDS(equilibrium)
+SAM_DEPENDS(newton)
 
 #include <memory>
 
-
-// (1) Let RPD_Base be derived from NewtonWrapper (✓)
-// (2) Use shared_ptr<RPD_Base>
-// (3) Use static_pointer_cast<NewtonFunctor, RPD_Base> when passing to SAM_Newton
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// Deterministic /////////////////////////////////////////////////
@@ -18,21 +15,23 @@ SAM_DEPENDS(equilibrium)
 #ifndef WITH_SAM_LIB
 namespace referencepoints_helper {
 
+  typedef TMBad::ad_aug ad;
+
 // Deterministic Reference point functors
-template<class Type>
+// template<class Type>
 struct RPD_Base : NewtonFunctor {
 
-  dataSet<Type> dat;
+  dataSet<ad> dat;
   confSet conf;
-  paraSet<Type> par;
-  referencepointSet<Type> rp;
+  paraSet<ad> par;
+  referencepointSet<ad> rp;
 
   RPD_Base() = default;
   
-  RPD_Base(const dataSet<Type>& dat_,
+  RPD_Base(const dataSet<ad>& dat_,
 	   const confSet& conf_,
-	   const paraSet<Type>& par_,
-	   const referencepointSet<Type>& rp_) :
+	   const paraSet<ad>& par_,
+	   const referencepointSet<ad>& rp_) :
     dat(dat_),
     conf(conf_),
     par(par_),
@@ -48,9 +47,9 @@ struct RPD_Base : NewtonFunctor {
     par(par_),
     rp(rp_){}
 
-  PERREC_t<Type> getPerRec(const Type& logFbar){
-    vector<Type> ls = rp.getLogSelectivity();
-    PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
+  PERREC_t<ad> getPerRec(const ad& logFbar){
+    vector<ad> ls = rp.getLogSelectivity();
+    PERREC_t<ad> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
     return r;
   }
 
@@ -59,7 +58,7 @@ struct RPD_Base : NewtonFunctor {
     return x;
   }
 
-  virtual Type operator()(const vector<Type>& logFbar) = 0;
+  virtual ad operator()(const vector<ad>& logFbar) = 0;
   
 };
 
@@ -257,7 +256,7 @@ public:
     virtual vector<Type> optimize(vector<Type> logF0) = 0;
   };
 
-  template<class Type, class Functor>
+  template<class Type>
   struct RefPointD_Numeric : RefPointD_Base<Type> {
 
     dataSet<Type> dat;
@@ -265,20 +264,21 @@ public:
     paraSet<Type> par;
     referencepointSet<Type> rp;
 
-    Functor f;			// i.e., RPD_MSY. Should be derived from RPD_Base
+    // Functor f;			// i.e., RPD_MSY. Should be derived from RPD_Base
+    std::shared_ptr<RPD_Base> ptr;
     newton::newton_config cfg;
   
     RefPointD_Numeric(const dataSet<Type>& dat_,
 		      const confSet& conf_,
 		      const paraSet<Type>& par_,
 		      const referencepointSet<Type>& rp_,
-		      Functor f_,
+		      std::shared_ptr<RPD_Base> p_,
 		      newton::newton_config cfg_ = newton::newton_config()) :
       dat(dat_),
       conf(conf_),
       par(par_),
       rp(rp_),
-      f(f_), cfg(cfg_) {};
+      ptr(p_), cfg(cfg_) {};
     ~RefPointD_Numeric() = default;
 
   
@@ -289,21 +289,22 @@ public:
     }
 
     vector<Type> par2logF(const vector<Type>& x){
-      return f.par2logF(x);
+      return ptr->par2logF(x);
     };
     vector<Type> optimize(vector<Type> logF0){
       // cfg.simplify = false;	// Needed in older versions of TMB for logspace_add
-      return newton::Newton(f,logF0, cfg);
+      std::shared_ptr<NewtonFunctor> pUse = std::static_pointer_cast<NewtonFunctor>(ptr);
+      return SAM_Newton(pUse,logF0, cfg);
     }  
   };
 
 #define USING_RPD_BASE_0			\
-  using RPD_Base<Type>::RPD_Base;		\
-  using RPD_Base<Type>::getPerRec
+  using RPD_Base::RPD_Base;		\
+  using RPD_Base::getPerRec
 
 #define USING_RPD_BASE				\
   USING_RPD_BASE_0;				\
-  using RPD_Base<Type>::par2logF
+  using RPD_Base::par2logF
 
 #define USING_REFPOINT_KNOWN			\
   using RefPointD_Known<Type>::RefPointD_Known;	\
@@ -314,13 +315,13 @@ public:
   // Define macro for repeat work
 #define MAKE_REFPOINT_D(NAME)						\
   template<class Type>							\
-  struct RefPointD_##NAME : RefPointD_Numeric<Type, RPD_##NAME<TMBad::ad_aug> > { \
+  struct RefPointD_##NAME : RefPointD_Numeric<Type> { \
     RefPointD_##NAME(dataSet<Type>& dat,				\
 		     confSet& conf,					\
 		     paraSet<Type>& par,				\
 		     referencepointSet<Type>& rp,			\
 		     newton::newton_config cfg = newton::newton_config()) : \
-    RefPointD_Numeric<Type, RPD_##NAME<TMBad::ad_aug> >(dat,conf,par,rp,RPD_##NAME<TMBad::ad_aug>(dat,conf,par,rp),cfg) {}; \
+    RefPointD_Numeric<Type>(dat,conf,par,rp,std::make_shared<RPD_##NAME>(dat,conf,par,rp),cfg) {}; \
     ~RefPointD_##NAME() = default;    						\
   }
   
@@ -343,14 +344,13 @@ public:
   //////// MSY Reference point ////////
 
 
-  template<class Type>
-  struct RPD_MSY : RPD_Base<Type> {
+  struct RPD_MSY : RPD_Base {
 
     USING_RPD_BASE;
   
-    Type operator()(const vector<Type> &x) {
-      Type logFbar = x(0);
-      PERREC_t<Type> r = getPerRec(logFbar);
+    ad operator()(const vector<ad> &x) {
+      ad logFbar = x(0);
+      PERREC_t<ad> r = getPerRec(logFbar);
       return -r.logYe;
     }
   };
@@ -359,8 +359,8 @@ public:
 
   //////// MSYRange Reference point ////////
 
-  template<class Type>
-  struct RPD_MSYrange : RPD_Base<Type> {
+  // template<class Type>
+  struct RPD_MSYrange : RPD_Base {
 
     USING_RPD_BASE_0;
 
@@ -380,18 +380,18 @@ public:
       return r;
     }
   
-    Type operator()(const vector<Type> &x) {
-      vector<Type> logFs = par2logF(x);
+    ad operator()(const vector<ad> &x) {
+      vector<ad> logFs = par2logF(x);
       SAM_ASSERT( logFs.size() == (2 * this->rp.xVal.size()),"In reference point MSYrange, length of F does not match length of fractions.");
-      Type kappa = 0.0;
+      ad kappa = 0.0;
       // MSY
-      PERREC_t<Type> r = getPerRec(x(0));
+      PERREC_t<ad> r = getPerRec(x(0));
       kappa += -r.logYe;
       // Ranges
       for(int i = 0; i < logFs.size(); ++i){
 	int xvi = (i) / 2;
-	PERREC_t<Type> r2 = getPerRec(logFs(i));
-	Type tmp = r2.logYe - (log(this->rp.xVal(xvi)) + r.logYe); 
+	PERREC_t<ad> r2 = getPerRec(logFs(i));
+	ad tmp = r2.logYe - (log(this->rp.xVal(xvi)) + r.logYe); 
 	kappa += tmp * tmp;	
       }
       return kappa;
@@ -404,14 +404,14 @@ public:
   //////// Max Reference point ////////
 
 
-  template<class Type>
-  struct RPD_Max : RPD_Base<Type> {
+  // template<class Type>
+  struct RPD_Max : RPD_Base {
 
     USING_RPD_BASE;
   
-    Type operator()(const vector<Type> &x) {
-      Type logFbar = x(0);
-      PERREC_t<Type> r = getPerRec(logFbar);
+    ad operator()(const vector<ad> &x) {
+      ad logFbar = x(0);
+      PERREC_t<ad> r = getPerRec(logFbar);
       return -r.logYPR;
     }
   };
@@ -422,19 +422,19 @@ public:
   //////// %dYPR(0) Reference point (e.g., F~0.1~) ////////
 
 
-  template<class Type>
-  struct RPD_xdYPR : RPD_Base<Type> {
+  // template<class Type>
+  struct RPD_xdYPR : RPD_Base {
 
     USING_RPD_BASE;
    
-    Type operator()(const vector<Type> &x) {
+    ad operator()(const vector<ad> &x) {
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point xdYPR, length of F does not match length of fractions.");
-      Type dYPR0 = dYPR(Type(SAM_NegInf), this->dat, this->conf, this->par, this->rp);
-      Type kappa = 0.0;
+      ad dYPR0 = dYPR(ad(SAM_NegInf), this->dat, this->conf, this->par, this->rp);
+      ad kappa = 0.0;
       for(int i = 0; i < x.size(); ++i){
-	Type logFbar = x(i);
-	Type v = dYPR(logFbar, this->dat,this->conf,this->par,this->rp);
-	Type tmp = v - this->rp.xVal(i) * dYPR0;
+	ad logFbar = x(i);
+	ad v = dYPR(logFbar, this->dat,this->conf,this->par,this->rp);
+	ad tmp = v - this->rp.xVal(i) * dYPR0;
 	kappa += tmp * tmp;
       }
       return kappa;
@@ -448,19 +448,19 @@ public:
   //////// %SPR(0) Reference point (e.g., F~35%SPR~) ////////
 
 
-  template<class Type>
-  struct RPD_xSPR : RPD_Base<Type> {
+  // template<class Type>
+  struct RPD_xSPR : RPD_Base {
 
    USING_RPD_BASE;
  
-    Type operator()(const vector<Type> &x) {
+    ad operator()(const vector<ad> &x) {
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point xSPR, length of F does not match length of fractions.");
-      Type SPR0 = spawnersPerRecruit_i(Type(SAM_NegInf), this->dat, this->conf, this->par, this->rp);
-      Type kappa = 0.0;
+      ad SPR0 = spawnersPerRecruit_i(ad(SAM_NegInf), this->dat, this->conf, this->par, this->rp);
+      ad kappa = 0.0;
       for(int i = 0; i < x.size(); ++i){
-	Type logFbar = x(i);
-	Type v = spawnersPerRecruit_i(logFbar, this->dat,this->conf,this->par,this->rp);
-	Type tmp = v - this->rp.xVal(i) * SPR0;
+	ad logFbar = x(i);
+	ad v = spawnersPerRecruit_i(logFbar, this->dat,this->conf,this->par,this->rp);
+	ad tmp = v - this->rp.xVal(i) * SPR0;
 	kappa += tmp * tmp;
       }
       return kappa;
@@ -474,19 +474,18 @@ public:
   //////// %B(0) Reference point (e.g., F~20%B0~) ////////
 
 
-  template<class Type>
-  struct RPD_xB0 : RPD_Base<Type> {
+  struct RPD_xB0 : RPD_Base {
 
     USING_RPD_BASE;
     
-    Type operator()(const vector<Type> &x) {
+    ad operator()(const vector<ad> &x) {
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point xB0, length of F does not match length of fractions.");
-      Type B0 = B0_i(this->dat, this->conf, this->par, this->rp);
-      Type kappa = 0.0;
+      ad B0 = B0_i(this->dat, this->conf, this->par, this->rp);
+      ad kappa = 0.0;
       for(int i = 0; i < x.size(); ++i){
-	Type logFbar = x(i);      
-	Type v = equilibriumBiomass_i(logFbar, this->dat,this->conf,this->par,this->rp);
-	Type tmp = v - this->rp.xVal(i) * B0;
+	ad logFbar = x(i);      
+	ad v = equilibriumBiomass_i(logFbar, this->dat,this->conf,this->par,this->rp);
+	ad tmp = v - this->rp.xVal(i) * B0;
 	kappa += tmp * tmp;
       }
       return kappa;
@@ -499,17 +498,17 @@ public:
   //////// Maximum yield per year lost (v1) ////////
 
 
-  template<class Type>
-  struct RPD_MYPYLdiv : RPD_Base<Type> {
+  // template<class Type>
+  struct RPD_MYPYLdiv : RPD_Base {
 
     USING_RPD_BASE;
  
-    Type operator()(const vector<Type> &x) {    
-      Type logFbar = x(0);
-      Type logAgeRange = log((Type)this->conf.maxAge - (Type)this->conf.minAge + (Type)1.0);
-      PERREC_t<Type> r = getPerRec(logFbar);
+    ad operator()(const vector<ad> &x) {    
+      ad logFbar = x(0);
+      ad logAgeRange = log((ad)this->conf.maxAge - (ad)this->conf.minAge + (ad)1.0);
+      PERREC_t<ad> r = getPerRec(logFbar);
       // Yield / (1 + YearsLost/AgeRange)
-      Type tmp = r.logYe - logspace_add_SAM(Type(0.0), r.logYearsLost - logAgeRange);
+      ad tmp = r.logYe - logspace_add_SAM(ad(0.0), r.logYearsLost - logAgeRange);
       return -tmp;
     }
   };
@@ -519,20 +518,19 @@ public:
   //////// Maximum yield per year lost (v2) ////////
 
 
-  template<class Type>
-  struct RPD_MYPYLprod : RPD_Base<Type> {
+  struct RPD_MYPYLprod : RPD_Base {
 
     USING_RPD_BASE;
  
-    Type operator()(const vector<Type> &x) {    
+    ad operator()(const vector<ad> &x) {    
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point MYPYLprod, length of F does not match length of fractions.");
-      Type logAgeRange = log((Type)this->conf.maxAge - (Type)this->conf.minAge + (Type)1.0);
+      ad logAgeRange = log((ad)this->conf.maxAge - (ad)this->conf.minAge + (ad)1.0);
 	// Yield * (1 - (YearsLost/AgeRange)^d)
-	Type kappa = 0.0;    
+	ad kappa = 0.0;    
       for(int i = 0; i < x.size(); ++i){
-	Type logFbar = x(i);
-	PERREC_t<Type> r = getPerRec(logFbar);
-	kappa -= r.logYe + logspace_sub_SAM(Type(0.0), this->rp.xVal(i) * (r.logYearsLost - logAgeRange));
+	ad logFbar = x(i);
+	PERREC_t<ad> r = getPerRec(logFbar);
+	kappa -= r.logYe + logspace_sub_SAM(ad(0.0), this->rp.xVal(i) * (r.logYearsLost - logAgeRange));
       }
       return kappa;
     }
@@ -543,14 +541,13 @@ public:
   //////// Maximum (life year) Discounted Yield ////////
 
 
-  template<class Type>
-  struct RPD_MDY : RPD_Base<Type> {
+  struct RPD_MDY : RPD_Base {
 
     USING_RPD_BASE;
  
-    Type operator()(const vector<Type> &x) {    
-      Type logFbar = x(0);
-      PERREC_t<Type> r = getPerRec(logFbar);
+    ad operator()(const vector<ad> &x) {    
+      ad logFbar = x(0);
+      PERREC_t<ad> r = getPerRec(logFbar);
       return -r.logDiscYe;
     }
   };
@@ -561,16 +558,15 @@ public:
   //////// Crash ////////
 
 
-  template<class Type>
-  struct RPD_Crash : RPD_Base<Type> {
+  struct RPD_Crash : RPD_Base {
 
     USING_RPD_BASE;
 
-    Type operator()(const vector<Type> &x) {    
-      Type logFbar = x(0);
-      Type logdSR0 = log(getPerRec(SAM_NegInf).dSR0); //log(rec.dSR(Type(SAM_Zero)))
-      PERREC_t<Type> r = getPerRec(logFbar);
-      Type tmp = logdSR0 - (-r.logSPR);
+    ad operator()(const vector<ad> &x) {    
+      ad logFbar = x(0);
+      ad logdSR0 = log(getPerRec(SAM_NegInf).dSR0); //log(rec.dSR(Type(SAM_Zero)))
+      PERREC_t<ad> r = getPerRec(logFbar);
+      ad tmp = logdSR0 - (-r.logSPR);
       return tmp * tmp;
     }
   };
@@ -582,14 +578,13 @@ public:
   //////// Ext ////////
 
 
-  template<class Type>
-  struct RPD_Ext : RPD_Base<Type> {
+  struct RPD_Ext : RPD_Base {
 
     USING_RPD_BASE;
   
-    Type operator()(const vector<Type> &x) {    
-      Type logFbar = x(0);
-      PERREC_t<Type> r = getPerRec(logFbar);
+    ad operator()(const vector<ad> &x) {    
+      ad logFbar = x(0);
+      PERREC_t<ad> r = getPerRec(logFbar);
       return r.logSe * r.logSe;
       // Type h = 0.2;
       // int N = 5;
