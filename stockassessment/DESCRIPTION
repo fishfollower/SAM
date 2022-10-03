@@ -19,7 +19,6 @@ Author: Anders Nielsen [aut, cre],
 Maintainer: Anders Nielsen <an@aqua.dtu.dk>	    
 Description: Fitting SAM...
 License: GPL-2
-Depends: R
 Imports: TMB, ellipse, methods, stats, utils, grDevices, graphics, Matrix
 LinkingTo: TMB (>= 1.9.1), RcppEigen
 Encoding: UTF-8
