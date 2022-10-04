@@ -1,17 +1,16 @@
-# `nscodParameters`: 
- nscodParameters
+# `nscodParameters`
+
+nscodParameters
 
 
 ## Description
 
-
- nscodParameters
+nscodParameters
 
 
 ## Format
 
-
- The format is:
+The format is:
  List of 14
  $ logFpar
  $ logQpow
@@ -32,25 +31,25 @@
 ## Usage
 
 ```r
-data("nscodParameters")```
+data("nscodParameters")
+```
 
 
 ## Details
 
-
- ...
+...
 
 
 ## References
 
-
- ...
+...
 
 
 ## Examples
 
-```r 
- data(nscodParameters)
- ## maybe str(nscodParameters) ; plot(nscodParameters) ...
- ``` 
+```r
+data(nscodParameters)
+## maybe str(nscodParameters) ; plot(nscodParameters) ...
+```
+
 

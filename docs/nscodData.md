@@ -1,17 +1,16 @@
-# `nscodData`: 
- nscodData
+# `nscodData`
+
+nscodData
 
 
 ## Description
 
-
- nscodData
+nscodData
 
 
 ## Format
 
-
- The format is:
+The format is:
  $ noFleets
  $ fleetTypes
  $ sampleTimes
@@ -36,25 +35,25 @@
 ## Usage
 
 ```r
-data("nscodData")```
+data("nscodData")
+```
 
 
 ## Details
 
-
- ...
+...
 
 
 ## References
 
-
- ...
+...
 
 
 ## Examples
 
-```r 
- data(nscodData)
- ## maybe str(nscodData) ; plot(nscodData) ...
- ``` 
+```r
+data(nscodData)
+## maybe str(nscodData) ; plot(nscodData) ...
+```
+
 

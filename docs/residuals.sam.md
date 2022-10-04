@@ -1,9 +1,11 @@
-# `residuals.sam`: Extract residuals from sam object
+# `residuals.sam`
+
+Extract residuals from sam object
+
 
 ## Description
 
-
- Extract residuals from sam object
+Extract residuals from sam object
 
 
 ## Usage
@@ -17,14 +19,14 @@ list(list("residuals"), list("sam"))(object, discrete = FALSE, ...)
 
 Argument      |Description
 ------------- |----------------
-```object```     |     sam fitted object as returned from the [`sam.fit`](sam.fit.html) function
-```discrete```     |     logical if model contain discrete observations
-```...```     |     extra arguments for TMB's oneStepPredict
+`object`     |     sam fitted object as returned from the [`sam.fit`](#sam.fit) function
+`discrete`     |     logical if model contain discrete observations
+`...`     |     extra arguments for TMB's oneStepPredict
+
 
 ## Details
 
-
- one-observation-ahead quantile residuals are calculated
+one-observation-ahead quantile residuals are calculated
  
  ...
 

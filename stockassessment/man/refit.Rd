@@ -4,12 +4,14 @@
 \alias{refit}
 \title{Re-fit a model from stockassessment.org}
 \usage{
-refit(fit, newConf, ...)
+refit(fit, newConf, startingValues, ...)
 }
 \arguments{
 \item{fit}{a sam fit or the name of a fit from stockassessment.org}
 
 \item{newConf}{list changes to the configuration}
+
+\item{startingValues}{list of parameter values to use as starting values}
 
 \item{...}{Arguments passed to sam.fit}
 }

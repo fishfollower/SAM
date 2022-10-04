@@ -1,9 +1,11 @@
-# `print.samset`: Print samset object
+# `print.samset`
+
+Print samset object
+
 
 ## Description
 
-
- Print samset object
+Print samset object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("print"), list("samset"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     a list of sam models
-```...```     |     extra arguments
+`x`     |     a list of sam models
+`...`     |     extra arguments
+
 
 ## Details
 
-
- ...
+...
 
 

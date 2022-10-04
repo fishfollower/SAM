@@ -1,9 +1,11 @@
-# `coef.sam`: Extract fixed coefficients of sam object
+# `coef.sam`
+
+Extract fixed coefficients of sam object
+
 
 ## Description
 
-
- Extract fixed coefficients of sam object
+Extract fixed coefficients of sam object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("coef"), list("sam"))(object, ...)
 
 Argument      |Description
 ------------- |----------------
-```object```     |     sam fitted object as returned from the [`sam.fit`](sam.fit.html) function
-```...```     |     extra arguments
+`object`     |     sam fitted object as returned from the [`sam.fit`](#sam.fit) function
+`...`     |     extra arguments
+
 
 ## Details
 
-
- fixed coefficients of sam object
+fixed coefficients of sam object
 
 

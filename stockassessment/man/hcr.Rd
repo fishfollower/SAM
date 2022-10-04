@@ -2,26 +2,32 @@
 % Please edit documentation in R/hcr.R
 \name{hcr}
 \alias{hcr}
+\alias{hcr.sam}
 \title{Harvest control rule forecast}
 \usage{
-hcr(
+hcr(fit, ...)
+
+\method{hcr}{sam}(
   fit,
   nYears = 20,
   Ftarget,
   Btrigger,
-  Flim = 0,
-  Blim = 0,
-  Flow = 0,
-  Blow = 0,
+  Forigin = 0,
+  Borigin = 0,
+  Fcap = 0,
+  Bcap = 0,
   nosim = 10000,
   ave.years = max(fit$data$years) + (-4:0),
-  rec.years = c(),
+  rec.years = numeric(0),
   preForecast = list(),
+  currentSSB = FALSE,
   ...
 )
 }
 \arguments{
 \item{fit}{A SAM fit}
+
+\item{...}{additional arguments passed to \link{modelforecast}}
 
 \item{nYears}{Number of years to forecast}
 
@@ -29,13 +35,13 @@ hcr(
 
 \item{Btrigger}{SSB that triggers the control rule}
 
-\item{Flim}{F used for SSB = Blim}
+\item{Forigin}{F used for SSB = Borigin}
 
-\item{Blim}{Between Blim and Btrigger, F values are selected based on linear interpolation from Flim to Ftarget}
+\item{Borigin}{Between Blim and Btrigger, F values are selected based on linear interpolation from Forigin to Ftarget}
 
-\item{Flow}{F used for SSB < Blow}
+\item{Fcap}{F for SSB < Bcap}
 
-\item{Blow}{SSB for which Flow is used below}
+\item{Bcap}{SSB for which Fcap is used below}
 
 \item{nosim}{Number of simulations to do. If NULL a model forecast based on the Laplace approximation is used}
 
@@ -45,20 +51,23 @@ hcr(
 
 \item{preForecast}{list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR}
 
-\item{...}{additional arguments passed to \link{modelforecast}}
+\item{currentSSB}{if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.}
 }
 \value{
-hcr object
+model forecast using a harvest control rule
+
+hcr model forecast object
 }
 \description{
 The formula below is used to determine a new F based on the previous SSB.
 \deqn{F = \left\{
               \begin{array}{ll}
-                  F_{low} & SSB < B_{low} \\
-                  min\left(Ftarget, \max\left( F_{lim}, (SSB - B_{lim}) \cdot (F_{target} - F_{lim}) / (B_{trigger}-B_{lim}) \right)\right) & SSB \ge B_{low}
+                  F_{cap} & SSB < B_{cap} \\
+                  min\left(F_{target}, \max\left( F_{origin}, (SSB - B_{origin}) \cdot (F_{target} - F_{origin}) / (B_{trigger}-B_{origin}) \right)\right) & SSB \ge B_{cap}
               \end{array}\right.
 }
+If \eqn{B_{trigger} = B_{origin}} and \eqn{SSB \ge B_{cap}}, \eqn{F_{target}} is always returned.
 }
-\author{
-Christoffer Moesgaard Albertsen
+\seealso{
+modelforecast
 }

@@ -1,9 +1,11 @@
-# `plot.samforecast`: Plot samforecast object
+# `plot.samforecast`
+
+Plot samforecast object
+
 
 ## Description
 
-
- Plot samforecast object
+Plot samforecast object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("plot"), list("samforecast"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     fitted object as returned from the [`sam.fit`](sam.fit.html) function
-```...```     |     extra arguments
+`x`     |     fitted object as returned from the [`sam.fit`](#sam.fit) function
+`...`     |     extra arguments
+
 
 ## Details
 
-
- ...
+...
 
 

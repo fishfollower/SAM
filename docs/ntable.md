@@ -1,9 +1,11 @@
-# `ntable`: N table
+# `ntable`
+
+N table
+
 
 ## Description
 
-
- N table
+N table
 
 
 ## Usage
@@ -18,12 +20,12 @@ list(list("ntable"), list("sam"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
-```...```     |     extra arguments not currently used
+`fit`     |     ...
+`...`     |     extra arguments not currently used
+
 
 ## Details
 
-
- ...
+...
 
 

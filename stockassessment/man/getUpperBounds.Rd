@@ -4,10 +4,12 @@
 \alias{getUpperBounds}
 \title{Bounds}
 \usage{
-getUpperBounds(parameters)
+getUpperBounds(parameters, conf)
 }
 \arguments{
 \item{parameters}{initial values for the model in a format similar to what is returned from the defpar function}
+
+\item{conf}{model configuration in a format similar to what is returned from the defcon function}
 }
 \value{
 a named list

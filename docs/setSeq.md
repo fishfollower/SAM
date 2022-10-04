@@ -1,9 +1,11 @@
-# `setSeq`: small helper function
+# `setSeq`
+
+small helper function
+
 
 ## Description
 
-
- small helper function
+small helper function
 
 
 ## Usage
@@ -17,12 +19,12 @@ setSeq(min, max)
 
 Argument      |Description
 ------------- |----------------
-```min```     |     from
-```max```     |     to
+`min`     |     from
+`max`     |     to
+
 
 ## Details
 
-
- internal
+internal
 
 

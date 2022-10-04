@@ -1,9 +1,11 @@
-# `qtableplot`: plot survey catchabilities
+# `qtableplot`
+
+plot survey catchabilities
+
 
 ## Description
 
-
- plot survey catchabilities
+plot survey catchabilities
  
  plot survey catchabilities
 
@@ -20,6 +22,7 @@ list(list("qtableplot"), list("samqtable"))(qt, exp = FALSE)
 
 Argument      |Description
 ------------- |----------------
-```qt```     |     An object of class 'samqtable' as returned from qtable
-```exp```     |     if true return on natural scale rather than log
+`qt`     |     An object of class 'samqtable' as returned from qtable
+`exp`     |     if true return on natural scale rather than log
+
 

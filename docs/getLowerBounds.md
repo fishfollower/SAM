@@ -1,15 +1,17 @@
-# `getLowerBounds`: Bounds
+# `getLowerBounds`
+
+Bounds
+
 
 ## Description
 
-
- Bounds
+Bounds
 
 
 ## Usage
 
 ```r
-getLowerBounds(parameters)
+getLowerBounds(parameters, conf)
 ```
 
 
@@ -17,11 +19,12 @@ getLowerBounds(parameters)
 
 Argument      |Description
 ------------- |----------------
-```parameters```     |     initial values for the model in a format similar to what is returned from the defpar function
+`parameters`     |     initial values for the model in a format similar to what is returned from the defpar function
+`conf`     |     model configuration in a format similar to what is returned from the defcon function
+
 
 ## Value
 
-
- a named list
+a named list
 
 

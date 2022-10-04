@@ -1,15 +1,18 @@
-# `mohn`: Mohn's rho calculation
+# `mohn`
+
+Mohn's rho calculation
+
 
 ## Description
 
-
- Mohn's rho calculation
+Mohn's rho calculation
 
 
 ## Usage
 
 ```r
 mohn(fits, what = NULL, lag = 0, ...)
+list(list("mohn"), list("samset"))(fits, what = NULL, lag = 0, ...)
 ```
 
 
@@ -17,14 +20,14 @@ mohn(fits, what = NULL, lag = 0, ...)
 
 Argument      |Description
 ------------- |----------------
-```fits```     |     a samset object as returned from the retro function.
-```what```     |     a function computing the quantity to calculate Mohn's rho for (default NULL computes Fbar, SSB, and R).
-```lag```     |     lag applied to fits and reference fit.
-```...```     |     extra arguments
+`fits`     |     a samset object as returned from the retro function.
+`what`     |     a function computing the quantity to calculate Mohn's rho for (default NULL computes Fbar, SSB, and R).
+`lag`     |     lag applied to fits and reference fit.
+`...`     |     extra arguments
+
 
 ## Details
 
-
- ...
+...
 
 

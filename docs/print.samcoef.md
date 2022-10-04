@@ -1,9 +1,11 @@
-# `print.samcoef`: Print samcoef object
+# `print.samcoef`
+
+Print samcoef object
+
 
 ## Description
 
-
- Print samcoef object
+Print samcoef object
 
 
 ## Usage
@@ -17,6 +19,7 @@ list(list("print"), list("samcoef"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     samcoef object as returned from the [`coef.sam`](coef.sam.html) function
-```...```     |     extra arguments
+`x`     |     samcoef object as returned from the [`coef.sam`](#coef.sam) function
+`...`     |     extra arguments
+
 

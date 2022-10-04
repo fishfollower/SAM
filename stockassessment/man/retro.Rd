@@ -2,9 +2,12 @@
 % Please edit documentation in R/retro.R
 \name{retro}
 \alias{retro}
+\alias{retro.sam}
 \title{retro run}
 \usage{
 retro(fit, year = NULL, ncores = detectCores(), ...)
+
+\method{retro}{sam}(fit, year = NULL, ncores = detectCores(), ...)
 }
 \arguments{
 \item{fit}{a fitted model object as returned from sam.fit}

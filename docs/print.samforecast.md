@@ -1,9 +1,11 @@
-# `print.samforecast`: Print samforecast object
+# `print.samforecast`
+
+Print samforecast object
+
 
 ## Description
 
-
- Print samforecast object
+Print samforecast object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("print"), list("samforecast"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     an object as returned from the forecast function
-```...```     |     extra arguments
+`x`     |     an object as returned from the forecast function
+`...`     |     extra arguments
+
 
 ## Details
 
-
- ...
+...
 
 

@@ -12,7 +12,7 @@ par<-defpar(nscodData,nscodConf)
 
 fit<-sam.fit(nscodData,nscodConf,par)
 
-forec <- forecast(fit,fval=c(.1,.2,.3,4))
+forec <- forecast(fit,fval=c(.1,.2,.3,4), addTSB=TRUE)
 
 resid <- residuals(fit)
 

@@ -10,6 +10,8 @@
 ##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.
 ##' @param ignore.parm.uncertainty option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties
 ##' @param rel.tol option passed to stats:::nlminb sets the convergence criteria
+##' @param penalizeSpline Add penalization to spline recruitment?
+##' @param fullDerived Report all derived values?
 ##' @param ... extra arguments to MakeADFun
 ##' @return an object of class \code{sam}
 ##' @details The model configuration object \code{conf} is a list of different objects defining different parts of the model. The different elements of the list are: 
@@ -17,8 +19,8 @@
 ##' \item{$minAge:}{A single integer defining the the lowest age class in the assessment.}
 ##' \item{$maxAge:}{A single integer defining the the highest age class in the assessment.}
 ##' \item{$maxAgePlusGroup:}{Is last age group considered a plus group (1 yes, or 0 no).}
-##' \item{$keyLogFsta:}{A matrix of integers. The number of rows is equal to the number of fleets and the number of columns is equal to the number of age classes. The matrix describes the coupling of the fishing mortality states (normally only first row is used). '-1' is used for entries where no fishing mortality applies (e.g. age groups in survey fleets, or unobserved age groups). For the valid entries consecutive integers starting at zero must be used, because they are used as indices in the corresponding state vector. If the same number is used for two age classes, then the fishing mortality for those age classes are assumed equal (linked to the same state).}
-##' \item{$corFlag:}{A single integer to specify the correlation structure of log-scale fishing mortality increments (0 independent, 1 compound symmetry, or 2 AR(1)).}
+##' \item{$keyLogFsta:}{A matrix of integers. The number of rows is equal to the number of fleets and the number of columns is equal to the number of age classes. The matrix describes the coupling of the fishing mortality states (the first rows are the catch fleet without effort). '-1' is used for entries where no fishing mortality applies (e.g. age groups in survey fleets, or unobserved age groups). For the valid entries consecutive integers starting at zero must be used, because they are used as indices in the corresponding state vector. If the same number is used for two fleet-age combinations, then the fishing mortality for those are assumed equal (linked to the same state).}
+##' \item{$corFlag:}{An integer vector to specify the correlation structure of log-scale of fishing mortality increments (0 independent, 1 compound symmetry, or 2 AR(1)). The length of the vector is equal to the number of catch fleets without effort information.}
 ##' \item{$keyLogFpar:}{A matrix of integers. The number of rows is equal to the number of fleets and the number of columns is equal to the number of age classes. The matrix describes the coupling of survey catchability parameters (so only used for survey fleets). '-1' is used for entries where catchability should not be specified (e.g. fleet - age groups combinations where fishing mortality is specified above, or unobserved fleet - age group combinations).  For the valid entries consecutive integers starting at zero must be used, because they are used as indices in the corresponding parameter vector. If the same number is used for two age classes, then the catchability for those age classes are assumed equal (linked to the same parameter).}
 ##' \item{$keyQpow:}{A matrix of integers. The number of rows is equal to the number of fleets and the number of columns is equal to the number of age classes. The matrix describes the coupling of density dependent catchability power parameters. This can only be applied to fleets - age combinations where a catchability is defined. '-1' is used for entries where this cannot be applied (e.g. fleet - age groups combinations where fishing mortality is specified above, or unobserved fleet - age group combinations). '-1' is also used to specify that density dependent catchability power parameters is turned off (the most common setup). For entries where density dependent catchability power parameter is to be estimates entries consecutive integers starting at zero must be used. If the same number is used for two age classes, then the density dependent catchability power parameter for those age classes are assumed equal (linked to the same parameter).}
 ##' \item{$keyVarF:}{A matrix of integers. The number of rows is equal to the number of fleets and the number of columns is equal to the number of age classes. The matrix describes the coupling of variance parameters for the different states in the log-scale fishing mortality random walk process. '-1' should be used for entries where no fishing mortality state is defined in \code{keyLogFsta} above. For the valid entries consecutive integers starting at zero must be used, because they are used as indices in the corresponding parameter vector. If the same number is used for two age classes, then the catchability for those age classes are assumed equal (linked to the same parameter). ((a curiosity of this setup is that it is possible to set different variance parameter indices for F-states that are coupled in \code{keyLogFsta}. This is ignored and the index corresponding to the lowest F-state number is used)).}
@@ -40,93 +42,102 @@
 ##' @importFrom TMB MakeADFun sdreport
 ##' @importFrom stats nlminb optimHess
 ##' @importFrom utils relist packageDescription
-##' @useDynLib stockassessment
+##' @useDynLib stockassessment, .registration = TRUE, .fixes = "C_"
 ##' @export
 ##' @examples
 ##' data(nscodData)
 ##' data(nscodConf)
 ##' data(nscodParameters)
-##' fit <- sam.fit(nscodData, nscodConf, nscodParameters)
+##' fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 ##' @references
 ##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters), upper=getUpperBounds(parameters), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, ...){
-  if(length(conf$maxAgePlusGroup)==1){
-    tmp <- conf$maxAgePlusGroup    
-    conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
-    conf$maxAgePlusGroup[1] <- tmp
-  }
-  definit <- defpar(data, conf)
-  if(!identical(parameters,relist(unlist(parameters), skeleton=definit))){
-    warning("Initial values are not consistent, so running with default init values from defpar()")
-    parameters<-definit
-  }
-  data<-clean.void.catches(data,conf)
-  
-  confTmp = defcon(data)
-  for(i in 1:length(confTmp)){
-    if(!names(confTmp)[i] %in% names(conf)){
-      conf[[length(conf)+1]] = confTmp[[i]]
-      names(conf)[length(conf)] = names(confTmp)[i]
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, penalizeSpline = FALSE, fullDerived = FALSE, ...){
+    if(length(conf$maxAgePlusGroup)==1){
+        tmp <- conf$maxAgePlusGroup    
+        conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
+        conf$maxAgePlusGroup[1] <- tmp
     }
-  }
-  
-  tmball <- c(data, conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
-  if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
-  nmissing <- sum(is.na(data$logobs))
-  parameters$missing <- numeric(nmissing)
-  ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM")
+    definit <- defpar(data, conf)
+    if(!identical(parameters,relist(unlist(parameters), skeleton=definit))){
+        warning("Initial values are not consistent, so running with default init values from defpar()")
+        parameters<-definit
+    }
+    data<-clean.void.catches(data,conf)
+    
+    confTmp = defcon(data)
+    for(i in 1:length(confTmp)){
+        if(!names(confTmp)[i] %in% names(conf)){
+            conf[[length(conf)+1]] = confTmp[[i]]
+            names(conf)[length(conf)] = names(confTmp)[i]
+        }
+    }
+    
+    tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=rep(as.integer(sim.condRE),length = 2)))
+    if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
+    nmissing <- sum(is.na(data$logobs))
+    parameters$missing <- numeric(nmissing)
+    ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logP")
+    if(penalizeSpline)
+        ran <- c(ran, "rec_pars")
+    
+    args <- c(list(data = tmball,
+                   parameters = parameters,
+                   random = ran,
+                   ## intern = intern,
+                   DLL = "stockassessment"),
+              list(...))
+    args$data$reportingLevel <- as.integer(fullDerived)
 
-  
-  args <- c(list(data = tmball,
-                 parameters = parameters,
-                 random = ran,
-                 DLL = "stockassessment"),
-            list(...))
-
-  mapRP <- list(logFScaleMSY = factor(NA),
-                implicitFunctionDelta = factor(NA),
-                logScaleFmsy = factor(NA),
-                logScaleFmax = factor(NA),
-                logScaleF01 = factor(NA),
-                logScaleFcrash = factor(NA),
-                logScaleFext = factor(NA),
-                logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
-                logScaleFlim = factor(NA)
-                )
-  if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
-      args$map <- mapRP
-  }else{
-      args$map <- c(args$map, mapRP)
-  }
-  
-  if(!is.null(conf$hockeyStickCurve))
-      if(is.null(args$map$rec_pars) &
-         !is.na(conf$hockeyStickCurve) &
-         conf$stockRecruitmentModelCode == 63)
-          args$map$rec_pars = factor(c(1,2,NA))
-
-
-  obj <- do.call(MakeADFun,args)
-
-  if(rm.unidentified){
-    gr <- obj$gr()
-    #grNA[abs(grNA)<1.0e-15] <- NA
-    safemap <- obj$env$parList(gr)
-    safemap <- safemap[!names(safemap)%in%ran]
-    safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
-    ddd<-list(...)
-    if(!is.null(ddd$map)){
-      safemap <- c(ddd$map,safemap)
-      ddd$map <- safemap
-      ddd$data <- tmball
-      ddd$parameters <- parameters
-      ddd$random <- ran
-      ddd$DLL <- "stockassessment"
-      obj <- do.call(MakeADFun,ddd)
+    mapRP <- list(logFScaleMSY = factor(NA),
+                  implicitFunctionDelta = factor(NA),
+                  ##               logScaleFmsy = factor(NA),
+                  ##               logScaleFmypyl = factor(NA),
+                  ##               logScaleFmdy = factor(NA),
+                  ##               logScaleFmax = factor(NA),
+                  ##               logScaleFxdYPR = factor(rep(NA,length(args$parameters$logScaleFxdYPR))),
+                  ##               logScaleFxB0 = factor(rep(NA,length(args$parameters$logScaleFxB0))),
+                  ##               logScaleFcrash = factor(NA),
+                  ##               logScaleFext = factor(NA),
+                  ##               logScaleFxPercent = factor(rep(NA,length(args$parameters$logScaleFxPercent))),
+                  ##               logScaleFlim = factor(NA),
+                  splinePenalty = factor(ifelse(penalizeSpline,1,NA))
+                  )
+    if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
+        args$map <- mapRP
     }else{
-      obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
+        args$map <- c(args$map, mapRP)
     }
-  }
+    
+    if(!is.null(conf$hockeyStickCurve))
+        if(is.null(args$map$rec_pars) &
+           !is.na(conf$hockeyStickCurve) &
+           conf$stockRecruitmentModelCode == 63)
+            args$map$rec_pars = factor(c(1,2,NA))
+
+    obj <- do.call(MakeADFun,args)
+    
+    ddd <- args
+    if(rm.unidentified){
+        gr <- obj$gr()
+                                        #grNA[abs(grNA)<1.0e-15] <- NA
+        safemap <- obj$env$parList(gr)
+        safemap <- safemap[!names(safemap)%in%ran]
+        safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
+        ## ddd<-args # list(...)
+        if(!is.null(ddd$map)){
+            ddd$map <- c(ddd$map,safemap)
+        }else{
+            ddd$map <- safemap
+        }
+        ## ddd$data <- tmball
+        ## ddd$parameters <- parameters
+        ## ddd$random <- ran
+        ## ddd$DLL <- "stockassessment"    
+        obj <- do.call(MakeADFun,ddd)
+        ## }else{
+        ##   obj <- MakeADFun(tmball, parameters, random=ran, map=safemap, DLL="stockassessment", ...)
+        ## }
+    }
   
   lower2<-rep(-Inf,length(obj$par))
   upper2<-rep(Inf,length(obj$par))
@@ -134,51 +145,125 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   for(nn in names(upper)) upper2[names(obj$par)==nn]=upper[[nn]]
 
   if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
-  
+
+  ## intern = TRUE,
+  ## if(intern){
+  ##     opt <- nlminb(obj$par, obj$fn,obj$gr, obj$he, control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
+  ##     he <- obj$he
+  ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
-  for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
-    g <- as.numeric( obj$gr(opt$par) )
-    h <- optimHess(opt$par, obj$fn, obj$gr)
-    opt$par <- opt$par - solve(h, g)
-    opt$objective <- obj$fn(opt$par)
-  }
-  ## opt$he <- optimHess(opt$par, obj$fn, obj$gr)
-  rep <- obj$report()
-  sdrep <- sdreport(obj,opt$par, ##opt$he,
-                    ignore.parm.uncertainty = ignore.parm.uncertainty)
+  
+    he <- function(par){ optimHess(par, obj$fn, obj$gr) }
+    ## }
+    for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
+        atLBound <- (opt$par < (lower2 + sqrt(.Machine$double.eps)))
+        atUBound <- (upper2 < (opt$par + sqrt(.Machine$double.eps)))
+        atBound <- atLBound | atUBound
+        g <- as.numeric( obj$gr(opt$par) )
+        h <- stats::optimHess(opt$par, obj$fn, obj$gr)
+        opt$par[!atBound] <- opt$par[!atBound]- solve(h[!atBound,!atBound], g[!atBound])
+        opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
+        opt$objective <- obj$fn(opt$par)
+    }
+    opt$he <- optimHess(opt$par, obj$fn, obj$gr)
 
-  # Last two states
-  idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
-  sdrep$estY <- sdrep$value[idx]
-  sdrep$covY <- sdrep$cov[idx,idx]
+    repList <- doReporting(obj, opt, ignore.parm.uncertainty)
 
-  idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
-  sdrep$estYm1 <- sdrep$value[idx]
-  sdrep$covYm1 <- sdrep$cov[idx,idx]
+    ret <- c(repList, list(data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower, hig=upper))
+    attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
+    attr(ret, "Version") <- packageDescription("stockassessment")$Version
+    ## Keep function call
+    call <- match.call()
+    frmls <- formals()
+    nms <- setdiff(names(frmls),names(call))
+    call[nms] <- frmls[nms]
+    attr(ret,"call") <- call[names(call) != "..."]
+    class(ret)<-"sam"
 
-  pl <- as.list(sdrep,"Est")
-  plsd <- as.list(sdrep,"Std")
+    return(ret)
+}
 
-  sdrep$cov<-NULL # save memory
+getFullCall <- function(...){
+    call <- evalq(match.call(),parent.frame(1))
+    frmls <- evalq(formals(),parent.frame(1))
+    nms <- setdiff(names(frmls),names(call))
+    call[nms] <- frmls[nms]
+    call[names(call) != "..."]
+}
+getCallValue <- function(name, call){
+    if(name %in% names(call))
+        return(call[[name]])
+    stop(sprintf("%s does not appear to be an argument of %s. Try to refit the model to update.",name,as.character(call[1])))
+}
+    
+doReporting <- function(obj, opt, ignore.parm.uncertainty){
+    sdrep <- sdreport(obj,opt$par, opt$he,
+                      ignore.parm.uncertainty = ignore.parm.uncertainty)    
+    ## Last two states
+    idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
+    sdrep$estY <- sdrep$value[idx]
+    sdrep$covY <- sdrep$cov[idx,idx]
 
-  ret <- list(sdrep=sdrep, pl=pl, plsd=plsd, data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower, hig=upper)
-  attr(ret, "RemoteSha") <- substr(packageDescription("stockassessment")$RemoteSha, 1, 12)
-  attr(ret, "Version") <- packageDescription("stockassessment")$Version
-  class(ret)<-"sam"
-  return(ret)
+    idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
+    sdrep$estYm1 <- sdrep$value[idx]
+    sdrep$covYm1 <- sdrep$cov[idx,idx]
+
+    ## rec_pars
+    idx <- which(names(sdrep$value)=="rec_pars")
+    sdrep$covRecPars <- sdrep$cov[idx,idx, drop = FALSE]
+
+    ## S-R pairs
+    idx <- names(sdrep$value)%in%c("logssb","logR")
+    sdrep$covSRpairs <- sdrep$cov[idx,idx, drop = FALSE]
+    colnames(sdrep$covSRpairs) <- rownames(sdrep$covSRpairs) <- names(sdrep$value)[idx]
+    
+    
+    pl <- as.list(sdrep,"Est")
+    plsd <- as.list(sdrep,"Std")
+
+    rep <- obj$report()
+
+    sdrep$cov<-NULL # save memory
+    list(sdrep=sdrep, pl=pl, plsd=plsd, rep = rep)
+}
+
+.checkFullDerived <- function(fit) getCallValue("fullDerived",attr(fit,"call"))
+
+##' Update sam fit with additional derived values
+##'
+##' @param fit sam fit returned by sam.fit
+##' @return Updated sam fit
+getAllDerivedValues <- function(fit){
+    if(.checkFullDerived(fit))
+        return(fit)
+    ddd2 <- as.list(fit$obj$env)[formalArgs(TMB::MakeADFun)[formalArgs(TMB::MakeADFun) != "..."]]
+    ddd2$data$reportingLevel <- 1
+    fit$obj$fn(fit$opt$par)
+    ddd2$parameters <- fit$obj$env$parList(par=fit$obj$env$last.par)
+    obj <- do.call(TMB::MakeADFun,ddd2)
+    sdList <- doReporting(obj, fit$opt, getCallValue("ignore.param.uncertainty",attr(fit,"call")))
+    fit[names(sdList)] <- sdList
+    fit$obj <- obj
+    return(fit)
+
 }
 
 ##' Bounds
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
+##' @param conf model configuration in a format similar to what is returned from the defcon function
 ##' @return a named list
-getLowerBounds<-function(parameters){
-    list(sigmaObsParUS=rep(-10,length(parameters$sigmaObsParUS)))
+getLowerBounds<-function(parameters, conf){    
+    r <- list(sigmaObsParUS=rep(-10,length(parameters$sigmaObsParUS)))
+    if(!missing(conf) && conf$stockRecruitmentModelCode %in% c(90,91,92))
+        r$rec_pars <- c(-20, rep(-10, length(parameters$rec_pars)-1))
+    r
 }
 
 ##' Bounds
 ##' @param parameters initial values for the model in a format similar to what is returned from the defpar function
+##' @param conf model configuration in a format similar to what is returned from the defcon function
 ##' @return a named list
-getUpperBounds<-function(parameters){
+getUpperBounds<-function(parameters, conf){
     list(sigmaObsParUS=rep(10,length(parameters$sigmaObsParUS)))
 }
     
@@ -187,7 +272,14 @@ getUpperBounds<-function(parameters){
 ##' @param conf model configuration which can be set up using the \code{\link{defcon}} function and then modified
 ##' @return an updated dataset without the catches where F is fixed to zero
 clean.void.catches<-function(dat, conf){
-  rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
+    if(!any(dat$fleetTypes == 0))
+        return(dat)       
+  cfidx <- which(dat$fleetTypes==0)
+  aidx <- unique(dat$aux[dat$aux[,2]%in%cfidx,3]-conf$minAge+1)
+  faidx <- as.matrix(expand.grid(cfidx, aidx))
+  faidx <- faidx[which(conf$keyLogFsta[faidx]== -1),,drop=FALSE]
+  ## rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
+  rmidx <- paste0(dat$aux[,2],"x",dat$aux[,3]-conf$minAge+1) %in%  paste0(faidx[,1],"x",faidx[,2])
   dat$aux <- dat$aux[!rmidx,]
   dat$logobs <- dat$logobs[!rmidx]
   dat$weight <- dat$weight[!rmidx]

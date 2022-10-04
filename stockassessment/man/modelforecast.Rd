@@ -9,6 +9,7 @@ modelforecast(fit, ...)
 
 \method{modelforecast}{sam}(
   fit,
+  constraints = NULL,
   fscale = NULL,
   catchval = NULL,
   fval = NULL,
@@ -16,14 +17,14 @@ modelforecast(fit, ...)
   landval = NULL,
   findMSY = NULL,
   hcr = NULL,
-  nosim = NULL,
+  nosim = 0,
   year.base = max(fit$data$years),
-  ave.years = max(fit$data$years) + (-4:0),
+  ave.years = c(),
   rec.years = c(),
   label = NULL,
   overwriteSelYears = NULL,
   deterministicF = FALSE,
-  processNoiseF = TRUE,
+  processNoiseF = FALSE,
   resampleFirst = !is.null(nosim) && nosim > 0,
   customSel = NULL,
   lagR = FALSE,
@@ -31,10 +32,14 @@ modelforecast(fit, ...)
   addTSB = FALSE,
   biasCorrect = FALSE,
   returnAllYears = FALSE,
-  useUniroot = FALSE,
   nCatchAverageYears = 1,
   returnObj = FALSE,
   hcrConf = numeric(0),
+  hcrCurrentSSB = 0,
+  progress = TRUE,
+  estimate = median,
+  silent = TRUE,
+  newton_config = NULL,
   ...
 )
 }
@@ -43,13 +48,15 @@ modelforecast(fit, ...)
 
 \item{...}{other variables used by the methods}
 
+\item{constraints}{a character vector of forecast constraint specifications}
+
 \item{fscale}{a vector of f-scales. See details.}
 
 \item{catchval}{a vector of target catches. See details.}
 
 \item{fval}{a vector of target f values. See details.}
 
-\item{nextssb}{a vector target SSB values the following year. See details}
+\item{nextssb}{a vector target SSB values the following year. See details.}
 
 \item{landval}{a vector of target catches. See details.}
 
@@ -57,7 +64,7 @@ modelforecast(fit, ...)
 
 \item{hcr}{Should not be used. See \link{hcr}.}
 
-\item{nosim}{number of simulations. Not used.}
+\item{nosim}{number of simulations. If 0, the Laplace approximation is used for forecasting.}
 
 \item{year.base}{starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before}
 
@@ -87,13 +94,21 @@ modelforecast(fit, ...)
 
 \item{returnAllYears}{If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.}
 
-\item{useUniroot}{Use uniroot to find catchval, landval, and nextssb?}
-
 \item{nCatchAverageYears}{Should not be used. See \link{forecastMSY}.}
 
 \item{returnObj}{Only return TMB object?}
 
 \item{hcrConf}{Should not be used. See \link{hcr}.}
+
+\item{hcrCurrentSSB}{Should not be used. See \link{hcr}.}
+
+\item{progress}{Show progress bar for simulations?}
+
+\item{estimate}{the summary function used (typically mean or median) for simulations}
+
+\item{silent}{Passed to MakeADFun. Should the TMB object be silent?}
+
+\item{newton_config}{Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.}
 }
 \value{
 an object of type samforecast
@@ -104,8 +119,64 @@ Model based forecast function
 Model based forecast function
 }
 \details{
-There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run.
+Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process. Therefore, catch constraints are not matched exactly in individual simulations (unlike the forecast function simulations). Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
+By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
+Catch scenarios are specified by a vector of target constraints. The first value determines F in the year after the base year.
 }
+\section{F based constraints}{
+
+Forecasts for F values are specified by the format "F[f,a0-a1]=x" where f is the residual catch fleet and a0-a1 is an age range. For example, "F[2,2-4]=0.3" specifies that the average F for the second fleet over ages 2-4 should be 0.3.
+If an "*" is added to the target value, the target will be relative to the year before. For example, "F[2,2-4]=0.9*" specifies that the average F for the second fleet over ages 2-4 should be 90% of the year before. Further, the target for a fleet can be relative to the total by adding "*F" or to another fleet by adding "*F[f]" where f is the fleet number. The same age range will always be used.
+If the fleet is omitted (e.g., F[2-4]), the target is for the total F.
+If the age range is omitted (e.g., F[2]), the fbar range of the model is used.
+Likewise, both fleet and age range can be omited (e.g., F=0.3) to specify a value for total F with the range used in the model.
+}
+
+\section{Catch/Landing based constraints}{
+
+Forecasts for catch and landing values are specified by the format "C[f,a0-a1]=x" for catch and "L[f,a0-a1]" for landings. If the age range is omitted, all modelled ages are used. Otherwise, the format is similar to F based scenarios.
+If an "*" is added to the target value, the target will be relative to the year before.
+Further, the catch target for a fleet can be relative to the total by adding "*C" or to another fleet by adding "*C[f]" where f is the fleet number. The same age range will always be used. Likewise, relative landing targets can be specified using "*", "*L", or "*L[f]" for targets relative to last year, the total, or fleet f, respectively.
+}
+
+\section{SSB/TSB at the beginning of next year based constraints}{
+
+Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. The format is similar to catch/landing based scenarios. However, fleets have no effect.
+If an "*" is added to the target value, the target will be relative to the year before.
+Note that SSB amd TSB used for catch constraints are at the beginning of the next year to avoid dependence on future F values. Therefore, the values will differ from the output SSB and TSB estimates if propM or propF are not zero.
+}
+
+\section{Combining constraints}{
+
+Constraints for different fleets can be combined by "&".
+For example, "F[2-4]=0.5 & C[2]=10000" specifies that total Fbar over ages 2-4 should be 0.5 while the catch for the second residual catch fleet should be 10,000t.
+The constraints cannot affect within-fleet selectivity. Therefore, a fleet can at most have one constraint per year, and the total number of constraints cannot exceed the number of catch fleets. That is, if a constraint is given for the sum of fleets, there must be at least one fleet without any constraints.
+For fleets where no constraints are given, a constraint is set to keep their relative Fs constant.
+}
+
+\section{Values relative to previous year}{
+
+Catch constraints specified as specific values are inherently different from catch constraints specified as relative values, even if they lead to the same F. Catch constraints specified as relative values will propagate the uncertainty in, e.g, F from previous years whereas constraints specified as specific values will not. This is different from the \link{forecast} function where, for example, a forecast using fval is the same as a forecast using fscale, if they lead to the same F.
+}
+
+\section{Old specification}{
+
+It is also possible to specify forecast constraints in a way similar to the \link{forecast} function. 
+There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. Unlike the forecast function, no value should be given for the base year.
+Internally, the old specification is translated such that "fval=x" becomes "F=x", "fscale=x" becomes "F=x*", "catchval=x" becomes "C=x", "nextssb=x" becomes "SSB=x", and "landval=x" becomes "L=x".
+}
+
+\section{Forecasts using Laplace approximation or simulations}{
+NA
+}
+
+\section{Warnings}{
+
+Long term forecasts with random walk recruitment can lead to unstable behaviour and difficulties finding suitable F values for the constraints.
+If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN. Likewise, forecasts leading to high F values in some years may cause problems for the optimization as they will be used as starting values for the next years.
+Since the model works on log space, all target values should be strictly positive. Values too close to zero may cause problems.
+}
+
 \seealso{
 forecast
 }

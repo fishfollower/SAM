@@ -1,9 +1,11 @@
-# `corplotcommon`: Common function for plotting correlation matrices.
+# `corplotcommon`
+
+Common function for plotting correlation matrices.
+
 
 ## Description
 
-
- Common function for plotting correlation matrices.
+Common function for plotting correlation matrices.
 
 
 ## Usage
@@ -17,7 +19,8 @@ corplotcommon(x, fn, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     a list of correlation matrices
-```fn```     |     a vector of fleet names
-```...```     |     extra arguments to plotcorr
+`x`     |     a list of correlation matrices
+`fn`     |     a vector of fleet names
+`...`     |     extra arguments to plotcorr
+
 

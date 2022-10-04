@@ -27,11 +27,17 @@ referencepoints(
   aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years),
   SPRpercent = c(0.35),
+  dYPRpercent = c(0.1),
+  B0percent = c(0.2),
   catchType = "catch",
   MSYreduction = c(0.05),
   newtonSteps = 3,
   optN = 20,
   jacobianHScale = 0.5,
+  fixRP = c(),
+  RecCorrection = "median",
+  biasCorrect = FALSE,
+  nlminb.control = list(eval.max = 1000, iter.max = 1000),
   ...
 )
 }
@@ -59,6 +65,18 @@ referencepoints(
 \item{jacobianHScale}{Scale step size in jacobian calculation}
 
 \item{...}{not used}
+
+\item{dYPRpercent}{Defunct}
+
+\item{B0percent}{Defunct}
+
+\item{fixRP}{Defunct}
+
+\item{RecCorrection}{Defunct}
+
+\item{biasCorrect}{Defunct}
+
+\item{nlminb.control}{Defunct}
 }
 \value{
 a sam_referencepoints fit
@@ -71,7 +89,4 @@ Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference poi
 }
 \seealso{
 \link{forecastMSY}
-}
-\author{
-Christoffer Moesgaard Albertsen
 }

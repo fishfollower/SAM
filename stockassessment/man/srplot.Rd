@@ -13,9 +13,15 @@ srplot(fit, ...)
   years = TRUE,
   linetype = "l",
   linecol = "black",
+  polycol = do.call("rgb", c(as.list(col2rgb("black")[, 1]), list(alpha = 0.1))),
+  polyborder = do.call("rgb", c(as.list(col2rgb("black")[, 1]), list(alpha = 0.3))),
+  polylty = 3,
+  polylwd = 1,
   xlim,
   ylim,
   add = FALSE,
+  CIlevel = 0.95,
+  addCurve = TRUE,
   ...
 )
 }
@@ -32,11 +38,23 @@ srplot(fit, ...)
 
 \item{linecol}{color of lines between points}
 
+\item{polycol}{Inner color of error ellipses}
+
+\item{polyborder}{Border color of error ellipses}
+
+\item{polylty}{Border line type of error ellipses}
+
+\item{polylwd}{Border line width of error ellipses}
+
 \item{xlim}{bounds for x-axis}
 
 \item{ylim}{bounds for y-axis}
 
 \item{add}{false if a new plot should be created}
+
+\item{CIlevel}{Confidence level for error ellipses on stock-recruitment pairs}
+
+\item{addCurve}{Call addRecruitmentCurve?}
 }
 \description{
 Plots the stock recruitment

@@ -1,9 +1,11 @@
-# `obscorrplot`: Plots the estimated correlation matrices by fleet.
+# `obscorrplot`
+
+Plots the estimated correlation matrices by fleet.
+
 
 ## Description
 
-
- Plots the estimated correlation matrices by fleet.
+Plots the estimated correlation matrices by fleet.
 
 
 ## Usage
@@ -18,6 +20,7 @@ list(list("obscorrplot"), list("sam"))(fit, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     the object returned from sam.fit
-```...```     |     extra arguments to plot
+`fit`     |     the object returned from sam.fit
+`...`     |     extra arguments to plot
+
 

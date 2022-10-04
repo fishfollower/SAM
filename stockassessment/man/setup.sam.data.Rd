@@ -7,7 +7,7 @@
 setup.sam.data(
   fleets = NULL,
   surveys = NULL,
-  residual.fleet = NULL,
+  residual.fleets = NULL,
   prop.mature = NULL,
   stock.mean.weight = NULL,
   catch.mean.weight = NULL,
@@ -17,7 +17,9 @@ setup.sam.data(
   prop.f = NULL,
   prop.m = NULL,
   land.frac = NULL,
-  recapture = NULL
+  recapture = NULL,
+  sum.residual.fleets = NULL,
+  keep.all.ages = FALSE
 )
 }
 \arguments{
@@ -25,7 +27,7 @@ setup.sam.data(
 
 \item{surveys}{surveys}
 
-\item{residual.fleet}{total catch minus commercial}
+\item{residual.fleets}{fleet, or list of fleets without effort information}
 
 \item{prop.mature}{pm}
 
@@ -46,6 +48,10 @@ setup.sam.data(
 \item{land.frac}{...}
 
 \item{recapture}{...}
+
+\item{sum.residual.fleets}{...}
+
+\item{keep.all.ages}{...}
 }
 \description{
 Combine the data sources to SAM readable object

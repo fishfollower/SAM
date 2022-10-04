@@ -20,22 +20,44 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
   data$noFleets <- length(suf)
   data$fleetTypes <- data$fleetTypes[suf]
   data$sampleTimes <- data$sampleTimes[suf]
+  oldYears <- data$years
   data$years <- min(as.numeric(data$aux[,"year"])):max(as.numeric(data$aux[,"year"]))
   ages <- min(as.numeric(data$aux[,"age"])):max(as.numeric(data$aux[,"age"]))
   data$noYears <- length(data$years)
   mmfun<-function(f,y, ff){idx<-which(data$aux[,"year"]==y & data$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
   data$idx1 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=min)
   data$idx2 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=max)
+  data$idxCor <- data$idxCor[suf,match(data$years,oldYears)]
   data$nobs <- length(data$logobs[idx])  
-  data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages]
-  data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, colnames(data$stockMeanWeight)%in%ages]
-  data$natMor <- data$natMor[rownames(data$natMor)%in%data$years, colnames(data$natMor)%in%ages]
-  data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages]
-  data$propM <- data$propM[rownames(data$propM)%in%data$years, colnames(data$propM)%in%ages]
-  data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages]  
-  data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages]
-  data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages]
-  data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages]
+  data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages,drop=FALSE]
+  data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, colnames(data$stockMeanWeight)%in%ages,drop=FALSE]
+  data$natMor <- data$natMor[rownames(data$natMor)%in%data$years, colnames(data$natMor)%in%ages,drop=FALSE]
+  if(length(dim(data$propF))==3){
+      data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages,,drop=FALSE]
+  }else{
+      data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages,drop=FALSE]
+  }
+  data$propM <- data$propM[rownames(data$propM)%in%data$years, colnames(data$propM)%in%ages,drop=FALSE]
+  if(length(dim(data$landFrac))==3){
+      data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages,,drop=FALSE]
+  }else{
+      data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages,drop=FALSE]
+  }
+  if(length(dim(data$catchMeanWeight))==3){
+      data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages,,drop=FALSE]
+  }else{
+            data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages,drop=FALSE]
+  }
+  if(length(dim(data$disMeanWeight))==3){
+      data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages,,drop=FALSE]
+  }else{
+      data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages,drop=FALSE]
+  }
+  if(length(dim(data$landMeanWeight))==3){
+      data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,,drop=FALSE]
+  }else{
+data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,drop=FALSE]
+  }
   data$aux[,"fleet"] <- match(data$aux[,"fleet"],suf)
   data$minAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=min)
   data$maxAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=max)
@@ -80,7 +102,15 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
 ##' @param ... extra arguments to sam.fit
 ##' @details ...
 ##' @export
-runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
+runwithout <- function(fit, year, fleet, ...){
+    UseMethod("runwithout")
+}
+
+##' @param map map to use
+##' @rdname runwithout
+##' @method runwithout sam
+##' @export
+runwithout.sam <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
   fakefile <- file()
@@ -101,9 +131,16 @@ runwithout <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
 ##' @param ncores the number of cores to attempt to use
 ##' @param ... extra arguments to \code{\link{sam.fit}}
 ##' @details ...
-##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster clusterEvalQ
 ##' @export
 retro <- function(fit, year=NULL, ncores=detectCores(), ...){
+    UseMethod("retro")
+}
+
+##' @rdname retro
+##' @method retro sam
+##' @importFrom parallel detectCores makeCluster clusterExport parLapply stopCluster clusterEvalQ
+##' @export
+retro.sam <- function(fit, year=NULL, ncores=detectCores(), ...){
   data <- fit$data
   y <- fit$data$aux[,"year"]
   f <- fit$data$aux[,"fleet"]
@@ -179,6 +216,13 @@ leaveout <- function(fit, fleet=as.list(2:fit$data$noFleets), ncores=detectCores
 ##' @details ...
 ##' @export
 mohn <- function(fits, what=NULL, lag=0, ...){
+    UseMethod("mohn")
+}
+
+##' @rdname mohn
+##' @method mohn samset
+##' @export
+mohn.samset <- function(fits, what=NULL, lag=0, ...){
   if(is.null(what)){
     what <- function(fit){
       ret <- cbind(rectable(fit,...)[,1], ssbtable(fit)[,1], fbartable(fit)[,1])

@@ -1,9 +1,11 @@
-# `rectable`: Recruit table
+# `rectable`
+
+Recruit table
+
 
 ## Description
 
-
- Recruit table
+Recruit table
 
 
 ## Usage
@@ -18,13 +20,13 @@ list(list("rectable"), list("default"))(fit, lagR = FALSE, ...)
 
 Argument      |Description
 ------------- |----------------
-```fit```     |     ...
-```lagR```     |     use the age after the youngest as R
-```...```     |     extra arguments not currently used
+`fit`     |     ...
+`lagR`     |     use the age after the youngest as R
+`...`     |     extra arguments not currently used
+
 
 ## Details
 
-
- ...
+...
 
 

@@ -10,7 +10,7 @@ catchtable(fit, obs.show = FALSE, ...)
 \method{catchtable}{sam}(fit, obs.show = FALSE, ...)
 }
 \arguments{
-\item{fit}{...}
+\item{fit}{object returned from sam.fit}
 
 \item{obs.show}{logical add a column with catch sum of product rowsums(C*W)}
 

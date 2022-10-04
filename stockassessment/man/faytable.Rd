@@ -7,12 +7,14 @@
 \usage{
 faytable(fit, ...)
 
-\method{faytable}{sam}(fit, ...)
+\method{faytable}{sam}(fit, fleet = which(fit$data$fleetTypes == 0), ...)
 }
 \arguments{
-\item{fit}{...}
+\item{fit}{a fitted object of class 'sam' as returned from sam.fit}
 
 \item{...}{extra arguments not currently used}
+
+\item{fleet}{the fleet number(s) to return F summed for (default is to return the sum of all residual fleets).}
 }
 \description{
 F-at-age table

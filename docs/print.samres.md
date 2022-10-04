@@ -1,9 +1,11 @@
-# `print.samres`: Print samres object
+# `print.samres`
+
+Print samres object
+
 
 ## Description
 
-
- Print samres object
+Print samres object
 
 
 ## Usage
@@ -17,12 +19,12 @@ list(list("print"), list("samres"))(x, ...)
 
 Argument      |Description
 ------------- |----------------
-```x```     |     a sam residual object as returnd from either [`residuals.sam`](residuals.sam.html) or [`procres`](procres.html)
-```...```     |     extra arguments
+`x`     |     a sam residual object as returned from either [`residuals.sam`](#residuals.sam) or [`procres`](#procres)
+`...`     |     extra arguments
+
 
 ## Details
 
-
- prints the residuals as a data.frame
+prints the residuals as a data.frame
 
 
