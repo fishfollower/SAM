@@ -86,7 +86,7 @@ vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Typ
 				      }
 
 				      for(int f=0; f<dat.noFleets; ++f){
-					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7))){ 
+					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6))){ 
 					  int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
 					  if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
 					  matrix<Type> cov(thisdim,thisdim);
@@ -249,7 +249,7 @@ namespace obs_fun {
 #endif
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF,
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, array<Type>& logP,
 	    Recruitment<Type> &recruit,
 	    MortalitySet<Type>& mort,
 	    data_indicator<vector<Type>,Type> &keep,
@@ -298,6 +298,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       vector<Type> fbarL = landFbarFun(dat, conf, logF);
       vector<Type> logfbarL = log(fbarL);
 
+      array<Type> comps = scalePFun(conf, dat, logP);
+      vector<Type> weekContrib = scaleWeekFun(par, dat, logP);
+      int noYearsLAI = yearsPFun(conf,dat);
+      
       if(reportingLevel > 0){
 	NOT_SIMULATE_F(of){  
 	  vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
@@ -332,7 +336,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	}
       }
 
-      vector<Type> predObs = predObsFun(dat, conf, par, logN, logF,mort, logssb, logtsb, logfsb, logCatch, logLand);
+      vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, noYearsLAI);
 
       vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
 
@@ -352,7 +356,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       for(int y=0;y<dat.noYears;y++){
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
-	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3))){
+	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6))){
 	    if(!isNAINT(dat.idx1(f,y))){
 	      int idxfrom=dat.idx1(f,y);
 	      int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
@@ -496,7 +500,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		}
 	      }
 	    }
-	  }else if(dat.fleetTypes(f)==3){
+	  }else if(dat.fleetTypes(f)==3||(dat.fleetTypes(f)==6)){
 	    Type sd=0;
 	    if(!isNAINT(dat.idx1(f,y))){
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
@@ -536,6 +540,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       ADREPORT_F(logCatchByFleet,of);
       ADREPORT_F(logLand,of);
       ADREPORT_F(logtsb,of);
+
+      REPORT_F(comps, of);
+      ADREPORT_F(comps, of);
+      REPORT_F(weekContrib, of);
 
       // Additional forecast quantities
       if(forecast.nYears > 0){
@@ -610,5 +618,5 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
     }
     )
 
-SAM_SPECIALIZATION(double nllObs(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, data_indicator<vector<double>,double>&, int, objective_function<double>*));
-SAM_SPECIALIZATION(TMBad::ad_aug nllObs(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, int, objective_function<TMBad::ad_aug>*));
+SAM_SPECIALIZATION(double nllObs(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, data_indicator<vector<double>,double>&, int, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllObs(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, int, objective_function<TMBad::ad_aug>*));

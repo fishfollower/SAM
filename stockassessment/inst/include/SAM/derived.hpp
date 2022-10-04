@@ -1,6 +1,106 @@
+SAM_DEPENDS(convenience)
 SAM_DEPENDS(logspace)
 SAM_DEPENDS(define)
 SAM_DEPENDS(incidence)
+
+
+template <class Type>
+int yearsPFun(confSet &conf, dataSet<Type> &dat) SOURCE({
+  
+  int noFleets=conf.keyLogFsta.dim[0];
+  Type minYear = dat.years(dat.noYears-1);
+  Type maxYear = 0;
+  int noYearsLAI = -1;
+  for(int f=0;f<noFleets;f++){
+  	if(dat.fleetTypes(f)==6){
+      for(int y=0;y<dat.noYears;y++){
+        if(!isNAINT(dat.idx1(f,y))){
+          if(dat.years(y)<minYear){
+	  	    minYear = dat.years(y);
+		    break;	
+		  }
+	    }
+	  }
+	  for(int y=0;y<dat.noYears;y++){
+        if(!isNAINT(dat.idx1(f,y))){
+          if(dat.years(y)>maxYear){
+	  	    maxYear = dat.years(y);
+	  	  }
+        }
+	  }	  
+    }  	
+    noYearsLAI = CppAD::Integer(maxYear - minYear + 1);
+  }
+  return noYearsLAI;
+  })
+
+
+SAM_SPECIALIZATION(int yearsPFun<double>(confSet&, dataSet<double>&));
+SAM_SPECIALIZATION(int yearsPFun<TMBad::ad_aug>(confSet&, dataSet<TMBad::ad_aug>&));
+
+template <class Type>
+array<Type> scalePFun(confSet &conf, dataSet<Type> &dat, array<Type> &logP)SOURCE({
+    // int noYearsLAI = yearsPFun(conf,dat);
+    int nlogP = logP.dim[0]+1;
+    array<Type> logPS(nlogP,logP.dim[1]);
+    logPS.setZero();
+    if(logPS.dim[0] == 1 || logPS.dim[1] == 0)
+      return logPS;
+    
+    Type totProp;
+    for(int j=0;j<logP.dim[1];j++){
+      totProp=0;
+      for(int i=0;i<(nlogP-1);i++){
+	totProp += exp(logP(i,j));
+      }
+      for(int i=0; i<(nlogP-1);i++){
+	logPS(i+1,j) = log(exp(logP(i,j)) / (1+totProp));
+      }
+      logPS(0,j) = log(1 - totProp / (1+totProp));
+    }      
+    return logPS;
+  })
+
+SAM_SPECIALIZATION(array<double> scalePFun(confSet&, dataSet<double>&, array<double>&));
+SAM_SPECIALIZATION(array<TMBad::ad_aug> scalePFun(confSet&, dataSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
+
+
+template <class Type>
+vector<Type> scaleWeekFun(paraSet<Type> &par, dataSet<Type> &dat, array<Type> &logP)SOURCE({
+
+  int nlogP = logP.dim[0]+1;
+  int maxLAIsurv = par.logAlphaSCB.size()+nlogP;
+  vector<Type> varAlphaSCB(maxLAIsurv);
+  varAlphaSCB.setZero();
+  if(logP.dim[0] == 0 || logP.dim[1] == 0)
+      return varAlphaSCB;
+  
+  //Take contribution of each survey to component and scale to 1
+  int indx; 
+  for(int i=0; i<nlogP;i++){
+    Type totProp_alpha = 0;
+    int idxmin=0; int idxmax=0;
+    idxmin = dat.minWeek(i);
+    idxmax = dat.maxWeek(i);
+    
+
+    for(int j=(idxmin+1);j<=idxmax;j++){
+      // Substract i because aSCB is only 7 long but I'm estimating 11 valus
+      indx = j - 1 - i;
+      totProp_alpha += exp(par.logAlphaSCB(indx));
+    }
+    for(int j=(idxmin+1); j<=idxmax; ++j){
+      indx = j -1 - i;
+      varAlphaSCB(j) = log(exp(par.logAlphaSCB(indx)) / (1+totProp_alpha));
+    }
+    varAlphaSCB(idxmin) = log(1 - totProp_alpha / (1+totProp_alpha));
+  }
+  return varAlphaSCB;
+  })
+
+SAM_SPECIALIZATION(vector<double> scaleWeekFun(paraSet<double>&, dataSet<double>&, array<double>&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> scaleWeekFun(paraSet<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
+
 
 
 template <class Type>

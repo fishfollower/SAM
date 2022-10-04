@@ -321,15 +321,26 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   if(!is.null(surveys)){
     if(is.data.frame(surveys)|is.matrix(surveys)){
       doone(surveys)
-      thistype<-ifelse(min(as.integer(colnames(surveys)))<(-.5),3,2)
+      thistype<-ifelse(is.null(attr(surveys,"part")),ifelse(min(as.integer(colnames(surveys)))<(-.5),3,2),6)
       type<-c(type,thistype)
       time<-c(time,mean(attr(surveys,'time')))
       name<-c(name,"Survey fleet")
     }else{
       dummy<-lapply(surveys,doone)
-      type<-c(type,unlist(lapply(surveys, function(x)ifelse(min(as.integer(colnames(x)))<(-.5), 3, 2))))
+      type<-c(type,unlist(lapply(surveys, function(x)ifelse(is.null(attr(x,"part")),ifelse(min(as.integer(colnames(x)))<(-.5), 3, 2),6))))
       time<-c(time,unlist(lapply(surveys, function(x)mean(attr(x,'time')))))
       name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
+      partSurveys <- unlist(lapply(surveys,function(x){attr(x,"part")}))
+      if(length(partSurveys)>0){
+        idxSurvP <- which(names(surveys) %in% names(partSurveys))
+        supP     <- cumsum(unlist(lapply(surveys[idxSurvP],function(x){return(max(as.integer(colnames(x)))+1)})))
+        minWeek <- c(1,supP[-length(supP)]+1)-1
+        maxWeek <- supP-1
+        names(minWeek) <- names(maxWeek)
+      } else {
+        minWeek <- -1
+        maxWeek <- -1
+      }
     }
   }
 
@@ -406,7 +417,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     name<-c(name,"Recaptures")
   }
 
-  dat<-dat[complete.cases(dat[,1:3]),]
+  cc <- which(complete.cases(dat[,1:3])==T)
+  ccc<- which(complete.cases(dat[,1:4])==F & dat[,2] %in% which(type==6))
+  keep <- cc[which(!cc %in% ccc)]
+  dat<-dat[keep,]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
   attr(dat,'type')<-type
@@ -434,6 +448,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                                            INDEX=factor(dat[,"fleet"],seq_len(fleet.idx)),
                                            FUN=max)
     }
+  attr(dat,"minWeek") <- minWeek
+  attr(dat,"maxWeek") <- maxWeek
   attr(dat,'year')<-newyear
   attr(dat,'nyear')<-max(as.numeric(dat$year))-min(as.numeric(dat$year))+1 ##length(unique(dat$year))
   cutY<-function(x)x[rownames(x)%in%newyear,,drop=FALSE]
@@ -474,6 +490,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     idx2=attr(dat,'idx2'),
     idxCor=idxCor,
     aux=do.call(cbind,lapply(dat[,-4],as.integer)),
+    minWeek=attr(dat,'minWeek'),
+    maxWeek=attr(dat,'maxWeek'),
+    aux=data.matrix(dat[,-4]),
     logobs=log(dat[,4]),
     weight=as.numeric(weight),
     propMat=attr(dat,'prop.mature'),

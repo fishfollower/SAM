@@ -55,6 +55,8 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(idx1); dataset.idx1=idx1;     // minimum index of obs by fleet x year
   DATA_IARRAY(idx2); dataset.idx2=idx2;     // maximum index of obs by fleet x year
   DATA_IARRAY(idxCor); dataset.idxCor=idxCor;    
+  DATA_IVECTOR(minWeek); dataset.minWeek=minWeek;
+  DATA_IVECTOR(maxWeek); dataset.maxWeek=maxWeek;
   DATA_IARRAY(aux); dataset.aux=aux; 
   DATA_VECTOR(logobs); dataset.logobs=logobs; 
   DATA_VECTOR(weight); dataset.weight=weight; 
@@ -84,6 +86,7 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
   DATA_IARRAY(keyVarF); confset.keyVarF=keyVarF; 
   DATA_IVECTOR(keyVarLogN); confset.keyVarLogN=keyVarLogN;  
+  DATA_IVECTOR(keyVarLogP); confset.keyVarLogP=keyVarLogP; //coupling of SD of RWs of logP
   DATA_IARRAY(keyVarObs); confset.keyVarObs=keyVarObs; 
   DATA_FACTOR(obsCorStruct); confset.obsCorStruct=obsCorStruct;  
   DATA_IARRAY(keyCorObs); confset.keyCorObs=keyCorObs; 
@@ -132,15 +135,18 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
   PARAMETER_VECTOR(logSdLogFsta); paraset.logSdLogFsta=logSdLogFsta;  
   PARAMETER_VECTOR(logSdLogN); paraset.logSdLogN=logSdLogN;  
+  PARAMETER_VECTOR(logSdLogP); paraset.logSdLogP=logSdLogP;       //Beta random walk components var
   PARAMETER_VECTOR(logSdLogObs); paraset.logSdLogObs=logSdLogObs; 
   PARAMETER_VECTOR(logSdLogTotalObs); paraset.logSdLogTotalObs=logSdLogTotalObs; 
   PARAMETER_VECTOR(transfIRARdist); paraset.transfIRARdist=transfIRARdist; //transformed distances for IRAR cor obs structure
   PARAMETER_VECTOR(sigmaObsParUS); paraset.sigmaObsParUS=sigmaObsParUS; //choleski elements for unstructured cor obs structure
   PARAMETER_VECTOR(rec_pars); paraset.rec_pars=rec_pars;  
   PARAMETER_VECTOR(itrans_rho); paraset.itrans_rho=itrans_rho;  
+  PARAMETER_VECTOR(rhop); paraset.rhop=rhop;                       //Correlation of beta RW components
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
-  PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;
+  PARAMETER_VECTOR(logitRecapturePhi); paraset.logitRecapturePhi=logitRecapturePhi;    
+  PARAMETER_VECTOR(logAlphaSCB); paraset.logAlphaSCB=logAlphaSCB;
 
   PARAMETER_VECTOR(sepFalpha); paraset.sepFalpha=sepFalpha;    
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
@@ -185,13 +191,18 @@ Type objective_function<Type>::operator() ()
   
   PARAMETER_ARRAY(logF); 
   PARAMETER_ARRAY(logN);
+
   PARAMETER_ARRAY(logSW);
   PARAMETER_ARRAY(logCW);  
   PARAMETER_ARRAY(logitMO);
   PARAMETER_ARRAY(logNM);    
+
+  PARAMETER_ARRAY(logP);
+  
+  
   PARAMETER_VECTOR(missing);
- 
-  // patch missing 
+
+    // patch missing 
   int idxmis=0; 
   for(int i=0;i<nobs;i++){
     if(isNA(dataset.logobs(i))){
@@ -199,33 +210,41 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
+  
+  
+
+
   Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
 
-  Type ans=0; //negative log-likelihood
+  prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
+
+  Type ans=0.0; //negative log-likelihood
 
   if(CppAD::Variable(keep.sum())){ // add wide prior for first state, but _only_ when computing ooa residuals
-    Type huge = 10;
-    for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0), huge, true);  
+    Type huge = 10.0;
+    for (int i = 0; i < missing.size(); i++) ans -= dnorm(missing(i), Type(0.0), huge, true);  
   }
   ans += nllSplinePenalty(dataset, confset, paraset, this);
 
-  prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
   
   ans += nllSW(logSW, dataset, confset, paraset, this);
   ans += nllCW(logCW, dataset, confset, paraset, this);
   ans += nllMO(logitMO, dataset, confset, paraset, this);
   ans += nllNM(logNM, dataset, confset, paraset, this);
-
+  
   MortalitySet<Type> mort(dataset, confset, paraset, logF);
   forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
 
+  ans += nllP(confset, paraset, logP, keep, this);
+  
   ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit,mort, this);
 
-  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep,reportingLevel, this);
+  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, recruit, mort, keep,reportingLevel, this);
 
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
+  
 
   return ans;
 }

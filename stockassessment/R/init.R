@@ -11,6 +11,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logQpow=numeric(max(conf$keyQpow)+1)
   ret$logSdLogFsta=numeric(max(conf$keyVarF)+1)-.7
   ret$logSdLogN=numeric(max(conf$keyVarLogN)+1)-.35
+  ret$logSdLogP=if(length(conf$keyVarLogP)>0){numeric(max(conf$keyVarLogP)+1)-.7} else { numeric(0)}
   ret$logSdLogObs=numeric(max(conf$keyVarObs)+1)-.35
   ret$logSdLogTotalObs=numeric(sum(conf$obsLikelihoodFlag %in% c("ALN")))
   ret$transfIRARdist=if(all(is.na(conf$keyCorObs)))numeric(0) else numeric(max(conf$keyCorObs,na.rm=TRUE)+1)+0.05
@@ -83,12 +84,17 @@ defpar <- function(dat,conf,spinoutyear=10){
   }
   
   ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0 || x==4){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))
+
+  ret$rhop = if(length(conf$keyVarLogP)>0){0.5}else{numeric(0)}
+
   ret$logScale=if(conf$noScaledYears==0){numeric(0)}else{numeric(max(conf$keyParScaledYA)+1)}
   ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))
                            }else{numeric(0)}
   ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(ret$logitReleaseSurvival))
                         }else{numeric(0)}
 
+  ret$logAlphaSCB = if(length(conf$keyVarLogP)>0){unlist(lapply(mapply(seq,dat$minWeek,dat$maxWeek,SIMPLIFY=F),function(x){log(rep(1/length(x),length(x)-1))}))}else{numeric(0)}
+  
   if(sum(conf$corFlag == 3) > 1 || (any( conf$corFlag == 3) && sum(dat$fleetTypes==0) > 1))
       stop("Separable F structure is only implemented for single fleet models")
   if(conf$corFlag[1] ==3 ){
@@ -157,5 +163,16 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logCW=if(conf$catchWeightModel==0){array(0, dim = c(0, 0, 0))}else{array(0, dim = c(nrow(dat$catchMeanWeight)+spinoutyear, ncol(dat$catchMeanWeight), nFleets))}  
   ret$logitMO=if(conf$matureModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$propMat), nrow=nrow(dat$propMat)+spinoutyear)}
   ret$logNM=if(conf$mortalityModel==0){matrix(0, nrow=0, ncol=0)}else{matrix(0, ncol=ncol(dat$natMor), nrow=nrow(dat$natMor)+spinoutyear)}
+
+
+
+  if(any(dat$fleetTypes==6)){
+    idxPart <- which(dat$fleetTypes==6)
+    colP    <- length(unique(dat$aux[which(dat$aux[,"fleet"] %in% idxPart),"year"]))
+    ret$logP=matrix(0, nrow=length(idxPart)-1, ncol=colP)
+  } else {
+      ret$logP=matrix(0, nrow=0, ncol=0)
+  }
+
   return(ret)
 }

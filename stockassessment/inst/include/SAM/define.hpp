@@ -57,6 +57,8 @@ struct dataSet{
   array<int> idx1;
   array<int> idx2;
   array<int> idxCor;
+  vector<int> minWeek;
+  vector<int> maxWeek;
   array<int> aux;
   vector<Type> logobs;
   vector<Type> weight;
@@ -90,6 +92,8 @@ struct dataSet{
     idx1(x.idx1, x.idx1.dim),
     idx2(x.idx2, x.idx2.dim),
     idxCor(x.idxCor, x.idxCor.dim),
+    minWeek(x.minWeek),
+    maxWeek(x.maxWeek),
     aux(x.aux, x.aux.dim),
     logobs(x.logobs),		
     weight(x.weight),  // Good
@@ -121,6 +125,8 @@ SOURCE(
       idx1 = asArray<int>(getListElement(x,"idx1"));
       idx2 = asArray<int>(getListElement(x,"idx2"));
       idxCor = asArray<int>(getListElement(x,"idxCor"));
+      minWeek = asVector<int>(getListElement(x,"minWeek"));
+      maxWeek = asVector<int>(getListElement(x,"maxWeek"));
       aux = asArray<int>(getListElement(x,"aux"));
       logobs = asVector<Type>(getListElement(x,"logobs"));
       weight = asVector<Type>(getListElement(x,"weight"));
@@ -152,6 +158,7 @@ struct confSet{
   array<int> keyQpow;
   array<int> keyVarF;
   vector<int> keyVarLogN; 
+  vector<int> keyVarLogP;
   array<int> keyVarObs;
   vector<int> obsCorStruct; 
   array<int> keyCorObs;
@@ -203,6 +210,7 @@ SOURCE(
 	   keyQpow = asArray<int>(getListElement(x,"keyQpow"));
 	   keyVarF = asArray<int>(getListElement(x,"keyVarF"));
 	   keyVarLogN = asVector<int>(getListElement(x,"keyVarLogN"));
+	   keyVarLogP = asVector<int>(getListElement(x,"keyVarLogP"));
 	   keyVarObs = asArray<int>(getListElement(x,"keyVarObs"));
 	   obsCorStruct = asVector<int>(getListElement(x,"obsCorStruct"));
 	   keyCorObs = asArray<int>(getListElement(x,"keyCorObs"));
@@ -248,6 +256,7 @@ SOURCE(
 	 keyQpow(other.keyQpow),
 	 keyVarF(other.keyVarF),
 	 keyVarLogN(other.keyVarLogN),
+	 keyVarLogP(other.keyVarLogP),
 	 keyVarObs(other.keyVarObs),
 	 obsCorStruct(other.obsCorStruct),
 	 keyCorObs(other.keyCorObs),
@@ -289,15 +298,18 @@ struct paraSet{
   vector<Type> logQpow; 
   vector<Type> logSdLogFsta; 
   vector<Type> logSdLogN; 
+  vector<Type> logSdLogP;
   vector<Type> logSdLogObs;
   vector<Type> logSdLogTotalObs;
   vector<Type> transfIRARdist;
   vector<Type> sigmaObsParUS;
   vector<Type> rec_pars; 
   vector<Type> itrans_rho; 
+  vector<Type> rhop;
   vector<Type> logScale;
   vector<Type> logitReleaseSurvival;   
-  vector<Type> logitRecapturePhi;   
+  vector<Type> logitRecapturePhi; 
+  vector<Type> logAlphaSCB;  
   vector<Type> sepFalpha;   
   vector<Type> sepFlogitRho;   
   vector<Type> sepFlogSd;
@@ -335,15 +347,18 @@ struct paraSet{
     logQpow(other.logQpow), 
     logSdLogFsta(other.logSdLogFsta), 
     logSdLogN(other.logSdLogN), 
+    logSdLogP(other.logSdLogP), 
     logSdLogObs(other.logSdLogObs),
     logSdLogTotalObs(other.logSdLogTotalObs),
     transfIRARdist(other.transfIRARdist),
     sigmaObsParUS(other.sigmaObsParUS),
     rec_pars(other.rec_pars), 
     itrans_rho(other.itrans_rho), 
+    rhop(other.rhop),
     logScale(other.logScale),
     logitReleaseSurvival(other.logitReleaseSurvival),   
     logitRecapturePhi(other.logitRecapturePhi),
+    logAlphaSCB(other.logAlphaSCB),
     sepFalpha(other.sepFalpha),
     sepFlogitRho(other.sepFlogitRho),
     sepFlogSd(other.sepFlogSd),
@@ -378,15 +393,18 @@ SOURCE(
 	   logQpow = asVector<Type>(getListElement(x,"logQpow"));
 	   logSdLogFsta = asVector<Type>(getListElement(x,"logSdLogFsta"));
 	   logSdLogN = asVector<Type>(getListElement(x,"logSdLogN"));
+	   logSdLogP = asVector<Type>(getListElement(x,"logSdLogP"));
 	   logSdLogObs = asVector<Type>(getListElement(x,"logSdLogObs"));
 	   logSdLogTotalObs = asVector<Type>(getListElement(x,"logSdLogTotalObs"));
 	   transfIRARdist = asVector<Type>(getListElement(x,"transfIRARdist"));
 	   sigmaObsParUS = asVector<Type>(getListElement(x,"sigmaObsParUS"));
 	   rec_pars = asVector<Type>(getListElement(x,"rec_pars"));
 	   itrans_rho = asVector<Type>(getListElement(x,"itrans_rho"));
+	   rhop = asVector<Type>(getListElement(x,"rhop"));
 	   logScale = asVector<Type>(getListElement(x,"logScale"));
 	   logitReleaseSurvival = asVector<Type>(getListElement(x,"logitReleaseSurvival"));
 	   logitRecapturePhi = asVector<Type>(getListElement(x,"logitRecapturePhi"));
+	   logAlphaSCB = asVector<Type>(getListElement(x,"logAlphaSCB"));
 	   sepFalpha = asVector<Type>(getListElement(x,"sepFalpha"));
 	   sepFlogitRho = asVector<Type>(getListElement(x,"sepFlogitRho"));
 	   sepFlogSd = asVector<Type>(getListElement(x,"sepFlogSd"));

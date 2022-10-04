@@ -57,10 +57,10 @@ checkNum <- function(val,test){
 ## (A fleet #1) Unintended catch from North Sea at 6142t: C[1]=6142
 ## (F fleet #4) Directed catch in subdivisions 22-24 is half of total: C[4]=0.5*C
 ## (D fleet #3) Bycatch from other fisheries in subdivisions 20-24 is practically zero: C[3]=0.001
-v <- modelforecast(fit,rep("F=0.31 & C[1]=6142 & C[4]=0.5*C & C[3]=1",5),
+suppressWarnings(v <- modelforecast(fit,rep("F=0.31 & C[1]=6142 & C[4]=0.5*C & C[3]=1",5),
                    rec.years = tail(fit$data$years,5),
                    ave.years = tail(fit$data$years,5),
-                   nosim = 0, newton_config=list(grad_tol=1e-7))
+                   nosim = 0, newton_config=list(grad_tol=1e-7)))
 
 cat(checkNum(tail(fbartable(v)[,1],-1),0.31),"\n", file="res.out", append=TRUE)
 Ctab <- attr(v,"catchby")
@@ -70,10 +70,10 @@ cat(checkNum(CtabMed[-1,1],6142),"\n", file="res.out", append=TRUE)
 cat(checkNum(CtabMed[-1,3],1),"\n", file="res.out", append=TRUE)
 cat(checkNum(CtabRel[-1,4],0.5),"\n", file="res.out", append=TRUE)
 
-v <- modelforecast(fit,rep("F=0.2",5),
+suppressWarnings(v <- modelforecast(fit,rep("F=0.2",5),
                    rec.years = tail(fit$data$years,5),
                    ave.years = tail(fit$data$years,5),
-                   nosim = 0, newton_config=list(grad_tol=1e-7))
+                   nosim = 0, newton_config=list(grad_tol=1e-7)))
 cat(checkNum(tail(fbartable(v)[,1],-1),0.2),"\n", file="res.out", append=TRUE)
 Ftab <- attr(v,"fbarby")
 FtabMed <- Ftab[rownames(Ftab) %in% "mostLikelyTrajectory",]
