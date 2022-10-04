@@ -17,7 +17,7 @@ modelforecast(fit, ...)
   landval = NULL,
   findMSY = NULL,
   hcr = NULL,
-  nosim = 1000,
+  nosim = 0,
   year.base = max(fit$data$years),
   ave.years = c(),
   rec.years = c(),

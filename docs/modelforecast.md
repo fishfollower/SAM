@@ -24,7 +24,7 @@ list(list("modelforecast"), list("sam"))(
   landval = NULL,
   findMSY = NULL,
   hcr = NULL,
-  nosim = NULL,
+  nosim = 0,
   year.base = max(fit$data$years),
   ave.years = c(),
   rec.years = c(),
@@ -66,7 +66,7 @@ Argument      |Description
 `landval`     |     a vector of target catches. See details.
 `findMSY`     |     Should not be used. See [forecastMSY](#forecastmsy) .
 `hcr`     |     Should not be used. See [hcr](#hcr) .
-`nosim`     |     number of simulations. Not used.
+`nosim`     |     number of simulations. If 0, the Laplace approximation is used for forecasting.
 `year.base`     |     starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before
 `ave.years`     |     vector of years to average for weights, maturity, M and such
 `rec.years`     |     vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.
@@ -88,7 +88,7 @@ Argument      |Description
 `progress`     |     Show progress bar for simulations?
 `estimate`     |     the summary function used (typically mean or median) for simulations
 `silent`     |     Passed to MakeADFun. Should the TMB object be silent?
-`newton_config`     |     Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for defaults.
+`newton_config`     |     Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.
 
 
 ## Details

@@ -1491,3 +1491,43 @@ b0plot.hcr <- function(fit, ...){
            x=as.numeric(rownames(attr(fit,"fit")$data$catchMeanWeight)), ...)
     addforecast(fit,"logSe")
 }
+
+##' Area plot of spawning components
+##'
+##' @param fit sam fit
+##' @param ... passed to legend
+##' @return Nothing
+##' @author Christoffer Moesgaard Albertsen
+##' @export
+componentplot <- function(fit, ...){
+    UseMethod("componentplot")
+}
+
+
+##' @param onlyComponentYears If true, x axis is limited to the range with spawning component data. Otherwise, the model years are used.
+##' @param ylab Label for y axis
+##' @param colSet Colors
+##' @param legend.pos Legend position. See ?legend
+##' @param bg  Background of legend. See ?legend
+##' @param ncol Number of columns in legend. See ?legend
+##' @rdname componentplot
+##' @method componentplot sam
+##' @export
+componentplot.sam <- function(fit, onlyComponentYears = FALSE, ylab = "Composition",
+                              colSet = c("#332288", "#88CCEE", "#44AA99", "#117733", "#999933", "#DDCC77", "#661100", "#CC6677", "#882255", "#AA4499"), legend.pos = "bottom", bg = "white", ncol = length(cf), ...){
+    if(sum(fit$data$fleetTypes == 6) == 0)
+        stop("The model was not fitted with spawning components")
+    p <- exp(fit$rep$comps)
+    cp <- rbind(0,apply(p,2,cumsum))
+    cf <- which(fit$data$fleetTypes == 6)
+    nms <- attr(fit$data,"fleetNames")[cf]
+    allYears <-  fit$data$years
+    cyRange <- range(fit$data$aux[fit$data$aux[,2] %in% cf,1])
+    compYears <- seq(cyRange[1],cyRange[2],1)
+    xlim <- if(onlyComponentYears){ range(cYearsUse) }else{ range(allYears)}
+    plot(0,0, type = "n", ylab = ylab, xlab = "Year", xlim = xlim, ylim = c(0,1),  xaxs="i",yaxs="i")
+    for(i in 1:(nrow(cp)-1)){
+        polygon(c(compYears,rev(compYears)), c(cp[i,],rev(cp[i+1,])), border = NA, col = colSet[i])
+    }
+    legend(legend.pos,fill = colSet[rev(1:length(nms))], legend = rev(nms), bg=bg, ncol=ncol, ...)
+}
