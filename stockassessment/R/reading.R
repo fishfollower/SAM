@@ -210,6 +210,21 @@ read.ices<-function(filen){
     if(!is.numeric(C)){
         stop(paste("In file",filen, ": Non numeric data values detected (could for instance be comma used as decimal operator)"))
     }
+
+      ## Add attributes
+      l <- readLines(filen,warn=FALSE)
+      lWithAttribName <- grep("^[[:blank:]]*#+'[[:blank:]]*@",l)
+      lWithAttribValues <- grep("^[[:blank:]]*#+'[[:blank:]]*[^@]",l)
+      lWithAttribValues <- setdiff(lWithAttribValues, lWithAttribName)
+      if(length(lWithAttribName) > 0){
+          nms <- sapply(l[lWithAttribName], function(v) gsub("[[:blank:]]+$","",gsub("(^[[:blank:]]*#+'[[:blank:]]*@)","",v)))
+          valList <- split(l[lWithAttribValues],sapply(lWithAttribValues,function(v) sum(v > lWithAttribName)))
+          customAttrib <- lapply(valList, function(l){
+              eval(parse(text=paste(gsub("^[[:blank:]]*#+'[[:blank:]]*","",l),collapse="\n")))
+          })
+          names(customAttrib) <- nms
+          attributes(C) <- c(attributes(C), customAttrib)
+      }
     return(C)
   }else{
     return(read.surveys(filen))  

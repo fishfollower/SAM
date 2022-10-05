@@ -1,16 +1,48 @@
 ##' Write ICES/CEFAS data file from matrix 
 ##' @param x a matrix where rownames are taken as years and colnames are taken as ages
 ##' @param fileout file name or connection
+##' @param writeToOne Write multi fleet data to one file if data is equal for all fleets
 ##' @param ... Arguments to be passed to write 
 ##' @details
 ##' 
 ##' Takes the data and writes them in the ICES/CEFAS format. It is assumed that rows represent consecutive years and cols consecutive ages 
 ##' 
 ##' @export
-write.ices <- function(x, fileout, ...){
-    top <- paste0(fileout, " auto written\n1 2\n", paste0(range(as.integer(rownames(x))), collapse="  "),"\n",paste0(range(as.integer(colnames(x))), collapse="  "), "\n1")    
-    write(top,fileout,...)
-    write(t(x),fileout,ncolumns=ncol(x),append=TRUE,sep="  \t",...)
+write.ices <- function(x, fileout, writeToOne = TRUE, ...){
+    writeOne <- function(x, fileout, ...){
+        top <- paste0(fileout, " auto written\n1 2\n", paste0(range(as.integer(rownames(x))), collapse="  "),"\n",paste0(range(as.integer(colnames(x))), collapse="  "), "\n1")    
+        write(top,fileout,...)
+        write(t(x),fileout,ncolumns=ncol(x),append=TRUE,sep="  \t",...)
+        if(any(!(names(attributes(x)) %in% c("dim","dimnames")))){
+            a <- attributes(x)
+            customA <- a[!(names(attributes(x)) %in% c("dim","dimnames"))]
+            invisible(sapply(seq_along(customA), function(i){
+                write(paste0(sprintf("#'@%s\n", names(customA)[i]),paste(paste("##'",deparse(customA[[i]])),collapse="\n")), fileout, append = TRUE,...)
+            }))
+        }
+    }
+    if(is.matrix(x)){
+        writeOne(x,fileout, ...)
+        return(NULL);
+    }
+
+    if(is.array(x) && length(dim(x))==3){
+        ## Convert to list of matrices
+        x <- lapply(split(x,rep(seq_len(dim(x)[3]), each = prod(dim(x)[1:2]))), matrix, nrow=dim(x)[1], ncol = dim(x)[2], dimnames = dimnames(x)[1:2])
+    }
+
+    if(!is.list(x))
+        stop("x must be a matrix, and array or a list of matrices")
+
+    if(writeToOne && all(sapply(x, function(y) isTRUE(all.equal(y,x[[1]])))))
+        x <- x[1]
+    
+    if(length(x) == 1){
+        writeOne(x[[1]], fileout)
+    }else{
+        f2 <- sub("\\.dat","_%05d.dat",fileout)
+        sapply(seq_along(x), function(i) writeOne(x[[i]],sprintf(f2,i)))
+    }    
 }
 
 ##' Extract a fleet observed or predicted value from a fitted object 
@@ -49,6 +81,14 @@ getResidualFleets <- function(fit, pred="FALSE"){
     return(r)
 }
 
+getResidualSumFleets <- function(fit, pred="FALSE"){
+    ii <- which(fit$data$fleetTypes == 7)
+    r <- lapply(ii, getFleet, fit=fit, pred=pred)
+    names(r) <- attr(fit$data,"fleetNames")[ii]
+    for(i in seq_along(ii))
+        attr(r[[i]],"sumof") <- which(fit$data$sumKey[ii[i],]>0)
+    return(r)
+}
 
 
 ##' Write surveys in ICES/CEFAS data file from a model object  
@@ -86,25 +126,23 @@ write.surveys <- function(fit,fileout,...){
 ##' Write all data files from a list as created by 'setup.sam.data'
 ##' 
 ##' @export
-write.data.files<-function(dat, dir="."){
+write.data.files<-function(dat, dir=".", writeToOne = TRUE, ...){
   od <- setwd(dir)
-  write.ices(dat$catchMeanWeight, "cw.dat")
-  write.ices(dat$disMeanWeight, "dw.dat")
-  write.ices(dat$landMeanWeight, "lw.dat")
-  write.ices(dat$landFrac, "lf.dat")  
-  write.ices(dat$propMat, "mo.dat")    
-  write.ices(dat$stockMeanWeight, "sw.dat")
-  write.ices(dat$propF, "pf.dat")
-  write.ices(dat$propM, "pm.dat")
-  write.ices(dat$natMor, "nm.dat")
+  write.ices(dat$catchMeanWeight, "cw.dat", writeToOne=writeToOne, ...)
+  write.ices(dat$disMeanWeight, "dw.dat", writeToOne=writeToOne,...)
+  write.ices(dat$landMeanWeight, "lw.dat", writeToOne=writeToOne,...)
+  write.ices(dat$landFrac, "lf.dat", writeToOne=writeToOne,...)  
+  write.ices(dat$propMat, "mo.dat", writeToOne=writeToOne,...)    
+  write.ices(dat$stockMeanWeight, "sw.dat", writeToOne=writeToOne,...)
+  write.ices(dat$propF, "pf.dat", writeToOne=writeToOne,...)
+  write.ices(dat$propM, "pm.dat", writeToOne=writeToOne,...)
+  write.ices(dat$natMor, "nm.dat", writeToOne=writeToOne,...)
   fit <- list(data=dat)
-  cn <- getResidualFleets(fit)
-  if(length(cn) == 1){
-      write.ices(cn[[1]], "cn.dat")
-  }else{
-      sapply(seq_along(cn), function(i) write.ices(cn[[i]], sprintf("cn_%s.dat",LETTERS[i])))
-  }
-  write.surveys(fit, "survey.dat")
+  write.ices(getResidualFleets(fit),"cn.dat", writeToOne=writeToOne,...)
+  write.surveys(fit, "survey.dat", ...)
+  sumFleets <- getResidualSumFleets(fit)
+  if(length(sumFleets) > 0)
+      write.ices(sumFleets,"cn_sum.dat", writeToOne=writeToOne,...)
   setwd(od)
 }
 
