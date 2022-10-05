@@ -98,7 +98,12 @@ write.data.files<-function(dat, dir="."){
   write.ices(dat$propM, "pm.dat")
   write.ices(dat$natMor, "nm.dat")
   fit <- list(data=dat)
-  write.surveys(getResidualFleets(fit), "cn.dat")
+  cn <- getResidualFleets(fit)
+  if(length(cn) == 1){
+      write.ices(cn[[1]], "cn.dat")
+  }else{
+      sapply(seq_along(cn), function(i) write.ices(cn[[i]], sprintf("cn_%s.dat",LETTERS[i])))
+  }
   write.surveys(fit, "survey.dat")
   setwd(od)
 }
