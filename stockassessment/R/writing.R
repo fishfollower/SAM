@@ -120,65 +120,29 @@ write.surveys <- function(fit,fileout,...){
 
 ##' Write all data files from a list as created by 'setup.sam.data'  
 ##' @param dat A list as created by 'setup.sam.data'
-##' @param dir Directory where the files are written  
+##' @param dir Directory where the files are written
+##' @param writeToOne Write multi fleet data to one file if data is equal for all fleets
 ##' @details
 ##' 
 ##' Write all data files from a list as created by 'setup.sam.data'
 ##' 
 ##' @export
 write.data.files<-function(dat, dir=".", writeToOne = TRUE, ...){
-  od <- setwd(dir)
-  write.ices(dat$catchMeanWeight, "cw.dat", writeToOne=writeToOne, ...)
-  write.ices(dat$disMeanWeight, "dw.dat", writeToOne=writeToOne,...)
-  write.ices(dat$landMeanWeight, "lw.dat", writeToOne=writeToOne,...)
-  write.ices(dat$landFrac, "lf.dat", writeToOne=writeToOne,...)  
-  write.ices(dat$propMat, "mo.dat", writeToOne=writeToOne,...)    
-  write.ices(dat$stockMeanWeight, "sw.dat", writeToOne=writeToOne,...)
-  write.ices(dat$propF, "pf.dat", writeToOne=writeToOne,...)
-  write.ices(dat$propM, "pm.dat", writeToOne=writeToOne,...)
-  write.ices(dat$natMor, "nm.dat", writeToOne=writeToOne,...)
-  fit <- list(data=dat)
-  write.ices(getResidualFleets(fit),"cn.dat", writeToOne=writeToOne,...)
-  write.surveys(fit, "survey.dat", ...)
-  sumFleets <- getResidualSumFleets(fit)
-  if(length(sumFleets) > 0)
-      write.ices(sumFleets,"cn_sum.dat", writeToOne=writeToOne,...)
-  setwd(od)
-}
-
-##' Read all standard data SAM files and return a list as created by 'setup.sam.data'
-##' @param dir Directory to read from
-##' @return list (as created by 'setup.sam.data')
-##' @details
-##'
-##' Read all standard SAM data files
-##'
-##' @export
-read.data.files<-function(dir="."){
     od <- setwd(dir); on.exit(setwd(od));
-
-    cn<-read.ices("cn.dat")
-    cw<-read.ices("cw.dat")
-    dw<-read.ices("dw.dat")
-    lw<-read.ices("lw.dat")
-    mo<-read.ices("mo.dat")
-    nm<-read.ices("nm.dat")
-    pf<-read.ices("pf.dat")
-    pm<-read.ices("pm.dat")
-    sw<-read.ices("sw.dat")
-    lf<-read.ices("lf.dat")
-    surveys<-read.ices("survey.dat")
-
-    dat<-setup.sam.data(surveys=surveys,
-                    residual.fleets=cn,
-                    prop.mature=mo,
-                    stock.mean.weight=sw,
-                    catch.mean.weight=cw,
-                    dis.mean.weight=dw,
-                    land.mean.weight=lw,
-                    prop.f=pf,
-                    prop.m=pm,
-                    natural.mortality=nm,
-                    land.frac=lf)
-    dat
+    write.ices(dat$catchMeanWeight, "cw.dat", writeToOne=writeToOne, ...)
+    write.ices(dat$disMeanWeight, "dw.dat", writeToOne=writeToOne,...)
+    write.ices(dat$landMeanWeight, "lw.dat", writeToOne=writeToOne,...)
+    write.ices(dat$landFrac, "lf.dat", writeToOne=writeToOne,...)  
+    write.ices(dat$propMat, "mo.dat", writeToOne=writeToOne,...)    
+    write.ices(dat$stockMeanWeight, "sw.dat", writeToOne=writeToOne,...)
+    write.ices(dat$propF, "pf.dat", writeToOne=writeToOne,...)
+    write.ices(dat$propM, "pm.dat", writeToOne=writeToOne,...)
+    write.ices(dat$natMor, "nm.dat", writeToOne=writeToOne,...)
+    fit <- list(data=dat)
+    write.ices(getResidualFleets(fit),"cn.dat", writeToOne=writeToOne,...)
+    write.surveys(fit, "survey.dat", ...)
+    sumFleets <- getResidualSumFleets(fit)
+    if(length(sumFleets) > 0)
+        write.ices(sumFleets,"cn_sum.dat", writeToOne=writeToOne,...)
+    setwd(od)
 }

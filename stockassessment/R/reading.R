@@ -231,6 +231,59 @@ read.ices<-function(filen){
   }
 }
 
+
+
+##' Read all standard data SAM files and return a list as created by 'setup.sam.data'
+##' @param dir Directory to read from
+##' @return list (as created by 'setup.sam.data')
+##' @details
+##'
+##' Read all standard SAM data files
+##'
+##' @export
+read.data.files<-function(dir="."){
+    od <- setwd(dir); on.exit(setwd(od));
+
+    ## read.ices("cn.dat")
+    cn<-lapply(list.files(".","cn(_[[:digit:]]{5})?\\.dat"),read.ices)
+    ## read.ices("cw.dat")
+    cw <- lapply(list.files(".","cw(_[[:digit:]]{5})?\\.dat"),read.ices)
+    ## dw<-read.ices("dw.dat")
+    dw <- lapply(list.files(".","dw(_[[:digit:]]{5})?\\.dat"),read.ices)
+    ## lw<-read.ices("lw.dat")
+    lw <- lapply(list.files(".","cn(_[[:digit:]]{5})?\\.dat"),read.ices)
+    mo<-read.ices("mo.dat")
+    nm<-read.ices("nm.dat")
+    pf<-read.ices("pf.dat")
+    pm<-read.ices("pm.dat")
+    sw<-read.ices("sw.dat")
+    ## lf<-read.ices("lf.dat")
+    lf <- lapply(list.files(".","lf(_[[:digit:]]{5})?\\.dat"),read.ices)
+    surveys<-read.ices("survey.dat")
+    if(length(list.files(".","cn_sum(_[[:digit:]]{5})?\\.dat")) > 0){
+        cns <- lapply(list.files(".","cn_sum(_[[:digit:]]{5})?\\.dat"),read.ices)
+    }else{
+        cns <- NULL
+    }
+
+    dat<-setup.sam.data(surveys=surveys,
+                    residual.fleets=cn,
+                    prop.mature=mo,
+                    stock.mean.weight=sw,
+                    catch.mean.weight=cw,
+                    dis.mean.weight=dw,
+                    land.mean.weight=lw,
+                    prop.f=pf,
+                    prop.m=pm,
+                    natural.mortality=nm,
+                    land.frac=lf,
+                    sum.residual.fleets = cns)
+    dat
+}
+
+
+
+
 ##' Combine the data sources to SAM readable object  
 ##' @param fleets comm fleets vith effort (currently unimplemented)
 ##' @param surveys surveys
@@ -526,6 +579,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   return(ret)
 }
 
+
+
 ##' Read a fitted model from stockassessment.org   
 ##' @param stockname The short-form name of a stock on stockassessment.org. This will (currently?) not work for stocks defined via the AD Model builder version of SAM.
 ##' @param character.only a logical indicating whether 'stockname' can be assumed to be a character string
@@ -550,55 +605,3 @@ fitfromweb <- function(stockname, character.only=FALSE, return.all = FALSE){
     return(e$fit)
 }
 
-##' Re-fit a model from stockassessment.org
-##' @param fit a sam fit or the name of a fit from stockassessment.org
-##' @param newConf list changes to the configuration
-##' @param startingValues list of parameter values to use as starting values
-##' @param ... Arguments passed to sam.fit
-##' @return A new sam fit
-refit <- function(fit, newConf, startingValues, ...){
-    if(is(fit,"character")){
-        fit2 <- fitfromweb(fit, TRUE)
-    }else if(is(fit,"sam")){
-        fit2 <- fit
-    }else{
-        stop("fit must be a sam fit or the name of a fit from stockassessment.org")
-    }
-    if(is.null(fit2$data$idxCor))
-        fit2$data$idxCor <- matrix(NA, nrow=fit2$data$noFleets,
-                                   ncol=fit2$data$noYears)
-    if(is.null(fit2$data$sumKey))
-        fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
-    if(!is.null(fit2$conf$keyCatchWeightMean) && !is.matrix(fit2$conf$keyCatchWeightMean)){
-        fit2$conf$keyCatchWeightMean <- matrix(fit2$conf$keyCatchWeightMean,
-                                               sum(fit2$data$fleetTypes==0),
-                                               diff(range(fit2$data$minAgePerFleet,fit2$data$maxAgePerFleet))+1, byrow=TRUE)
-    }
-     if(!is.null(fit2$conf$keyCatchWeightObsVar) && !is.matrix(fit2$conf$keyCatchWeightObsVar)){
-        fit2$conf$keyCatchWeightObsVar <- matrix(fit2$conf$keyCatchWeightObsVar,
-                                               sum(fit2$data$fleetTypes==0),
-                                               diff(range(fit2$data$minAgePerFleet,fit2$data$maxAgePerFleet))+1, byrow=TRUE)
-    }
-    if(!missing(newConf))
-        fit2$conf[names(newConf)] <- newConf
-    ## Add missing parts from defcon
-    dc <- defcon(fit2$data)
-    nm <- setdiff(names(dc),names(fit2$conf))
-    fit2$conf[nm] <- dc[nm]
-    ## Update parameters
-    dp <- defpar(fit2$data,fit2$conf)
-    for(i in intersect(names(dp),names(fit2$pl)))
-        if(length(dp[[i]]) == length(fit2$pl[[i]]))
-            dp[[i]] <- fit2$pl[[i]]
-    if(!missing(startingValues)){
-        for(i in intersect(names(dp),names(startingValues)))
-            if(length(dp[[i]]) == length(startingValues[[i]])){
-                dp[[i]] <- startingValues[[i]]
-            }else{
-                warning(sprintf("Starting value for %s does not match defpar.",i))
-            }
-    }
-    
-    ##runwithout(fit2, ...)
-    sam.fit(fit2$data, fit2$conf, dp, ...)
-}

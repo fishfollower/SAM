@@ -108,7 +108,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         args$map <- c(args$map, mapRP)
     }
     
-    if(!is.null(conf$hockeyStickCurve))
+    if(!is.null(conf$hockeyStickCurve) && length(conf$hockeyStickCurve)==1)
         if(is.null(args$map$rec_pars) &
            !is.na(conf$hockeyStickCurve) &
            conf$stockRecruitmentModelCode == 63)
@@ -323,4 +323,97 @@ jit <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=de
   attr(fits,"jitflag") <- 1
   class(fits) <- c("samset")
   fits
+}
+
+
+
+
+rerun<-function(fit){
+    if(any(fit$data$fleetTypes == 5))
+        warning("Recapture data will be included in the rerun")
+    od<-getwd()  
+    d<-tempdir()
+    setwd(d)
+    on.exit(setwd(od))
+    write.data.files(fit$data)
+    saveConf(fit$conf, file="model.cfg")
+    dat <- read.data.files(".")
+    conf<-loadConf(dat, "model.cfg", patch = TRUE)
+    par<-defpar(dat,conf)
+    fit<-sam.fit(dat,conf,par)
+    fit
+}
+
+
+##' Re-fit a model from stockassessment.org
+##' @param fit a sam fit or the name of a fit from stockassessment.org
+##' @param newConf list changes to the configuration
+##' @param startingValues list of parameter values to use as starting values
+##' @param ... Arguments passed to sam.fit
+##' @return A new sam fit
+refit <- function(fit, newConf, startingValues, ...){
+    
+    update.structure <- function(.Data, template){
+        do.call(structure, c(list(.Data = rep(.Data, length.out = length(template))),
+                             attributes(template)))
+    }
+
+    if(is(fit,"character")){
+        fit2 <- fitfromweb(fit, TRUE)
+    }else if(is(fit,"sam")){
+        fit2 <- fit
+    }else{
+        stop("fit must be a sam fit or the name of a fit from stockassessment.org")
+    }
+    if(is.null(fit2$data$minWeek)){
+        fit2$data$minWeek <- -1
+    }
+    if(is.null(fit2$data$maxWeek)){
+        fit2$data$maxWeek <- -1
+    }
+    if(is.null(fit2$data$idxCor))
+        fit2$data$idxCor <- matrix(NA, nrow=fit2$data$noFleets,
+                                   ncol=fit2$data$noYears)
+    if(is.null(fit2$data$sumKey))
+        fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
+
+    toArray <- function(x){
+        if(length(dim(x))==2)
+            return(array(x,c(dim(x),1)))
+        return(x)
+    }
+    fit2$data$disMeanWeight <- toArray(fit2$data$disMeanWeight)
+    fit2$data$landMeanWeight <- toArray(fit2$data$landMeanWeight)
+    fit2$data$catchMeanWeight <- toArray(fit2$data$catchMeanWeight)
+    fit2$data$landFrac <- toArray(fit2$data$landFrac)
+    fit2$data$propF <- toArray(fit2$data$propF)
+    
+    if(!missing(newConf))
+        fit2$conf[names(newConf)] <- newConf
+    ## Add missing parts from defcon
+    dc <- defcon(fit2$data)
+    nm <- setdiff(names(dc),names(fit2$conf))
+    fit2$conf[nm] <- dc[nm]
+    nms <- names(fit2$conf)
+    fit2$conf <- lapply(nms, function(n){
+        update.structure(fit2$conf[[n]], dc[[n]])
+    })
+    names(fit2$conf) <- nms
+    
+    ## Update parameters
+    dp <- defpar(fit2$data,fit2$conf)
+    for(i in intersect(names(dp),names(fit2$pl)))
+        if(length(dp[[i]]) == length(fit2$pl[[i]]))
+            dp[[i]] <- fit2$pl[[i]]
+    if(!missing(startingValues)){
+        for(i in intersect(names(dp),names(startingValues)))
+            if(length(dp[[i]]) == length(startingValues[[i]])){
+                dp[[i]] <- startingValues[[i]]
+            }else{
+                warning(sprintf("Starting value for %s does not match defpar.",i))
+            }
+    }
+    
+    ##runwithout(fit2, ...)
+    sam.fit(fit2$data, fit2$conf, dp, ...)
 }
