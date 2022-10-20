@@ -382,7 +382,7 @@ refit <- function(fit, newConf, startingValues, ...){
 
     toArray <- function(x){
         if(length(dim(x))==2)
-            return(array(x,c(dim(x),1)))
+            return(array(x,c(dim(x),1), dimnames = c(dimnames(x),"Residual catch")))
         return(x)
     }
     fit2$data$disMeanWeight <- toArray(fit2$data$disMeanWeight)
