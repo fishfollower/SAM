@@ -333,12 +333,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         hcr <- rep(NA_real_, nYears)
     if(any(!is.na(constraints) & !is.na(hcr)))
         warning("hcr specified for years with other constraints. hcr will overwrite other values.")
-    
-    if(any(!is.na(nextssb)))
-        warning("The nextssb target is not currently supported.")
-    if(any(!is.na(nextssb)) && (any(fit$data$propM != 0) || any(fit$data$propM != 0)))
-        warning("The nextssb target is at the beginning of the year.")
-    
+          
     ## tab <- rbind(fscale,fval,catchval,nextssb,landval, findMSY, hcr)
     ## FModel <- apply(tab,2, function(x){
     ##     y <- which(!is.na(x))
@@ -421,6 +416,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),nYears))
     pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),nYears))
     if(useModelBio){
+        splitArray <- function(a){
+            nr <- dim(a)[1]; nc <- dim(a)[2]; na <- dim(a)[3]
+            lapply(split(a,rep(seq_len(na),each=nr*nc)), matrix, nrow = nr, ncol = nc)
+        }
         extendBio <- function(x) rbind(x,matrix(x[nrow(x)],nYears,ncol(x)))
         if(nrow(pl$logitMO) > 0){            
             pl$logitMO <- extendBio(pl$logitMO)
@@ -437,8 +436,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         }else{
             warning(sprintf("No SW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
         }
-        if(nrow(pl$logCW) > 0){            
-            pl$logCW <- extendBio(pl$logCW)
+        if(dim(pl$logCW)[1] > 0){            
+            pl$logCW <- simplify2array(lapply(splitArray(pl$logCW), extendBio))
         }else{
             warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
         }
