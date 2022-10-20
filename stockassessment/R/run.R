@@ -341,9 +341,9 @@ rerun<-function(fit){
     conf<-loadConf(dat, "model.cfg", patch = TRUE)
     par<-defpar(dat,conf)
     fit2<-sam.fit(dat,conf,par)
-    ld <- (as.numeric(logLik(fit)) - as.numeric(logLik(fit2)))
-    if(ld < 1e-4)
-        warning("Optimized likelihoods differ by %f. Check the results carefully.",ld)
+    ld <- abs(as.numeric(logLik(fit)) - as.numeric(logLik(fit2)))
+    if(ld > 1e-4)
+        warning(sprintf("Optimized likelihoods differ by %f. Check the results carefully.",ld))
     fit2
 }
 
@@ -419,8 +419,8 @@ refit <- function(fit, newConf, startingValues, ...){
     
     ##runwithout(fit2, ...)
     fitNew <- sam.fit(fit2$data, fit2$conf, dp, ...)
-    ld <- (as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
-    if(ld < 1e-4)
-        warning("Optimized likelihoods differ by %f. Check the results carefully.",ld)
+    ld <- abs(as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
+    if(ld > 1e-4)
+        warning(sprintf("Optimized likelihoods differ by %f. Check the results carefully.",ld))
     fitNew
 }
