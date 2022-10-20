@@ -27,7 +27,7 @@ all: $(SAM_SRC) $(SAM_HEADER) SAM.h $(SHLIB)
 	-@$(call writeToFile, >>$@,"#include \"../inst/include/SAM_preprocessor.h\"")
 	-@$(call fileToFile, >>$@, $^)
 	-@$(call writeToFile, >>$@,"#endif")
-	-@sed -i -E 's/SAM_DEPENDS\((.+)\)/#include "A_\1.h"/g' $@
+	-@sed -i'.bak' -E 's/SAM_DEPENDS\((.+)\)/#include "A_\1.h"/g' $@
 
 ./A_%.cpp: ../inst/include/SAM/%.hpp
 	@echo Generating $@
