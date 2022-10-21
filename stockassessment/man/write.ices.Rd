@@ -4,12 +4,14 @@
 \alias{write.ices}
 \title{Write ICES/CEFAS data file from matrix}
 \usage{
-write.ices(x, fileout, ...)
+write.ices(x, fileout, writeToOne = TRUE, ...)
 }
 \arguments{
 \item{x}{a matrix where rownames are taken as years and colnames are taken as ages}
 
 \item{fileout}{file name or connection}
+
+\item{writeToOne}{Write multi fleet data to one file if data is equal for all fleets}
 
 \item{...}{Arguments to be passed to write}
 }

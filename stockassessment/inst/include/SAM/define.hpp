@@ -190,6 +190,7 @@ struct confSet{
   vector<int> keyMortalityObsVar;
   matrix<int> keyXtraSd;
   vector<int> logNMeanAssumption;
+  int initState;
 
   inline confSet() = default;
 
@@ -242,6 +243,7 @@ SOURCE(
 	   keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar"));
 	   keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd"));
 	   logNMeanAssumption = asVector<int>(getListElement(x,"logNMeanAssumption"));
+	   initState = (int)*REAL(getListElement(x,"initState"));
 	 }
 	 )
 
@@ -287,7 +289,8 @@ SOURCE(
 	 keyMortalityMean(other.keyMortalityMean),
 	 keyMortalityObsVar(other.keyMortalityObsVar),
 	 keyXtraSd(other.keyXtraSd),
-	 logNMeanAssumption(other.logNMeanAssumption)
+	 logNMeanAssumption(other.logNMeanAssumption),
+	 initState(other.initState)
 	 {}
 	 );
 
@@ -335,6 +338,9 @@ struct paraSet{
   vector<Type> logSdLogNM;
   vector<Type> logXtraSd;
 
+  vector<Type> initF;
+  vector<Type> initN;
+
   Type splinePenalty;
 
   inline paraSet() = default;
@@ -381,6 +387,8 @@ struct paraSet{
     meanLogNM(other.meanLogNM),
     logSdLogNM(other.logSdLogNM),
     logXtraSd(other.logXtraSd),
+     initF(other.initF),
+     initN(other.initN),
     splinePenalty(other.splinePenalty)  {}
 
 });
@@ -428,6 +436,8 @@ SOURCE(
 	   meanLogNM  = asVector<Type>(getListElement(x,"meanLogNM")); 
 	   logSdLogNM = asVector<Type>(getListElement(x,"logSdLogNM"));
 	   logXtraSd = asVector<Type>(getListElement(x,"logXtraSd"));
+	   initF = asVector<Type>(getListElement(x,"initF"));
+	   initN = asVector<Type>(getListElement(x,"initN"));
 
 	   splinePenalty = (Type)Rf_asReal(getListElement(x,"splinePenalty"));
 	 }

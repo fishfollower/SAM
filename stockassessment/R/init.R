@@ -139,7 +139,10 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logSdLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityObsVar,na.rm=TRUE)+1)}
   ret$logXtraSd=if(nrow(conf$keyXtraSd)==0){numeric(0)}else{numeric(length(unique(conf$keyXtraSd[,4])))}
   
+  ret$initF <- numeric(nrow(ret$logF) * (conf$initState > 0))
+  ret$initN <- numeric(nrow(ret$logN) * (conf$initState > 0))
 
+  
   ## Reference points
   ret$logFScaleMSY <- 0
   ret$implicitFunctionDelta <- 0
@@ -173,6 +176,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   } else {
       ret$logP=matrix(0, nrow=0, ncol=0)
   }
+
 
   return(ret)
 }

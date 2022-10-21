@@ -127,6 +127,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
   DATA_IVECTOR(logNMeanAssumption); confset.logNMeanAssumption=logNMeanAssumption;
+  DATA_INTEGER(initState); confset.initState = initState;
 
   DATA_INTEGER(reportingLevel);
 
@@ -169,7 +170,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(meanLogNM); paraset.meanLogNM=meanLogNM;
   PARAMETER_VECTOR(logSdLogNM); paraset.logSdLogNM=logSdLogNM;
   PARAMETER_VECTOR(logXtraSd); paraset.logXtraSd=logXtraSd;
-
+  PARAMETER_VECTOR(initF); paraset.initF = initF;
+  PARAMETER_VECTOR(initN); paraset.initN = initN;
+  
+  
   // Forecast FMSY
   PARAMETER(logFScaleMSY); paraset.logFScaleMSY = logFScaleMSY;
   PARAMETER(implicitFunctionDelta); paraset.implicitFunctionDelta = implicitFunctionDelta;

@@ -242,6 +242,16 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
   matrix<Type> LF = lltCovF.matrixL();
   matrix<Type> LinvF = LF.inverse();
 
+  if(conf.initState){
+    resF.col(0) = LinvF*(vector<Type>(logF.col(0)-par.initF));
+    nll+=neg_log_densityF(logF.col(0)-par.initF);//density::MVNORM(diagonalMatrix(Type(0.1),stateDimF))((vector<Type>)(logF.col(0)-par.initF));
+    SIMULATE_F(of){
+	if(conf.simFlag(0)==0){
+	  logF.col(0)=par.initF+neg_log_densityF.simulate();
+	}
+      }
+  }
+  
   for(int i=1;i<timeSteps;i++){
     resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
 

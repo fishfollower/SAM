@@ -140,6 +140,7 @@ defcon<-function(dat){
     ret$keyMortalityObsVar <- rep(NA_integer_,nAges)  
     ret$keyXtraSd<-matrix(NA_integer_, nrow=0, ncol=4)
     ret$logNMeanAssumption <- c(0,0)
+    ret$initState <- 0
     return(ret) 
 }
 

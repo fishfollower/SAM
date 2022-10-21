@@ -56,6 +56,8 @@ Help Pages
 | [caytable](caytable.md)                     | Catch-at-age in numbers table                                                           |
 | [clean.void.catches](clean.void.catches.md) | remove void catches                                                                     |
 | [coef.sam](coef.sam.md)                     | Extract fixed coefficients of sam object                                                |
+| [componentplot](componentplot.md)           | Area plot of spawning components                                                        |
+| [componentplot.sam](componentplot.md)       | Area plot of spawning components                                                        |
 | [corplot](corplot.md)                       | Plots between-age correlations by fleet, either estimated or empirical using residuals. |
 | [corplot.sam](corplot.md)                   | Plots between-age correlations by fleet, either estimated or empirical using residuals. |
 | [corplot.samres](corplot.md)                | Plots between-age correlations by fleet, either estimated or empirical using residuals. |

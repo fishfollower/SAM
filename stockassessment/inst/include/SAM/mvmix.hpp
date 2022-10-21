@@ -1,5 +1,19 @@
 SAM_DEPENDS(convenience)
 
+
+template <class Type>
+matrix<Type> diagonalMatrix(Type v, int n) SOURCE({
+  matrix<Type> r(n,n);
+  r.setZero();
+  for(int i = 0; i < n; ++i)
+    r(i,i) = v;
+  return r;
+  })
+
+SAM_SPECIALIZATION(matrix<double> diagonalMatrix(double, int));
+SAM_SPECIALIZATION(matrix<TMBad::ad_aug> diagonalMatrix(TMBad::ad_aug, int));
+
+
 HEADER(
 template <class Type>
 class MVMIX_t{

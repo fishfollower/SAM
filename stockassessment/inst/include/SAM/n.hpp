@@ -46,6 +46,14 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
 
   matrix<Type> pn(stateDimN,timeSteps);
   pn.setZero();
+
+  if(conf.initState){
+    resN.col(0) = LinvN*(vector<Type>(logN.col(0)-par.initN));    
+    nll+= neg_log_densityN(logN.col(0)-par.initN) ;//density::MVNORM(diagonalMatrix(Type(0.1),stateDimN))(logN.col(0)-par.initN); //neg_log_densityN(logN.col(0)-par.initN); // N-Process likelihood 
+    SIMULATE_F(of){
+      logN.col(0) = par.initN + neg_log_densityN.simulate(); //SCALE(N01(par.initN),1.0); // + neg_log_densityN.simulate();
+    }
+  }
   
   for(int i = 1; i < timeSteps; ++i){
     vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort, i);
@@ -69,7 +77,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       }
     }else{
       resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
-      nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood 
+      nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood
       SIMULATE_F(of){
     	if(forecast.nYears > 0 &&
     	   forecast.forecastYear(i) > 0){
