@@ -138,9 +138,10 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$meanLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityMean,na.rm=TRUE)+1)}
   ret$logSdLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityObsVar,na.rm=TRUE)+1)}
   ret$logXtraSd=if(nrow(conf$keyXtraSd)==0){numeric(0)}else{numeric(length(unique(conf$keyXtraSd[,4])))}
-  
-  ret$initF <- numeric(nrow(ret$logF) * (conf$initState > 0))
-  ret$initN <- numeric(nrow(ret$logN) * (conf$initState > 0))
+
+
+  ret$initF <- numeric((max(conf$keyLogFsta)+1) * (conf$initState > 0))
+  ret$initN <- numeric((conf$maxAge-conf$minAge+1) * (conf$initState > 0))
 
   
   ## Reference points
