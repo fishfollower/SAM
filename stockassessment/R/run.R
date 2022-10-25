@@ -424,3 +424,25 @@ refit <- function(fit, newConf, startingValues, ...){
         warning(sprintf("Optimized likelihoods differ by %f. Check the results carefully.",ld))
     fitNew
 }
+
+
+processPriorTMBObject <- function(fit, mapMissing = TRUE){
+    if(fit$conf$initState == 0)
+        warning("A wide prior will be added to the first state of the processes")
+    dat <- fit$obj$env$data
+    par <- fit$pl
+    par$keep <- cbind(rep(0L,length(dat$logobs)))
+    map <- fit$obj$env$map
+    map[["keep"]] <- factor(rep(NA,length(par$keep)))
+    ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logP")
+    if(mapMissing && kength(par$missing) > 0){
+        map[["missing"]] <- factor(rep(NA,length(par$missing)))
+        ran <- setdiff(ran,"missing")
+    }
+    TMB::MakeADFun(data = dat,
+                   parameters = par,
+                   map = map,
+                   random = ran,
+                   checkParameterOrder = FALSE,
+                   DLL = "stockassessment")
+}
