@@ -435,7 +435,7 @@ processPriorTMBObject <- function(fit, mapMissing = TRUE){
     map <- fit$obj$env$map
     map[["keep"]] <- factor(rep(NA,length(par$keep)))
     ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logP")
-    if(mapMissing && kength(par$missing) > 0){
+    if(mapMissing && length(par$missing) > 0){
         map[["missing"]] <- factor(rep(NA,length(par$missing)))
         ran <- setdiff(ran,"missing")
     }

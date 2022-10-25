@@ -277,7 +277,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     }
   }
 
-  if(CppAD::Variable(keep.sum()) && conf.initState){ // add wide prior for first state, but _only_ when computing ooa residuals
+  if(CppAD::Variable(keep.sum()) && conf.initState == 0){ // add wide prior for first state, but _only_ when computing ooa residuals
     Type huge = 10;
     for (int i = 0; i < stateDimF; i++) nll -= dnorm(logF(i, 0), Type(0), huge, true);  
   } 
