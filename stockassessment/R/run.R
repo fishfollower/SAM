@@ -242,7 +242,7 @@ getAllDerivedValues <- function(fit){
     fit$obj$fn(fit$opt$par)
     ddd2$parameters <- fit$obj$env$parList(par=fit$obj$env$last.par)
     obj <- do.call(TMB::MakeADFun,ddd2)
-    sdList <- doReporting(obj, fit$opt, getCallValue("ignore.param.uncertainty",attr(fit,"call")))
+    sdList <- doReporting(obj, fit$opt, getCallValue("ignore.parm.uncertainty",attr(fit,"call")))
     fit[names(sdList)] <- sdList
     fit$obj <- obj
     return(fit)
