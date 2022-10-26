@@ -426,7 +426,7 @@ refit <- function(fit, newConf, startingValues, ...){
 }
 
 
-processPriorTMBObject <- function(fit, mapMissing = TRUE){
+processPriorTMBObject <- function(fit, mapMissing = TRUE, useRandomEffects = FALSE){
     if(fit$conf$initState == 0)
         warning("A wide prior will be added to the first state of the processes")
     dat <- fit$obj$env$data
@@ -434,7 +434,9 @@ processPriorTMBObject <- function(fit, mapMissing = TRUE){
     par$keep <- cbind(rep(0L,length(dat$logobs)))
     map <- fit$obj$env$map
     map[["keep"]] <- factor(rep(NA,length(par$keep)))
-    ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logP")
+    ran <- NULL
+    if(useRandomEffects)
+        ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logP")
     if(mapMissing && length(par$missing) > 0){
         map[["missing"]] <- factor(rep(NA,length(par$missing)))
         ran <- setdiff(ran,"missing")
