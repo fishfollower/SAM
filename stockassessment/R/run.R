@@ -233,6 +233,7 @@ doReporting <- function(obj, opt, ignore.parm.uncertainty){
 ##'
 ##' @param fit sam fit returned by sam.fit
 ##' @return Updated sam fit
+##' @export
 getAllDerivedValues <- function(fit){
     if(.checkFullDerived(fit))
         return(fit)
