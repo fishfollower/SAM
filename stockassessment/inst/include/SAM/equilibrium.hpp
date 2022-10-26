@@ -63,7 +63,7 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   newDat.noYears = nYears;
 
   Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
-  confSet conf2(conf); conf2.stockRecruitmentModelCode = -99;
+  confSet conf2(conf); conf2.stockRecruitmentModelCode = -1;
   Recruitment<Type> rec0 = makeRecruitmentFunction(conf2, par);
 
   // Make logF array
