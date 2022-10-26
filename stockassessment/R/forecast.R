@@ -811,6 +811,7 @@ forecast <- function(fit,
     ##   attr(simlist, "label") <- label  
     ## >>>>>>> multi   !!!End of conflict block 3 -- NOT FULLY MERGED!!!
     class(simlist) <- "samforecast"
+    attr(simlist,"estimateLabel") <- estimateLabel
     if(!savesim){  
         simlistsmall<-lapply(simlist, function(x)list(year=x$year))
         attributes(simlistsmall)<-attributes(simlist)

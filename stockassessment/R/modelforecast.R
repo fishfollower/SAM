@@ -595,6 +595,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist, "fbarby")<-fbftable
         attr(simlist, "nosim") <- nosim
         class(simlist) <- "samforecast"
+        attr(simlist,"estimateLabel") <- estimateLabel
         ## Done with reporting
         incpb()
         if(progress)
@@ -714,6 +715,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist, "fulltab") <- fullTable
         attr(simlist,"nosim") <- 0
         class(simlist) <- "samforecast"
+        attr(simlist,"estimateLabel") <- estimateLabel
         return(simlist)    
     }
 }
