@@ -94,7 +94,7 @@ SAM_SPECIALIZATION(struct Recruitment<TMBad::ad_aug>);
 
 namespace RecruitmentConvenience {
 
-  enum RecruitmentModel {
+  enum RecruitmentModel {			 
 			 ICESforecast = -2,
 			 NoRecruit = -1,
 			 LogRandomWalk = 0,

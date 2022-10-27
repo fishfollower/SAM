@@ -227,7 +227,7 @@ doReporting <- function(obj, opt, ignore.parm.uncertainty){
     list(sdrep=sdrep, pl=pl, plsd=plsd, rep = rep)
 }
 
-.checkFullDerived <- function(fit) getCallValue("fullDerived",attr(fit,"call"))
+.checkFullDerived <- function(fit) (fit$obj$env$data$reportingLevel == 1)
 
 ##' Update sam fit with additional derived values
 ##'
