@@ -4,10 +4,12 @@
 \alias{defcon}
 \title{Setup basic minimal configuration for sam assessment}
 \usage{
-defcon(dat)
+defcon(dat, level = 1)
 }
 \arguments{
 \item{dat}{sam data object}
+
+\item{level}{1 or 2 (1 most basic configuration, 2 configuration with AR correlation structure on surveys)}
 }
 \value{
 a list containing the elements needed to configure a sam model (e.g. minAge, maxAge, maxAgePlusGroup, keyLogFsta, ...).

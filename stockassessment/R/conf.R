@@ -19,11 +19,12 @@ setS<-function(x){
 }
 
 ##' Setup basic minimal configuration for sam assessment
-##' @param dat sam data object 
+##' @param dat sam data object
+##' @param level 1 or 2 (1 most basic configuration, 2 configuration with AR correlation structure on surveys)
 ##' @return a list containing the elements needed to configure a sam model (e.g. minAge, maxAge, maxAgePlusGroup, keyLogFsta, ...). 
 ##' @details The configuration returned by defcon is intended as a help to set up a syntactically correct configuration for the sam model. The dimensions are set from the data (years, age-classes, and fleet types available). The configuration is intended to be fairly simplistic in the hope that the model configured will at least converge (not guaranteed). Most importantly: No model validation has been performed, so it should not be assumed that the returned model configuration will result in a sensible assessment of the stock. The actual model configuration is the responsibility of the user.     
 ##' @export
-defcon<-function(dat){
+defcon<-function(dat, level=1){
     fleetTypes <- dat$fleetTypes    
     ##ages <- do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
     ages <- cbind(dat$minAgePerFleet, dat$maxAgePerFleet)    
@@ -88,13 +89,22 @@ defcon<-function(dat){
     ret$keyVarObs <- x - 1
 
     ret$obsCorStruct <- factor(rep("ID",nFleets),levels=c("ID","AR","US"))
+    if(level==2){
+        ret$obsCorStruct[fleetTypes==2]<-"AR"
+    }
     ret$obsCorStruct[fleetTypes==7] <- NA
     ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=nAges-1)
     colnames(ret$keyCorObs)<-paste(minAge:(maxAge-1),(minAge+1):maxAge,sep="-")
+    nextpar<-0
     for(i in 1:nrow(x)){
         if(fleetTypes[i]!=7){
             if(ages[i,1]<ages[i,2]){
-                ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-NA
+                if((level==2)&(fleetTypes[i]==2)){
+                    ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-nextpar
+                    nextpar<-nextpar+1
+                }else{
+                    ret$keyCorObs[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge)]<-NA
+                }           
             }
         }
     }
