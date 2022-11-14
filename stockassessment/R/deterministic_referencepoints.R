@@ -141,7 +141,9 @@ recruitmentProperties <- function(fit){
 }
 
 
-.refpointStartingValue <- function(rparg, fit, Fsequence, fay = faytable(fit), fbar = fbartable(fit)[,1]){
+.refpointCheckRecruitment <- function(rparg,fit){
+    srmc <- fit$conf$stockRecruitmentModelCode
+    recProp <- recruitmentProperties(fit)
 
     ## Check validity of SRR-refpoint combination
     srmc <- fit$conf$stockRecruitmentModelCode
@@ -172,6 +174,12 @@ recruitmentProperties <- function(fit){
     i <- match(rparg$rpType, invalidRP)
     if(length(i) > 0 && !is.na(i))
         stop(sprintf("%s cannot be estimated for %s recruitment",names(.refpointEnum)[match(invalidRP[i],.refpointEnum)],srName))
+    return(NULL)
+    
+}
+
+.refpointStartingValue <- function(rparg, fit, Fsequence, fay = faytable(fit), fbar = fbartable(fit)[,1]){
+    .refpointCheckRecruitment(rparg,fit)
     
     if(rparg$rpType == -99){            # None
         rparg$logF0 <- numeric(0)
