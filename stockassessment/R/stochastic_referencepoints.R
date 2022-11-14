@@ -369,6 +369,7 @@ predict.rpscurvefit <- function(x,newF,...){
 ##' @param referencepoints a character vector of reference points to estimate (see Details)
 ##' @param ... Additional arguments passed on
 ##' @return sam reference point object
+##' @export
 stochasticReferencepoints <- function(fit,
                                        referencepoints,
                                        ...){
@@ -423,7 +424,7 @@ stochasticReferencepoints.sam <- function(fit,
 
     MT <- .refpointSMethodParser(method, formula = formula)
 
-    catchType <- pmatch(catchType,c("catch","landing","discard"))
+    catchType <- pmatch(catchType,c("catch","landing","discard"))-1
     if(is.na(catchType))
         stop("Invalid catch type")
 
@@ -449,27 +450,31 @@ stochasticReferencepoints.sam <- function(fit,
     rpArgs <- Reduce(.refpointMerger,
                      lapply(referencepoints, .refpointParser, cutoff = 0.1),
                      list())
+    invisible(lapply(rpArgs,.refpointCheckRecruitment,fit=fit))
     a <- capture.output(v0 <- .refpointSFitCriteria(rpArgs, fit$pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType))
    incpb()
     ## Sample to get CIs
-    plRep <- .asympSampleParVec(nosim_ci,fit, boundary = TRUE, returnList = TRUE)
-    incpb()
-    vv <- lapply(plRep, function(par){
-        oN <- fit$obj
-        a <- capture.output(invisible(oN$fn(par)))
-        pl <- oN$env$parList(par,oN$env$last.par)
-        a <- capture.output(v <- try({.refpointSFitCriteria(rpArgs,pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType)}, silent = TRUE))
+    if(nosim_ci > 0){
+        plRep <- .asympSampleParVec(nosim_ci,fit, boundary = TRUE, returnList = TRUE)
         incpb()
-        v
-    })
-    close(pb)
-       
+        vv <- lapply(plRep, function(par){
+            oN <- fit$obj
+            a <- capture.output(invisible(oN$fn(par)))
+            pl <- oN$env$parList(par,oN$env$last.par)
+            a <- capture.output(v <- try({.refpointSFitCriteria(rpArgs,pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType)}, silent = TRUE))
+            incpb()
+            v
+        })
     ## Get Ye/Re/Se/... (how should they be summarized?)
-    ii <- sapply(vv, class) == "try-error"
+        ii <- sapply(vv, class) == "try-error"
+    }else{
+        ii <- logical(0)
+    }
     if(sum(!ii) > 0){
         resTabs <- lapply(rownames(vv[!ii][[1]]$Estimates), function(nm){
             tab <- cbind(v0$Estimate[nm,],t(apply(do.call("rbind",lapply(vv[!ii], function(x) x$Estimates[nm,])),2,quantile, prob = c(0.025,0.975))))
             colnames(tab) <- c("Estimate","Low","High")
+            rownames(tab) <- colnames(v0$Estimate)
             tab
         })
         names(resTabs) <- rownames(vv[!ii][[1]]$Estimates)
@@ -478,9 +483,13 @@ stochasticReferencepoints.sam <- function(fit,
         resTabs <- lapply(rownames(v0$Estimates), function(nm){
             tab <- cbind(v0$Estimate[nm,], NA, NA)
             colnames(tab) <- c("Estimate","Low","High")
+            rownames(tab) <- colnames(v0$Estimate)
             tab
         })
+        names(resTabs) <- rownames(v0$Estimate)
     }
+        
+    close(pb)
 
     Fseq <- seq(0,2,len=200)
     
