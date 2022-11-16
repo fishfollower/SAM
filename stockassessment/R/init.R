@@ -117,23 +117,23 @@ defpar <- function(dat,conf,spinoutyear=10){
     }else{numeric(0)}
   }else{numeric(0)}
 
-  ret$logPhiSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(2)}
+  ret$logPhiSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(conf$stockWeightModel+1)}
   ret$logSdProcLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(1)}
   ret$meanLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightMean,na.rm=TRUE)+1)}
   ret$logSdLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(max(conf$keyStockWeightObsVar,na.rm=TRUE)+1)}
 
   nFleets <- sum(dat$fleetTypes == 0)
-  ret$logPhiCW=if(conf$catchWeightModel==0){matrix(0,0,0)}else{matrix(0,2,nFleets)}
+  ret$logPhiCW=if(conf$catchWeightModel==0){matrix(0,0,0)}else{matrix(0,conf$catchWeightModel+1,nFleets)}
   ret$logSdProcLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(nFleets)}
   ret$meanLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(max(conf$keyCatchWeightMean,na.rm=TRUE)+1)}
   ret$logSdLogCW=if(conf$catchWeightModel==0){numeric(0)}else{numeric(max(conf$keyCatchWeightObsVar,na.rm=TRUE)+1)}
 
-  ret$logPhiMO=if(conf$matureModel==0){numeric(0)}else{numeric(2)}
+  ret$logPhiMO=if(conf$matureModel==0){numeric(0)}else{numeric(conf$matureModel+1)}
   ret$logSdProcLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
   ret$meanLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(max(conf$keyMatureMean,na.rm=TRUE)+1)}
   ret$logSdMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
 
-  ret$logPhiNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(2)}
+  ret$logPhiNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(conf$mortalityModel+1)}
   ret$logSdProcLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(1)}
   ret$meanLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityMean,na.rm=TRUE)+1)}
   ret$logSdLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityObsVar,na.rm=TRUE)+1)}

@@ -19,6 +19,7 @@ Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, 
     }
     matrix<Type> Wc(n,n); Wc.setZero();
     matrix<Type> Wd(n,n); Wd.setZero();
+    matrix<Type> Wp(n,n); Wp.setZero();    
     for(int i=0; i<n; ++i){
       for(int j=0; j<n; ++j){
 	if((c(i)==c(j))&&(abs(r(i)-r(j))==1)){
@@ -29,6 +30,13 @@ Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, 
        	  Wd(i,j)=1;
 	  Wd(i,i)-=1;
 	}
+	if(logPhi.size()==3){
+          if ((c(i)==(ncol-1)) && (c(j)==(ncol-1)) && (abs(r(i)-r(j))==1) ){
+            Wp(i,j)=1;
+	    Wp(i,i)-=1;
+	  }
+	}
+
       }
     }
     
@@ -43,7 +51,9 @@ Type nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> keyMeanVec, 
     matrix<Type> I(Wc.rows(),Wc.cols());
     I.setIdentity();
     matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
-    
+    if(logPhi.size()==3){
+      Q-=phi(2)*Wp;
+    }
     return density::SCALE(density::GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
 });
 
