@@ -61,9 +61,9 @@ conf$keyLogFpar[5:8,1] <- 6-1
 #conf$keyVarLogP <- rep(0,3)
 par<-defpar(dat,conf)
 
+par$logFpar<-c(0, 0.3, 0.4, -9, -12.5, -4.1)
 
 suppressWarnings(fit<-sam.fit(dat,conf,par))
-
 
 cat(fit$opt$objective,"\n\n", file="res.out")
 
