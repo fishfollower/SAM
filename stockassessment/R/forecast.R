@@ -73,7 +73,7 @@ forecast <- function(fit,
                      year.base=max(fit$data$years),
                      ave.years=max(fit$data$years)+(-4:0),
                      rec.years=max(fit$data$years)+(-9:0),
-                     label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE,  customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel==1), useCWmodel=(fit$conf$catchWeightModel==1), useMOmodel=(fit$conf$matureModel==1), useNMmodel=(fit$conf$mortalityModel==1), savesim=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
+                     label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE,  customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel>=1), useCWmodel=(fit$conf$catchWeightModel>=1), useMOmodel=(fit$conf$matureModel>=1), useNMmodel=(fit$conf$mortalityModel>=1), savesim=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
     ## if(sum(fit$data$fleetTypes==0) > 1)
     ##     stop("Forecast for multi fleet models not implemented yet")
 
