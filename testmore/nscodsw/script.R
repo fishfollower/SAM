@@ -51,7 +51,15 @@ conf$keyStockWeightObsVar<-rep(0,6)
 
 par<-defpar(dat,conf)
 fit1<-sam.fit(dat,conf,par)
+
+conf$stockWeightModel<-2
+par<-defpar(dat,conf)
+fit2<-sam.fit(dat,conf,par)
+
+
 #matplot(log(fit1$data$stockMeanWeight))
-#matplot(t(t(fit1$pl$logSW)+fit1$pl$meanLogSW), type="l", add=TRUE)
+#matplot(fit1$pl$logSW, type="l", add=TRUE)
+#matplot(fit2$pl$logSW, type="l", add=TRUE)
 
 cat(logLik(fit1),"\n", file="res.out")
+cat(logLik(fit2),"\n", file="res.out", append=TRUE)

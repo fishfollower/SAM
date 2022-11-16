@@ -62,7 +62,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug nllBioProcess(array<TMBad::ad_aug>, vector<TMBa
 
 template <class Type>
 Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE({
-    if(conf.stockWeightModel==1){
+    if(conf.stockWeightModel>=1){
       Type nll=0;
       array<Type> sw=dat.stockMeanWeight;
       nll += nllBioProcess(logSW, par.meanLogSW, conf.keyStockWeightMean, par.logPhiSW, par.logSdProcLogSW(0));
@@ -85,7 +85,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug nllSW(array<TMBad::ad_aug>&, dataSet<TMBad::ad_
 
 template <class Type>
 Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE( {
-  if(conf.catchWeightModel==1){
+  if(conf.catchWeightModel>=1){
     Type nll=0;
     array<Type> cw=dat.catchMeanWeight;
     for(int k = 0; k < logCW.dim[2]; ++k){
@@ -115,7 +115,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug nllCW(array<TMBad::ad_aug>&, dataSet<TMBad::ad_
 
 template <class Type>
   Type nllMO(array<Type> &logitMO, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE({
-  if(conf.matureModel==1){
+  if(conf.matureModel>=1){
     Type nll=0;
     array<Type> mo=dat.propMat;
     nll += nllBioProcess(logitMO, par.meanLogitMO, conf.keyMatureMean, par.logPhiMO, par.logSdProcLogitMO(0));
@@ -153,7 +153,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug nllMO(array<TMBad::ad_aug>&, dataSet<TMBad::ad_
 
 template <class Type>
 Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, objective_function<Type> *of) SOURCE({
-  if(conf.mortalityModel==1){
+  if(conf.mortalityModel>=1){
     Type nll=0;
     array<Type> nm=dat.natMor;
     nll += nllBioProcess(logNM, par.meanLogNM, conf.keyMortalityMean, par.logPhiNM, par.logSdProcLogNM(0));
