@@ -23,6 +23,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		Type logfsb,
 		Type logCatch,
 		Type logLand,
+		Type logfbar,
 		Type tagv1,	     // dat.aux(i,5)
 		Type tagv2,	     // dat.aux(i,6)
 		Type releaseSurvival // releaseSurvivalVec(i)
@@ -157,6 +158,9 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 			}
 			pred = log(N) + par.logFpar(conf.keyLogFpar(f-1,a));
 		      }
+		      if(conf.keyBiomassTreat(f-1)==10){
+			pred = logfbar+par.logFpar(conf.keyLogFpar(f-1,a));
+		      }		      
 		      break;
   
 		    case 4:
@@ -199,12 +203,12 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		    return pred;
 		  });
 		  
-SAM_SPECIALIZATION(double predOneObs(int, int,int,int,int, int,dataSet<double>&,confSet&,paraSet<double>&,array<double>&, array<double>&, array<double>&, vector<double>& ,MortalitySet<double>&,double,double,double,double,double,double,double,double));
-SAM_SPECIALIZATION(TMBad::ad_aug predOneObs(int, int,int,int,int, int,dataSet<TMBad::ad_aug>&,confSet&,paraSet<TMBad::ad_aug>&,array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&,MortalitySet<TMBad::ad_aug>&,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug));
+SAM_SPECIALIZATION(double predOneObs(int, int,int,int,int, int,dataSet<double>&,confSet&,paraSet<double>&,array<double>&, array<double>&, array<double>&, vector<double>& ,MortalitySet<double>&,double,double,double,double,double,double,double,double,double));
+SAM_SPECIALIZATION(TMBad::ad_aug predOneObs(int, int,int,int,int, int,dataSet<TMBad::ad_aug>&,confSet&,paraSet<TMBad::ad_aug>&,array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&,MortalitySet<TMBad::ad_aug>&,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug));
 
 
 template <class Type>
-vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, array<Type>& logPs, vector<Type>& varAlphaSCB, MortalitySet<Type>& mort, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand, int noYearsLAI)SOURCE({
+vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, array<Type>& logPs, vector<Type>& varAlphaSCB, MortalitySet<Type>& mort, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand, vector<Type> &logfbar, int noYearsLAI)SOURCE({
     vector<Type> pred(dat.nobs);
     pred.setConstant(R_NegInf);
 
@@ -259,6 +263,7 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 			   lfsb,
 			   lctch,
 			   lland,
+			   logfbar(y),
 			   tagv1,
 			   tagv2,	     
 			   releaseSurvivalVec(i) // releaseSurvival
@@ -269,5 +274,5 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     return pred;
   });
 
-SAM_SPECIALIZATION(vector<double> predObsFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, array<double>&, vector<double>&, MortalitySet<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, int));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> predObsFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int));
+SAM_SPECIALIZATION(vector<double> predObsFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, array<double>&, vector<double>&, MortalitySet<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, int));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> predObsFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int));

@@ -336,7 +336,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	}
       }
 
-      vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, noYearsLAI);
+      vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, logfbar, noYearsLAI);
 
       vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
 

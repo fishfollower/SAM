@@ -41,6 +41,7 @@ read.surveys<-function(filen){
   idx2<-c(idx1[-1]-1,length(lin))
   names<-lin[idx1]
   years<-matrix(as.numeric(unlist(strsplit(lin[idx1+1], '[[:space:]]+'))), ncol=2, byrow=TRUE)
+  twofirst<-matrix(as.numeric(unlist(strsplit(lin[idx1+2], '[[:space:]]+'))), ncol=4, byrow=TRUE)[,1:2,drop=FALSE]  
   times<-matrix(as.numeric(unlist(strsplit(lin[idx1+2], '[[:space:]]+'))), ncol=4, byrow=TRUE)[,3:4,drop=FALSE]
   ages<-matrix(as.numeric(unlist(lapply(strsplit(lin[idx1+3], '[[:space:]]+'), function(x)x[1:2]))), ncol=2, byrow=TRUE)
   for(i in 1:length(names)){
@@ -103,6 +104,7 @@ read.surveys<-function(filen){
     ret<-ret[,1:length(ages[i,1]:ages[i,2]),drop=FALSE]
     colnames(ret)<-ages[i,1]:ages[i,2]
     attr(ret,'time')<-times[i,]
+    attr(ret,'twofirst')<-twofirst[i,]
     ret[ret<0]<-NA
     ret
   }
