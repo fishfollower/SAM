@@ -141,7 +141,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdLogTotalObs); paraset.logSdLogTotalObs=logSdLogTotalObs; 
   PARAMETER_VECTOR(transfIRARdist); paraset.transfIRARdist=transfIRARdist; //transformed distances for IRAR cor obs structure
   PARAMETER_VECTOR(sigmaObsParUS); paraset.sigmaObsParUS=sigmaObsParUS; //choleski elements for unstructured cor obs structure
-  PARAMETER_VECTOR(rec_pars); paraset.rec_pars=rec_pars;  
+  PARAMETER_VECTOR(rec_pars); paraset.rec_pars=rec_pars;
+  PARAMETER_VECTOR(rec_transphi); paraset.rec_transphi=rec_transphi;  
   PARAMETER_VECTOR(itrans_rho); paraset.itrans_rho=itrans_rho;  
   PARAMETER_VECTOR(rhop); paraset.rhop=rhop;                       //Correlation of beta RW components
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
@@ -231,10 +232,10 @@ Type objective_function<Type>::operator() ()
   ans += nllSplinePenalty(dataset, confset, paraset, this);
 
   
-  ans += nllSW(logSW, dataset, confset, paraset, this);
-  ans += nllCW(logCW, dataset, confset, paraset, this);
-  ans += nllMO(logitMO, dataset, confset, paraset, this);
-  ans += nllNM(logNM, dataset, confset, paraset, this);
+  ans += nllSW(logSW, dataset, confset, paraset, forecast, this);
+  ans += nllCW(logCW, dataset, confset, paraset, forecast, this);
+  ans += nllMO(logitMO, dataset, confset, paraset, forecast, this);
+  ans += nllNM(logNM, dataset, confset, paraset, forecast, this);
   
   MortalitySet<Type> mort(dataset, confset, paraset, logF);
   forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    

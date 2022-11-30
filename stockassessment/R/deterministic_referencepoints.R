@@ -1,7 +1,11 @@
 
 
 recruitmentProperties <- function(fit){
-    .Call(C_recruitmentProperties,fit$obj$env$data,fit$pl)
+    r <- .Call(C_recruitmentProperties,fit$obj$env$data,fit$pl)
+    r$ARpars <- numeric(0)
+    if(length(fit$pl$rec_transphi) > 0)
+        r$ARpars <- .Call(C_logitroots2ARpar, fit$pl$rec_transphi)
+    r
 }
 
 

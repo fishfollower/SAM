@@ -40,6 +40,9 @@ extern "C" {
   SEXP splinebasis_ibcR(SEXP x, SEXP knots);
   SEXP splinebasis_iibcR(SEXP x, SEXP knots);
   SEXP recruitmentProperties(SEXP tmbdat, SEXP pl);
+  SEXP roots2coefficients(SEXP roots);
+  SEXP roots2ARpar(SEXP roots);
+  SEXP logitroots2ARpar(SEXP x);
   
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
@@ -77,6 +80,9 @@ extern "C" {
     CALLDEF(splinebasis_ibcR,2),
     CALLDEF(splinebasis_iibcR,2),
     CALLDEF(recruitmentProperties,2),
+				   CALLDEF(roots2coefficients,1),
+				   CALLDEF(roots2ARpar,1),
+				   CALLDEF(logitroots2ARpar,1),
     {NULL,NULL,0}
   };
 
@@ -107,6 +113,9 @@ extern "C" {
     CALLABLE(splinebasis_ibcR);
     CALLABLE(splinebasis_iibcR);
     CALLABLE(recruitmentProperties);
+    CALLABLE(roots2coefficients);
+    CALLABLE(roots2ARpar);
+    CALLABLE(logitroots2ARpar);
  
     R_useDynamicSymbols(info, (Rboolean)FALSE);
     R_forceSymbols(info, (Rboolean)FALSE);

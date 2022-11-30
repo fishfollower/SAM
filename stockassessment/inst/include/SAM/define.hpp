@@ -306,7 +306,8 @@ struct paraSet{
   vector<Type> logSdLogTotalObs;
   vector<Type> transfIRARdist;
   vector<Type> sigmaObsParUS;
-  vector<Type> rec_pars; 
+  vector<Type> rec_pars;
+  vector<Type> rec_transphi;
   vector<Type> itrans_rho; 
   vector<Type> rhop;
   vector<Type> logScale;
@@ -358,7 +359,8 @@ struct paraSet{
     logSdLogTotalObs(other.logSdLogTotalObs),
     transfIRARdist(other.transfIRARdist),
     sigmaObsParUS(other.sigmaObsParUS),
-    rec_pars(other.rec_pars), 
+    rec_pars(other.rec_pars),
+     rec_transphi(other.rec_transphi),
     itrans_rho(other.itrans_rho), 
     rhop(other.rhop),
     logScale(other.logScale),
@@ -407,6 +409,7 @@ SOURCE(
 	   transfIRARdist = asVector<Type>(getListElement(x,"transfIRARdist", &Rf_isNumeric));
 	   sigmaObsParUS = asVector<Type>(getListElement(x,"sigmaObsParUS", &Rf_isNumeric));
 	   rec_pars = asVector<Type>(getListElement(x,"rec_pars", &Rf_isNumeric));
+	   rec_transphi = asVector<Type>(getListElement(x,"rec_transphi", &Rf_isNumeric));
 	   itrans_rho = asVector<Type>(getListElement(x,"itrans_rho", &Rf_isNumeric));
 	   rhop = asVector<Type>(getListElement(x,"rhop", &Rf_isNumeric));
 	   logScale = asVector<Type>(getListElement(x,"logScale", &Rf_isNumeric));
