@@ -515,8 +515,12 @@ simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, keep.process =
     if(full.data){
         ret <- replicate(nsim, {
             sval <- object$obj$simulate(est)
-            ret <- c(object$data[names(object$data)!="logobs"],#all the old data
-                     sval["logobs"])#simulated observations
+            ## ret <- c(object$data[names(object$data)!="logobs"],#all the old data
+            ##          sval["logobs"])#simulated observations
+            ret <- object$data
+            ## Replace with simulated values
+            nms <- intersect(names(ret),names(sval))
+            ret[nms] <- sval[nms]
             if(keep.process){
                 ret$logN <- sval$logN
                 ret$logF <- sval$logF

@@ -52,7 +52,7 @@ extern "C" {
     if(!Rf_isFunction(fn))
       Rf_error("fn must be a function");
     ///// par is a numeric vector
-    if(!Rf_isReal(par) && Rf_length(par) > 0)
+    if(!(Rf_isReal(par) && Rf_length(par) > 0))
       Rf_error("par must be a non-zero length numeric vector");
     ///// rho is an environment
     if(!Rf_isEnvironment(rho))
@@ -61,10 +61,10 @@ extern "C" {
     if(!(Rf_isInteger(maxit) || Rf_isReal(maxit)) && Rf_length(maxit) == 1)
       Rf_error("maxit must be a single integer");
     ///// h is a vector of the same length as par
-    if(!Rf_isReal(h) && Rf_length(h) == Rf_length(par))
+    if(!(Rf_isReal(h) && Rf_length(h) == Rf_length(par)))
       Rf_error("h must be a numeric vector with the same length as par");
     //// tolerance is a scalar
-    if(!Rf_isReal(tolerance) && Rf_length(tolerance) == 1)
+    if(!(Rf_isReal(tolerance) && Rf_length(tolerance) == 1))
       Rf_error("tolerance must be a numeric scalar");
 
     

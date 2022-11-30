@@ -11,7 +11,7 @@ Write all data files from a list as created by 'setup.sam.data'
 ## Usage
 
 ```r
-write.data.files(dat, dir = ".")
+write.data.files(dat, dir = ".", writeToOne = TRUE, ...)
 ```
 
 
@@ -21,6 +21,7 @@ Argument      |Description
 ------------- |----------------
 `dat`     |     A list as created by 'setup.sam.data'
 `dir`     |     Directory where the files are written
+`writeToOne`     |     Write multi fleet data to one file if data is equal for all fleets
 
 
 ## Details

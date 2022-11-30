@@ -4,6 +4,59 @@
                           "Mode"=2,
                           "Quantile"=1)
 
+.SAM_setPB <- function(pb, value, label=""){
+    if (!inherits(pb, "txtProgressBar")) 
+        stop(gettextf("'pb' is not from class %s", dQuote("txtProgressBar")), 
+             domain = NA)
+    oldval <- pb$getVal()
+    pb$up(value,label)
+    invisible(oldval)
+}
+.SAMpb <- function (min = 0, max = 1, initial = 0, char = "=", width = NA, 
+    title, label="", format = "| %.3f%%",...) {
+    file <- ""
+    style <- 3
+    .val <- initial
+    .killed <- FALSE
+    .nb <- 0L
+    .pc <- -1L
+    nw <- nchar(char, "w")
+    if (nw == 0) 
+        stop("'char' must have a non-zero width")
+    if (max <= min) 
+        stop("must have 'max' > 'min'")
+    up <- function(value, label="") {
+        if (!is.finite(value) || value < min || value > max) 
+            return()
+        width <- getOption("width") - 10L - nchar(label,"w")  
+        if (nw > 1) 
+            width <- trunc(width/nw)
+        .val <<- value
+        nb <- (width * (value - min)/(max - min))
+        pc <- (100 * (value - min)/(max - min))
+        if (nb == .nb && pc == .pc) 
+            return()
+        cat(paste0(sprintf("\r %s |",label), strrep(" ", nw * width + 6)), file = file)
+        cat(paste(c(sprintf("\r %s |",label), rep.int(char, nb), rep.int(" ", 
+            nw * (width - nb)), sprintf(format, pc)), collapse = ""), 
+            file = file)
+        flush.console()
+        .nb <<- nb
+        .pc <<- pc
+    }
+    getVal <- function() .val
+    kill <- function() if (!.killed) {
+        cat("\n", file = file)
+        flush.console()
+        .killed <<- TRUE
+    }
+    up(initial,label)
+    structure(list(getVal = getVal, up = up, kill = kill), class = "txtProgressBar")
+}
+
+
+
+
 .timeToSeed <- function(){
     tp <- Sys.time()
     tv_sec <- as.numeric(tp)
@@ -72,30 +125,105 @@ predict.rpscurvefit <- function(x,newF,...){
     as.numeric(pM)  
 }
 
-.perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = numeric(0)){
-    if(length(logCustomSel) > 0){
+.getDoSim <- function(logf1, fit, nYears, aveYears, selYears, pl, logCustomSel = NULL,...){
+   if(length(logCustomSel) > 0){
         sel <- exp(logCustomSel)
+    }else if(length(selYears) == 0){   
+        sel <- NULL
     }else{
-        sel <- exp(.logFtoSel(pl$logF, selYears, fit$conf))
+        sel <- exp(.logFtoSel(pl$logF, match(selYears, fit$data$years) - 1, fit$conf))
     }
-    as.data.frame(.Call(C_perRecruitSR,
-                        logFbar = logf,
-                        tmbdat = fit$obj$env$data,
-                        pl = pl,
-                        sel = sel,
-                        aveYears = aveYears,
-                        nYears = nYears,
-                        CT = ct,
-                        logNinit = as.vector(tail(t(pl$logN),1))
-                        ))
+   suppressWarnings(invisible(doSim <- modelforecast(fit,
+                                                     rep(sprintf("F=%f",exp(logf1)), nYears),
+                                                     nosim = 1,
+                                                     progress = FALSE,
+                                                     returnObj = 2,
+                                                     ave.years = aveYears,
+                                                     custom_pl = pl,
+                                                     cstomSel = sel,
+                                                     ...)))
+   doSim
 }
+
+.perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = NULL, nTail = 1,incpb=NULL, doSim = NULL, label="", ...){    
+    ## pl$missing <- NULL
+    ## attr(pl,"what") <- NULL
+    ## f2 <- sam.fit(fit$data,fit$conf,pl, run = FALSE)
+    ## f2$opt <- list(par = f2$obj$par, objective=NA)
+    ## f2$sdrep <- fit$sdrep[c("estY","covY")]
+    ## class(f2) <- "sam"
+    if(is.null(doSim))
+        doSim <- .getDoSim(logf[1], fit, nYears, aveYears, selYears, pl, logCustomSel)
+    if(isTRUE(all.equal(pl,fit$pl))){
+        re_pl <- NULL
+    }else{
+        re_pl <- pl
+    }
+
+    ## progress <- TRUE
+    ## if(progress){
+    ##     pb <- .SAMpb(min = 0, max = length(logf))
+    ##     incpb <- function() .SAM_setPB(pb, pb$getVal()+1)
+    ## }else{
+    ##     incpb <- function(){}
+    ## }
+
+    
+    do.call("rbind",lapply(logf, function(lf){
+        v <- doSim(sprintf("F=%f",exp(lf)))
+        logRe <- tail(v$logN[1,],nTail)
+        logSe <- tail(v$logssb,nTail)
+        if(ct == 0){
+            logYe <- tail(v$logCatch,nTail)
+        }else if(ct == 1){
+            logYe <- tail(v$logLand,nTail)
+        }else{
+            logYe <- tail(log(exp(v$logCatch)-(v$logLand)),nTail)
+        }
+        logLE <- NA_real_ # tail(v$logLifeExpectancy,nTail)
+        logYL <- NA_real_ #tail(v$logYLTF,nTail)
+
+        res <- list(logF = rep(lf,length.out = nTail),
+                logYPR = NA_real_,
+                logSPR = NA_real_,
+                logSe = logSe,
+                logRe = logRe,
+                logYe = logYe,
+                dSR0  = NA_real_,
+                logLifeExpectancy = logLE,
+                logYearsLost = logYL,
+                logDiscYe = NA_real_,
+                logDiscYPR = NA_real_)
+        if(!is.null(incpb))
+            incpb(label)
+        as.data.frame(res)
+    }))
+}
+
+## .perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = numeric(0)){
+##     if(length(logCustomSel) > 0){
+##         sel <- exp(logCustomSel)
+##     }else{
+##         sel <- exp(.logFtoSel(pl$logF, selYears, fit$conf))
+##     }
+##     as.data.frame(.Call(C_perRecruitSR,
+##                         logFbar = logf,
+##                         tmbdat = fit$obj$env$data,
+##                         pl = pl,
+##                         sel = sel,
+##                         aveYears = aveYears,
+##                         nYears = nYears,
+##                         CT = ct,
+##                         logNinit = as.vector(tail(t(pl$logN),1))
+##                         ))
+## }
 
 .numDiff <- function(x,y){
     diff(y) / diff(x)    
 }
 
 #' @importFrom stats runif predict
-.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType){
+.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",...){
     rfv <- function(n,a,b){
         u <- stats::runif(n)
         v1 <- exp(stats::runif(n,log(ifelse(a==0,0.002,a)), log(b)))
@@ -103,13 +231,18 @@ predict.rpscurvefit <- function(x,newF,...){
         ifelse(u < 0.25, v1, v2)
     }
     Fvals <- sort(rfv(nosim,Frange[1],Frange[2]))
-    PRvals <- do.call("rbind",lapply(log(Fvals), .perRecruitSR,
-                                     fit=fit,
-                                     nYears=nYears,
-                                     aveYears = aveYears,
-                                     selYears = selYears,
-                                     pl = pl,
-                                     ct = catchType))  
+    PRvals <- .perRecruitSR(log(Fvals),
+                            fit=fit,
+                            nYears=nYears,
+                            aveYears = aveYears,
+                            selYears = selYears,
+                            pl = pl,
+                            ct = catchType,
+                            nTail = nTail,
+                            incpb = incpb,
+                            doSim = doSim,
+                            label=sprintf("%s equilibrium simulations",label),
+                            ...)  
 ###### Different for different RP's
     getOneRP <- function(rp){
         if(rp$rpType == 1){ ## MSY
@@ -264,13 +397,18 @@ predict.rpscurvefit <- function(x,newF,...){
             }
             return(sapply(c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost"), doOneA))
         }else if(is.function(MT$derivedSummarizer)){  #Simulate
-            return(sapply(lapply(as.list(do.call("rbind",lapply(rep(log(f),nosim), .perRecruitSR,
+            return(sapply(lapply(as.list(.perRecruitSR(rep(log(f),nosim),
                                                          fit=fit,
                                                          nYears=nYears,
                                                          aveYears = aveYears,
                                                          selYears = selYears,
                                                          pl = pl,
-                                                         ct = catchType)))[c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost")],
+                                                         ct = catchType,
+                                                       nTail = nTail,
+                                                       incpb=incpb,
+                                                       doSim = doSim,
+                                                       label = sprintf("%s derived values",label),
+                                                       ...))[c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost")],
                           exp),
                           function(x){ if(all(is.na(x))) return(NA); MT$derivedSummarizer}))
         }else{
@@ -344,10 +482,10 @@ predict.rpscurvefit <- function(x,newF,...){
 ##'    \item{StatusQuo-y}{F in the y years before the last in the assessment, e.g., \code{"StatusQuo-1"} (NOT IMPLEMENTED YET)}
 ##'    \item{MSY}{F that maximizes yield}
 ##'    \item{0.xMSY}{Fs that gives 0.x*100\% of MSY, e.g., \code{"0.95MSY"}}
-##'    \item{Max}{F that maximizes yield per recruit}
-##'    \item{0.xdYPR}{F such that the derivative of yield per recruit is 0.x times the derivative at F=0, e.g., \code{"0.1dYPR"}}
-##'    \item{0.xSPR}{F such that spawners per recruit is 0.x times spawners per recruit at F=0, e.g., \code{"0.35SPR"}}
-##'    \item{0.xB0}{F such that biomass is 0.x times the biomass at F=0, e.g., \code{"0.2B0"}}
+##'    \item{Max}{F that maximizes yield per recruit (NOT IMPLEMENTED YET)}
+##'    \item{0.xdYPR}{F such that the derivative of yield per recruit is 0.x times the derivative at F=0, e.g., \code{"0.1dYPR"} (NOT IMPLEMENTED YET)}
+##'    \item{0.xSPR}{F such that spawners per recruit is 0.x times spawners per recruit at F=0, e.g., \code{"0.35SPR"} (NOT IMPLEMENTED YET)}
+##'    \item{0.xB0}{F such that biomass is 0.x times the biomass at F=0, e.g., \code{"0.2B0"} (NOT IMPLEMENTED YET)}
 ##' }
 ##'
 ##' Reference points can be estimated using these methods:
@@ -363,7 +501,7 @@ predict.rpscurvefit <- function(x,newF,...){
 ##' 
 ##' @examples
 ##' \dontrun{
-##'   stochasticReferencepoints(fit, c("MSY","0.95MSY","Max","0.35SPR","0.1dYPR"))
+##'   stochasticReferencepoints(fit, c("MSY","0.95MSY"))
 ##' }
 ##' @param fit a sam fit
 ##' @param referencepoints a character vector of reference points to estimate (see Details)
@@ -404,13 +542,14 @@ stochasticReferencepoints.sam <- function(fit,
                                           nYears = 300,
                                           Frange = c(0,2),
                                           nosim = 1000,
-                                          aveYears = max(fit$data$years)+(-9:0),
+                                          aveYears = c(), #max(fit$data$years)+(-9:0),
                                           selYears = max(fit$data$years),
                                           newton.control = list(),
                                           seed = .timeToSeed(),
                                           formula = ~ibc(F,5),
                                           nosim_ci = 200,
-                                          derivedSummarizer = median,
+                                          derivedSummarizer = NA,
+                                          nTail = 1,
                                           ...){
 
 
@@ -422,47 +561,51 @@ stochasticReferencepoints.sam <- function(fit,
     on.exit(set.seed(oldSeed))
     set.seed(seed)
 
-    MT <- .refpointSMethodParser(method, formula = formula)
+    MT <- .refpointSMethodParser(method, formula = formula, derivedSummarizer=derivedSummarizer)
 
     catchType <- pmatch(catchType,c("catch","landing","discard"))-1
     if(is.na(catchType))
         stop("Invalid catch type")
 
     aveYearsIn <- aveYears
-    aveYears <- match(aveYears, fit$data$years) - 1
-    if(any(is.na(aveYears)))
-        stop("aveYears has years without data.")
+    ## aveYears <- match(aveYears, fit$data$years) - 1
+    ## if(any(is.na(aveYears)))
+    ##     stop("aveYears has years without data.")
 
     selYearsIn <- selYears
-    selYears <- match(selYears, fit$data$years) - 1
-    if(any(is.na(selYears)))
-        stop("selYears has years without data.")
+    ## selYears <- match(selYears, fit$data$years) - 1
+    ## if(any(is.na(selYears)))
+    ##     stop("selYears has years without data.")
 
     if(!all(Frange >= 0) && Frange[1] < Frange[2] && length(Frange) ==2)
         stop("Wrong Frange")
     if(!nosim > 0)
         stop("nosim must be a positive integer")
 
+    doSim <- .getDoSim(logf1=tail(log(fbartable(fit)[,1]),1),
+                       fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl,...)
  
-    pb <- txtProgressBar(min = 0, max = nosim_ci+2, style = 3)
-    incpb <- function() setTxtProgressBar(pb, pb$getVal()+1)
-    ## Get RPs for best fit
+     ## Get RPs for best fit
     rpArgs <- Reduce(.refpointMerger,
                      lapply(referencepoints, .refpointParser, cutoff = 0.1),
                      list())
     invisible(lapply(rpArgs,.refpointCheckRecruitment,fit=fit))
-    a <- capture.output(v0 <- .refpointSFitCriteria(rpArgs, fit$pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType))
-   incpb()
+
+    pb <- .SAMpb(min = 0, max = nosim * (nosim_ci + 1 + is.function(derivedSummarizer)*length(rpArgs)))
+    incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
+
+    
+    v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:", ...)
+
     ## Sample to get CIs
     if(nosim_ci > 0){
         plRep <- .asympSampleParVec(nosim_ci,fit, boundary = TRUE, returnList = TRUE)
-        incpb()
-        vv <- lapply(plRep, function(par){
+         vv <- lapply(plRep, function(par){
             oN <- fit$obj
             a <- capture.output(invisible(oN$fn(par)))
             pl <- oN$env$parList(par,oN$env$last.par)
-            a <- capture.output(v <- try({.refpointSFitCriteria(rpArgs,pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType)}, silent = TRUE))
-            incpb()
+            v <- try({.refpointSFitCriteria(rpArgs,pl=pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Confidence intervals:", ...)}, silent = TRUE)
+ 
             v
         })
     ## Get Ye/Re/Se/... (how should they be summarized?)
@@ -471,8 +614,9 @@ stochasticReferencepoints.sam <- function(fit,
         ii <- logical(0)
     }
     if(sum(!ii) > 0){
+        nan2na <- function(x)ifelse(is.nan(x),NA,x)
         resTabs <- lapply(rownames(vv[!ii][[1]]$Estimates), function(nm){
-            tab <- cbind(v0$Estimate[nm,],t(apply(do.call("rbind",lapply(vv[!ii], function(x) x$Estimates[nm,])),2,quantile, prob = c(0.025,0.975))))
+            tab <- cbind(v0$Estimate[nm,],t(apply(do.call("rbind",lapply(vv[!ii], function(x) nan2na(x$Estimates[nm,]))),2,quantile, prob = c(0.025,0.975), na.rm=TRUE)))
             colnames(tab) <- c("Estimate","Low","High")
             rownames(tab) <- colnames(v0$Estimate)
             tab
@@ -488,9 +632,6 @@ stochasticReferencepoints.sam <- function(fit,
         })
         names(resTabs) <- rownames(v0$Estimate)
     }
-        
-    close(pb)
-
     Fseq <- seq(0,2,len=200)
     
     ## Make output tables

@@ -43,22 +43,22 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   dataSet<Type> newDat = dat;
   int nMYears = dat.noYears;
   // propMat
-  extendArray(newDat.propMat, nMYears, nYears, aveYears, false);
+  extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 2, false);
    // stockMeanWeight
-  extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, false);
+  extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 1, false);
   // catchMeanWeight
-  extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, false);
+  extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 1, false);
   // natMor
-  extendArray(newDat.natMor, nMYears, nYears, aveYears, false);
-  // landFrac
+  extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 1, false);
+  // landFrac (No biopar process)
   extendArray(newDat.landFrac, nMYears, nYears, aveYears, false);
-  // disMeanWeight
+  // disMeanWeight (No biopar process)
   extendArray(newDat.disMeanWeight, nMYears, nYears, aveYears, false);
-  // landMeanWeight
+  // landMeanWeight (No biopar process)
   extendArray(newDat.landMeanWeight, nMYears, nYears, aveYears, false);
-  // propF
+  // propF (No biopar process)
   extendArray(newDat.propF, nMYears, nYears, aveYears, false);
-  // propM
+  // propM (No biopar process)
   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
   newDat.noYears = nYears;
 

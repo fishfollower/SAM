@@ -96,3 +96,44 @@ Type softmax(Type x, Type y, Type k DEFARG(=1.0))SOURCE({
 
 SAM_SPECIALIZATION(double softmax(double, double, double));
 SAM_SPECIALIZATION(TMBad::ad_aug softmax(TMBad::ad_aug, TMBad::ad_aug, TMBad::ad_aug));
+
+
+
+/*
+  For the zero mean AR(p) process
+X_t = \sum_{i=1}^p  phi_i X_{t-i}
+  The characteristic polynomial is 
+  p(z) = 1 - phi_1 * z^1 - phi_2 * z^2 - \cdots - phi_p z^p
+  The process is stationary if all roots of p(z) = 0 are outside the unit circle (|r_i| > 1)
+  or equivalently, if all roots of the reciprocal polynomial
+  q(w) = w^p - phi_1 * w^{p-1} - \cdots - phi_{p-1} * z - phi_p
+  are inside the unit circle (|r_i| < 1).
+ 
+
+*/
+template<class Type>
+vector<Type> logitroots2ARpar(vector<Type> x)SOURCE({
+    vector<Type> xInc(x.size());
+    xInc.setZero();
+    xInc(0) = x(0);
+    for(int i = 1; i < x.size(); ++i)
+      xInc(i) = xInc(i-1) + exp(x(i));
+  int n = x.size();
+  vector<Type> p(n);
+  p.setZero();
+  vector<Type> coef(n+1);
+  coef.setZero();
+  coef(n) = 1.0;
+  for(int i = 1; i <= n; ++i){
+    for(int j = n - i - 1; j < n; ++j){
+      if(j >= 0)
+	coef(j) += Type(-1.0) * toInterval(xInc(i-1),Type(-1.0),Type(1.0),Type(1.0)) * coef(j+1);
+    }
+  }
+  for(int i = 0; i < n; ++i)
+    p(i) = -coef((n-1)-i);
+  return p;
+  })
+
+  SAM_SPECIALIZATION(vector<double> logitroots2ARpar(vector<double>));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> logitroots2ARpar(vector<TMBad::ad_aug>));

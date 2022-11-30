@@ -40,6 +40,7 @@ modelforecast(fit, ...)
   estimate = median,
   silent = TRUE,
   newton_config = NULL,
+  custom_pl = NULL,
   ...
 )
 }

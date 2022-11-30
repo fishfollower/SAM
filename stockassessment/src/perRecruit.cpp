@@ -489,7 +489,7 @@ extern "C" {
     confSet c0(tmbdat);
     paraSet<double> p0(pl);
     Recruitment<double> rec = makeRecruitmentFunction(c0,p0);
-    const char *resNms[] = {"name","hasEquilibrium", "isCompensatory", "hasMaxAtFiniteS", "isAutoregressive","isTimevarying","hasOvercompensation","hasFiniteMax","hasFiniteMaxGradient", ""}; // Must end with ""
+    const char *resNms[] = {"name","hasEquilibrium", "isCompensatory", "hasMaxAtFiniteS", "isAutoregressive","isTimevarying","hasOvercompensation","hasFiniteMax","hasFiniteMaxGradient", "logSAtMaxR", "logMaxR", "maxGradient", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));
     SET_VECTOR_ELT(res, 0, Rf_mkString(rec.name));
@@ -501,6 +501,9 @@ extern "C" {
     SET_VECTOR_ELT(res, 6, Rf_ScalarLogical(rec_hasOvercompensation(rec))); // Must be same as hasMaxAtFiniteS
     SET_VECTOR_ELT(res, 7, Rf_ScalarLogical(rec_hasFiniteMax(rec)));
     SET_VECTOR_ELT(res, 8, Rf_ScalarLogical(rec_hasFiniteMaxGradient(rec)));
+    SET_VECTOR_ELT(res, 9, Rf_ScalarReal(rec.logSAtMaxR()));
+    SET_VECTOR_ELT(res, 10, Rf_ScalarReal(rec.logMaxR()));
+    SET_VECTOR_ELT(res, 11, Rf_ScalarReal(rec.maxGradient()));
     UNPROTECT(1);
     return res;
   }

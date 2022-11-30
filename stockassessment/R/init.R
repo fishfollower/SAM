@@ -82,6 +82,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   }else{ # The rest
       ret$rec_pars <- numeric(2)
   }
+  ret$rec_transphi <- numeric(conf$recruitmentAutocorrelation)
   
   ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0 || x==4){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))
 

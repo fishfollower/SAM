@@ -2,6 +2,7 @@ SAM_DEPENDS(define)
 SAM_DEPENDS(incidence)
 SAM_DEPENDS(recruitment)
 SAM_DEPENDS(derived)
+SAM_DEPENDS(convenience)
 
 template <class Type>
 vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, MortalitySet<Type>& mort, int i)SOURCE({
@@ -23,6 +24,15 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     lastLogR = logN(0,i-1);    
   predN(0) = recruit(logThisSSB, lastLogR, dat.years(0) + i); // dat.years(0) + i is needed for forecast
 
+  if(par.rec_transphi.size() > 0){
+    vector<Type> phi = logitroots2ARpar(par.rec_transphi);
+    for(int j = 1; j <= par.rec_transphi.size(); ++j){
+      Type logThatSSB = ssbi(dat,conf,logN,logF,mort,std::max(i-conf.minAge-j,0), true);
+      Type thatMu = recruit(logThatSSB, logN(0,std::max(i-1-j,0)), dat.years(0) + i - j);
+      predN(0) += phi(j-1) * (logN(0,std::max(i-j,0)) - thatMu);
+    }
+  }
+  
   switch(conf.logNMeanAssumption(0)){
   case 0:			// Median on natural scale
     predN(0) += 0.0;

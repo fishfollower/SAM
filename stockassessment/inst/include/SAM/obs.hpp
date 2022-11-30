@@ -302,6 +302,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       vector<Type> weekContrib = scaleWeekFun(par, dat, logP);
       int noYearsLAI = yearsPFun(conf,dat);
       
+      
       if(reportingLevel > 0){
 	NOT_SIMULATE_F(of){  
 	  vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
@@ -310,7 +311,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  ADREPORT_F(logLifeExpectancy,of);
 	  ADREPORT_F(logLifeExpectancyRec,of);
 	  ADREPORT_F(logLifeExpectancyAge,of);
+	  REPORT_F(logLifeExpectancy,of);
+	  REPORT_F(logLifeExpectancyRec,of);
+	  REPORT_F(logLifeExpectancyAge,of);
 
+      
 	  vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
 	  matrix<Type> logYLTFf = yearsLostFishingFleet(dat, conf, logF).array().log().matrix();
 	  vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
@@ -318,8 +323,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  ADREPORT_F(logYLTF, of);
 	  ADREPORT_F(logYLTFf, of);
 	  ADREPORT_F(logYLTM, of);
-	  ADREPORT_F(logYNL, of);
- 
+	  ADREPORT_F(logYNL, of);	
+	  REPORT_F(logYLTF, of);
+	  REPORT_F(logYLTFf, of);
+	  REPORT_F(logYLTM, of);
+	  REPORT_F(logYNL, of);	
 	  vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
 	  vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
 	  ADREPORT_F(logrmax, of);
