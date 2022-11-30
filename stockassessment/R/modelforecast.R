@@ -244,6 +244,7 @@ modelforecast.sam <- function(fit,
                               estimate = median,
                               silent = TRUE,
                               newton_config = NULL,
+                              custom_pl = NULL,
                               ...
                               ){
 
@@ -412,7 +413,11 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
 
     args <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
     args$silent <- silent
-    pl <- fit$pl
+    if(is.null(custom_pl)){
+        pl <- fit$pl
+    }else{
+        pl <- custom_pl
+    }
     pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),nYears))
     pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),nYears))
     if(useModelBio){
@@ -480,7 +485,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     ## Done with initial MakeADFun
     incpb()
 
-    if(returnObj)
+    if(as.integer(returnObj)==1)
         return(obj)
 
     fleetHasF <- apply(fit$conf$keyLogFsta>-1,1,any)
@@ -504,23 +509,44 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         }
         plMap[with.map] <- sapply(with.map, applyMap, simplify = FALSE)
         sniii <- 1
-        doSim <- function(){
+        doSim <- function(re_constraint = NULL, re_pl = NULL){
+            obj2 <- obj
+            if(!is.null(re_constraint)){
+                ## Check length of constraints?
+                cstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
+                cstr[!is.na(re_constraint)] <- .parseForecast(re_constraint[!is.na(re_constraint)], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge))                
+                obj2$env$data$forecast$constraints <- cstr
+            }
             sim0 <- est 
             if(resampleFirst)
                 sim0 <- rmvnorm(1, mu=est, Sigma=cov)
             estList0 <- split(as.vector(sim0), names(est))
-            p <- unlist(plMap)
-            names(p) <- rep(names(plMap), times = sapply(plMap,length))
+            if(!is.null(re_pl)){
+                plMap2 <- re_pl
+                map <- fit$obj$env$map
+                with.map <- intersect(names(plMap2), names(map))
+                applyMap <- function(par.name) {
+                    tapply(plMap2[[par.name]], map[[par.name]], mean)
+                }
+                plMap2[with.map] <- sapply(with.map, applyMap, simplify = FALSE)
+                p <- unlist(plMap2)
+                names(p) <- rep(names(plMap2), times = sapply(plMap2,length))
+            }else{
+                p <- unlist(plMap)
+                names(p) <- rep(names(plMap), times = sapply(plMap,length))
+            }            
             ## Only works when year.base is last assessment year
             indxN <- matrix(which(names(p) %in% "logN"),nrow=length(estList0$LogN))[,i0]
             indxF <- matrix(which(names(p) %in% "logF"),nrow=length(estList0$LogF))[,i0]
             p[indxN] <- estList0$LogN
             p[indxF] <- estList0$LogF
-            v <- obj$simulate(par = p)
+            v <- obj2$simulate(par = p)
             sniii <<- sniii+1
             incpb()
             return(v)
         }
+        if(as.integer(returnObj)==2)
+            return(doSim)
         simvals <- replicate(nosim, doSim(), simplify = FALSE)
         simlist <- vector("list",length(FModel) + 1)
         for(i in 0:(length(FModel))){

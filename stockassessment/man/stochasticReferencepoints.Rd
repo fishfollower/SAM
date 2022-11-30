@@ -15,13 +15,14 @@ stochasticReferencepoints(fit, referencepoints, ...)
   nYears = 300,
   Frange = c(0, 2),
   nosim = 1000,
-  aveYears = max(fit$data$years) + (-9:0),
+  aveYears = c(),
   selYears = max(fit$data$years),
   newton.control = list(),
   seed = .timeToSeed(),
   formula = ~ibc(F, 5),
   nosim_ci = 200,
-  derivedSummarizer = median,
+  derivedSummarizer = NA,
+  nTail = 1,
   ...
 )
 }
@@ -70,10 +71,10 @@ The following reference points are implemented:
    \item{StatusQuo-y}{F in the y years before the last in the assessment, e.g., \code{"StatusQuo-1"} (NOT IMPLEMENTED YET)}
    \item{MSY}{F that maximizes yield}
    \item{0.xMSY}{Fs that gives 0.x*100\% of MSY, e.g., \code{"0.95MSY"}}
-   \item{Max}{F that maximizes yield per recruit}
-   \item{0.xdYPR}{F such that the derivative of yield per recruit is 0.x times the derivative at F=0, e.g., \code{"0.1dYPR"}}
-   \item{0.xSPR}{F such that spawners per recruit is 0.x times spawners per recruit at F=0, e.g., \code{"0.35SPR"}}
-   \item{0.xB0}{F such that biomass is 0.x times the biomass at F=0, e.g., \code{"0.2B0"}}
+   \item{Max}{F that maximizes yield per recruit (NOT IMPLEMENTED YET)}
+   \item{0.xdYPR}{F such that the derivative of yield per recruit is 0.x times the derivative at F=0, e.g., \code{"0.1dYPR"} (NOT IMPLEMENTED YET)}
+   \item{0.xSPR}{F such that spawners per recruit is 0.x times spawners per recruit at F=0, e.g., \code{"0.35SPR"} (NOT IMPLEMENTED YET)}
+   \item{0.xB0}{F such that biomass is 0.x times the biomass at F=0, e.g., \code{"0.2B0"} (NOT IMPLEMENTED YET)}
 }
 }
 \details{
@@ -90,6 +91,6 @@ To estimate median equilibrium yield, as required by ICES, the method "Q0.5" sho
 }
 \examples{
 \dontrun{
-  stochasticReferencepoints(fit, c("MSY","0.95MSY","Max","0.35SPR","0.1dYPR"))
+  stochasticReferencepoints(fit, c("MSY","0.95MSY"))
 }
 }
