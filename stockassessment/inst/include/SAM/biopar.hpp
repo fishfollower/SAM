@@ -116,6 +116,7 @@ SAM_SPECIALIZATION(bioResult<double> nllBioProcess(array<double>, vector<double>
 SAM_SPECIALIZATION(bioResult<TMBad::ad_aug> nllBioProcess(array<TMBad::ad_aug>, vector<TMBad::ad_aug>, vector<int>, vector<TMBad::ad_aug>, TMBad::ad_aug));
 
 
+template <class Type>
 Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, objective_function<Type> *of) SOURCE({
     if(conf.stockWeightModel==1){
       Type nll=0;

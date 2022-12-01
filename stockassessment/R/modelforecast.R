@@ -32,19 +32,8 @@
     nCF <- sum(fleetTypes == 0)
     ## Split constraints
     sL <- strsplit(s,"[[:space:]]*&+[[:space:]]*")
-    forecastEnum <- c("F","C","SSB","TSB","L","KeepRelF")
-    parseOne <- function(ss){
-        frmt <- "(F|C|SSB|TSB|L)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]*)(\\*.*)?"
-        type <- factor(gsub(frmt,"\\1",ss),forecastEnum)
-        spec <- gsub(frmt,"\\2",ss)
-        target <- log(as.numeric(gsub(frmt,"\\4",ss)))
-        if(is.na(target))
-            stop("wrong specification of forecast target")
-        rel <- .parseRel(type,gsub(frmt,"\\5",ss))
-        if(is.na(rel) || !is.numeric(rel) || rel < -3){
-            stop("wrong specification of relative value")
-        }
-
+    forecastEnum <- c("F","C","SSB","TSB","L","KeepRelF","HCR")
+    getAgeFleetSettings <- function(spec, type){
         if(spec == ""){                 # Not specified
             Amin <- as.numeric(ifelse(type=="F",FbarRange[1],ageRange[1]))
             Amax <- as.numeric(ifelse(type=="F",FbarRange[2],ageRange[2]))
@@ -64,6 +53,101 @@
         }else{ #Wrongly specified
             stop("Wrong specification of forecast")
         }
+        list(Amin = Amin, Amax = Amax, fleet = fleet)
+    }
+    parseHCR <- function(ss){
+        ## HCR[settings]=value(F|C|L)[settings]~value(SSB|TSB)[settings]lag
+        ## Match 1: HCR
+        ## Match 2: HCR settings
+        ## Match 3: =
+        ## Match 4: Target value 
+        ## Match 5: Target type (F, C, L)
+        ## Match 6: Target settings (age range, fleet)
+        ## Match 7: ~
+        ## Match 8: Trigger value
+        ## Match 9: Trigger type (SSB, TSB)
+        ## Match 10: Trigger settings (age range)
+        ## Match 11: Trigger lag
+        frmt <- "^(HCR)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]+)(F|C|L)?(\\[.+\\])?(~)([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB)?(\\[.+\\])?(-[[:digit:]]*)?$"
+        if(!grepl(frmt,ss))
+            stop("Wrong specification of HCR")
+        type <- factor(gsub(frmt,"\\1",ss),forecastEnum)
+        rel <- -3
+        ## Get target info
+        target <- log(as.numeric(gsub(frmt,"\\4",ss)))
+        if(is.na(target))
+            stop("wrong specification of forecast target")
+        targetType <- gsub(frmt,"\\5",ss)
+        if(targetType == "")
+            targetType <- "F"
+        targetTypeI <- match(targetType, c("F","C","L"))-1
+        if(is.na(targetTypeI))
+            stop("wrong specification of forecast target type")
+        targetSpec <- gsub(frmt,"\\6",ss)
+        targetSettings <- getAgeFleetSettings(targetSpec,targetType)
+        ## Get trigger info (Need to trick gsub)     
+        frmtTrig <- "^([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB)?(\\[.+\\])?(-[[:digit:]]*)?$"
+        ssTrig <- gsub(".+~","",ss)
+        if(!grepl(frmtTrig,ssTrig))
+            stop("Wrong specification of HCR trigger")     
+        triggerValue <- as.numeric(gsub(frmtTrig,"\\1",ssTrig))
+        triggerType <- gsub(frmtTrig,"\\2",ssTrig)
+        if(triggerType == "")
+            triggerType <- "SSB"
+        triggerTypeI <- match(triggerType, c("SSB","TSB"))-1
+        triggerSpec <- gsub(frmtTrig,"\\3",ssTrig)
+        triggerSettings <- getAgeFleetSettings(triggerSpec,triggerType)
+        triggerLag <- gsub(frmtTrig,"\\4",ssTrig)
+        if(triggerLag == ""){
+            triggerLag <- 0
+        }else{
+            triggerLag <- -as.numeric(triggerLag)
+        }
+        ## Get other HCR info
+        hcrSpec <- lapply(strsplit(gsub("(\\[|\\])","",gsub(frmt,"\\2",ss)),",")[[1]],function(x) strsplit(x,"=")[[1]])
+        hcrVal <- lapply(hcrSpec, function(x) as.numeric(x[2]))
+        names(hcrVal) <- sapply(hcrSpec, function(x) x[1])
+        hcrConf <- list(FO = 0, FC = 0, BO = 0, BC = 0)
+        nms <- intersect(names(hcrConf),names(hcrVal))
+        hcrConf[nms] <- hcrVal[nms]
+        list(specification = ss,
+             Amin = targetSettings$Amin,
+             Amax = targetSettings$Amax,
+             fleet = targetSettings$fleet,
+             relative = rel,
+             cstr = as.numeric(type)-1,
+             target = target,
+             settings = c(biomassType=triggerTypeI,
+                          biomassLag = triggerLag,
+                          targetType = targetTypeI,
+                          triggerAmin = triggerSettings$Amin,
+                          triggerAmax = triggerSettings$Amax,
+                          Forigin = hcrConf$FO,
+                          Fcap = hcrConf$FC,
+                          Borigin = hcrConf$BO,
+                          Bcap = hcrConf$BC,
+                          Btrigger = triggerValue)
+             )
+    }
+    parseOne <- function(ss){
+        if(grepl("^HCR",ss))
+            return(parseHCR(ss))
+        frmt <- "^(F|C|SSB|TSB|L)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]*)(\\*.*)?$"
+        if(!grepl(frmt,ss))
+            stop("Wrong specification of forecast")      
+        type <- factor(gsub(frmt,"\\1",ss),forecastEnum)
+        spec <- gsub(frmt,"\\2",ss)
+        target <- log(as.numeric(gsub(frmt,"\\4",ss)))
+        if(is.na(target))
+            stop("wrong specification of forecast target")
+        rel <- .parseRel(type,gsub(frmt,"\\5",ss))
+        if(is.na(rel) || !is.numeric(rel) || rel < -3){
+            stop("wrong specification of relative value")
+        }
+        fa <- getAgeFleetSettings(spec, type)
+        Amin <- fa$Amin
+        Amax <- fa$Amax
+        fleet <- fa$fleet
         if((type == "SSB" || type == "TSB") && fleet >= 0){
             warning("For SSB and TSB constraints, fleet should not be set")
             fleet <- -1
@@ -82,7 +166,8 @@
                   fleet = fleet,
                   relative = rel,
                   cstr = as.numeric(type)-1,
-                  target = target)
+                  target = target,
+                  settings = numeric(0))
         v
     }
     cstr <- lapply(sL,function(x)lapply(x,parseOne))
@@ -100,7 +185,8 @@
              fleet = as.numeric(f1)-1,
              relative = as.numeric(f2)-1,
              cstr = as.numeric(factor("KeepRelF",forecastEnum))-1,
-             target = 0)  
+             target = 0,
+             settings = numeric(0))  
     }
     cToAdd <- lapply(ft,function(x){
         ii <- unname(which(x[-1]==0))
