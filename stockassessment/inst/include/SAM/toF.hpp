@@ -24,6 +24,7 @@ struct FConstraint {
   int relative; 		// -3: Absolute; -2: relative to last year; -1: relative to total; >=0: relative to fleet #
   ConstraintType cstr;
   Type target;
+  vector<Type> settings;
 
   inline FConstraint() = default;
 
@@ -35,19 +36,21 @@ struct FConstraint {
 					 fleet(x.fleet),
 					 relative(x.relative),
 					 cstr(x.cstr),
-					 target(x.target) {}
+						target(x.target),
+						settings(x.settings) {}
 };
        )
 
 SOURCE(
 	 template<class Type>
 	 FConstraint<Type>::FConstraint(SEXP x){
-	   Amin = (int)*REAL(getListElement(x,"Amin"));
-	   Amax = (int)*REAL(getListElement(x,"Amax"));
-	   fleet = (int)*REAL(getListElement(x,"fleet"));
-	   relative = (int)*REAL(getListElement(x,"relative"));
-	   cstr = static_cast<ConstraintType>((int)*REAL(getListElement(x,"cstr")));
-	   target = (Type)*REAL(getListElement(x,"target"));
+	   Amin = Rf_asInteger(getListElement(x,"Amin",  &isNumericScalar);
+			       Amax = Rf_asInteger(getListElement(x,"Amax",  &isNumericScalar));
+			       fleet = Rf_asInteger(getListElement(x,"fleet", &isNumericScalar));
+			       relative = Rf_asInteger(getListElement(x,"relative",  &isNumericScalar));
+			       cstr = static_cast<ConstraintType>(Rf_asInteger(getListElement(x,"cstr",  &isNumericScalar)));
+			       target = Rf_asInteger(getListElement(x,"target",  &isNumericScalar));
+			       settings = asVector<Type>(getListElement(x,"settings", &Rf_isNumeric))
 	 }
 	 );
 
