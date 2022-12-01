@@ -57,7 +57,7 @@ SOURCE(
 	   fleet = Rf_asInteger(getListElement(x,"fleet", &isNumericScalar));
 	   relative = Rf_asInteger(getListElement(x,"relative",  &isNumericScalar));
 	   cstr = static_cast<ConstraintType>(Rf_asInteger(getListElement(x,"cstr",  &isNumericScalar)));
-	   target = Rf_asInteger(getListElement(x,"target",  &isNumericScalar));
+	   target = Rf_asReal(getListElement(x,"target",  &isNumericScalar));
 	   settings = asVector<Type>(getListElement(x,"settings", &Rf_isNumeric));
 	 }
        );
