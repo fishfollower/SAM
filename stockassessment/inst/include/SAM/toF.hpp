@@ -3,15 +3,17 @@ SAM_DEPENDS(logspace)
 SAM_DEPENDS(recruitment)
 SAM_DEPENDS(convenience)
 SAM_DEPENDS(newton)
+SAM_DEPENDS(hcr)
 
 HEADER(
 enum ConstraintType {
-		     Constrain_Fbar,
-		     Constrain_Catch,
-		     Constrain_SSB,
-		     Constrain_TSB,
-		     Constrain_Landing,
-		     Constrain_KeepRelF,
+		     Constrain_Fbar = 0,
+		     Constrain_Catch = 1,
+		     Constrain_SSB = 2,
+		     Constrain_TSB = 3,
+		     Constrain_Landing = 4,
+		     Constrain_KeepRelF = 5,
+		     Constrain_HCR = 6,
 		     Constrain_NONE = 99
 };
 
@@ -32,10 +34,10 @@ struct FConstraint {
 
   template<class T>
   inline FConstraint(const FConstraint<T>& x) : Amin(x.Amin),
-					 Amax(x.Amax),
-					 fleet(x.fleet),
-					 relative(x.relative),
-					 cstr(x.cstr),
+						Amax(x.Amax),
+						fleet(x.fleet),
+						relative(x.relative),
+						cstr(x.cstr),
 						target(x.target),
 						settings(x.settings) {}
 };
@@ -44,15 +46,15 @@ struct FConstraint {
 SOURCE(
 	 template<class Type>
 	 FConstraint<Type>::FConstraint(SEXP x){
-	   Amin = Rf_asInteger(getListElement(x,"Amin",  &isNumericScalar);
-			       Amax = Rf_asInteger(getListElement(x,"Amax",  &isNumericScalar));
-			       fleet = Rf_asInteger(getListElement(x,"fleet", &isNumericScalar));
-			       relative = Rf_asInteger(getListElement(x,"relative",  &isNumericScalar));
-			       cstr = static_cast<ConstraintType>(Rf_asInteger(getListElement(x,"cstr",  &isNumericScalar)));
-			       target = Rf_asInteger(getListElement(x,"target",  &isNumericScalar));
-			       settings = asVector<Type>(getListElement(x,"settings", &Rf_isNumeric))
+	   Amin = Rf_asInteger(getListElement(x,"Amin",  &isNumericScalar));
+	   Amax = Rf_asInteger(getListElement(x,"Amax",  &isNumericScalar));
+	   fleet = Rf_asInteger(getListElement(x,"fleet", &isNumericScalar));
+	   relative = Rf_asInteger(getListElement(x,"relative",  &isNumericScalar));
+	   cstr = static_cast<ConstraintType>(Rf_asInteger(getListElement(x,"cstr",  &isNumericScalar)));
+	   target = Rf_asInteger(getListElement(x,"target",  &isNumericScalar));
+	   settings = asVector<Type>(getListElement(x,"settings", &Rf_isNumeric));
 	 }
-	 );
+       );
 
 SAM_SPECIALIZATION(struct FConstraint<double>);
 SAM_SPECIALIZATION(struct FConstraint<TMBad::ad_aug>);
@@ -191,7 +193,9 @@ namespace ConstrainCalculations {
     Type logThisSSB = R_NegInf;
     int ys = std::max(yn-conf.minAge, 0); // Year of birth for predicted logN
     for(int a = 0; a < logN.dim[0]; a++){
-      logThisSSB = logspace_add_SAM(logThisSSB, logN(a,ys) + log(dat.propMat(ys,a)) + log(dat.stockMeanWeight(ys,a)));
+      // if(dat.propF(ys,a) > 0) // needs fleet index
+      // 	Rf_warning("For next year ssb constraints, prediction of recruitment assumes no fishing before spawning.");
+      logThisSSB = logspace_add_SAM(logThisSSB, logN(a,ys) + log(dat.propMat(ys,a)) + log(dat.stockMeanWeight(ys,a) + dat.propM(ys,a) * dat.natMor(ys,a)));
     }
     // Next N
     vector<Type> logNp(logN.dim[0]);
@@ -226,9 +230,9 @@ namespace ConstrainCalculations {
     Type llssb = R_NegInf;
     for(int a = a0; a <= a1; a++){
       if(dat.propMat(yn,a-conf.minAge) > 0)
-	logssb = logspace_add_SAM(logssb, logNp(a-conf.minAge) + log(dat.propMat(yn,a-conf.minAge)) + log(dat.stockMeanWeight(yn,a-conf.minAge)));
+	logssb = logspace_add_SAM(logssb, logNp(a-conf.minAge) + log(dat.propMat(yn,a-conf.minAge)) + log(dat.stockMeanWeight(yn,a-conf.minAge)) + dat.propM(ys,a) * dat.natMor(ys,a));
       if(dat.propMat(yn,a-conf.minAge) > 0)
-	llssb = logspace_add_SAM(llssb, logN(a-conf.minAge,y) + log(dat.propMat(y,a-conf.minAge)) + log(dat.stockMeanWeight(y,a-conf.minAge)));
+	llssb = logspace_add_SAM(llssb, logN(a-conf.minAge,y) + log(dat.propMat(y,a-conf.minAge)) + log(dat.stockMeanWeight(y,a-conf.minAge)) + dat.propM(ys,a) * dat.natMor(ys,a));
     }
     //
     if(rel)
@@ -236,7 +240,7 @@ namespace ConstrainCalculations {
     return logssb;    
   };
 
-   SAM_SPECIALIZATION(double getSSB(dataSet<double>&, confSet&, vector<int>&, Recruitment<double>&, array<double>&, vector<double>&, int, int, int, bool));
+  SAM_SPECIALIZATION(double getSSB(dataSet<double>&, confSet&, vector<int>&, Recruitment<double>&, array<double>&, vector<double>&, int, int, int, bool));
   SAM_SPECIALIZATION(TMBad::ad_aug getSSB(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, Recruitment<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, bool));
   
 
@@ -248,7 +252,9 @@ namespace ConstrainCalculations {
     Type logThisSSB = R_NegInf;
     int ys = std::max(yn-conf.minAge, 0); // Year of birth for predicted logN
     for(int a = 0; a < logN.dim[0]; a++){
-      logThisSSB = logspace_add_SAM(logThisSSB, logN(a,ys) + log(dat.propMat(ys,a)) + log(dat.stockMeanWeight(ys,a)));
+      // if(dat.propF(ys,a) > 0) // needs fleet index
+      // 	Rf_warning("For next year tsb constraints, prediction of recruitment assumes no fishing before spawning.");
+      logThisSSB = logspace_add_SAM(logThisSSB, logN(a,ys) + log(dat.propMat(ys,a)) + log(dat.stockMeanWeight(ys,a)) + dat.propM(ys,a) * dat.natMor(ys,a));
     }
     // Next N
     vector<Type> logNp(logN.dim[0]);
@@ -293,6 +299,47 @@ namespace ConstrainCalculations {
 
   SAM_SPECIALIZATION(double getTSB(dataSet<double>&, confSet&, vector<int>&, Recruitment<double>&, array<double>&, vector<double>&, int, int, int, bool));
   SAM_SPECIALIZATION(TMBad::ad_aug getTSB(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, Recruitment<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, bool));
+
+
+  /*
+
+   */
+  template<class Type>
+  Type getHCRBiomass(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int lag, int bioType){
+    Type logBiomass = R_NegInf;
+    int ys = std::max(y-lag, 0);
+    for(int a = a0-conf.minAge; a < a1-conf.minAge; a++){
+      Type lb = logN(a,ys) + log(dat.stockMeanWeight(ys,a));
+      if(bioType == 0){		// SSB
+	if(dat.propMat(ys,a) > 0){
+	  Type Fa = 0.0;
+	  if(lag > 0){
+	    for(int ii = 0; ii < cFleets.size(); ++ii){
+	      int f = cFleets(ii);
+	      if(dat.propF(ys,a,f) > 0)
+		if(conf.keyLogFsta(f,a) > (-1))
+		  Fa += dat.propF(ys,a,f) * exp(logF(conf.keyLogFsta(f,a)));
+	    }
+	  }
+	  // else if(dat.propF(ys,a) > 0 && lag >= 0){ // propF needs fleet index
+	  //   Rf_error("With lag 0, SSB without fishing before spawning time is used for the HCR.");
+	  // }
+	  lb += log(dat.propMat(ys,a)) + Fa + dat.propM(ys,a) * dat.natMor(ys,a);
+	}
+      }else if(bioType == 1){	// TSB
+	// Do no more
+      }else{
+	Rf_error("Unknown biomass type for HCR");
+      }
+      logBiomass = logspace_add_SAM(logBiomass, lb);
+    }
+    return exp(logBiomass);
+  }
+
+  SAM_SPECIALIZATION(double getHCRBiomass(dataSet<double>&, confSet&, vector<int>&, array<double>&, vector<double>&, int, int, int, int, int));
+  SAM_SPECIALIZATION(TMBad::ad_aug getHCRBiomass(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, int, int));
+
+
   
   typedef TMBad::ad_aug ad;
 
@@ -444,7 +491,65 @@ namespace ConstrainCalculations {
 	  SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total");
 	  SAM_ASSERT(cstr.relative >= 0 && cstr.fleet != cstr.relative, "Keep relative can only be used relative to other fleets in same year");
 	  ad tmp = (lastFleetLogFbar(cstr.fleet) - lastFleetLogFbar(cstr.relative)) - (fleetLogFbar(cstr.fleet) - fleetLogFbar(cstr.relative));
-	  kappa += tmp * tmp;	  
+	  kappa += tmp * tmp;
+
+	}else if(cstr.cstr == ConstraintType::Constrain_HCR){
+	  // Give error if the relative flag makes it this far:
+	  RELATIVE_CONSTRAINTS(
+			       // Last year
+			       Rf_error("A HCR target cannot be relative");
+			       ,
+			       // Total
+			       Rf_error("A HCR target cannot be relative");
+			       ,
+			       // Fleet
+			       Rf_error("A HCR target cannot be relative");
+			       );
+  
+	  /* cstr.settings should be:
+	     0: Indicator of biomass type (TSB,SSB,...)
+	     1: Indicator of SSB year (-1,0,1)
+	     2: Indicator of target Type (F, Catch, Landing,...)
+	     3: Amin for TSB/SSB
+	     4: Amax for TSB/SSB
+	     5: F_origin for HCR
+	     6: F_cap for HCR
+	     7: B_origin for HCR
+	     8: B_cap for HCR
+	     9: B_trigger for HCR
+	   */
+	  int biomassType = CppAD::Integer(cstr.settings(0));
+	  int biomassLag = CppAD::Integer(cstr.settings(1));
+	  int targetType = CppAD::Integer(cstr.settings(2));
+	  int bioA0 = CppAD::Integer(cstr.settings(3));
+	  int bioA1 = CppAD::Integer(cstr.settings(4));
+	  // Get current biomass
+	  ad BforHCR = getHCRBiomass(dat, conf, cFleets, logN, lastLogF, y, bioA0, bioA1, biomassLag, biomassType);
+	  // Get optimization target
+	  vector<ad> hcrConf = cstr.settings.segment(4,6); // Start to early and overwrite
+	  // Insert target
+	  hcrConf(0) = exp(cstr.target);
+	  ad trgt = hcr(BforHCR, hcrConf);
+	  // kappa
+	  if(targetType == 0){	  // F target
+	    if(cstr.fleet == (-1)){	// Total
+	      ad tmp = logFbar - trgt;
+	      kappa += tmp * tmp;
+	    }else{		// Fleet
+	      ad tmp = fleetLogFbar(cstr.fleet) - trgt;
+	      kappa += tmp * tmp;
+	    }
+	  }else if(targetType == 1){ // Catch target
+	    ad logC = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	    ad tmp = logC - trgt;
+	    kappa += tmp * tmp;
+	  }else if(targetType == 2){ // Landing target
+	    ad logL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	    ad tmp = logL - trgt;
+	    kappa += tmp * tmp;
+	  }else{
+	    Rf_error("Unknown target type for HCR");
+	  }
 	}else{
 	  Rf_error("Constraint type not implemented");
 	}
