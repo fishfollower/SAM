@@ -10,13 +10,16 @@ devtools::install_github("fishfollower/SAM/stockassessment")
 (To ensure only installing in 64-bit some windows users may need to install with:
 
 ```R
-devtools::install_github("fishfollower/SAM/stockassessment", INSTALL_opts=c("--no-multiarch"))
+devtools::install_github("fishfollower/SAM/stockassessment",
+                          INSTALL_opts=c("--no-multiarch"))
 ```
 )
 
 Alternatively it can be installed from r-universe by:
 ```R
-install.packages('stockassessment', repos=c(CRAN="https://cloud.r-project.org/", SAM='https://sam.r-universe.dev'))
+install.packages('stockassessment',
+                 repos=c(CRAN="https://cloud.r-project.org/",
+		         SAM='https://sam.r-universe.dev'))
 ```
 
 ## A quick example: 
