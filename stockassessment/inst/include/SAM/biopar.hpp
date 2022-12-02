@@ -10,7 +10,7 @@ struct bioResult {
   matrix<Type> MeanAdjScale;
   vector<Type> mu;
 
-  MVNORM_t<Type> dens;
+  density::MVNORM_t<Type> dens;
 
   bioResult(Type nll_, matrix<Type> Sigma_RR_, matrix<Type> MeanAdjScale_, vector<Type> mu_) :
     nll(nll_), Sigma_RR(Sigma_RR_), MeanAdjScale(MeanAdjScale_), mu(mu_), dens(Sigma_RR_) {};
@@ -118,7 +118,7 @@ SAM_SPECIALIZATION(bioResult<TMBad::ad_aug> nllBioProcess(array<TMBad::ad_aug>, 
 
 template <class Type>
 Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, objective_function<Type> *of) SOURCE({
-    if(conf.stockWeightModel==1){
+    if(conf.stockWeightModel>=1){
       Type nll=0;
       array<Type> sw=dat.stockMeanWeight;
       bioResult<Type> br = nllBioProcess(logSW, par.meanLogSW, conf.keyStockWeightMean, par.logPhiSW, par.logSdProcLogSW(0));
