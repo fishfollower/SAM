@@ -29,9 +29,9 @@ listMatrixFromR<Type>::listMatrixFromR(int n) : vector<matrix<Type> >(n) {};
 
 SOURCE(
 	 template<class Type>
-	 listMatrixFromR<Type>::listMatrixFromR(SEXP x){ 
-	   (*this).resize(LENGTH(x));
-	   for(int i=0; i<LENGTH(x); i++){
+	 listMatrixFromR<Type>::listMatrixFromR(SEXP x) : vector<matrix<Type> >(Rf_length(x)){ 
+	   //(*this).resize(LENGTH(x));
+	   for(int i=0; i<Rf_length(x); i++){
 	     SEXP sm = VECTOR_ELT(x, i);
 	     (*this)(i) = asMatrix<Type>(sm);
 	   }
@@ -76,33 +76,33 @@ struct dataSet{
   array<int> sumKey;
 
   inline dataSet() :
-    noFleets(0),
-    fleetTypes(0),
-    sampleTimes(0),
-    noYears(0), 	
-    years(0),
-    minAgePerFleet(0),
-    maxAgePerFleet(0),
-    nobs(0),
-    idx1(0),
-    idx2(0),
-    idxCor(0),
-    minWeek(0),
-    maxWeek(0),
-    aux(0),
-    logobs(0),		
-    weight(0),  // Good
-    propMat(0), //(x.propMat),
-    stockMeanWeight(0),
-    catchMeanWeight(0),
-    natMor(0),
-    landFrac(0),
-    disMeanWeight(0), //x.disMeanWeight),
-    landMeanWeight(0), //x.landMeanWeight),
-    propF(0), //x.propF),
-    propM(0),
-    corList(0),
-    sumKey(0) {}
+    noFleets(),
+    fleetTypes(),
+    sampleTimes(),
+    noYears(), 	
+    years(),
+    minAgePerFleet(),
+    maxAgePerFleet(),
+    nobs(),
+    idx1(),
+    idx2(),
+    idxCor(),
+    minWeek(),
+    maxWeek(),
+    aux(),
+    logobs(),		
+    weight(),  // Good
+    propMat(), //(x.propMat),
+    stockMeanWeight(),
+    catchMeanWeight(),
+    natMor(),
+    landFrac(),
+    disMeanWeight(), //x.disMeanWeight),
+    landMeanWeight(), //x.landMeanWeight),
+    propF(), //x.propF),
+    propM(),
+    corList(),
+    sumKey() {}
 
   dataSet(SEXP x);
 
