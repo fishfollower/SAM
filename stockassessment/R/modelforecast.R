@@ -107,7 +107,7 @@
         hcrSpec <- lapply(strsplit(gsub("(\\[|\\])","",gsub(frmt,"\\2",ss)),",")[[1]],function(x) strsplit(x,"=")[[1]])
         hcrVal <- lapply(hcrSpec, function(x) as.numeric(x[2]))
         names(hcrVal) <- sapply(hcrSpec, function(x) x[1])
-        hcrConf <- list(FO = 0, FC = 0, BO = 0, BC = 0)
+        hcrConf <- list(FO = 1e-9, FC = 1e-9, BO = 0, BC = 0)
         nms <- intersect(names(hcrConf),names(hcrVal))
         hcrConf[nms] <- hcrVal[nms]
         list(specification = ss,
@@ -470,7 +470,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         rectab <- rectable(fit)
         recpool <- rectab[rownames(rectab)%in%rec.years,1]
         recModel <- rep(1,nYears)
-        logRecruitmentMedian <- median(log(recpool))
+        logRecruitmentMedian <- log(median(recpool))
         logRecruitmentVar <- stats::var(log(recpool))
     }
 
