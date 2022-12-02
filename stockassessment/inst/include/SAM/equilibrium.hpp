@@ -189,6 +189,7 @@ struct Funct_YPR {
     par(),
     rp() {};
   
+  Funct_YPR() : dat(), conf(), par(), rp() {};
   
   Funct_YPR(const dataSet<Type>& dat_,
   	    const confSet& conf_,

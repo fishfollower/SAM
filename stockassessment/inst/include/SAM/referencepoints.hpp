@@ -69,7 +69,6 @@ struct RefPointD_Base {
   virtual PERREC_t<Type> getPerRecruit(Type logFbar) = 0;
   virtual vector<Type> optimize(vector<Type> logF0) = 0;
   virtual vector<Type> par2logF(const vector<Type>& x) = 0;
-  //virtual ~RefPointD_Base() = default;
   
 };
 
@@ -81,9 +80,7 @@ class Referencepoint_D {
   int id;
   vector<Type> logF;
 public:
-  // Referencepoint_D() = default;
-  Referencepoint_D() :
-    ptr(), name(), id(), logF() {}
+  Referencepoint_D() : ptr(), name(), id(), logF() {}
 
   Referencepoint_D(const char* name_,
 		   int id_,
@@ -282,7 +279,6 @@ public:
       par(par_),
       rp(rp_),
       ptr(p_), cfg(cfg_) {};
-    // ~RefPointD_Numeric() = default;
 
   
     PERREC_t<Type> getPerRecruit(Type logFbar){
@@ -302,19 +298,19 @@ public:
   };
 
   //   using RPD_Base::RPD_Base;	       
-#define USING_RPD_BASE_0(NAME)						\
-  RPD_##NAME() : RPD_Base() {}					\
-  RPD_##NAME(const dataSet<ad>& dat,					\
-	     const confSet& conf,					\
-	     const paraSet<ad>& par,					\
-	     const referencepointSet<ad>& rp) :			\
-  RPD_Base(dat,conf,par,rp) {}					\
-  template<class T>							\
-  RPD_##NAME(const dataSet<T>& dat,					\
-	     const confSet& conf,					\
-	     const paraSet<T>& par,					\
-	     const referencepointSet<T>& rp) :				\
-  RPD_Base(dat,conf,par,rp) {}					\
+#define USING_RPD_BASE_0(NAME)			\
+  RPD_##NAME() : RPD_Base() {}			\
+  RPD_##NAME(const dataSet<ad>& dat,		\
+	     const confSet& conf,		\
+	     const paraSet<ad>& par,		\
+	     const referencepointSet<ad>& rp) :	\
+  RPD_Base(dat,conf,par,rp) {}			\
+  template<class T>				\
+  RPD_##NAME(const dataSet<T>& dat,		\
+	     const confSet& conf,		\
+	     const paraSet<T>& par,		\
+	     const referencepointSet<T>& rp) :	\
+       RPD_Base(dat,conf,par,rp) {}		\
   using RPD_Base::getPerRec
 
 #define USING_RPD_BASE(NAME)			\
@@ -344,7 +340,6 @@ public:
 		     newton::newton_config cfg = newton::newton_config()) : \
     RefPointD_Numeric<Type>(dat,conf,par,rp,std::make_shared<RPD_##NAME>(dat,conf,par,rp),cfg) {}; \
   }
-    // ~RefPointD_##NAME() = default;    						
   
 
   //////////////////////////////// Specializations ////////////////////////////////

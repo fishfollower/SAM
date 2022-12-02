@@ -21,7 +21,6 @@ struct referencepointSet {
   vector<Type> logF0;		// Starting value for optimization
   vector<Type> logSel;
 
-  // inline referencepointSet() = default;
   inline referencepointSet() :
     nYears(),
     rpType(),
@@ -33,7 +32,7 @@ struct referencepointSet {
     logF0(),
     logSel()
   {}    
-  
+
   referencepointSet(int nYears_, int CT, int i, array<Type> logF, confSet conf);
   
   referencepointSet(SEXP x);

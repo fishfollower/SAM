@@ -251,9 +251,8 @@ struct confSet{
   vector<int> logNMeanAssumption;
   int initState;
 
-  // inline confSet() = default;
   confSet();
-  
+
   confSet(SEXP x);
 
   confSet(const confSet &other);
@@ -306,6 +305,53 @@ SOURCE(
 	 initState = Rf_asInteger(getListElement(x,"initState", &isNumericScalar));
 	 }
 	 )
+
+SOURCE(
+	 confSet::confSet() :
+	 minAge(),
+	 maxAge(),
+	 maxAgePlusGroup(),
+	 keyLogFsta(),
+	 corFlag(),
+	 keyLogFpar(),
+	 keyQpow(),
+	 keyVarF(),
+	 keyVarLogN(),
+	 keyVarLogP(),
+	 keyVarObs(),
+	 obsCorStruct(),
+	 keyCorObs(),
+	 stockRecruitmentModelCode(),
+	 constRecBreaks(),
+	 noScaledYears(),
+	 keyScaledYears(),
+	 keyParScaledYA(),
+	 fbarRange(),
+	 keyBiomassTreat(),
+	 simFlag(),
+	 resFlag(),
+	 obsLikelihoodFlag(),
+	 fixVarToWeight(),
+	 fracMixF(),
+	 fracMixN(),
+	 fracMixObs(),
+	 predVarObsLink(),
+	 stockWeightModel(),
+	 keyStockWeightMean(),
+	 keyStockWeightObsVar(),
+	 catchWeightModel(),
+	 keyCatchWeightMean(),
+	 keyCatchWeightObsVar(),
+	 matureModel(),
+	 keyMatureMean(),
+	 mortalityModel(),
+	 keyMortalityMean(),
+	 keyMortalityObsVar(),
+	 keyXtraSd(),
+	 logNMeanAssumption(),
+	 initState()
+	 {}
+	 );
 
 SOURCE(
 	 confSet::confSet(const confSet &other) :
@@ -451,8 +497,49 @@ struct paraSet{
 
   Type splinePenalty;
 
-  //inline paraSet() = default;
-  paraSet();
+  inline paraSet() :
+    logFpar(), 
+    logQpow(), 
+    logSdLogFsta(), 
+    logSdLogN(), 
+    logSdLogP(), 
+    logSdLogObs(),
+    logSdLogTotalObs(),
+    transfIRARdist(),
+    sigmaObsParUS(),
+    rec_pars(),
+     rec_transphi(),
+    itrans_rho(), 
+    rhop(),
+    logScale(),
+    logitReleaseSurvival(),   
+    logitRecapturePhi(),
+    logAlphaSCB(),
+    sepFalpha(),
+    sepFlogitRho(),
+    sepFlogSd(),
+    logFScaleMSY(),
+    implicitFunctionDelta(),
+    logPhiSW(), 
+    logSdProcLogSW(),
+    meanLogSW(), 
+    logSdLogSW(), 
+    logPhiCW(), 
+    logSdProcLogCW(),
+    meanLogCW(), 
+    logSdLogCW(),  
+    logPhiMO(), 
+    logSdProcLogitMO(),
+    meanLogitMO(), 
+    logSdMO(), 
+    logPhiNM(),
+    logSdProcLogNM(),
+    meanLogNM(),
+    logSdLogNM(),
+    logXtraSd(),
+     initF(),
+     initN(),
+    splinePenalty()  {}
   
   paraSet(SEXP x);
 

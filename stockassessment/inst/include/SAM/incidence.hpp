@@ -43,8 +43,7 @@ struct MortalitySet {
   array<Type> otherCumulativeIncidence; // age x year x causes
   matrix<Type> ssbSurvival_before;	     // age x year
 
-  //  inline MortalitySet() = default
-  inline MortalitySet() :
+  inline MortalitySet():
     totalZ(),
     fleetSurvival_before(),
     fleetCumulativeIncidence(),
