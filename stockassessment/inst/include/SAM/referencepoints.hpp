@@ -74,7 +74,7 @@ struct RefPointD_Base {
   virtual PERREC_t<Type> getPerRecruit(Type logFbar) = 0;
   virtual vector<Type> optimize(vector<Type> logF0) = 0;
   virtual vector<Type> par2logF(const vector<Type>& x) = 0;
-  virtual ~RefPointD_Base() = default;
+  //virtual ~RefPointD_Base() = default;
   
 };
 
