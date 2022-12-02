@@ -74,8 +74,8 @@ template<class Type>
 struct FConstraintList : vector<FConstraint<Type> > {
   FConstraintList() : vector<FConstraint<Type> >() {};
   FConstraintList(int n) : vector<FConstraint<Type> >(n) {};
-  FConstraintList(SEXP x){ 
-    (*this).resize(Rf_length(x));
+  FConstraintList(SEXP x) : vector<FConstraint<Type> >(Rf_length(x)){ 
+    //(*this).resize(Rf_length(x));
     for(int i=0; i<Rf_length(x); i++){
       (*this)(i) = FConstraint<Type>(VECTOR_ELT(x, i));
     }
