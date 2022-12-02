@@ -26,12 +26,7 @@ struct RPD_Base : NewtonFunctor {
   paraSet<ad> par;
   referencepointSet<ad> rp;
 
-  // RPD_Base() = default;
-  RPD_Base() :
-    dat(),
-    conf(),
-    par(),
-    rp() {}
+  RPD_Base() : dat(), conf(), par(), rp() {};
   
   RPD_Base(const dataSet<ad>& dat_,
 	   const confSet& conf_,
@@ -239,14 +234,13 @@ public:
     paraSet<Type> par;
     referencepointSet<Type> rp;
 
-    // RefPointD_Known() = default;
-    RefPointD_Known() : dat(), conf(), par(), rp() {};
-    ~RefPointD_Known() = default;
+    RefPointD_Known() : RefPointD_Base<Type>(), dat(), conf(), par(), rp() {};
   
     RefPointD_Known(const dataSet<Type>& dat_,
 		    const confSet& conf_,
 		    const paraSet<Type>& par_,
 		    const referencepointSet<Type>& rp_) :
+      RefPointD_Base<Type>(),
       dat(dat_),
       conf(conf_),
       par(par_),
@@ -282,12 +276,13 @@ public:
 		      const referencepointSet<Type>& rp_,
 		      std::shared_ptr<RPD_Base> p_,
 		      newton::newton_config cfg_ = newton::newton_config()) :
+      RefPointD_Base<Type>(),
       dat(dat_),
       conf(conf_),
       par(par_),
       rp(rp_),
       ptr(p_), cfg(cfg_) {};
-    ~RefPointD_Numeric() = default;
+    // ~RefPointD_Numeric() = default;
 
   
     PERREC_t<Type> getPerRecruit(Type logFbar){
@@ -330,8 +325,8 @@ public:
 		     referencepointSet<Type>& rp,			\
 		     newton::newton_config cfg = newton::newton_config()) : \
     RefPointD_Numeric<Type>(dat,conf,par,rp,std::make_shared<RPD_##NAME>(dat,conf,par,rp),cfg) {}; \
-    ~RefPointD_##NAME() = default;    						\
   }
+    // ~RefPointD_##NAME() = default;    						
   
 
   //////////////////////////////// Specializations ////////////////////////////////
