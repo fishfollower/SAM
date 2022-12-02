@@ -7,6 +7,9 @@ SAM_DEPENDS(f)
 SAM_DEPENDS(predn)
 SAM_DEPENDS(n)
 
+/*
+  Forecast simulations must be done concurrently to ensure N can influence F in, e.g., harvest control rules
+ */
 
 template <class Type>
 void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, Recruitment<Type>& recruit, MortalitySet<Type>& mort, objective_function<Type> *of)SOURCE({
@@ -53,7 +56,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
 	predN(0) = forecast.logRecruitmentMedian;
       }
       // logN.col(indx) = predN + neg_log_densityN.simulate();// * Nscale;
-      vector<Type> noiseN = neg_log_densityN.simulate();
+      vector<Type> noiseN = neg_log_densityN.simulate() * Nscale;
       logN.col(indx) = predN + noiseN;
       if(conf.minAge == 0 &&
 	 forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.asRecModel)

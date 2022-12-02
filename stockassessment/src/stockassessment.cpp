@@ -246,13 +246,20 @@ Type objective_function<Type>::operator() ()
   ans += nllCW(logCW, dataset, confset, paraset, forecast, this);
   ans += nllMO(logitMO, dataset, confset, paraset, forecast, this);
   ans += nllNM(logNM, dataset, confset, paraset, forecast, this);
-  
+
+  // Prepare Laplace trajectory forecast
   MortalitySet<Type> mort(dataset, confset, paraset, logF);
   forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
 
   ans += nllP(confset, paraset, logP, keep, this);
   
   ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
+  // Update mortalities if simulating
+  SIMULATE_F(this){
+    if(confset.simFlag(0)==0){
+      mort = MortalitySet<Type>(dataset, confset, paraset, logF);
+    }
+  }
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit,mort, this);
 
