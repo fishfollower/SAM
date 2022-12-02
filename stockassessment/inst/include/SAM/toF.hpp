@@ -28,7 +28,14 @@ struct FConstraint {
   Type target;
   vector<Type> settings;
 
-  inline FConstraint() = default;
+  inline FConstraint() :
+    Amin(),
+    Amax(),
+    fleet(),
+    relative(),
+    cstr(),
+    target(),
+    settings() {}
 
   FConstraint(SEXP x);
 
