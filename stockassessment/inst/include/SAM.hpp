@@ -14,6 +14,7 @@
 #include "SAM/mvmix.hpp"
 #include "SAM/incidence.hpp"
 #include "SAM/recruitment.hpp"
+#include "SAM/hcr.hpp"
 #include "SAM/toF.hpp"
 #include "SAM/forecast.hpp"
 #include "SAM/survival.hpp"
