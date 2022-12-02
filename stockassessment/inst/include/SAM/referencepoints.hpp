@@ -300,19 +300,37 @@ public:
     }  
   };
 
-#define USING_RPD_BASE_0			\
-  using RPD_Base::RPD_Base;		\
+  //   using RPD_Base::RPD_Base;	       
+#define USING_RPD_BASE_0(NAME)						\
+  RPD_##NAME() : RPD_Base() {}					\
+  RPD_##NAME(const dataSet<ad>& dat,					\
+	     const confSet& conf,					\
+	     const paraSet<ad>& par,					\
+	     const referencepointSet<ad>& rp) :			\
+  RPD_Base(dat,conf,par,rp) {}					\
+  template<class T>							\
+  RPD_##NAME(const dataSet<T>& dat,					\
+	     const confSet& conf,					\
+	     const paraSet<T>& par,					\
+	     const referencepointSet<T>& rp) :				\
+  RPD_Base(dat,conf,par,rp) {}					\
   using RPD_Base::getPerRec
 
-#define USING_RPD_BASE				\
-  USING_RPD_BASE_0;				\
+#define USING_RPD_BASE(NAME)			\
+  USING_RPD_BASE_0(NAME);			\
   using RPD_Base::par2logF
 
-#define USING_REFPOINT_KNOWN			\
-  using RefPointD_Known<Type>::RefPointD_Known;	\
-  using RefPointD_Known<Type>::getPerRecruit;	\
+  //  using RefPointD_Known<Type>::RefPointD_Known;    
+#define USING_REFPOINT_KNOWN(NAME)					\
+  RefPointD_##NAME(dataSet<Type>& dat,					\
+		   confSet& conf,					\
+		   paraSet<Type>& par,					\
+		   referencepointSet<Type>& rp) :			\
+  RefPointD_Known<Type>(dat,conf,par,rp) {};				\
+  using RefPointD_Known<Type>::getPerRecruit;				\
   using RefPointD_Known<Type>::par2logF
 
+ 
 
   // Define macro for repeat work
 #define MAKE_REFPOINT_D(NAME)						\
@@ -335,7 +353,7 @@ public:
   template<class Type>
   struct RefPointD_FixedF : RefPointD_Known<Type> {
 
-    USING_REFPOINT_KNOWN;
+    USING_REFPOINT_KNOWN(FixedF);
 
     vector<Type> optimize(vector<Type> logF0){
       return logF0;
@@ -348,7 +366,7 @@ public:
 
   struct RPD_MSY : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(MSY);
   
     ad operator()(const vector<ad> &x) {
       ad logFbar = x(0);
@@ -364,7 +382,7 @@ public:
   // template<class Type>
   struct RPD_MSYrange : RPD_Base {
 
-    USING_RPD_BASE_0;
+    USING_RPD_BASE_0(MSYrange);
 
     // Does not report MSY
     template<class T>
@@ -409,7 +427,7 @@ public:
   // template<class Type>
   struct RPD_Max : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(Max);
   
     ad operator()(const vector<ad> &x) {
       ad logFbar = x(0);
@@ -427,7 +445,7 @@ public:
   // template<class Type>
   struct RPD_xdYPR : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(xdYPR);
    
     ad operator()(const vector<ad> &x) {
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point xdYPR, length of F does not match length of fractions.");
@@ -453,7 +471,7 @@ public:
   // template<class Type>
   struct RPD_xSPR : RPD_Base {
 
-   USING_RPD_BASE;
+    USING_RPD_BASE(xSPR);
  
     ad operator()(const vector<ad> &x) {
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point xSPR, length of F does not match length of fractions.");
@@ -478,7 +496,7 @@ public:
 
   struct RPD_xB0 : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(xB0);
     
     ad operator()(const vector<ad> &x) {
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point xB0, length of F does not match length of fractions.");
@@ -503,7 +521,7 @@ public:
   // template<class Type>
   struct RPD_MYPYLdiv : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(MYPYLdiv);
  
     ad operator()(const vector<ad> &x) {    
       ad logFbar = x(0);
@@ -522,7 +540,7 @@ public:
 
   struct RPD_MYPYLprod : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(MYPYLprod);
  
     ad operator()(const vector<ad> &x) {    
       SAM_ASSERT(x.size() == this->rp.xVal.size(),"In reference point MYPYLprod, length of F does not match length of fractions.");
@@ -545,7 +563,7 @@ public:
 
   struct RPD_MDY : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(MDY);
  
     ad operator()(const vector<ad> &x) {    
       ad logFbar = x(0);
@@ -562,7 +580,7 @@ public:
 
   struct RPD_Crash : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(Crash);
 
     ad operator()(const vector<ad> &x) {    
       ad logFbar = x(0);
@@ -582,7 +600,7 @@ public:
 
   struct RPD_Ext : RPD_Base {
 
-    USING_RPD_BASE;
+    USING_RPD_BASE(Ext);
   
     ad operator()(const vector<ad> &x) {    
       ad logFbar = x(0);
