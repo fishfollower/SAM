@@ -75,9 +75,35 @@ struct dataSet{
   listMatrixFromR<Type> corList;
   array<int> sumKey;
 
-  // inline dataSet() = default;
-  dataSet();
-  
+  inline dataSet() :
+    noFleets(0),
+    fleetTypes(0),
+    sampleTimes(0),
+    noYears(0), 	
+    years(0),
+    minAgePerFleet(0),
+    maxAgePerFleet(0),
+    nobs(0),
+    idx1(0),
+    idx2(0),
+    idxCor(0),
+    minWeek(0),
+    maxWeek(0),
+    aux(0),
+    logobs(0),		
+    weight(0),  // Good
+    propMat(0), //(x.propMat),
+    stockMeanWeight(0),
+    catchMeanWeight(0),
+    natMor(0),
+    landFrac(0),
+    disMeanWeight(0), //x.disMeanWeight),
+    landMeanWeight(0), //x.landMeanWeight),
+    propF(0), //x.propF),
+    propM(0),
+    corList(0),
+    sumKey(0) {}
+
   dataSet(SEXP x);
 
   template<class T>
