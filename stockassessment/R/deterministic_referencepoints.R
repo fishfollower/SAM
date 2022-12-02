@@ -414,7 +414,7 @@ deterministicReferencepoints <- function(fit,
 ##'
 ##' @param fit A fitted SAM model
 ##' @param referencepoints list of reference points to calculate (See details)
-##' @param catchType landing, catch, or discard
+##' @param catchType Type of yield to optimize: landing, catch, or discard
 ##' @param nYears Number of years in per-recruit calculations
 ##' @param Fsequence Sequence of F values for plotting and starting values
 ##' @param aveYears Years to average over for biological input
@@ -424,6 +424,8 @@ deterministicReferencepoints <- function(fit,
 ##' @param run Run estimation? If false, a list of arguments to MakeADFun is returned.
 ##' @param ... other arguments not used
 ##' @return List of estimated reference points
+##' @method deterministicReferencepoints sam
+##' @rdname deterministicReferencepoints
 ##' @export
 deterministicReferencepoints.sam <- function(fit,
                                              referencepoints,

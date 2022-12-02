@@ -215,12 +215,10 @@ modelforecast <- function(fit, ...){
 ##' Model based forecast function
 ##' @param constraints a character vector of forecast constraint specifications
 ##' @param fscale a vector of f-scales. See details.  
-##' @param catchval a vector of target catches. See details.
-##' @param fval a vector of target f values. See details.
-##' @param nextssb a vector target SSB values the following year. See details.
-##' @param landval a vector of target catches. See details.   
-##' @param findMSY Should not be used. See \link{forecastMSY}.
-##' @param hcr Should not be used. See \link{hcr}.
+##' @param catchval a vector of target catches. See details "old specification".
+##' @param fval a vector of target f values. See details "old specification".
+##' @param nextssb a vector target SSB values the following year. See details "old specification".
+##' @param landval a vector of target catches. See details "old specification".   
 ##' @param nosim number of simulations. If 0, the Laplace approximation is used for forecasting.
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
@@ -236,47 +234,93 @@ modelforecast <- function(fit, ...){
 ##' @param addTSB if TRUE the total stock biomass (TSB) is added
 ##' @param biasCorrect Do bias correction of reported variables. Can be turned off to reduce running time (not recommended).
 ##' @param returnAllYears If TRUE, all years are bias corrected. Otherwise, only forecast years are corrected.
-##' @param nCatchAverageYears Should not be used. See \link{forecastMSY}.
 ##' @param returnObj Only return TMB object?
-##' @param hcrConf Should not be used. See \link{hcr}.
-##' @param hcrCurrentSSB Should not be used. See \link{hcr}.
 ##' @param progress Show progress bar for simulations?
 ##' @param estimate the summary function used (typically mean or median) for simulations
 ##' @param silent Passed to MakeADFun. Should the TMB object be silent?
 ##' @param newton_config Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.
 ##' @details
-##' Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process. Therefore, catch constraints are not matched exactly in individual simulations (unlike the forecast function simulations). Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
+##' Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process for each simulation. Therefore, catch constraints are not matched exactly in individual simulations. Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
 ##' By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
 ##' Catch scenarios are specified by a vector of target constraints. The first value determines F in the year after the base year.
 ##'
-##' @section F based constraints:
+##' @section Forecast constraints:
+##'
+##' \subsection{F based constraints:}{
 ##' Forecasts for F values are specified by the format "F[f,a0-a1]=x" where f is the residual catch fleet and a0-a1 is an age range. For example, "F[2,2-4]=0.3" specifies that the average F for the second fleet over ages 2-4 should be 0.3.
 ##' If an "*" is added to the target value, the target will be relative to the year before. For example, "F[2,2-4]=0.9*" specifies that the average F for the second fleet over ages 2-4 should be 90% of the year before. Further, the target for a fleet can be relative to the total by adding "*F" or to another fleet by adding "*F[f]" where f is the fleet number. The same age range will always be used.
 ##' If the fleet is omitted (e.g., F[2-4]), the target is for the total F.
 ##' If the age range is omitted (e.g., F[2]), the fbar range of the model is used.
 ##' Likewise, both fleet and age range can be omited (e.g., F=0.3) to specify a value for total F with the range used in the model.
 ##'
-##' @section Catch/Landing based constraints:
+##' For example:
+##' \describe{
+##' \item{"F=0.2"}{Will set the median average total fishing mortality rate to 0.2}
+##' \item{"F[1]=0.2"}{Will set the median average fishing mortality rate of the first fleet to 0.2}
+##' \item{"F[2-4]=0.2"}{Will set the median average total fishing mortality rate over ages 2 to 4 to 0.2}
+##' \item{"F[3,2-4]=0.2"}{Will set the median average fishing mortality rate over ages 2 to 4 for the third fleet to 0.2}
+##' }
+##' }
+##'
+##' \subsection{Catch/Landing based constraints:}{
 ##' Forecasts for catch and landing values are specified by the format "C[f,a0-a1]=x" for catch and "L[f,a0-a1]" for landings. If the age range is omitted, all modelled ages are used. Otherwise, the format is similar to F based scenarios.
 ##' If an "*" is added to the target value, the target will be relative to the year before.
 ##' Further, the catch target for a fleet can be relative to the total by adding "*C" or to another fleet by adding "*C[f]" where f is the fleet number. The same age range will always be used. Likewise, relative landing targets can be specified using "*", "*L", or "*L[f]" for targets relative to last year, the total, or fleet f, respectively.
 ##'
-##' @section SSB/TSB at the beginning of next year based constraints:
-##' Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. The format is similar to catch/landing based scenarios. However, fleets have no effect.
+##' For example:
+##' \describe{
+##' \item{"C=100000"}{Will scale F such that the total predicted catch is 100000}
+##' \item{"C[1]=100000"}{Will scale F such that the predicted catch of the first fleet is 100000}
+##' \item{"C[2-4]=100000"}{Will scale F such that the total predicted catch for ages 2 to 4 is 100000}
+##' \item{"C[3,2-4]=100000"}{Will scale F such that the predicted catch for ages 2 to 4 in the third fleet is 100000}
+##' \item{"L=100000"}{Will scale F such that the total predicted landing is 100000}
+##' \item{"L[1]=100000"}{Will scale F such that the predicted landing of the first fleet is 100000}
+##' \item{"L[2-4]=100000"}{Will scale F such that the total predicted landing for ages 2 to 4 is 100000}
+##' \item{"L[3,2-4]=100000"}{Will scale F such that the predicted landing for ages 2 to 4 in the third fleet is 100000}
+##' }
+##'}
+##' 
+##' \subsection{SSB/TSB at the beginning of next year based constraints:}{
+##' Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. The format is similar to catch/landing based scenarios. However, fleets have no effect. If an age range is omitted, the full age range of the model is used.
 ##' If an "*" is added to the target value, the target will be relative to the year before.
 ##' Note that SSB amd TSB used for catch constraints are at the beginning of the next year to avoid dependence on future F values. Therefore, the values will differ from the output SSB and TSB estimates if propM or propF are not zero.
 ##'
-##' @section Combining constraints:
+##' For example:
+##' \describe{
+##' \item{SSB=200000}{Will scale F such that the predicted SSB at the beginning of the next year is 200000}
+##' \item{SSB[3-9]=200000}{Will scale F such that the predicted SSB for ages 3 to 9 at the beginning of the next year is 200000}
+##' \item{TSB=200000}{Will scale F such that the predicted TSB at the beginning of the next year is 200000}
+##' \item{TSB[3-9]=200000}{Will scale F such that the predicted TSB for ages 3 to 9 at the beginning of the next year is 200000}
+##'}
+##' }
+##' 
+##' \subsection{Harvest control rule based constraints:}{
+##' Harvest control rules can be specified for forecasts using the format "HCR=x~y" where x is the target and y is the biomass trigger (see ?hcr for full details on the form of the harvest control rule). Further, the target can be specified as an F target ("HCR=xF~y"), catch target ("HCR=xC~y"), or landing target ("HCR=xL~y"). Likewise the trigger can either be for SSB ("HCR=x~ySSB") or TSB ("HCR=x~yTSB"). Age ranges can be set for both triggers and targets and a fleet can be set for the target. The notation and defaults are similar to the F based and SSB/TSB based constraints, respectively. Finally, the origin and cap for the HCR can be set using "HCR[FO=a,FC=b,BO=d,BC=e]=x~y", where FO is the F (or catch or landing) value at origin, BO is the biomass at origin, FC is the F (or catch or landing) value when the HCR is capped and BC is the biomass at which the HCR is capped. See ?hcr for further details on the shape of the HCR. For a HCR similar to the ICES advice rule, the specification is on the form "HCR[BC=Blim] = fmsy~MSYBtrigger". Note that, unlike an ICES advice rule, the HCR does not do a forecast to determine if fishing can continue below Blim.
+##'
+##' For example:
+##' \describe{
+##' \item{HCR=0.9~100000}{Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB}
+##' \item{HCR=10000C~100000}{Will apply a harvest control rule with a catch target of 10000 and a biomass trigger of 100000 on SSB}
+##' \item{HCR=0.9~100000SSB}{Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB}
+##' \item{HCR=0.9F[1,2-4]~100000SSB}{Will apply a harvest control rule with an F target on the first fleet ages 2-4 of 0.9 and a biomass trigger of 100000 on SSB}
+##' \item{HCR=0.9~100000TSB[0-4]}{Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on TSB for ages 0 to 4}
+##' \item{HCR[FC=1e-9,BC=20000]=0.9~100000}{Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB where biomass values below 20000 will give an F of 1e-9}
+##' \item{HCR[FO=0,BO=30000]=0.9~100000}{Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB where the slope on which F is reduced goes to zero F at a biomass of 30000}
+##' }
+##'}
+##' 
+##' \subsection{Combining constraints:}{
 ##' Constraints for different fleets can be combined by "&".
 ##' For example, "F[2-4]=0.5 & C[2]=10000" specifies that total Fbar over ages 2-4 should be 0.5 while the catch for the second residual catch fleet should be 10,000t.
 ##' The constraints cannot affect within-fleet selectivity. Therefore, a fleet can at most have one constraint per year, and the total number of constraints cannot exceed the number of catch fleets. That is, if a constraint is given for the sum of fleets, there must be at least one fleet without any constraints.
 ##' For fleets where no constraints are given, a constraint is set to keep their relative Fs constant.
+##' }
 ##'
-##' @section Values relative to previous year:
+##' \subsection{Values relative to previous year:}{
 ##' Catch constraints specified as specific values are inherently different from catch constraints specified as relative values, even if they lead to the same F. Catch constraints specified as relative values will propagate the uncertainty in, e.g, F from previous years whereas constraints specified as specific values will not. This is different from the \link{forecast} function where, for example, a forecast using fval is the same as a forecast using fscale, if they lead to the same F. 
-##'
-##' @section Harvest control rule based constraints:
-##' Harvest control rules can be specified for forecasts using the format "HCR=x~y" where x is the target and y is the biomass trigger (see ?hcr for full details on the form of the harvest control rule). Further, the target can be specified as an F target ("HCR=xF~y"), catch target ("HCR=xC~y"), or landing target ("HCR=xL~y"). Likewise the trigger can either be for SSB ("HCR=x~ySSB") or TSB ("HCR=x~yTSB"). Age ranges can be set for both triggers and targets and a fleet can be set for the target. The notation and defaults are similar to the F based and SSB/TSB based constraints, respectively. Finally, the origin and cap for the HCR can be set using "HCR[FO=a,FC=b,BO=d,BC=e]=x~y", where FO is the F (or catch or landing) value at origin, BO is the biomass at origin, FC is the F (or catch or landing) value when the HCR is capped and BC is the biomass at which the HCR is capped. See ?hcr for further details on the shape of the HCR. For a HCR similar to the ICES advice rule, the specification is on the form "HCR[BC=Blim] = fmsy~MSYBtrigger". Note that, unlike an ICES advice rule, the HCR does not do a forecast to determine if fishing can continue below Blim.
+##'}
+##' 
+
 ##' 
 ##' @section Old specification:
 ##' It is also possible to specify forecast constraints in a way similar to the \link{forecast} function. 
@@ -308,8 +352,6 @@ modelforecast.sam <- function(fit,
                               fval = NULL,
                               nextssb = NULL,
                               landval = NULL,
-                              findMSY = NULL,
-                              hcr = NULL,
                               nosim = 0,
                               year.base = max(fit$data$years),
                               ave.years = c(),
@@ -325,10 +367,7 @@ modelforecast.sam <- function(fit,
                               addTSB = FALSE,
                               biasCorrect = FALSE,
                               returnAllYears = FALSE,
-                              nCatchAverageYears = 1,
                               returnObj = FALSE,
-                              hcrConf = numeric(0),
-                              hcrCurrentSSB = 0,
                               progress = TRUE,
                               estimate = median,
                               silent = TRUE,
@@ -336,6 +375,24 @@ modelforecast.sam <- function(fit,
                               custom_pl = NULL,
                               ...
                               ){
+    ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
+    dots <- as.list(...)
+    findMSY  <-  NULL
+    if(!is.na(match("findMSY",names(dots))))
+        findMSY <- dots[[match("findMSY",names(dots))]]
+    hcr  <-  NULL
+    if(!is.na(match("hcr",names(dots))))
+        hcr <- dots[[match("hcr",names(dots))]]
+    hcrConf = numeric(0)
+    if(!is.na(match("hcrConf",names(dots))))
+        hcrConf <- dots[[match("hcrConf",names(dots))]]
+    hcrCurrentSSB = 0
+    if(!is.na(match("hcrCurrentSSB",names(dots))))
+        hcrCurrentSSB <- dots[[match("hcrCurrentSSB",names(dots))]]
+    nCatchAverageYears  <-  1
+    if(!is.na(match("nCatchAverageYears",names(dots))))
+        nCatchAverageYears <- dots[[match("nCatchAverageYears",names(dots))]]
+    
 
     if(!is.null(nosim) && nosim > 0){ 
         estimateLabel <- deparse1(substitute(estimate))
