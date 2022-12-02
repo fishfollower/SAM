@@ -221,72 +221,76 @@ SAM_SPECIALIZATION(matrix<TMBad::ad_aug> get_fvar(dataSet<TMBad::ad_aug>&, confS
   
 template <class Type>
 Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
-  Type nll=0; 
-  int stateDimF=logF.dim[0];
-  int timeSteps=logF.dim[1];
-  // int stateDimN=conf.keyLogFsta.dim[1];
-  vector<Type> sdLogFsta=exp(par.logSdLogFsta);
-  array<Type> resF(stateDimF,timeSteps-1);
+    Type nll=0; 
+    int stateDimF=logF.dim[0];
+    int timeSteps=logF.dim[1];
+    // int stateDimN=conf.keyLogFsta.dim[1];
+    vector<Type> sdLogFsta=exp(par.logSdLogFsta);
+    array<Type> resF(stateDimF,timeSteps-1);
 
   
-  if(conf.corFlag(0)==3){
-    SAM_ASSERT(getCatchFleets(dat.fleetTypes).size() == 1,"separable F correlation structure is only implemented for a single catch fleet.");
-    // Only works for one catch fleet!
-    return(f_fun::nllFseparable(dat, conf, par, forecast, logF, keep ,of));
-  }
+    if(conf.corFlag(0)==3){
+      SAM_ASSERT(getCatchFleets(dat.fleetTypes).size() == 1,"separable F correlation structure is only implemented for a single catch fleet.");
+      // Only works for one catch fleet!
+      return(f_fun::nllFseparable(dat, conf, par, forecast, logF, keep ,of));
+    }
  
-  //density::MVNORM_t<Type> neg_log_densityF(fvar);
-  matrix<Type> fvar = get_fvar(dat, conf, par, logF);
-  MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
-  Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovF(fvar);
-  matrix<Type> LF = lltCovF.matrixL();
-  matrix<Type> LinvF = LF.inverse();
+    //density::MVNORM_t<Type> neg_log_densityF(fvar);
+    matrix<Type> fvar = get_fvar(dat, conf, par, logF);
+    MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
+    Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovF(fvar);
+    matrix<Type> LF = lltCovF.matrixL();
+    matrix<Type> LinvF = LF.inverse();
 
-  if(conf.initState){
-    resF.col(0) = LinvF*(vector<Type>(logF.col(0)-par.initF));
-    nll+=neg_log_densityF(logF.col(0)-par.initF);//density::MVNORM(diagonalMatrix(Type(0.1),stateDimF))((vector<Type>)(logF.col(0)-par.initF));
-    SIMULATE_F(of){
+    if(conf.initState){
+      resF.col(0) = LinvF*(vector<Type>(logF.col(0)-par.initF));
+      nll+=neg_log_densityF(logF.col(0)-par.initF);//density::MVNORM(diagonalMatrix(Type(0.1),stateDimF))((vector<Type>)(logF.col(0)-par.initF));
+      SIMULATE_F(of){
 	if(conf.simFlag(0)==0){
 	  logF.col(0)=par.initF+neg_log_densityF.simulate();
 	}
       }
-  }
+    }
   
-  for(int i=1;i<timeSteps;i++){
-    resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
+    for(int i=1;i<timeSteps;i++){
+      resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
 
-    if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
-      // Forecast
-      int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
-      Type timeScale = forecast.forecastCalculatedLogSdCorrection(forecastIndex);
+      if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
+	// Forecast
+	int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+	Type timeScale = forecast.forecastCalculatedLogSdCorrection(forecastIndex);
 
-      nll += neg_log_densityF((logF.col(i) - (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
+	nll += neg_log_densityF((logF.col(i) - (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
 
-      SIMULATE_F(of){
-    	if(forecast.simFlag(0) == 0){
-    	  logF.col(i) = (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
-    	}
-      }
-    }else{
-      nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
-      SIMULATE_F(of){
-	if(conf.simFlag(0)==0){
-	  logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+	// THIS IS DONE IN forecastSimulation(...)
+	// SIMULATE_F(of){
+	// 	if(forecast.simFlag(0) == 0){
+	// 	  logF.col(i) = (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex) + neg_log_densityF.simulate() * timeScale;
+	// 	}
+	// }
+      }else{
+	nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+	SIMULATE_F(of){
+	  if(conf.simFlag(0)==0){
+	    // Do pre-forecast simulation here
+	    // if(forecast.nYears == 0 || forecast.forecastYear(i) <= 0){
+	      logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+	    // }
+	  }
 	}
       }
     }
-  }
 
-  if(CppAD::Variable(keep.sum()) && conf.initState == 0){ // add wide prior for first state, but _only_ when computing ooa residuals
-    Type huge = 10;
-    for (int i = 0; i < stateDimF; i++) nll -= dnorm(logF(i, 0), Type(0), huge, true);  
-  } 
+    if(CppAD::Variable(keep.sum()) && conf.initState == 0){ // add wide prior for first state, but _only_ when computing ooa residuals
+      Type huge = 10;
+      for (int i = 0; i < stateDimF; i++) nll -= dnorm(logF(i, 0), Type(0), huge, true);  
+    } 
 
-  if(conf.resFlag==1){
-    ADREPORT_F(resF,of);
-  }
-  REPORT_F(fvar,of);
-  return nll;
+    if(conf.resFlag==1){
+      ADREPORT_F(resF,of);
+    }
+    REPORT_F(fvar,of);
+    return nll;
   }
   )
 
