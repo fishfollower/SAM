@@ -194,7 +194,14 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      }
 		      pred+=log(sumF);
 		      break;
-  
+
+		    case 80:	// Catch/Landing proportion in part of year
+		      Rf_error("Not implemented yet");
+		      break;		      
+
+		    case 90:	// Stock composition in catch/landing
+		      Rf_error("Reserved for multiStockassessment");
+
 		    default:
 		      Rf_error("Unknown fleet code");
 		      return 0 ;
