@@ -123,101 +123,7 @@ namespace f_fun {
 } // End of namespace F functionns
 #endif
 
-  
-template<class Type>
-matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF)SOURCE({
-  // using CppAD::abs;
-  int stateDimF=logF.dim[0];
-  int timeSteps=logF.dim[1];
-  int noFleets=conf.keyLogFsta.dim[0];
-  int stateDimN=conf.keyLogFsta.dim[1];
-  vector<Type> sdLogFsta=exp(par.logSdLogFsta);
-  array<Type> resF(stateDimF,timeSteps-1);
-  matrix<Type> fvar(stateDimF,stateDimF);
-  matrix<Type> fcor(stateDimF,stateDimF);
-  vector<Type> fsd(stateDimF);  
-  vector<Type> statesFleets(stateDimF);
-  
-  //Fill statesFleets:
-  for(int f=0; f<noFleets;f++){
-    for(int i=0;i<stateDimF;i++){
-      for(int j=0;j<stateDimN;j++){
-	if(conf.keyLogFsta(f,j)==i){
-	  statesFleets(i)=f;
-	  break;
-	}  
-      }
-    }
-  }
-  
-  fcor.setZero();
-  // for(int i=0; i<stateDimF; ++i){
-  //   fcor(i,i)=1.0;
-  // }
-  
-  int count=0; //if corFlag varies between 0-2, itrans_rho is shorter than comm fleet length
-  for(int f=0;f<noFleets;f++){
-    bool nxtPar = false;
-    for(int i=0; i<stateDimF; ++i){
-      fcor(i,i)=1.0;
-      for(int j=0; j<i; ++j){
-        if(statesFleets(i)==f && statesFleets(j)==f){
-	  switch(conf.corFlag(f)){
-	  case 0:		// Independent
-	    fcor(j,i) = 0.0;
-	    break;
-	  case 1:		// Compound symmetry
-	    fcor(j,i)=toInterval((Type)par.itrans_rho(count),Type(-1.0),Type(1.0),Type(2.0));
-	    nxtPar = true;
-	    break;
-	  case 2:		// AR(1) structure
-	    fcor(j,i)=pow(toInterval((Type)par.itrans_rho(count),Type(-1.0),Type(1.0),Type(2.0)),abs(i-j));
-	    nxtPar = true;
-	    break;
-	    // case 3: separable structure
-	  case 4:		// (almost) Perfect correlation
-            fcor(j,i)= 0.99;
-	    break;
-	  default:
-	    Rf_error("F correlation not implemented");
-	    break;
-	  }
-	  fcor(i,j) = fcor(j,i);
-        }
-      }
-    }
-    if(nxtPar)
-      count++;
-  }
 
-  for(int i=0; i<stateDimF; ++i){
-    bool stop = false;
-    int ff = 0;
-    int j = 0;
-    for(ff=0; ff<noFleets; ff++){
-      for(j=0; j<stateDimN; j++){
-        if(conf.keyLogFsta(ff,j)==i){
-          stop=true;
-          break;
-        } 
-      }
-      if(stop)break;
-    }
-    fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
-  }
- 
-  for(int i=0; i<stateDimF; ++i){
-    for(int j=0; j<stateDimF; ++j){
-      fvar(i,j)=fsd(i)*fsd(j)*fcor(i,j);
-    }
-  }
-  return fvar;
-  })
-
-SAM_SPECIALIZATION(matrix<double> get_fvar(dataSet<double>&, confSet&, paraSet<double>&, array<double>&));
-SAM_SPECIALIZATION(matrix<TMBad::ad_aug> get_fvar(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
-
-  
   
 template <class Type>
 Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
@@ -228,13 +134,19 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     vector<Type> sdLogFsta=exp(par.logSdLogFsta);
     array<Type> resF(stateDimF,timeSteps-1);
 
-  
+   
     if(conf.corFlag(0)==3){
       SAM_ASSERT(getCatchFleets(dat.fleetTypes).size() == 1,"separable F correlation structure is only implemented for a single catch fleet.");
       // Only works for one catch fleet!
       return(f_fun::nllFseparable(dat, conf, par, forecast, logF, keep ,of));
     }
- 
+
+    vector<Type> muF = get_fmu(dat,conf,par, logF);
+    vector<Type> rhoF = get_frho(dat,conf,par, logF);
+
+    REPORT_F(muF,of);
+    REPORT_F(rhoF,of);
+    
     //density::MVNORM_t<Type> neg_log_densityF(fvar);
     matrix<Type> fvar = get_fvar(dat, conf, par, logF);
     MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
@@ -253,7 +165,8 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     }
   
     for(int i=1;i<timeSteps;i++){
-      resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-logF.col(i-1)));
+      vector<Type> predF = muF + rhoF * (logF.col(i-1) - muF);
+      resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-predF));
 
       if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
 	// Forecast
@@ -269,12 +182,12 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
 	// 	}
 	// }
       }else{
-	nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+	nll+=neg_log_densityF(logF.col(i)-predF); // F-Process likelihood
 	SIMULATE_F(of){
 	  if(conf.simFlag(0)==0){
 	    // Do pre-forecast simulation here
 	    // if(forecast.nYears == 0 || forecast.forecastYear(i) <= 0){
-	      logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
+	      logF.col(i)=predF+neg_log_densityF.simulate();
 	    // }
 	  }
 	}

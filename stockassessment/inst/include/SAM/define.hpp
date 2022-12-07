@@ -180,6 +180,8 @@ struct confSet{
   int maxAge;
   vector<int> maxAgePlusGroup;
   array<int> keyLogFsta;
+  array<int> keyLogFmu;
+  array<int> keyLogFrho;
   vector<int> corFlag;
   array<int> keyLogFpar;
   array<int> keyQpow;
@@ -233,6 +235,8 @@ SOURCE(
 	 maxAge = Rf_asInteger(getListElement(x,"maxAge", &isNumericScalar));
 	 maxAgePlusGroup = asVector<int>(getListElement(x,"maxAgePlusGroup", &Rf_isNumeric));
 	 keyLogFsta = asArray<int>(getListElement(x,"keyLogFsta", &Rf_isArray));
+	 keyLogFmu = asArray<int>(getListElement(x,"keyLogFmu", &Rf_isArray));
+	 keyLogFrho = asArray<int>(getListElement(x,"keyLogFrho", &Rf_isArray));
 	 corFlag = asVector<int>(getListElement(x,"corFlag", &Rf_isNumeric));
 	 keyLogFpar = asArray<int>(getListElement(x,"keyLogFpar", &Rf_isArray));
 	 keyQpow = asArray<int>(getListElement(x,"keyQpow", &Rf_isArray));
@@ -280,6 +284,8 @@ SOURCE(
 	 maxAge(),
 	 maxAgePlusGroup(),
 	 keyLogFsta(),
+	 keyLogFmu(),
+	 keyLogFrho(),
 	 corFlag(),
 	 keyLogFpar(),
 	 keyQpow(),
@@ -327,6 +333,8 @@ SOURCE(
 	 maxAge(other.maxAge),
 	 maxAgePlusGroup(other.maxAgePlusGroup),
 	 keyLogFsta(other.keyLogFsta),
+	 keyLogFmu(other.keyLogFmu),
+	 keyLogFrho(other.keyLogFrho),
 	 corFlag(other.corFlag),
 	 keyLogFpar(other.keyLogFpar),
 	 keyQpow(other.keyQpow),
@@ -374,6 +382,8 @@ struct paraSet{
   vector<Type> logFpar; 
   vector<Type> logQpow; 
   vector<Type> logSdLogFsta; 
+  vector<Type> muF; 
+  vector<Type> trans_rho_F; 
   vector<Type> logSdLogN; 
   vector<Type> logSdLogP;
   vector<Type> logSdLogObs;
@@ -422,6 +432,8 @@ struct paraSet{
     logFpar(), 
     logQpow(), 
     logSdLogFsta(), 
+    muF(), 
+    trans_rho_F(), 
     logSdLogN(), 
     logSdLogP(), 
     logSdLogObs(),
@@ -469,6 +481,8 @@ struct paraSet{
      logFpar(other.logFpar), 
     logQpow(other.logQpow), 
     logSdLogFsta(other.logSdLogFsta), 
+    muF(other.muF), 
+    trans_rho_F(other.trans_rho_F), 
     logSdLogN(other.logSdLogN), 
     logSdLogP(other.logSdLogP), 
     logSdLogObs(other.logSdLogObs),
@@ -518,6 +532,8 @@ SOURCE(
 	   logFpar = asVector<Type>(getListElement(x,"logFpar", &Rf_isNumeric));
 	   logQpow = asVector<Type>(getListElement(x,"logQpow", &Rf_isNumeric));
 	   logSdLogFsta = asVector<Type>(getListElement(x,"logSdLogFsta", &Rf_isNumeric));
+	   muF = asVector<Type>(getListElement(x,"muF", &Rf_isNumeric));
+	   trans_rho_F = asVector<Type>(getListElement(x,"trans_rho_F", &Rf_isNumeric));
 	   logSdLogN = asVector<Type>(getListElement(x,"logSdLogN", &Rf_isNumeric));
 	   logSdLogP = asVector<Type>(getListElement(x,"logSdLogP", &Rf_isNumeric));
 	   logSdLogObs = asVector<Type>(getListElement(x,"logSdLogObs", &Rf_isNumeric));

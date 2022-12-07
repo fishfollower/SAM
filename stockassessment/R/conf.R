@@ -37,8 +37,8 @@ defcon<-function(dat, level=1){
     ret <- list()
     ret$minAge <- minAge
     ret$maxAge <- maxAge  
-    ret$maxAgePlusGroup <- as.integer(ages[,2]==max(ages[,2], na.rm=TRUE))
-    x <- matrix(0, nrow=nFleets, ncol=nAges)
+    ret$maxAgePlusGroup <- as.integer(ages[,2]==max(ages[,2], na.rm=TRUE))    
+    x <- xOff <- matrix(0, nrow=nFleets, ncol=nAges)
     lastMax <- 0
     for(i in 1:nrow(x)){
         if(fleetTypes[i]==0){
@@ -49,6 +49,9 @@ defcon<-function(dat, level=1){
         }
     }  
     ret$keyLogFsta <- x - 1
+    ret$keyLogFmu <- xOff - 1
+    ret$keyLogFrho <- xOff - 1
+
     ret$corFlag <- rep(2,length(which(fleetTypes==0)))
     x <- matrix(0, nrow=nFleets, ncol=nAges)
     lastMax <- 0

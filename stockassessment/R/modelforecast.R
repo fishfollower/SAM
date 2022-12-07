@@ -376,7 +376,7 @@ modelforecast.sam <- function(fit,
                               ...
                               ){
     ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
-    dots <- as.list(...)
+    dots <- list(...)
     findMSY  <-  NULL
     if(!is.na(match("findMSY",names(dots))))
         findMSY <- dots[[match("findMSY",names(dots))]]
