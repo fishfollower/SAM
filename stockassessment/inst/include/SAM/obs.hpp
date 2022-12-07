@@ -278,7 +278,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  logCatchByFleet(i,j)=log(catchByFleet(i,j));
 	}
       }
-
       vector<Type> land = landFun(dat, conf, logN, logF, mort);
       vector<Type> logLand = log(land);
 
@@ -301,7 +300,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       array<Type> comps = scalePFun(conf, dat, logP);
       vector<Type> weekContrib = scaleWeekFun(par, dat, logP);
       int noYearsLAI = yearsPFun(conf,dat);
-      
       
       if(reportingLevel > 0){
 	NOT_SIMULATE_F(of){  
@@ -345,7 +343,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       }
 
       vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, logfbar, noYearsLAI);
-
       vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
 
       vector<Type> recapturePhi(par.logitRecapturePhi.size());
@@ -360,10 +357,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }
 	}
       }
+
       //eval likelihood 
       for(int y=0;y<dat.noYears;y++){
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
+
 	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6))){
 	    if(!isNAINT(dat.idx1(f,y))){
 	      int idxfrom=dat.idx1(f,y);
@@ -477,7 +476,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		nll += log(obs_fun::log2proportion((vector<Type>)dat.logobs.segment(idxfrom,idxlength))).sum();
 		nll -= dnorm(log(obs_fun::log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength))),
 			     log(obs_fun::log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-			     exp(par.logSdLogTotalObs(totalParKey++)),true);
+			     exp(par.logSdLogTotalObs(totalParKey)),true);
 		nll += log(obs_fun::log2expsum((vector<Type>)dat.logobs.segment(idxfrom,idxlength)));
 		nll -= log(fabs(obs_fun::jacobianDet((vector<Type>)dat.logobs.segment(idxfrom,idxlength).exp())));
 		nll -= dat.logobs.segment(idxfrom,idxlength).sum();
@@ -488,9 +487,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  Type logDenom = obs_fun::logExpSum(logProb);
 		  logProb -= logDenom;
 		  Type logTotal = rnorm(log(obs_fun::log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-					exp(par.logSdLogTotalObs(totalParKey++)));
+					exp(par.logSdLogTotalObs(totalParKey)));
 		  dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
 		}
+		totalParKey++;
 		break;
 	      default:
 		Rf_error("Unknown obsLikelihoodFlag");
@@ -540,14 +540,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }   
 	}   
       }  
-
       SIMULATE_F(of) {
 	REPORT_F(logF,of);
 	REPORT_F(logN,of);
 	vector<Type> logobs=dat.logobs; 
 	REPORT_F(logobs,of);
       }
-
       // REPORT_F(obsCov,of);
       REPORT_F(predObs,of);
       ADREPORT_F(logssb,of);
@@ -560,7 +558,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       REPORT_F(comps, of);
       ADREPORT_F(comps, of);
       REPORT_F(weekContrib, of);
-
       // Additional forecast quantities
       if(forecast.nYears > 0){
 	vector<Type> dis = disFun(dat, conf, logN, logF, mort);
@@ -594,7 +591,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	//}
 	// }
       }
-
       vector<Type> logLagR(logR.size());
       for(int i=0; i<logR.size(); ++i){
 	logLagR(i) = logN(1,i);
@@ -613,7 +609,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       ADREPORT_F(beforeLastLogN,of);
       vector<Type> beforeLastLogF = logF.col(timeSteps-2);
       ADREPORT_F(beforeLastLogF,of);  
-
       if(forecast.nYears > 0 && forecast.FModel(forecast.FModel.size()-1) == forecast.findMSY){
     
 	int catchYears = std::min((int)asDouble(forecast.nYears),forecast.nCatchAverageYears);
@@ -629,7 +624,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	ADREPORT_F(logFstatus, of);
 	ADREPORT_F(logSSBstatus, of);    
       }
-
       return nll;
     }
     )
