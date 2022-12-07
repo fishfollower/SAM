@@ -268,7 +268,7 @@ SOURCE(
 	   }
 	   
 	   vector<Type> muF = get_fmu(dat,conf,par,logF);
-	   vector<Type> rhoF = get_fmu(dat,conf,par,logF);
+	   vector<Type> rhoF = get_frho(dat,conf,par,logF);
 	   vector<Type> predF = muF + rhoF * (logF.col(indx-1) - muF);
     
 	   // Calculate CV correction
