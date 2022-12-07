@@ -15,7 +15,5 @@ fit<-sam.fit(nscodData,nscodConf,par)
 
 cat(fit$opt$objective,"\n", file="res.out")
 
-fv <- modelforecast(fit,rep(NA,100), nosim=100)
-
-
-fbarplot(fv)
+## Will warn about biopar
+suppressWarnings(fv <- modelforecast(fit,rep(NA,100), nosim=100))
