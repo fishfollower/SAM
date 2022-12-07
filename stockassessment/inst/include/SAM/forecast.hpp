@@ -5,6 +5,7 @@ SAM_DEPENDS(incidence)
 SAM_DEPENDS(derived)
 SAM_DEPENDS(logspace)
 SAM_DEPENDS(hcr)
+SAM_DEPENDS(predf)
 
 #ifndef WITH_SAM_LIB
 namespace forecast_fun {
@@ -265,14 +266,18 @@ SOURCE(
 	   default:
 	     Rf_error("F time scale model not implemented");
 	   }
-
+	   
+	   vector<Type> muF = get_fmu(dat,conf,par,logF);
+	   vector<Type> rhoF = get_fmu(dat,conf,par,logF);
+	   vector<Type> predF = muF + rhoF * (logF.col(indx-1) - muF);
+    
 	   // Calculate CV correction
 	   switch(FModel(i)) { // target is not used. F is a random walk
 	   case asFModel:
 	     if(fsdTimeScaleModel(i) != oneScale)
 	       Rf_warning("F time scale model is ignored when the F model is used for forecasting.");
 	     forecastCalculatedLogSdCorrection(i) = 1.0;
-	     forecastCalculatedMedian.col(i) = logF.col(indx - 1);
+	     forecastCalculatedMedian.col(i) = predF;// logF.col(indx - 1);
 	     break;
 	   case constrainedF:
 	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),lastShortLogF,logN,indx, cfg);    
@@ -301,27 +306,27 @@ SOURCE(
 
 SOURCE(
 	 template <class Type>
-	 forecastSet<Type>::forecastSet() : nYears(0),
-		  nCatchAverageYears(0),
-		  aveYears(0),
-		  forecastYear(0),
-		  FModel(0),
+	 forecastSet<Type>::forecastSet() : nYears(),
+		  nCatchAverageYears(),
+		  aveYears(),
+		  forecastYear(),
+		  FModel(),
 		  // target(0),
-		  constraints(0),
+		  constraints(),
 		  cfg(),
-		  selectivity(0),
-		  recModel(0),
-		  logRecruitmentMedian(0),
-		  logRecruitmentVar(0),
-		  fsdTimeScaleModel(0),
-		  simFlag(0),
-		  hcrConf(0),
-		  hcrCurrentSSB(0),
-		  forecastCalculatedMedian(0,0),
-		  forecastCalculatedLogSdCorrection(0),
-		  sel(0),
-		  selFull(0),
-		  initialFbar(0) {}
+		  selectivity(),
+		  recModel(),
+		  logRecruitmentMedian(),
+		  logRecruitmentVar(),
+		  fsdTimeScaleModel(),
+		  simFlag(),
+		  hcrConf(),
+		  hcrCurrentSSB(),
+		  forecastCalculatedMedian(),
+		  forecastCalculatedLogSdCorrection(),
+		  sel(),
+		  selFull(),
+		  initialFbar() {}
 	 )  
 
 SOURCE(

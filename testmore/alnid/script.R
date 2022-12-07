@@ -10,4 +10,7 @@ par<-defpar(nscodData,nscodConf)
 
 fit<-sam.fit(nscodData,nscodConf,par)
 
+## Test that simulation does not give error
+s <- simulate(fit,1)
+
 cat(fit$opt$objective,"\n", file="res.out")

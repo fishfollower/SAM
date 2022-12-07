@@ -81,6 +81,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(maxAge); confset.maxAge=maxAge; 
   DATA_IVECTOR(maxAgePlusGroup); confset.maxAgePlusGroup=maxAgePlusGroup; 
   DATA_IARRAY(keyLogFsta); confset.keyLogFsta=keyLogFsta; 
+  DATA_IARRAY(keyLogFmu); confset.keyLogFmu=keyLogFmu; 
+  DATA_IARRAY(keyLogFrho); confset.keyLogFrho=keyLogFrho; 
   DATA_IVECTOR(corFlag); confset.corFlag=corFlag; 
   DATA_IARRAY(keyLogFpar); confset.keyLogFpar=keyLogFpar; 
   DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
@@ -135,6 +137,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logFpar); paraset.logFpar=logFpar;  
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
   PARAMETER_VECTOR(logSdLogFsta); paraset.logSdLogFsta=logSdLogFsta;  
+  PARAMETER_VECTOR(muF); paraset.muF=muF;  
+  PARAMETER_VECTOR(trans_rho_F); paraset.trans_rho_F=trans_rho_F;  
   PARAMETER_VECTOR(logSdLogN); paraset.logSdLogN=logSdLogN;  
   PARAMETER_VECTOR(logSdLogP); paraset.logSdLogP=logSdLogP;       //Beta random walk components var
   PARAMETER_VECTOR(logSdLogObs); paraset.logSdLogObs=logSdLogObs; 
@@ -215,10 +219,6 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
-  
-  
-
-
   Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
 
   prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
@@ -231,7 +231,7 @@ Type objective_function<Type>::operator() ()
   }
   ans += nllSplinePenalty(dataset, confset, paraset, this);
 
-  
+
   ans += nllSW(logSW, dataset, confset, paraset, forecast, this);
   ans += nllCW(logCW, dataset, confset, paraset, forecast, this);
   ans += nllMO(logitMO, dataset, confset, paraset, forecast, this);
@@ -242,7 +242,7 @@ Type objective_function<Type>::operator() ()
   forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
 
   ans += nllP(confset, paraset, logP, keep, this);
-  
+
   ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
   // Update mortalities if simulating
   SIMULATE_F(this){
@@ -250,13 +250,14 @@ Type objective_function<Type>::operator() ()
       mort = MortalitySet<Type>(dataset, confset, paraset, logF);
     }
   }
+
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit,mort, this);
 
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, recruit, mort, keep,reportingLevel, this);
 
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
-  
+
 
   return ans;
 }

@@ -201,7 +201,8 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 
 		    case 90:	// Stock composition in catch/landing
 		      Rf_error("Reserved for multiStockassessment");
-
+		      break;
+		      
 		    default:
 		      Rf_error("Unknown fleet code");
 		      return 0 ;
