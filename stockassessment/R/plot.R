@@ -938,7 +938,7 @@ obscorrplot<-function(fit,...){
 ##' @export
 obscorrplot.sam <- function(fit,...){
     x <- obscov(fit,TRUE)
-    fn <- attr(fit$data,"fleetNames")
+    fn <- attr(fit$data,"fleetNames")[fit$data$fleetTypes != 7]
     for(i in 1:length(x)){
         xx <- x[[i]]
         ages <- fit$data$minAgePerFleet[i]:fit$data$maxAgePerFleet[i]
