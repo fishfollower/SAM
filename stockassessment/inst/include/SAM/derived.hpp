@@ -149,7 +149,7 @@ matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, a
       for(int f=0; f<noFleets;f++){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
 	  // cat(a-conf.minAge, y) += exp(logN(a-conf.minAge, y)) * mort.fleetCumulativeIncidence(a-conf.minAge,y, f) * dat.catchMeanWeight(y, a-conf.minAge, f);
-	  cat(a-conf.minAge, y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a,y,f))) * dat.catchMeanWeight(y, a-conf.minAge, f);
+	  cat(a-conf.minAge, y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f))) * dat.catchMeanWeight(y, a-conf.minAge, f);
 	}
       }
     }
@@ -175,7 +175,7 @@ array<Type> catchByFleetFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &l
       for(int f=0; f<noFleets;f++){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
 	  // cat(a-conf.minAge, y) += exp(logN(a-conf.minAge, y)) * mort.fleetCumulativeIncidence(a-conf.minAge,y, f) * dat.catchMeanWeight(y, a-conf.minAge, f);
-	  cat(a-conf.minAge, y, f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a,y,f))) * dat.catchMeanWeight(y, a-conf.minAge, f);
+	  cat(a-conf.minAge, y, f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f))) * dat.catchMeanWeight(y, a-conf.minAge, f);
 	}
       }
     }

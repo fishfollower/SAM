@@ -523,8 +523,8 @@ struct paraSet{
   vector<Type> initN;
 
   matrix<Type> seasonMu;
-  matrix<Type> seasonLogitRho;
-  matrix<Type> seasonLogSd;
+  vector<Type> seasonLogitRho;
+  vector<Type> seasonLogSd;
 
   Type splinePenalty;
 
