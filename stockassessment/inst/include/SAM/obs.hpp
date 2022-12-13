@@ -537,7 +537,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  dat.logobs(i) = rnorm(predObs(i),sd);
 		}
 	      }
-	    }    
+	    }
 	  }else{
 	    Rf_error("Fleet type not implemented");
 	  }   
