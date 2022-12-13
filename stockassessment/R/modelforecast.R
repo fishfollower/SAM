@@ -593,6 +593,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
         }
     }
+    d0 <- dim(pl$logitFseason)
+    lfsOld <- pl$logitFseason
+    pl$logitFseason <- array(0, c(d0[1:2],nYears+d0[3]))
+    pl$logitFseason[,,1:d0[3]] <- lfsOld
     args$parameters <- pl
     args$random <- unique(names(obj0$env$par[obj0$env$random]))
     args$data$reportingLevel <- 0

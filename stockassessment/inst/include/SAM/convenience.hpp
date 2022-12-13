@@ -137,3 +137,4 @@ vector<Type> logitroots2ARpar(vector<Type> x)SOURCE({
 
   SAM_SPECIALIZATION(vector<double> logitroots2ARpar(vector<double>));
 SAM_SPECIALIZATION(vector<TMBad::ad_aug> logitroots2ARpar(vector<TMBad::ad_aug>));
+

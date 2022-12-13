@@ -272,12 +272,22 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 
       array<Type> catchByFleet = catchByFleetFun(dat, conf, logN, logF, mort);
       array<Type> logCatchByFleet(dat.catchMeanWeight.dim(0), conf.keyLogFsta.dim(0));
-
       for(int i=0; i<logCatchByFleet.dim(0); ++i){
 	for(int j=0; j<logCatchByFleet.dim(1); ++j){
 	  logCatchByFleet(i,j)=log(catchByFleet(i,j));
 	}
       }
+
+      array<Type> catchByFleetAge = catchByFleetFunAge(dat, conf, logN, logF, mort);
+      array<Type> logCatchByFleetAge = catchByFleetAge;
+      for(int i=0; i<logCatchByFleetAge.dim(0); ++i){
+	for(int j=0; j<logCatchByFleetAge.dim(1); ++j){
+	  for(int k=0; k<logCatchByFleetAge.dim(2); ++k){
+	    logCatchByFleetAge(i,j,k)=log(logCatchByFleetAge(i,j,k));
+	  }
+	}
+      }
+
       vector<Type> land = landFun(dat, conf, logN, logF, mort);
       vector<Type> logLand = log(land);
 
@@ -415,6 +425,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		}
 		REPORT_F(VV,of);
 		combiCov = G.transpose()*VV*G;
+		obsCov(f) = combiCov;
 		nllVec(f).setSigma(combiCov);
 	      }
 	      // ----------------updating of covariance matrix done
@@ -555,6 +566,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       ADREPORT_F(logLand,of);
       ADREPORT_F(logtsb,of);
 
+      REPORT_F(logCatchByFleetAge,of);
+
       REPORT_F(comps, of);
       ADREPORT_F(comps, of);
       REPORT_F(weekContrib, of);
@@ -585,6 +598,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(logCatch,of);
 	REPORT_F(logCatchAge,of);
 	REPORT_F(logCatchByFleet,of);
+	REPORT_F(logCatchByFleetAge,of);
 	REPORT_F(logFbarByFleet, of);
 	REPORT_F(logLand,of);
 	REPORT_F(logtsb,of);      

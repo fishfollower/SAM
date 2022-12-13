@@ -46,7 +46,8 @@ Type objective_function<Type>::operator() ()
   dataSet<Type> dataset;
   DATA_INTEGER(noFleets); dataset.noFleets=noFleets; 
   DATA_IVECTOR(fleetTypes); dataset.fleetTypes=fleetTypes;    
-  DATA_VECTOR(sampleTimes); dataset.sampleTimes=sampleTimes; 
+  DATA_VECTOR(sampleTimesStart); dataset.sampleTimesStart=sampleTimesStart; 
+  DATA_VECTOR(sampleTimesEnd); dataset.sampleTimesEnd=sampleTimesEnd;
   DATA_INTEGER(noYears); dataset.noYears=noYears; 
   DATA_VECTOR(years); dataset.years=years; 
   DATA_IVECTOR(minAgePerFleet); dataset.minAgePerFleet=minAgePerFleet; 
@@ -140,7 +141,10 @@ Type objective_function<Type>::operator() ()
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
   DATA_IVECTOR(logNMeanAssumption); confset.logNMeanAssumption=logNMeanAssumption;
   DATA_INTEGER(initState); confset.initState = initState;
-
+  DATA_IARRAY(keyLogFseason); confset.keyLogFseason = keyLogFseason;
+  DATA_VECTOR(seasonTimes); vector<double> seasonTimesDouble(seasonTimes.size()); for(int i=0; i<seasonTimes.size(); ++i){seasonTimesDouble(i)=asDouble(seasonTimes(i));} confset.seasonTimes=seasonTimesDouble; 
+  DATA_IVECTOR(isFishingSeason); confset.isFishingSeason = isFishingSeason;
+  
   DATA_INTEGER(reportingLevel);
 
   paraSet<Type> paraset;
@@ -187,6 +191,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logXtraSd); paraset.logXtraSd=logXtraSd;
   PARAMETER_VECTOR(initF); paraset.initF = initF;
   PARAMETER_VECTOR(initN); paraset.initN = initN;
+
+  PARAMETER_MATRIX(seasonMu); paraset.seasonMu = seasonMu;
+  PARAMETER_MATRIX(seasonLogitRho); paraset.seasonLogitRho = seasonLogitRho;
+  PARAMETER_MATRIX(seasonLogSd); paraset.seasonLogSd = seasonLogSd;
   
   
   // Forecast FMSY
@@ -217,7 +225,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_ARRAY(logNM);    
 
   PARAMETER_ARRAY(logP);
-  
+
+  PARAMETER_ARRAY(logitFseason);
   
   PARAMETER_VECTOR(missing);
 
@@ -248,21 +257,31 @@ Type objective_function<Type>::operator() ()
   ans += nllNM(logNM, dataset, confset, paraset, forecast, this);
 
   // Prepare Laplace trajectory forecast
-  MortalitySet<Type> mort(dataset, confset, paraset, logF);
+  MortalitySet<Type> mort(dataset, confset, paraset, logF, logitFseason);
   forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
 
   ans += nllP(confset, paraset, logP, keep, this);
 
   ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
+  ans += nllSeason(dataset, confset, paraset, forecast, logitFseason, keep, this);
   // Update mortalities if simulating
   SIMULATE_F(this){
     if(confset.simFlag(0)==0){
-      mort = MortalitySet<Type>(dataset, confset, paraset, logF);
+      mort = MortalitySet<Type>(dataset, confset, paraset, logF, logitFseason);
     }
   }
 
+  REPORT(mort.totalZseason);
+  REPORT(mort.totalZ);
+  REPORT(mort.logFleetSurvival_before);
+  REPORT(mort.fleetCumulativeIncidence);
+  REPORT(mort.otherCumulativeIncidence);
+  REPORT(mort.ssbSurvival_before);
+  
+  
+
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
-  forecastSimulation(dataset, confset, paraset, forecast, logN, logF, recruit,mort, this);
+  forecastSimulation(dataset, confset, paraset, forecast, logN, logF, logitFseason, recruit,mort, this);
 
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, recruit, mort, keep,reportingLevel, this);
 

@@ -48,7 +48,8 @@ template <class Type>
 struct dataSet{
   int noFleets;
   vector<int> fleetTypes; 
-  vector<Type> sampleTimes;
+  vector<Type> sampleTimesStart;
+  vector<Type> sampleTimesEnd;
   int noYears;
   vector<Type> years;
   vector<int> minAgePerFleet;
@@ -78,7 +79,8 @@ struct dataSet{
   inline dataSet() :
     noFleets(),
     fleetTypes(),
-    sampleTimes(),
+    sampleTimesStart(),
+    sampleTimesEnd(),
     noYears(), 	
     years(),
     minAgePerFleet(),
@@ -110,7 +112,8 @@ struct dataSet{
   inline dataSet(const dataSet<T> &x) :
     noFleets(x.noFleets),
     fleetTypes(x.fleetTypes),
-    sampleTimes(x.sampleTimes),
+    sampleTimesStart(x.sampleTimesStart),
+    sampleTimesEnd(x.sampleTimesEnd),
     noYears(x.noYears), 	
     years(x.years),
     minAgePerFleet(x.minAgePerFleet),
@@ -134,7 +137,8 @@ struct dataSet{
     propF(x.propF, x.propF.dim), //x.propF),
     propM(x.propM, x.propM.dim),
     corList(x.corList),
-    sumKey(x.sumKey, x.sumKey.dim) {}
+    sumKey(x.sumKey, x.sumKey.dim)
+  {}
 });
 
 SOURCE(
@@ -175,7 +179,8 @@ SOURCE(
       using tmbutils::asArray;
       noFleets = Rf_asInteger(getListElement(x,"noFleets", &isNumericScalar));
       fleetTypes = asVector<int>(getListElement(x,"fleetTypes",  &Rf_isNumeric));
-      sampleTimes = asVector<Type>(getListElement(x,"sampleTimes",  &Rf_isNumeric));
+      sampleTimesStart = asVector<Type>(getListElement(x,"sampleTimesStart",  &Rf_isNumeric));
+      sampleTimesEnd = asVector<Type>(getListElement(x,"sampleTimesEnd",  &Rf_isNumeric));
       noYears = Rf_asInteger(getListElement(x,"noYears", &isNumericScalar));
       years = asVector<Type>(getListElement(x,"years",  &Rf_isNumeric));
       minAgePerFleet = asVector<int>(getListElement(x,"minAgePerFleet",  &Rf_isNumeric));
@@ -201,7 +206,7 @@ SOURCE(
       corList = listMatrixFromR<Type>(getListElement(x,"corList"));
       sumKey = asArray<int>(getListElement(x,"sumKey", &Rf_isArray));
     };
-    )
+       )
 
 SAM_SPECIALIZATION(struct dataSet<double>);
 SAM_SPECIALIZATION(struct dataSet<TMBad::ad_aug>);
@@ -252,7 +257,10 @@ struct confSet{
   matrix<int> keyXtraSd;
   vector<int> logNMeanAssumption;
   int initState;
-
+  array<int> keyLogFseason;
+  vector<double> seasonTimes;
+  vector<int> isFishingSeason;
+  
   confSet();
 
   confSet(SEXP x);
@@ -307,8 +315,11 @@ SOURCE(
 	 keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd", &Rf_isMatrix));
 	 logNMeanAssumption = asVector<int>(getListElement(x,"logNMeanAssumption", &Rf_isNumeric));
 	 initState = Rf_asInteger(getListElement(x,"initState", &isNumericScalar));
-	 }
-	 )
+	 keyLogFseason = asArray<int>(getListElement(x,"keyLogFseason", &Rf_isArray));
+	 seasonTimes = asVector<double>(getListElement(x,"seasonTimes", &Rf_isNumeric));
+	 isFishingSeason = asVector<int>(getListElement(x,"isFishingSeason", &Rf_isNumeric));
+       }
+       )
 
 SOURCE(
 	 confSet::confSet() :
@@ -355,7 +366,10 @@ SOURCE(
 	 keyMortalityObsVar(),
 	 keyXtraSd(),
 	 logNMeanAssumption(),
-	 initState()
+	 initState(),
+	 keyLogFseason(),
+	 seasonTimes(),
+	 isFishingSeason()
 	 {}
 	 );
 
@@ -404,7 +418,10 @@ SOURCE(
 	 keyMortalityObsVar(other.keyMortalityObsVar),
 	 keyXtraSd(other.keyXtraSd),
 	 logNMeanAssumption(other.logNMeanAssumption),
-	 initState(other.initState)
+	 initState(other.initState),
+	 keyLogFseason(other.keyLogFseason),
+	 seasonTimes(other.seasonTimes),
+	 isFishingSeason(other.isFishingSeason)
 	 {}
 	 );
 
@@ -505,6 +522,10 @@ struct paraSet{
   vector<Type> initF;
   vector<Type> initN;
 
+  matrix<Type> seasonMu;
+  matrix<Type> seasonLogitRho;
+  matrix<Type> seasonLogSd;
+
   Type splinePenalty;
 
   inline paraSet() :
@@ -551,6 +572,9 @@ struct paraSet{
     logXtraSd(),
      initF(),
      initN(),
+    seasonMu(),
+    seasonLogitRho(),
+    seasonLogSd(),
     splinePenalty()  {}
   
   paraSet(SEXP x);
@@ -600,6 +624,9 @@ struct paraSet{
     logXtraSd(other.logXtraSd),
      initF(other.initF),
      initN(other.initN),
+    seasonMu(other.seasonMu),
+    seasonLogitRho(other.seasonLogitRho),
+    seasonLogSd(other.seasonLogSd),
     splinePenalty(other.splinePenalty)  {}
 
 });
@@ -697,6 +724,9 @@ SOURCE(
 	   logXtraSd = asVector<Type>(getListElement(x,"logXtraSd", &Rf_isNumeric));
 	   initF = asVector<Type>(getListElement(x,"initF", &Rf_isNumeric));
 	   initN = asVector<Type>(getListElement(x,"initN", &Rf_isNumeric));
+	   seasonMu = asMatrix<Type>(getListElement(x,"seasonMu", &Rf_isMatrix));
+	   seasonLogitRho = asVector<Type>(getListElement(x,"seasonLogitRho", &Rf_isNumeric));
+	   seasonLogSd = asVector<Type>(getListElement(x,"seasonLogSd", &Rf_isNumeric));
 
 	   splinePenalty = (Type)Rf_asReal(getListElement(x,"splinePenalty", &isNumericScalar));
 	 }

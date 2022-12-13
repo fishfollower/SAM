@@ -146,6 +146,9 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$initF <- numeric((max(conf$keyLogFsta)+1) * (conf$initState > 0))
   ret$initN <- numeric((conf$maxAge-conf$minAge+1) * (conf$initState > 0))
 
+  ret$seasonMu <- matrix(0,length(conf$seasonTimes)-2, max(conf$keyLogFseason)+1)
+  ret$seasonLogitRho <- matrix(0,length(conf$seasonTimes)-2, max(conf$keyLogFseason)+1)
+  ret$seasonLogSd <- matrix(0,length(conf$seasonTimes)-2, max(conf$keyLogFseason)+1)
   
   ## Reference points
   ret$logFScaleMSY <- 0
@@ -181,6 +184,7 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$logP=matrix(0, nrow=0, ncol=0)
   }
 
+  ret$logitFseason <- array(0, dim = c(length(conf$seasonTimes)-2, dat$noYears, max(conf$keyLogFseason)+1))
 
   return(ret)
 }
