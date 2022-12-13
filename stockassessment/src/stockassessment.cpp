@@ -258,7 +258,7 @@ Type objective_function<Type>::operator() ()
 
   // Prepare Laplace trajectory forecast
   MortalitySet<Type> mort(dataset, confset, paraset, logF, logitFseason);
-  forecast.calculateForecast(logF,logN, dataset, confset, paraset, recruit, mort);    
+  forecast.calculateForecast(logF,logN,logitFseason, dataset, confset, paraset, recruit, mort);    
 
   ans += nllP(confset, paraset, logP, keep, this);
 
