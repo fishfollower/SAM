@@ -120,7 +120,7 @@ runwithout.sam <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...)
   conf <- loadConf(data, fakefile, patch=TRUE)
   close(fakefile)
   par <- defpar(data,conf)
-  par[!names(par)%in%c("logN", "logF", "logSW", "logCW", "logitMO", "logNM")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF", "logSW", "logCW", "logitMO", "logNM")]
+  par[!names(par)%in%c("logN", "logF", "logSW", "logCW", "logitMO", "logNM","logP","logitFseason")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF", "logSW", "logCW", "logitMO", "logNM","logP","logitFseason")]
   ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, lower=fit$low, upper=fit$hig, ...)
   return(ret)
 }

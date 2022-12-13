@@ -4,6 +4,10 @@ SAM_DEPENDS(recruitment)
 SAM_DEPENDS(convenience)
 SAM_DEPENDS(newton)
 SAM_DEPENDS(hcr)
+SAM_DEPENDS(incidence)
+SAM_DEPENDS(derived)
+SAM_DEPENDS(predn)
+SAM_DEPENDS(extend_array)
 
 HEADER(
 enum ConstraintType {
@@ -103,7 +107,7 @@ namespace ConstrainCalculations {
       int f = cFleets(i);
       for(int a=a0; a<=a1; a++){
 	if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
-	  fbar(i) += exp(logF(conf.keyLogFsta(f,a-conf.minAge)));
+	  fbar(i) += exp(logF(conf.keyLogFsta(f,a-conf.minAge))) * (dat.sampleTimesEnd(f) - dat.sampleTimesStart(f));
       }
       fbar(i) /= Type(a1-a0 + 1.0);
     }
@@ -116,36 +120,23 @@ namespace ConstrainCalculations {
   
 
   template<class Type>
-  Type getFleetCatch(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
+  Type getFleetCatch(dataSet<Type>& dat, confSet& conf, array<Type>& logN, array<Type>& logF, MortalitySet<Type>& mort, int y, int a0, int a1, int fleet){
     Type logCat = R_NegInf;
     // Type cat = 0.0;
-    for(int a=a0; a<=a1; a++){
-      Type logZa = log(dat.natMor(y, a-conf.minAge));
-      // Type Za = dat.natMor(y, a-conf.minAge);
-      for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
-	  // Za += exp(logF(conf.keyLogFsta(f,a-conf.minAge)));
-	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-conf.minAge)));
-	}
-      }
-      Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
-      // Type v = (1.0 - exp(-Za)) / Za;
-      int f0 = 0;
-      int f1 = cFleets.size()-1;
-      if(fleet > (-1)){
-	f0 = fleet;
-	f1 = fleet;
-      }
-    for(int ii = f0; ii <= f1; ++ii){
-      int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
-	  Type logFI = logv + logF(conf.keyLogFsta(f,a-conf.minAge));
-	  // Type FI = v * exp(logF(conf.keyLogFsta(f,a-conf.minAge)));
-	  // Type cc = FI * exp(logN(a-conf.minAge,y)) * dat.catchMeanWeight(y, a-conf.minAge, f);
-	  Type lc =  logFI + logN(a-conf.minAge,y) + log(dat.catchMeanWeight(y, a-conf.minAge, f));
-	  logCat = logspace_add_SAM(logCat, lc);
-	  // cat += cc;
+    int f0 = 0;
+    int f1 = conf.keyLogFsta.dim(0);
+    if(fleet > (-1)){
+      f0 = fleet;
+      f1 = fleet;
+    }
+    for(int f = f0; f < f1; ++f){
+      if(dat.fleetTypes(f) == 0){
+	for(int a=a0; a<=a1; a++){
+	  if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
+	    Type lc = logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f)) + log( dat.catchMeanWeight(y, a-conf.minAge, f));
+	    logCat = logspace_add_SAM(logCat, lc);
+	    // cat += cc;
+	  }
 	}
       }
     }
@@ -153,199 +144,71 @@ namespace ConstrainCalculations {
     return logCat;
   }
   
-  SAM_SPECIALIZATION(double getFleetCatch(dataSet<double>&, confSet&, vector<int>&, array<double>&, vector<double>&, int, int, int, int));
-  SAM_SPECIALIZATION(TMBad::ad_aug getFleetCatch(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, int));
+  SAM_SPECIALIZATION(double getFleetCatch(dataSet<double>&, confSet&, array<double>&, array<double>&, MortalitySet<double>&, int, int, int, int));
+  SAM_SPECIALIZATION(TMBad::ad_aug getFleetCatch(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, int, int, int, int));
   
   template<class Type>
-  Type getFleetLanding(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int fleet){
+  Type getFleetLanding(dataSet<Type>& dat, confSet& conf, array<Type>& logN, array<Type>& logF, MortalitySet<Type>& mort, int y, int a0, int a1, int fleet){
     Type logCat = R_NegInf;
-    for(int a=a0; a<=a1; a++){
-      Type logZa = log(dat.natMor(y, a-conf.minAge));
-      for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a-conf.minAge) > (-1))
-	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-conf.minAge)));
-      }
-      Type logv = logspace_sub_SAM(Type(0.0), -exp(logZa)) - logZa;
-      int f0 = 0;
-      int f1 = cFleets.size()-1;
-      if(fleet > (-1)){
-	f0 = fleet;
-	f1 = fleet;
-      }
-    for(int ii = f0; ii <= f1; ++ii){
-      int f = cFleets(ii);	
-	if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
-	  Type LW = dat.landMeanWeight(y, a-conf.minAge, f);
-	  Type LF = dat.landFrac(y,a-conf.minAge,f);
-	  if(LW > 0 && LF > 0){
-	    Type logFI = logv + logF(conf.keyLogFsta(f,a-conf.minAge));
-	    Type lc =  log(LF) + logFI + logN(a-conf.minAge,y) + log(LW);
-	    logCat = logspace_add_SAM(logCat, lc);
+    // Type cat = 0.0;
+    int f0 = 0;
+    int f1 = conf.keyLogFsta.dim(0);
+    if(fleet > (-1)){
+      f0 = fleet;
+      f1 = fleet;
+    }
+    for(int f = f0; f < f1; ++f){
+      if(dat.fleetTypes(f) == 0){
+	for(int a=a0; a<=a1; a++){
+	  if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
+	    Type LF = dat.landFrac(y,a-conf.minAge,f);
+	    Type LW = dat.landMeanWeight(y,a-conf.minAge,f);
+	    if(LF > 0 && LW > 0){
+	      Type lc = logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f)) + log(LF) + log(LW);
+	      logCat = logspace_add_SAM(logCat, lc);
+	    }
+	    // cat += cc;
 	  }
 	}
       }
     }
+    // return log(cat);
     return logCat;
   }
 
-  SAM_SPECIALIZATION(double getFleetLanding(dataSet<double>&, confSet&, vector<int>&, array<double>&, vector<double>&, int, int, int, int));
-  SAM_SPECIALIZATION(TMBad::ad_aug getFleetLanding(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, int));
+  SAM_SPECIALIZATION(double getFleetLanding(dataSet<double>&, confSet&, array<double>&, array<double>&, MortalitySet<double>&, int, int, int, int));
+  SAM_SPECIALIZATION(TMBad::ad_aug getFleetLanding(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, int, int, int, int));
   
-  // Begining of next year
   template<class Type>
-  Type getSSB(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
-    // Current SSB for recruitment
-    int yn = std::min(y+1, dat.propMat.dim[0]-1);
-    Type logThisSSB = R_NegInf;
-    int ys = std::max(yn-conf.minAge, 0); // Year of birth for predicted logN
-    for(int a = 0; a < logN.dim[0]; a++){
-      // if(dat.propF(ys,a) > 0) // needs fleet index
-      // 	Rf_warning("For next year ssb constraints, prediction of recruitment assumes no fishing before spawning.");
-      logThisSSB = logspace_add_SAM(logThisSSB, logN(a,ys) + log(dat.propMat(ys,a)) + log(dat.stockMeanWeight(ys,a) + dat.propM(ys,a) * dat.natMor(ys,a)));
-    }
-    // Next N
-    vector<Type> logNp(logN.dim[0]);
-    logNp.setConstant(R_NegInf);
-    //// Recruit
-    logNp(0) = recruit(logThisSSB,logN(0,y), dat.years(0)+y+1);
-    //// Middle
-    for(int a = 1; a < logNp.size(); ++a){
-      Type logZa = log(dat.natMor(y, a-1));
-      for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a-1) > (-1))
-	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-1)));
-      }     
-      logNp(a) = logN(a-1,y) - exp(logZa);
-    }
-    //// Plus group
-    if(conf.maxAgePlusGroup(0)==1){
-      int a = logNp.size()-1;
-      Type v1 = logNp(a);
-      Type logZa = log(dat.natMor(y, a));
-      for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a) > (-1))
-	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a)));
-      }
-      Type v2 = logN(a, y) - exp(logZa);
-      logNp(a) = logspace_add_SAM(v1,v2);
-    }    
-   // Next SSB
+  Type getLogSSB(dataSet<Type>& dat, confSet& conf, array<Type>& logN, array<Type>& logF, MortalitySet<Type> mort, int y, int a0, int a1){
     Type logssb = R_NegInf;
-    Type llssb = R_NegInf;
-    for(int a = a0; a <= a1; a++){
-      if(dat.propMat(yn,a-conf.minAge) > 0)
-	logssb = logspace_add_SAM(logssb, logNp(a-conf.minAge) + log(dat.propMat(yn,a-conf.minAge)) + log(dat.stockMeanWeight(yn,a-conf.minAge)) + dat.propM(ys,a) * dat.natMor(ys,a));
-      if(dat.propMat(yn,a-conf.minAge) > 0)
-	llssb = logspace_add_SAM(llssb, logN(a-conf.minAge,y) + log(dat.propMat(y,a-conf.minAge)) + log(dat.stockMeanWeight(y,a-conf.minAge)) + dat.propM(ys,a) * dat.natMor(ys,a));
+    int yu = std::min(y,dat.propMat.dim(0));
+    for(int a=a0; a<=a1; ++a){
+      if(dat.propMat(yu,a-conf.minAge) > 0){
+	Type lssbNew = logN(a-conf.minAge,y) + log(mort.ssbSurvival_before(a-conf.minAge,yu)) + log(dat.propMat(yu,a-conf.minAge)) + log(dat.stockMeanWeight(yu,a-conf.minAge));
+	logssb = logspace_add_SAM(logssb, lssbNew);
+      }
     }
-    //
-    if(rel)
-      return logssb - llssb;
-    return logssb;    
+    return logssb;
   };
 
-  SAM_SPECIALIZATION(double getSSB(dataSet<double>&, confSet&, vector<int>&, Recruitment<double>&, array<double>&, vector<double>&, int, int, int, bool));
-  SAM_SPECIALIZATION(TMBad::ad_aug getSSB(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, Recruitment<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, bool));
+  SAM_SPECIALIZATION(double getLogSSB(dataSet<double>&, confSet&, array<double>&, array<double>&, MortalitySet<double>, int, int, int));
+  SAM_SPECIALIZATION(TMBad::ad_aug getLogSSB(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>, int, int, int));
   
 
-  // Begining of next year
   template<class Type>
-  Type getTSB(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, Recruitment<Type> &recruit, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, bool rel = false){
-    // Current SSB for recruitment
-    int yn = std::min(y+1, dat.propMat.dim[0]-1);
-    Type logThisSSB = R_NegInf;
-    int ys = std::max(yn-conf.minAge, 0); // Year of birth for predicted logN
-    for(int a = 0; a < logN.dim[0]; a++){
-      // if(dat.propF(ys,a) > 0) // needs fleet index
-      // 	Rf_warning("For next year tsb constraints, prediction of recruitment assumes no fishing before spawning.");
-      logThisSSB = logspace_add_SAM(logThisSSB, logN(a,ys) + log(dat.propMat(ys,a)) + log(dat.stockMeanWeight(ys,a)) + dat.propM(ys,a) * dat.natMor(ys,a));
-    }
-    // Next N
-    vector<Type> logNp(logN.dim[0]);
-    logNp.setConstant(R_NegInf);
-    //// Recruit
-    logNp(0) = recruit(logThisSSB,logN(0,y), dat.years(0)+y+1);
-    //// Middle
-    for(int a = 1; a < logNp.size(); ++a){
-      Type logZa = log(dat.natMor(y, a-1));
-      for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a-1) > (-1))
-	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a-1)));
-      }     
-      logNp(a) = logN(a-1,y) - exp(logZa);
-    }
-    //// Plus group
-    if(conf.maxAgePlusGroup(0)==1){
-      int a = logNp.size()-1;
-      Type v1 = logNp(a);
-      Type logZa = log(dat.natMor(y, a));
-      for(int ii = 0; ii < cFleets.size(); ++ii){
-	int f = cFleets(ii);
-	if(conf.keyLogFsta(f,a) > (-1))
-	  logZa = logspace_add_SAM(logZa, logF(conf.keyLogFsta(f,a)));
-      }
-      Type v2 = logN(a, y) - exp(logZa);
-      logNp(a) = logspace_add_SAM(v1,v2);
-    }    
-    // Next TSB
+  Type getLogTSB(dataSet<Type>& dat, confSet& conf, array<Type>& logN, array<Type>& logF, MortalitySet<Type> mort, int y, int a0, int a1){
     Type logtsb = R_NegInf;
-    Type lltsb = R_NegInf;
-    for(int a = a0; a <= a1; a++){
-      logtsb = logspace_add_SAM(logtsb, logNp(a-conf.minAge) + log(dat.stockMeanWeight(yn,a-conf.minAge)));
-      lltsb = logspace_add_SAM(lltsb, logN(a-conf.minAge,y) + log(dat.stockMeanWeight(y,a-conf.minAge)));
+    int yu = std::min(y,dat.propMat.dim(0));
+    for(int a=a0; a<=a1; ++a){
+      Type ltsbNew = logN(a-conf.minAge,y) + log(dat.stockMeanWeight(yu,a-conf.minAge));
+      logtsb = logspace_add_SAM(logtsb, ltsbNew);
     }
-    //
-    if(rel)
-      return logtsb - lltsb;
     return logtsb;
   };
 
-  SAM_SPECIALIZATION(double getTSB(dataSet<double>&, confSet&, vector<int>&, Recruitment<double>&, array<double>&, vector<double>&, int, int, int, bool));
-  SAM_SPECIALIZATION(TMBad::ad_aug getTSB(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, Recruitment<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, bool));
-
-
-  /*
-
-   */
-  template<class Type>
-  Type getHCRBiomass(dataSet<Type>& dat, confSet& conf, vector<int>& cFleets, array<Type>& logN, vector<Type>& logF, int y, int a0, int a1, int lag, int bioType){
-    Type logBiomass = R_NegInf;
-    int ys = std::max(y-lag, 0);
-    for(int a = a0-conf.minAge; a < a1-conf.minAge; a++){
-      Type lb = logN(a,ys) + log(dat.stockMeanWeight(ys,a));
-      if(bioType == 0){		// SSB
-	if(dat.propMat(ys,a) > 0){
-	  Type Fa = 0.0;
-	  if(lag > 0){
-	    for(int ii = 0; ii < cFleets.size(); ++ii){
-	      int f = cFleets(ii);
-	      if(dat.propF(ys,a,f) > 0)
-		if(conf.keyLogFsta(f,a) > (-1))
-		  Fa += dat.propF(ys,a,f) * exp(logF(conf.keyLogFsta(f,a)));
-	    }
-	  }
-	  // else if(dat.propF(ys,a) > 0 && lag >= 0){ // propF needs fleet index
-	  //   Rf_error("With lag 0, SSB without fishing before spawning time is used for the HCR.");
-	  // }
-	  lb += log(dat.propMat(ys,a)) + Fa + dat.propM(ys,a) * dat.natMor(ys,a);
-	}
-      }else if(bioType == 1){	// TSB
-	// Do no more
-      }else{
-	Rf_error("Unknown biomass type for HCR");
-      }
-      logBiomass = logspace_add_SAM(logBiomass, lb);
-    }
-    return exp(logBiomass);
-  }
-
-  SAM_SPECIALIZATION(double getHCRBiomass(dataSet<double>&, confSet&, vector<int>&, array<double>&, vector<double>&, int, int, int, int, int));
-  SAM_SPECIALIZATION(TMBad::ad_aug getHCRBiomass(dataSet<TMBad::ad_aug>&, confSet&, vector<int>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, int, int, int, int));
-
+SAM_SPECIALIZATION(double getLogTSB(dataSet<double>&, confSet&, array<double>&, array<double>&, MortalitySet<double>, int, int, int));
+SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>, int, int, int));
 
   
   typedef TMBad::ad_aug ad;
@@ -365,14 +228,16 @@ namespace ConstrainCalculations {
   struct ForecastF : NewtonFunctor {
     dataSet<ad> dat;
     confSet conf;
+    paraSet<ad> par;
     vector<int> cFleets;
     Recruitment<ad> recruit;
     FConstraintList<ad> cstrs;
-    vector<ad> lastLogF;
     array<ad> logN;
+    array<ad> historicalLogF;
+    array<ad> logitFseason;
     int y;
 
-    ForecastF(dataSet<ad> dat_, confSet conf_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, vector<ad> lastLogF_, array<ad> logN_, int y_) : dat(dat_), conf(conf_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), lastLogF(lastLogF_), logN(logN_), y(y_) {};
+    ForecastF(dataSet<ad> dat_, confSet conf_, paraSet<ad> par_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, array<ad> logN_, array<ad> histLogF_, array<ad> lfs_, int y_) : dat(dat_), conf(conf_), par(par_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), logN(logN_), historicalLogF(histLogF_), logitFseason(lfs_), y(y_) {};
 
     ad operator()(const vector<ad>& logFs){
       ad kappa = 0.0;
@@ -381,7 +246,8 @@ namespace ConstrainCalculations {
       // vector<ad> llfs = (vector<ad>)(lastLogF - lastLFB);
       // matrix<ad> logF = toFleetMatrix(dat, conf, lastLogF, logFs);
 
-      vector<ad> newLogF = lastLogF;
+      vector<ad> lastLogF = historicalLogF.col(y-1);
+      vector<ad> newLogF = historicalLogF.col(y-1);
    
       vector<bool> done(newLogF.size());
       done.setConstant(false);
@@ -407,8 +273,18 @@ namespace ConstrainCalculations {
 	// New F values
 	vector<ad> fleetLogFbar = getFleetLogFbar(dat, conf, cFleets, newLogF, cstr.Amin, cstr.Amax);
 	ad logFbar = logspace_sum(fleetLogFbar);
-	// Add constraint
+	
+	// Predict year y and y+1, add one year
+	// logisticFseason is already updated at this point;
+	array<ad> hLogF2 = historicalLogF;
+	hLogF2.col(y) = newLogF;
+	hLogF2.col(y+1) = newLogF;
+	MortalitySet<ad> mort(dat, conf, par, hLogF2, logitFseason);
+	array<ad> logN2 = logN;
+	logN2.col(y) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y);
+	logN2.col(y+1) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y+1);
 
+	// Add constraint
 	if(cstr.cstr == ConstraintType::Constrain_Fbar){
 
 	  if(cstr.fleet == (-1)){	// Total F
@@ -443,19 +319,19 @@ namespace ConstrainCalculations {
 
 	}else if(cstr.cstr == ConstraintType::Constrain_Catch){
 
-	  ad logC = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	  ad logC = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	  ad trgt = cstr.target;
 	  RELATIVE_CONSTRAINTS(
 			       // Last year
-			       ad logCL = getFleetCatch(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
+			       ad logCL = getFleetCatch(dat, conf, logN2, hLogF2, mort, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
 			       trgt += logCL;
 			       ,
 			       // Total
-			       ad logCL = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, -1);
+			       ad logCL = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, -1);
 			       trgt += logCL;
 			       ,
 			       // Fleet
-			       ad logCL = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+			       ad logCL = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.relative);
 			       trgt += logCL;
 			       )	
 	  ad tmp = logC - trgt;
@@ -463,31 +339,36 @@ namespace ConstrainCalculations {
 
 	}else if(cstr.cstr == ConstraintType::Constrain_SSB){
 	  SAM_ASSERT(cstr.relative <= -2, "SSB constraints can only be relative to last year");
-	  ad logB = getSSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative == (-2));
+	  //ad logB = getSSB(dat,conf, cFleets, recruit, logN, newLogF, historicalLogF, y, cstr.Amin, cstr.Amax, cstr.relative == (-2));
+	  ad logB = getLogSSB(dat, conf, logN2, hLogF2, mort, y+1, cstr.Amin, cstr.Amax);
+	  if(cstr.relative == (-2))
+	    logB -= getLogSSB(dat, conf, logN2, hLogF2, mort, y-1, cstr.Amin, cstr.Amax);
 	  ad tmp = logB - cstr.target;
 	  kappa += tmp * tmp;
 	  
 	}else if(cstr.cstr == ConstraintType::Constrain_TSB){
 	  SAM_ASSERT(cstr.relative <= -2, "TSB constraints can only be relative to last year");
-	  ad logB = getTSB(dat,conf, cFleets, recruit, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative == (-2));
+	  ad logB = getLogTSB(dat, conf, logN2, hLogF2, mort, y+1, cstr.Amin, cstr.Amax);
+	  if(cstr.relative == (-2))
+	    logB -= getLogTSB(dat, conf, logN2, hLogF2, mort, y-1, cstr.Amin, cstr.Amax);
 	  ad tmp = logB - cstr.target;
 	  kappa += tmp * tmp;
 	  
 	}else if(cstr.cstr == ConstraintType::Constrain_Landing){
 
-	  ad logL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	  ad logL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	  ad trgt = cstr.target;
 	  RELATIVE_CONSTRAINTS(
 			       // Last year
-			       ad logLL = getFleetLanding(dat, conf, cFleets, logN, lastLogF, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
+			       ad logLL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y-1, cstr.Amin, cstr.Amax, cstr.fleet);
 			       trgt += logLL;
 			       ,
 			       // Total
-			       ad logLL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, -1);
+			       ad logLL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, -1);
 			       trgt += logLL;
 			       ,
 			       // Fleet
-			       ad logLL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.relative);
+			       ad logLL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.relative);
 			       trgt += logLL;
 			       )	
 	  ad tmp = logL - trgt;
@@ -531,12 +412,24 @@ namespace ConstrainCalculations {
 	  int bioA0 = CppAD::Integer(cstr.settings(3));
 	  int bioA1 = CppAD::Integer(cstr.settings(4));
 	  // Get current biomass
-	  ad BforHCR = getHCRBiomass(dat, conf, cFleets, logN, lastLogF, y, bioA0, bioA1, biomassLag, biomassType);
+	  ad BforHCR = 0.0;
+	  if(biomassType == 0){	// SSB
+	    BforHCR = exp(getLogSSB(dat, conf, logN2, hLogF2, mort, y-biomassLag, bioA0, bioA1));
+	  }else if(biomassType ==1){ // TSB
+	    BforHCR = exp(getLogTSB(dat, conf, logN2, hLogF2, mort, y-biomassLag, bioA0, bioA1));
+	  }else{
+	    Rf_error("Wrong biomass type for HCR");
+	  }
 	  // Get optimization target
 	  vector<ad> hcrConf = cstr.settings.segment(4,6); // Start to early and overwrite
 	  // Insert target
 	  hcrConf(0) = exp(cstr.target);
 	  ad trgt = hcr(BforHCR, hcrConf);
+	  array<ad> logitFseason(0,historicalLogF.dim[1],0);
+	  ad tmpSSB2 = ssbi(dat,conf,logN,historicalLogF,mort,y-2);
+	  ad tmpSSB1 = ssbi(dat,conf,logN,historicalLogF,mort,y-1);
+	  ad tmpSSB0 = ssbi(dat,conf,logN,historicalLogF,mort,y);
+	  
 	  // kappa
 	  if(targetType == 0){	  // F target
 	    if(cstr.fleet == (-1)){	// Total
@@ -547,11 +440,11 @@ namespace ConstrainCalculations {
 	      kappa += tmp * tmp;
 	    }
 	  }else if(targetType == 1){ // Catch target
-	    ad logC = getFleetCatch(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	    ad logC = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	    ad tmp = logC - trgt;
 	    kappa += tmp * tmp;
 	  }else if(targetType == 2){ // Landing target
-	    ad logL = getFleetLanding(dat, conf, cFleets, logN, newLogF, y, cstr.Amin, cstr.Amax, cstr.fleet);
+	    ad logL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
 	    ad tmp = logL - trgt;
 	    kappa += tmp * tmp;
 	  }else{
@@ -594,8 +487,10 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 			      confSet& conf,
 			      paraSet<Type>& par,
 			      FConstraintList<Type>& cstrs,
-			      vector<Type>& lastLogF,
 			      array<Type>& logN,
+			      array<Type>& logF,
+			      array<Type>& logitFseason,
+			      vector<int>& aveYears,
 			      int y,
 			      newton::newton_config& cfg)SOURCE({
   
@@ -604,8 +499,60 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 
   vector<int> cFleets = getCatchFleets(dat.fleetTypes);
 
+  // Make data one longer
+  dataSet<Type> newDat = dat;
+  int nMYears = dat.propMat.dim(0);
+  int nYears = 10;
+  // propMat
+  extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, true);
+  // stockMeanWeight
+  extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, true);
+  // catchMeanWeight
+  extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, true);
+  // natMor
+  extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, true);
+  // landFrac (No biopar process)
+  extendArray(newDat.landFrac, nMYears, nYears, aveYears, true);
+  // disMeanWeight (No biopar process)
+  extendArray(newDat.disMeanWeight, nMYears, nYears, aveYears, true);
+  // landMeanWeight (No biopar process)
+  extendArray(newDat.landMeanWeight, nMYears, nYears, aveYears, true);
+  // propF (No biopar process)
+  extendArray(newDat.propF, nMYears, nYears, aveYears, true);
+  // propM (No biopar process)
+  extendArray(newDat.propM, nMYears, nYears, aveYears, true);
+  newDat.noYears = nYears+nMYears;
+
+  
+  // Make logN, histLogF, and logitFseason one longer in the year direction
+  array<Type> logN2(logN.dim(0),logN.dim(1)+nYears);
+  for(int i = 0; i < logN2.dim(0); ++i){
+    for(int j = 0; j < logN2.dim(1); ++j){
+      int j2 = std::min(j,logN.dim(1)-1);
+      logN2(i,j) = logN(i,j2);
+    }
+  }
+  array<Type> logF2(logF.dim(0),logF.dim(1)+nYears);
+  for(int i = 0; i < logF2.dim(0); ++i){
+    for(int j = 0; j < logF2.dim(1); ++j){
+      int j2 = std::min(j,logF.dim(1)-1);
+      logF2(i,j) = logF(i,j2);
+    }
+    logF2(i,logF2.dim(0)-1) = logF(i,logF.dim(0)-1);
+  }
+  array<Type> logitFseason2(logitFseason.dim(0),logitFseason.dim(1)+nYears,logitFseason.dim(2));
+  for(int i = 0; i < logitFseason2.dim(0); ++i){
+    for(int k = 0; k < logitFseason2.dim(2); ++k){
+      for(int j = 0; j < logitFseason2.dim(1); ++j){
+	int j2 = std::min(j,logitFseason.dim(1)-1);
+      logitFseason2(i,j,k) = logitFseason(i,j2,k);
+      }      
+    }
+  }
+    
+  
   // Should be deleted by NewtonWrapper
-  std::shared_ptr<NewtonFunctor> p_fc(new ConstrainCalculations::ForecastF(dat,conf,cFleets,recruit,cstrs,lastLogF,logN,y));
+  std::shared_ptr<NewtonFunctor> p_fc(new ConstrainCalculations::ForecastF(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2,y));
   
   // vector<double> s0(cFleets.size());
   // s0.setConstant(0);
@@ -614,7 +561,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   start.setConstant(0.0);
   
   vector<Type> res = SAM_Newton(p_fc, start, cfg);
-  vector<Type> newLogF = lastLogF;// - lastLogFbar;
+  vector<Type> newLogF = logF.col(y-1);// - lastLogFbar;
 
   vector<bool> done(newLogF.size());
   done.setConstant(false);
@@ -631,6 +578,6 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   return newLogF;
 				})
 
-SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, vector<double>&, array<double>&, int, newton::newton_config&));
-  SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, newton::newton_config&));
+SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, array<double>&,array<double>&,array<double>&, vector<int>&, int, newton::newton_config&));
+  SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,vector<int>&, int, newton::newton_config&));
 
