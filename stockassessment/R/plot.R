@@ -914,7 +914,7 @@ obscov<-function(fit, corr=FALSE,...){
 ##' @method obscov sam
 ##' @export
 obscov.sam<-function(fit, corr=FALSE,...){
-    res<-fit$rep$obsCov
+    res<-fit$rep$obsCov[fit$data$fleetTypes != 7]
     for(i in 1:length(res)) rownames(res[[i]])<-fit$data$minAgePerFleet[i]:(fit$data$minAgePerFleet[i]+nrow(res[[i]])-1)
     if(corr) for(i in 1:length(res)) if(any(is.na(res[[i]])))res[[i]][]<-NA else res[[i]]<-cov2cor(res[[i]])
     res
