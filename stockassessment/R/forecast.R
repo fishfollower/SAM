@@ -77,7 +77,8 @@ forecast <- function(fit,
     ## if(sum(fit$data$fleetTypes==0) > 1)
     ##     stop("Forecast for multi fleet models not implemented yet")
 
-    estimateLabel <- deparse1(substitute(estimate))
+    ##estimateLabel <- deparse1(substitute(estimate))
+    estimateLabel <- paste(deparse(substitute(estimate), 500L), collapse = " ")
     idxN <- 1:nrow(fit$rep$nvar)
     
     idxF <- 1:nrow(fit$rep$fvar)+nrow(fit$rep$nvar)
