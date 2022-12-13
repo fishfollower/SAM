@@ -15,17 +15,17 @@ Type nllSeason(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSe
     for(int p = 0; p < nProcesses; ++p){
       for(int i = 1; i < timeSteps; ++i){
       	for(int s = 0; s < nSeasonPar; ++s){
-	  Type b = toInterval((Type)par.seasonLogitRho(s,p), Type(0.0), Type(1.0), Type(1.0));
+	  Type b = toInterval((Type)par.seasonLogitRho(p), Type(0.0), Type(1.0), Type(1.0));
 	  Type mu = par.seasonMu(s,p);
 	  Type pred = mu + b * (logitFseason(s,i-1,p) - mu);
 
-	  nll -= dnorm(logitFseason(s, i, p), pred, exp(par.seasonLogSd(s,p)), true);
+	  nll -= dnorm(logitFseason(s, i, p), pred, exp(par.seasonLogSd(p)), true);
 	  if(!(forecast.nYears > 0 && forecast.forecastYear(i) > 0)){
 	  // if(forecast.nYears == 0){
 	    SIMULATE_F(of){
 	      if(conf.simFlag(0)==0){
 	  	// Do pre-forecast simulation here
-	  	logitFseason(s,i,p) = rnorm(pred, exp(par.seasonLogSd(s,p)));
+	  	logitFseason(s,i,p) = rnorm(pred, exp(par.seasonLogSd(p)));
 	      }
 	    }
 	  // }else if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){

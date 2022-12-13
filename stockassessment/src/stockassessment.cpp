@@ -193,8 +193,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(initN); paraset.initN = initN;
 
   PARAMETER_MATRIX(seasonMu); paraset.seasonMu = seasonMu;
-  PARAMETER_MATRIX(seasonLogitRho); paraset.seasonLogitRho = seasonLogitRho;
-  PARAMETER_MATRIX(seasonLogSd); paraset.seasonLogSd = seasonLogSd;
+  PARAMETER_VECTOR(seasonLogitRho); paraset.seasonLogitRho = seasonLogitRho;
+  PARAMETER_VECTOR(seasonLogSd); paraset.seasonLogSd = seasonLogSd;
   
   
   // Forecast FMSY
