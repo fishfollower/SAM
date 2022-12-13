@@ -10,6 +10,8 @@
 ##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.
 ##' @param ignore.parm.uncertainty option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties
 ##' @param rel.tol option passed to stats:::nlminb sets the convergence criteria
+##' @param eval.max option passed to stats:::nlminb sets the maximum number of function evaluations
+##' @param iter.max option passed to stats:::nlminb sets the maximum number of iterations
 ##' @param penalizeSpline Add penalization to spline recruitment?
 ##' @param fullDerived Report all derived values?
 ##' @param ... extra arguments to MakeADFun
@@ -51,7 +53,7 @@
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 ##' @references
 ##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, penalizeSpline = FALSE, fullDerived = FALSE, ...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, eval.max=2000,iter.max=1000, penalizeSpline = FALSE, fullDerived = FALSE, ...){
     if(length(conf$maxAgePlusGroup)==1){
         tmp <- conf$maxAgePlusGroup    
         conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
@@ -76,7 +78,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
     nmissing <- sum(is.na(data$logobs))
     parameters$missing <- numeric(nmissing)
-    ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logP")
+    ran <- c("logN", "logF", "missing", "logSW", "logCW", "logitMO", "logNM", "logP","logitFseason")
     if(penalizeSpline)
         ran <- c(ran, "rec_pars")
     
@@ -151,7 +153,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ##     opt <- nlminb(obj$par, obj$fn,obj$gr, obj$he, control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
   ##     he <- obj$he
   ## }else{
-  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
+  opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=eval.max, iter.max=iter.max, rel.tol=rel.tol),lower=lower2,upper=upper2)
   
     he <- function(par){ optimHess(par, obj$fn, obj$gr) }
     ## }
@@ -381,6 +383,12 @@ refit <- function(fit, newConf, startingValues, ...){
     if(is.null(fit2$data$sumKey))
         fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
 
+    if(is.null(fit2$data$sampleTimesStart))
+        fit2$data$sampleTimesStart <- ifelse(fit2$data$fleetTypes == 0, 0, fit2$data$sampleTimes)
+    if(is.null(fit2$data$sampleTimesEnd))
+        fit2$data$sampleTimesEnd <- ifelse(fit2$data$fleetTypes == 0, 1, fit2$data$sampleTimes)
+
+                
     toArray <- function(x){
         if(length(dim(x))==2)
             return(array(x,c(dim(x),1), dimnames = c(dimnames(x),"Residual catch")))

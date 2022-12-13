@@ -17,6 +17,7 @@
 #include "SAM/hcr.hpp"
 #include "SAM/toF.hpp"
 #include "SAM/forecast.hpp"
+#include "SAM/season.hpp"
 #include "SAM/survival.hpp"
 #include "SAM/biopar.hpp"
 #include "SAM/p.hpp"

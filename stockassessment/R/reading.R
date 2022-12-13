@@ -309,12 +309,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
                            natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL,
-                           keep.all.ages = FALSE){
+                           keep.all.ages = FALSE,
+                           average.sampleTimes.survey = TRUE){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
   type<-NULL
-  time<-NULL
+  timeStart<-NULL
+  timeEnd<-NULL
   name<-NULL
   corList <- list()
   idxCor <- matrix(NA_integer_, nrow=length(fleets)+length(surveys)+length(residual.fleets) + length(sum.residual.fleets), ncol=nrow(natural.mortality))
@@ -323,7 +325,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     fleetAges <- list()
   weight<-NULL
   sumKey<-NULL
-  doone<-function(m){
+  doone<-function(m, average.sampleTimes){
     year<-rownames(m)[row(m)]
     fleet.idx<<-fleet.idx+1
     fleet<-rep(fleet.idx,length(year))
@@ -361,44 +363,54 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
       nextIdx <- if(all(is.na(idxCor))){0}else{max(idxCor,na.rm=TRUE)}
       idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
     }
+    if("time"%in%names(attributes(m))){
+        tt <- attr(m,"time")
+        if(average.sampleTimes){
+            tt <- rep(mean(tt),2)
+        }
+        timeStart <<- c(timeStart,tt[1])
+        timeEnd <<- c(timeEnd,tt[2])        
+    }else{
+        timeStart <<- c(timeStart,0)
+        timeEnd <<- c(timeEnd,1)
+    }
   }
   if(!is.null(residual.fleets)){
     if(is.data.frame(residual.fleets)|is.matrix(residual.fleets)){
-      doone(residual.fleets)
+      doone(residual.fleets, average.sampleTimes=FALSE)
       type<-c(type,0)
-      time<-c(time,0)
+      #time<-c(time,0)
       name<-c(name,"Residual catch")
     }else{
-      dummy<-lapply(residual.fleets,doone)
+      dummy<-lapply(residual.fleets,doone, average.sampleTimes=FALSE)
       type<-c(type,rep(0,length(residual.fleets)))
-      time<-c(time,rep(0,length(residual.fleets)))
+      #time<-c(time,rep(0,length(residual.fleets)))
       name<-c(name,paste0("Fleet w.o. effort ", 1:length(residual.fleets)))
     }
   }
   if(!is.null(fleets)){
     if(is.data.frame(fleets)|is.matrix(fleets)){
-      doone(fleets)
+      doone(fleets, average.sampleTimes=FALSE)
       type<-c(type,1)
-      time<-c(time,0)
+      ## time<-c(time,0)
       name<-c(name,"Comm fleet")
     }else{
-      dummy<-lapply(fleets,doone)
+      dummy<-lapply(fleets,doone, average.sampleTimes=FALSE)
       type<-c(type,rep(1,length(fleets)))
-      time<-c(time,rep(0,length(fleets)))
+      ## time<-c(time,rep(0,length(fleets)))
       name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
     }
   }
   if(!is.null(surveys)){
     if(is.data.frame(surveys)|is.matrix(surveys)){
-      doone(surveys)
+      doone(surveys, average.sampleTimes=average.sampleTimes.survey)
       thistype<-ifelse(is.null(attr(surveys,"part")),ifelse(min(as.integer(colnames(surveys)))<(-.5),3,2),6)
-      type<-c(type,thistype)
-      time<-c(time,mean(attr(surveys,'time')))
+      type<-c(type,thistype)    
       name<-c(name,"Survey fleet")
     }else{
-      dummy<-lapply(surveys,doone)
+      dummy<-lapply(surveys,doone, average.sampleTimes=average.sampleTimes.survey)
       type<-c(type,unlist(lapply(surveys, function(x)ifelse(is.null(attr(x,"part")),ifelse(min(as.integer(colnames(x)))<(-.5), 3, 2),6))))
-      time<-c(time,unlist(lapply(surveys, function(x)mean(attr(x,'time')))))
+      ## time<-c(time,unlist(lapply(surveys, function(x)mean(attr(x,'time')))))   
       name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
       partSurveys <- unlist(lapply(surveys,function(x){attr(x,"part")}))
       if(length(partSurveys)>0){
@@ -418,12 +430,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     if(is.data.frame(sum.residual.fleets)|is.matrix(sum.residual.fleets)){
       doone(sum.residual.fleets)
       type <- c(type,7)
-      time <- c(time,0)
+      ##time <- c(time,0)
       name <- c(name,paste0("Fleet(", paste0(attr(sum.residual.fleets,"sumof"), collapse="+"),")"))
     }else{
       dummy<-lapply(sum.residual.fleets,doone)
       type<-c(type,rep(7,length(sum.residual.fleets)))
-      time<-c(time,rep(0,length(sum.residual.fleets)))
+      ##time<-c(time,rep(0,length(sum.residual.fleets)))
       name<-c(name,unlist(lapply(sum.residual.fleets,function(x)paste0("Fleet(", paste0(attr(x,"sumof"), collapse="+"),")"))))
     }
   }
@@ -483,7 +495,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     dat<-rbind(dat, tag)
     weight<-c(weight,rep(NA_real_,nrow(tag)))
     type<-c(type,5)
-    time<-c(time,0)
+    timeStart<-c(timeStart,0)
+    timeEnd<-c(timeEnd,1)
     name<-c(name,"Recaptures")
   }
 
@@ -494,8 +507,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
   attr(dat,'type')<-type
-  names(time)<-NULL
-  attr(dat,'time')<-time
+  names(timeStart)<-NULL
+  attr(dat,'timeStart')<-timeStart
+  names(timeEnd)<-NULL
+  attr(dat,'timeEnd')<-timeEnd
   names(name)<-NULL  
   attr(dat,'name')<-name
   dat<-dat[o,]
@@ -550,7 +565,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   ret<-list(
     noFleets=length(attr(dat,'type')),
     fleetTypes=as.integer(attr(dat,'type')),
-    sampleTimes=attr(dat,'time'),
+    sampleTimesStart=attr(dat,'timeStart'),
+    sampleTimesEnd=attr(dat,'timeEnd'),
     noYears=attr(dat,'nyear'),
     years=attr(dat,'year'),
     minAgePerFleet=attr(dat,"minAgePerFleet"),

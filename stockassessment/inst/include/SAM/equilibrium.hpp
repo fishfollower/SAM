@@ -43,13 +43,13 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   dataSet<Type> newDat = dat;
   int nMYears = dat.noYears;
   // propMat
-  extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 2, false);
+  extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, false);
    // stockMeanWeight
-  extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 1, false);
+  extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, false);
   // catchMeanWeight
-  extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 1, false);
+  extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, false);
   // natMor
-  extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 1, false);
+  extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, false);
   // landFrac (No biopar process)
   extendArray(newDat.landFrac, nMYears, nYears, aveYears, false);
   // disMeanWeight (No biopar process)
@@ -72,13 +72,22 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
   for(int i = 0; i < nYears; ++i)
     logF.col(i) = logSel + logFbar;
 
+  // Make logitF season array
+  array<Type> logitFseason(par.seasonMu.rows(), par.seasonMu.cols(),nYears);
+  logitFseason.setZero();
+  for(int i = 0; i < nYears; ++i)
+    for(int j = 0; j < par.seasonMu.cols(); ++j)
+      for(int k = 0; k < par.seasonMu.rows(); ++k)
+	logitFseason(k,j,i) = par.seasonMu(k,j);
+      
+
   // Make logN array - start with one recruit
   int nAge = conf.maxAge - conf.minAge + 1;
   array<Type> logN(nAge, nYears);
   logN.setConstant(R_NegInf);
   logN(0,0) = 0.0;
 
-  MortalitySet<Type> mort(newDat, conf, par, logF);
+  MortalitySet<Type> mort(newDat, conf, par, logF, logitFseason);
   
   // Run loop over years
   for(int i = 1; i < nYears; ++i){
@@ -210,7 +219,7 @@ struct Funct_YPR {
 
 template<class Type>
 Type dYPR(Type logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, referencepointSet<Type>& rp)SOURCE({
-  equilibrium_fun::Funct_YPR<Type> f(dat,conf,par,rp);
+    equilibrium_fun::Funct_YPR<Type> f(dat,conf,par,rp);
   vector<Type> u(1); u(0) = logFbar;
   //vector<Type> g = autodiff::gradient(f, u);
   // autodiff::gradient gives memory not mapped error
@@ -237,8 +246,8 @@ Type yieldPerRecruit_i(const Type& logFbar, dataSet<Type>& dat, confSet& conf, p
   return exp(r.logYPR);
   });
 
-  SAM_SPECIALIZATION(double yieldPerRecruit_i(const double&, dataSet<double>&, confSet&, paraSet<double>&, referencepointSet<double>&, bool));
-  SAM_SPECIALIZATION(TMBad::ad_aug yieldPerRecruit_i(const TMBad::ad_aug&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, referencepointSet<TMBad::ad_aug>&, bool));
+SAM_SPECIALIZATION(double yieldPerRecruit_i(const double&, dataSet<double>&, confSet&, paraSet<double>&, referencepointSet<double>&, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug yieldPerRecruit_i(const TMBad::ad_aug&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, referencepointSet<TMBad::ad_aug>&, bool));
 
 
 // For calculations about assessment period for one year
@@ -327,7 +336,7 @@ Type SPR0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& 
   return spawnersPerRecruit_i(logFbar, dat, conf, par, rp, give_log);
   })
 
-SAM_SPECIALIZATION(double SPR0_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, int, int, int, bool));
+SAM_SPECIALIZATION(double SPR0_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&,  int, int, int, bool));
 SAM_SPECIALIZATION(TMBad::ad_aug SPR0_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
 
 ////////// Convenience functions to get equilibrium biomass //////////

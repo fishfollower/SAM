@@ -75,8 +75,8 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      // if(conf.keyLogFsta(f-1,a)>(-1)){
 		      //   vv+=logF(conf.keyLogFsta(f-1,a),y);
 		      // }
-		      // TODO: Update to allow range within year
-		      pred = logN(a,y) + log(mort.fleetCumulativeIncidence(a,y,f-1));
+		      // N * Survival until start * cumulative incidence
+		      pred = logN(a,y) + mort.logFleetSurvival_before(a,y,f-1) + log(mort.fleetCumulativeIncidence(a,y,f-1));
 		      scaleIdx=-1;
 		      yy=year;
 		      for(int j=0; j<conf.noScaledYears; ++j){
@@ -110,12 +110,12 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 			  //   logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,aa),y));
 			  // }
 			  // pred+=exp(logN(aa,y)-exp(logzz)*dat.sampleTimes(f-1));
-			  pred += exp(logN(aa,y)) * mort.fleetSurvival_before(aa,y,f-1);
+			  pred += exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,f-1));
 			}
 			pred=log(pred);
 		      }else{
 			//pred=logN(a,y)-exp(logzz)*dat.sampleTimes(f-1);
-			pred = logN(a,y) + log(mort.fleetSurvival_before(a,y,f-1));
+			pred = logN(a,y) + mort.logFleetSurvival_before(a,y,f-1);
 		      }
 		      if(conf.keyQpow(f-1,a)>(-1)){
 			pred*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
@@ -154,7 +154,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 			  // 	zz+=exp(logF(conf.keyLogFsta(fx,aa),y));
 			  //   }
 			  // N +=  exp(logN(aa,y)-zz*dat.sampleTimes(f-1));
-			  N += exp(logN(aa,y)) * mort.fleetSurvival_before(aa,y,f-1);
+			  N += exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,f-1));
 			}
 			pred = log(N) + par.logFpar(conf.keyLogFpar(f-1,a));
 		      }

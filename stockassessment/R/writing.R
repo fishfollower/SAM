@@ -9,8 +9,8 @@
 ##' 
 ##' @export
 write.ices <- function(x, fileout, writeToOne = TRUE, ...){
-    writeOne <- function(x, fileout, ...){
-        top <- paste0(fileout, " auto written\n1 2\n", paste0(range(as.integer(rownames(x))), collapse="  "),"\n",paste0(range(as.integer(colnames(x))), collapse="  "), "\n1")    
+    writeOne <- function(x, fileout, sampleTimes=c("",""), ...){
+        top <- paste0(fileout, " auto written\n1 2\n", paste0(range(as.integer(rownames(x))), collapse="  "),"\n",paste0(range(as.integer(colnames(x))),sampleTimes, collapse="  "), "\n1")    
         write(top,fileout,...)
         write(t(x),fileout,ncolumns=ncol(x),append=TRUE,sep="  \t",...)
         if(any(!(names(attributes(x)) %in% c("dim","dimnames")))){
@@ -22,6 +22,7 @@ write.ices <- function(x, fileout, writeToOne = TRUE, ...){
         }
     }
     if(is.matrix(x)){
+        
         writeOne(x,fileout, ...)
         return(NULL);
     }
