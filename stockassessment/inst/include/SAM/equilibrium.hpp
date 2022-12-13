@@ -6,6 +6,8 @@ SAM_DEPENDS(refpointset)
 SAM_DEPENDS(derived)
 SAM_DEPENDS(predn)
 SAM_DEPENDS(survival)
+SAM_DEPENDS(extend_array)
+
 
 HEADER(
 template<class Type>

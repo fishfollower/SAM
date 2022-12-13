@@ -25,31 +25,44 @@ vector<Type> toLogSeasonEffect(vector<Type> x, vector<int> isFishingSeason, vect
 
 
 template <class Type>
-array<Type> totFFun(dataSet<Type>& dat, confSet &conf, array<Type> &logF, int Ftype DEFARG(= 0)) SOURCE({
+vector<Type> totFFun(dataSet<Type>& dat, confSet &conf, array<Type> &logF, int y, int Ftype) SOURCE({
   int noFleets=conf.keyLogFsta.dim[0];
   int stateDimN=conf.keyLogFsta.dim[1];
-  int timeSteps=logF.dim[1];
-  if(Ftype > 0)
-    timeSteps = dat.landFrac.dim[0];
-  array<Type> totF(stateDimN,timeSteps);
+  vector<Type> totF(stateDimN);
   totF.setZero();  
-  for(int i=0;i<timeSteps;i++){ 
-    for(int j=0; j<stateDimN; ++j){
-      for(int f=0; f<noFleets; ++f){
-        if(conf.keyLogFsta(f,j)>(-1)){
-	  Type Fval = exp(logF(conf.keyLogFsta(f,j),i)) * (dat.sampleTimesEnd(f) - dat.sampleTimesStart(f));
-	  if(Ftype == 1){
-	    Fval *= dat.landFrac(i,j,f);
-	  }else if(Ftype == 2){
-	    Fval *= (1.0 - dat.landFrac(i,j,f));
-	  }
-          totF(j,i) += Fval;
-        }
+  for(int j=0; j<stateDimN; ++j){
+    for(int f=0; f<noFleets; ++f){
+      if(conf.keyLogFsta(f,j)>(-1)){
+	Type Fval = exp(logF(conf.keyLogFsta(f,j),y)) * (dat.sampleTimesEnd(f) - dat.sampleTimesStart(f));
+	if(Ftype == 1){
+	  Fval *= dat.landFrac(y,j,f);
+	}else if(Ftype == 2){
+	  Fval *= (1.0 - dat.landFrac(y,j,f));
+	}
+	totF(j) += Fval;
       }
     }
   }
   return totF;
   })
+
+SAM_SPECIALIZATION(vector<double> totFFun(dataSet<double>&, confSet&, array<double>&, int, int));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> totFFun(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, int, int));
+
+template <class Type>
+array<Type> totFFun(dataSet<Type>& dat, confSet &conf, array<Type> &logF, int Ftype DEFARG(= 0)) SOURCE({
+    int stateDimN=conf.keyLogFsta.dim[1];
+    int timeSteps=logF.dim[1];
+    if(Ftype > 0)
+      timeSteps = dat.landFrac.dim[0];
+    array<Type> totF(stateDimN,timeSteps);
+    totF.setZero();  
+    for(int i=0;i<timeSteps;i++){ 
+      totF.col(i) = totFFun(dat,conf,logF,i,Ftype);
+    }
+    return totF;
+  })
+
 
 SAM_SPECIALIZATION(array<double> totFFun(dataSet<double>&, confSet&, array<double>&, int));
 SAM_SPECIALIZATION(array<TMBad::ad_aug> totFFun(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, int));

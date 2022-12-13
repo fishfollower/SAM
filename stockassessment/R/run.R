@@ -107,7 +107,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
         args$map <- mapRP
     }else{
-        args$map <- c(args$map, mapRP)
+        args$map[names(mapRP)] <- mapRP
     }
     
     if(!is.null(conf$hockeyStickCurve) && length(conf$hockeyStickCurve)==1)
@@ -127,7 +127,13 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         safemap <- lapply(safemap, function(x)factor(ifelse(abs(x)>1.0e-15,1:length(x),NA)))
         ## ddd<-args # list(...)
         if(!is.null(ddd$map)){
-            ddd$map <- c(ddd$map,safemap)
+            nm1 <- setdiff(names(safemap), names(ddd$map))
+            ddd$map[nm1] <- safemap[nm1]
+            nm2 <- intersect(names(safemap), names(ddd$map))
+            for(nn in nm2){
+                ddd$map[[nn]][is.na(safemap[[nn]])] <- NA
+                ddd$map[[nn]] <- factor(ddd$map[[nn]])
+            }
         }else{
             ddd$map <- safemap
         }

@@ -33,19 +33,31 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
   for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
   MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
 
+  Rcout << "Ready to simulate forecasts!\n";
 
   int nYears = forecast.nYears;
   for(int i = 0; i < nYears; ++i){
     int indx = forecast.forecastYear.size() - nYears + i;
+    Rcout << i << " - " << indx << "\n";
     // Update forecast
-    forecast.updateForecast(i, logF, logN, dat, conf, par, recruit, mort);
+    forecast.updateForecast(i, logF, logN, logitFseason, dat, conf, par, recruit, mort);
     // Simulate F
     // int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
+    Type tmpSSB2 = ssbi(dat,conf,logN,logF,mort,indx-2);
+    Type tmpSSB1 = ssbi(dat,conf,logN,logF,mort,indx-1);
+    Type tmpSSB0 = ssbi(dat,conf,logN,logF,mort,indx);
+    Type tmpFbar = fbari(dat,conf,logF,indx);
+    Rcout << tmpSSB0 << ", " << tmpSSB1 << ", " << tmpSSB2 << ", " << tmpFbar << "\n";
     if(forecast.simFlag(0) == 0){
       Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
       logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
       mort.updateYear(dat,conf,par,logF, logitFseason,indx);
     }
+    tmpSSB2 = ssbi(dat,conf,logN,logF,mort,indx-2);
+     tmpSSB1 = ssbi(dat,conf,logN,logF,mort,indx-1);
+     tmpSSB0 = ssbi(dat,conf,logN,logF,mort,indx);
+     tmpFbar = fbari(dat,conf,logF,indx);
+    Rcout << tmpSSB0 << ", " << tmpSSB1 << ", " << tmpSSB2 << ", " << tmpFbar << "\n";
     // Simulate N
     if(forecast.simFlag(1) == 0){
       vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort,indx);
@@ -62,6 +74,12 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
 	 forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.asRecModel)
 	logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,mort,indx)(0) + noiseN(0);
     }
+    tmpSSB2 = ssbi(dat,conf,logN,logF,mort,indx-2);
+    tmpSSB1 = ssbi(dat,conf,logN,logF,mort,indx-1);
+    tmpSSB0 = ssbi(dat,conf,logN,logF,mort,indx);
+    tmpFbar = fbari(dat,conf,logF,indx);
+    Rcout << tmpSSB0 << ", " << tmpSSB1 << ", " << tmpSSB2 << ", " << tmpFbar << "\n";
+
   }
   return;
 })
