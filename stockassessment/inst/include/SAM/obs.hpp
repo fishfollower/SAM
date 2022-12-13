@@ -124,6 +124,7 @@ vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Typ
 					  dummy(0,0) = R_NaReal;
 					  obsCov(f) = dummy;
 					}
+					
 				      }
 				      REPORT_F(obsCov,of);
 				      return nllVec;
@@ -425,7 +426,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		}
 		REPORT_F(VV,of);
 		combiCov = G.transpose()*VV*G;
-		obsCov(f) = combiCov;
 		nllVec(f).setSigma(combiCov);
 	      }
 	      // ----------------updating of covariance matrix done
