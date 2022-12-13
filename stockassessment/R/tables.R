@@ -267,16 +267,17 @@ faytable <- function(fit,...){
 ##' @method faytable sam
 ##' @export
 faytable.sam <- function(fit, fleet=which(fit$data$fleetTypes==0), ...){
-   getfleet <- function(f){
-     idx <- fit$conf$keyLogFsta[f,]+2    
-     ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
-     ret[is.na(ret)] <- 0
-     ret
-   }
-   ret <- Reduce("+",lapply(fleet,getfleet))
-   colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
-   rownames(ret) <- fit$data$years
-   return(ret)
+    getfleet <- function(f){
+        dt <- fit$data$sampleTimesEnd[f] - fit$data$sampleTimesStart[f]
+        idx <- fit$conf$keyLogFsta[f,]+2    
+        ret <- cbind(NA,exp(t(fit$pl$logF)))[,idx] * dt
+        ret[is.na(ret)] <- 0
+        ret
+    }
+    ret <- Reduce("+",lapply(fleet,getfleet))
+    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
+    rownames(ret) <- fit$data$years
+    return(ret)
 }
 
 ##' Catch-at-age in numbers table 
@@ -285,18 +286,19 @@ faytable.sam <- function(fit, fleet=which(fit$data$fleetTypes==0), ...){
 ##' @details ...
 ##' @export
 caytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
-   getfleet <- function(f){
-     idx <- fit$conf$keyLogFsta[f,]+2    
-     F <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
-     F[is.na(F)] <- 0
-     M <- fit$data$natMor
-     N <- exp(t(fit$pl$logN))
-     F/(F+M)*N*(1-exp(-F-M))
-   }
-   ret <- Reduce("+",lapply(fleet,getfleet)) 
-   colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
-   rownames(ret) <- fit$data$years
-   return(ret)
+    getfleet <- function(f){
+        ## idx <- fit$conf$keyLogFsta[f,]+2    
+        ## F <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
+        ## F[is.na(F)] <- 0
+        ## M <- fit$data$natMor
+        ## N <- exp(t(fit$pl$logN))
+        ## F/(F+M)*N*(1-exp(-F-M))
+        exp(t(fit$rep$logCatchByFleetAge[,,f]))
+    }
+    ret <- Reduce("+",lapply(fleet,getfleet)) 
+    colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
+    rownames(ret) <- fit$data$years
+    return(ret)
 }
 
 ##' parameter table 

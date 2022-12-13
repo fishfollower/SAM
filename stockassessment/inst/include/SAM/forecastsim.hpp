@@ -12,7 +12,7 @@ SAM_DEPENDS(n)
  */
 
 template <class Type>
-void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, Recruitment<Type>& recruit, MortalitySet<Type>& mort, objective_function<Type> *of)SOURCE({
+void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, forecastSet<Type>& forecast, array<Type>& logN, array<Type>& logF, array<Type>& logitFseason, Recruitment<Type>& recruit, MortalitySet<Type>& mort, objective_function<Type> *of)SOURCE({
   // Only for forecast simulation
   if(forecast.nYears == 0 || !(isDouble<Type>::value) || !(of->do_simulate))
     return;
@@ -44,7 +44,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
     if(forecast.simFlag(0) == 0){
       Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
       logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
-      mort.updateYear(dat,conf,par,logF,indx);
+      mort.updateYear(dat,conf,par,logF, logitFseason,indx);
     }
     // Simulate N
     if(forecast.simFlag(1) == 0){
@@ -66,5 +66,5 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
   return;
 })
 
-SAM_SPECIALIZATION(void forecastSimulation(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, objective_function<double>*));
-SAM_SPECIALIZATION(void forecastSimulation(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
+SAM_SPECIALIZATION(void forecastSimulation(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(void forecastSimulation(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

@@ -10,7 +10,7 @@
 // #include <R_ext/Rdynload.h>
 
 
-
+// NOTE: This function does not simulate biopars or logitFseason
 PERREC_t<double> perRecruit_S(double logFbar, dataSet<double>& dat, confSet& conf, paraSet<double>& par, vector<double>& logSel, vector<int> aveYears, int nYears, int CT, vector<double> logNinit){
   if(nYears < 0)
     Rf_error("nYears must be non-negative.");
@@ -61,6 +61,15 @@ PERREC_t<double> perRecruit_S(double logFbar, dataSet<double>& dat, confSet& con
   for(int i = 0; i < nYears; ++i)
     logF.col(i) = logSel + logFbar;
 
+  // Make logitF season array
+  array<double> logitFseason(par.seasonMu.rows(), par.seasonMu.cols(),nYears);
+  logitFseason.setZero();
+  for(int i = 0; i < nYears; ++i)
+    for(int j = 0; j < par.seasonMu.cols(); ++j)
+      for(int k = 0; k < par.seasonMu.rows(); ++k)
+	logitFseason(k,j,i) = par.seasonMu(k,j);
+   
+  
   // Make logN array - start with one recruit
   int nAge = conf.maxAge - conf.minAge + 1;
   array<double> logN(nAge, nYears);
@@ -72,7 +81,7 @@ PERREC_t<double> perRecruit_S(double logFbar, dataSet<double>& dat, confSet& con
   vector<double> fracMixN(conf.fracMixN.size());
   for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
   MVMIX_t<double> neg_log_densityN(nvar,fracMixN);
-  MortalitySet<double> mort(newDat, conf, par, logF);
+  MortalitySet<double> mort(newDat, conf, par, logF, logitFseason);
   for(int i = 1; i < nYears; ++i){
     vector<double> predN = predNFun(newDat, conf, par, logN, logF, recruit, mort, i);
     logN.col(i) = predN + neg_log_densityN.simulate();

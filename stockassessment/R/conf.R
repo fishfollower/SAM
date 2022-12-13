@@ -155,6 +155,9 @@ defcon<-function(dat, level=1){
     ret$logNMeanAssumption <- c(0,0)
     ret$initState <- 0
     ret$recruitmentAutocorrelation <- 0
+    ret$keyLogFseason <- xOff - 1
+    ret$seasonTimes <- c(0,1)
+    ret$isFishingSeason <- 1
     return(ret) 
 }
 

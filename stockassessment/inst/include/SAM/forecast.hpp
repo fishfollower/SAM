@@ -423,12 +423,12 @@ SAM_SPECIALIZATION(void extendArray(array<TMBad::ad_aug>&, int, int, vector<int>
 template <class Type>
 void extendArray(array<Type>& x, int nModelYears, int nForecastYears, vector<int> aveYears, vector<Type> meanVec, vector<int> keyMeanVec, int meanType, bool keepModelYears DEFARG(= true))SOURCE({
   if(x.dim.size() == 2){
-    forecast_fun::extendArray_2D(x, nModelYears, nForecastYears, aveYears, meanVec, keyMeanVec, keepModelYears);
+    forecast_fun::extendArray_2D(x, nModelYears, nForecastYears, aveYears, meanVec, keyMeanVec, meanType, keepModelYears);
   }else if(x.dim.size() == 3){
     Rf_warning("extendArray: dimensions of x and keyMeanVec does not match.");
     matrix<int> kmv(1,keyMeanVec.size());
     kmv.row(0) = keyMeanVec;
-    forecast_fun::extendArray_3D(x, nModelYears, nForecastYears, aveYears, meanVec, kmv, keepModelYears);
+    forecast_fun::extendArray_3D(x, nModelYears, nForecastYears, aveYears, meanVec, kmv, meanType, keepModelYears);
   }else{
     Rf_error("extendArray is only implemented for arrays of dimension 2 and 3");
   }

@@ -1068,11 +1068,16 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
     makeCIpolygon <- function(i){
         mu <- c(log(S)[i],log(R)[i])
         Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
-                                  c(idxS[i], n + idxR[i])]    
+                                  c(idxS[i], n + idxR[i])]
+        if(!all(is.finite(Sig))){
+            return(list(x=mu[1],y=mu[2],col=NA,border=NA))
+        }
         r <- ellipse::ellipse(Sig,centre=mu, level = CIlevel)
         list(x = exp(r[,1]), y = exp(r[,2]), col = polycol,border=NA)
-    }
+    }    
     pols <- lapply(seq_along(idxR), makeCIpolygon)
+    if(any(sapply(pols, function(x) is.na(x$col))))
+        warning("Some recruitment pairs had non-finite elements in their covariance matrix")
     if(!add){
       if (missing(xlim)) xlim=range(0,S, unlist(lapply(pols,function(x)x$x)))
       if (missing(ylim)) ylim=range(0,R, unlist(lapply(pols,function(x)x$y)))
