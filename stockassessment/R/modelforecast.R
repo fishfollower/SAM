@@ -12,18 +12,34 @@
 
 .parseRel <- function(type,s){
     if(s == ""){                        #Absolute value
-        return(-3)
+        v <- -3
+        attr(v,"lag") <- 1
+        return(v)
     }
-    if(s == "*")                      #Relative to last year
-        return(-2)
+    if(s == "*"){                      #Relative to last year
+        v <- -2
+        attr(v,"lag") <- 1
+        return(v)
+    }
     ## Check relative to same type of value
+    if(grepl("(\\*)(+|-)([[:digit:]]+)",s)){
+        v <- -2
+        sign <- 1
+        if(gsub("(\\*)(+|-)([[:digit:]]+)","\\2",s)=="+")
+            sign <- -1
+        attr(v,"lag") <- sign * as.numeric(gsub("(\\*)(+|-)([[:digit:]]+)","\\3",s))
+    }
     if(as.character(type) != gsub("(\\*)(F|C|SSB|TSB|L)(.*)","\\2",s))
         stop(sprintf("%s values can only be relative to %s values",as.character(type),as.character(type)))
     ## Find relative type
     if(grepl("^\\*(F|C|SSB|TSB|L)$",s)){ #Relative to total
+        v <- -1
+        attr(v,"lag") <- 1
         return(-1)
     }else if(grepl("^\\*(F|C|SSB|TSB|L)(\\[[[:digit:]]+\\])$",s)){
-        return(as.numeric(gsub("(^\\*(F|C|SSB|TSB|L))(\\[)([[:digit:]]+)(\\]$)","\\4",s))-1)
+        v <- as.numeric(gsub("(^\\*(F|C|SSB|TSB|L))(\\[)([[:digit:]]+)(\\]$)","\\4",s))-1
+        attr(v,"lag") <- 1
+        return(v)
     }
     stop("Wrong specification of relative value. Relative values can only specify a fleet")
 }
@@ -68,7 +84,7 @@
         ## Match 9: Trigger type (SSB, TSB)
         ## Match 10: Trigger settings (age range)
         ## Match 11: Trigger lag
-        frmt <- "^(HCR)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]+)(F|C|L)?(\\[.+\\])?(~)([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB)?(\\[.+\\])?(-[[:digit:]]*)?$"
+        frmt <- "^(HCR)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]+)(F|C|L)?(\\[.+\\])?(~)([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB|B0)?(\\[.+\\])?(-[[:digit:]]*)?$"
         if(!grepl(frmt,ss))
             stop("Wrong specification of HCR")
         type <- factor(gsub(frmt,"\\1",ss),forecastEnum)
@@ -86,7 +102,7 @@
         targetSpec <- gsub(frmt,"\\6",ss)
         targetSettings <- getAgeFleetSettings(targetSpec,targetType)
         ## Get trigger info (Need to trick gsub)     
-        frmtTrig <- "^([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB)?(\\[.+\\])?(-[[:digit:]]*)?$"
+        frmtTrig <- "^([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB|B0)?(\\[.+\\])?(-[[:digit:]]*)?$"
         ssTrig <- gsub(".+~","",ss)
         if(!grepl(frmtTrig,ssTrig))
             stop("Wrong specification of HCR trigger")     
@@ -94,7 +110,7 @@
         triggerType <- gsub(frmtTrig,"\\2",ssTrig)
         if(triggerType == "")
             triggerType <- "SSB"
-        triggerTypeI <- match(triggerType, c("SSB","TSB"))-1
+        triggerTypeI <- match(triggerType, c("SSB","TSB","B0"))-1
         triggerSpec <- gsub(frmtTrig,"\\3",ssTrig)
         triggerSettings <- getAgeFleetSettings(triggerSpec,triggerType)
         triggerLag <- gsub(frmtTrig,"\\4",ssTrig)
@@ -117,8 +133,8 @@
              relative = rel,
              cstr = as.numeric(type)-1,
              target = target,
-             settings = c(biomassType=triggerTypeI,
-                          biomassLag = triggerLag,
+             settings = c(biomassLag = triggerLag,
+                          biomassType=triggerTypeI,
                           targetType = targetTypeI,
                           triggerAmin = triggerSettings$Amin,
                           triggerAmax = triggerSettings$Amax,
@@ -141,6 +157,9 @@
         if(is.na(target))
             stop("wrong specification of forecast target")
         rel <- .parseRel(type,gsub(frmt,"\\5",ss))
+        lag <- attr(rel,"lag")
+        if(is.null(lag))
+            lag <- 1
         if(is.na(rel) || !is.numeric(rel) || rel < -3){
             stop("wrong specification of relative value")
         }
@@ -167,7 +186,7 @@
                   relative = rel,
                   cstr = as.numeric(type)-1,
                   target = target,
-                  settings = numeric(0))
+                  settings = c(compareLag = lag))
         v
     }
     cstr <- lapply(sL,function(x)lapply(x,parseOne))
@@ -186,7 +205,7 @@
              relative = as.numeric(f2)-1,
              cstr = as.numeric(factor("KeepRelF",forecastEnum))-1,
              target = 0,
-             settings = numeric(0))  
+             settings = c(compareLag = 1))  
     }
     cToAdd <- lapply(ft,function(x){
         ii <- unname(which(x[-1]==0))
@@ -280,10 +299,11 @@ modelforecast <- function(fit, ...){
 ##' }
 ##'}
 ##' 
-##' \subsection{SSB/TSB at the beginning of next year based constraints:}{
-##' Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. The format is similar to catch/landing based scenarios. However, fleets have no effect. If an age range is omitted, the full age range of the model is used.
-##' If an "*" is added to the target value, the target will be relative to the year before.
-##' Note that SSB amd TSB used for catch constraints are at the beginning of the next year to avoid dependence on future F values. Therefore, the values will differ from the output SSB and TSB estimates if propM or propF are not zero.
+##' \subsection{Next year's SSB/TSB based constraints:}{
+##' Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. For setting F in year y, the relevant biomass for year y+1 is predicted for the constraint. If spawning is not at the beginning of the year, F is assumed to be the same for year y and y+1 in the prediction.
+##' The format is similar to catch/landing based scenarios. However, fleets have no effect. If an age range is omitted, the full age range of the model is used.
+##' If an "*" is added to the target value, the target will be relative to the year before. That is, when setting F in year y, the predicted biomass in year y+1 will be relative to the biomass in year y-1.
+##' Note that since SSB and TSB used for catch constraints are predicted, the input constraint will differ from the output SSB and TSB estimates due to process variability.
 ##'
 ##' For example:
 ##' \describe{
@@ -295,7 +315,10 @@ modelforecast <- function(fit, ...){
 ##' }
 ##' 
 ##' \subsection{Harvest control rule based constraints:}{
-##' Harvest control rules can be specified for forecasts using the format "HCR=x~y" where x is the target and y is the biomass trigger (see ?hcr for full details on the form of the harvest control rule). Further, the target can be specified as an F target ("HCR=xF~y"), catch target ("HCR=xC~y"), or landing target ("HCR=xL~y"). Likewise the trigger can either be for SSB ("HCR=x~ySSB") or TSB ("HCR=x~yTSB"). Age ranges can be set for both triggers and targets and a fleet can be set for the target. The notation and defaults are similar to the F based and SSB/TSB based constraints, respectively. Finally, the origin and cap for the HCR can be set using "HCR[FO=a,FC=b,BO=d,BC=e]=x~y", where FO is the F (or catch or landing) value at origin, BO is the biomass at origin, FC is the F (or catch or landing) value when the HCR is capped and BC is the biomass at which the HCR is capped. See ?hcr for further details on the shape of the HCR. For a HCR similar to the ICES advice rule, the specification is on the form "HCR[BC=Blim] = fmsy~MSYBtrigger". Note that, unlike an ICES advice rule, the HCR does not do a forecast to determine if fishing can continue below Blim.
+##' Harvest control rules can be specified for forecasts using the format "HCR=x~y" where x is the target and y is the biomass trigger (see ?hcr for full details on the form of the harvest control rule). Further, the target can be specified as an F target ("HCR=xF~y"), catch target ("HCR=xC~y"), or landing target ("HCR=xL~y"). Likewise the trigger can either be for SSB ("HCR=x~ySSB") or TSB ("HCR=x~yTSB"). Age ranges can be set for both triggers and targets and a fleet can be set for the target. The notation and defaults are similar to the F based and SSB/TSB based constraints, respectively.
+##'When setting F in year y, the projected biomass in year y is used by default. To use the (at this time known) biomass in a previous year, a time lag can be specified. To specify a time lag of, e.g., 1 year for SSB the format is "HCR=x~ySSB-1".
+##' Finally, the origin and cap for the HCR can be set using "HCR[FO=a,FC=b,BO=d,BC=e]=x~y", where FO is the F (or catch or landing) value at origin, BO is the biomass at origin, FC is the F (or catch or landing) value when the HCR is capped and BC is the biomass at which the HCR is capped. See ?hcr for further details on the shape of the HCR.
+##' For a HCR similar to the ICES advice rule, the specification is on the form "HCR[BC=Blim] = fmsy~MSYBtrigger". Note that, unlike an ICES advice rule, the HCR does not do a forecast to determine if fishing can continue below Blim.
 ##'
 ##' For example:
 ##' \describe{
@@ -319,6 +342,11 @@ modelforecast <- function(fit, ...){
 ##' \subsection{Values relative to previous year:}{
 ##' Catch constraints specified as specific values are inherently different from catch constraints specified as relative values, even if they lead to the same F. Catch constraints specified as relative values will propagate the uncertainty in, e.g, F from previous years whereas constraints specified as specific values will not. This is different from the \link{forecast} function where, for example, a forecast using fval is the same as a forecast using fscale, if they lead to the same F. 
 ##'}
+##'
+##'
+##' ##' \subsection{Process variability:}{
+##' In the forecast, constraints are used to set the predicted F value in year y based on information available until year y-1. Therefore, constraints using predicted values for year y, such as catch, will not be matched exactly by the realized catch due to process variability in F, N, biological processes and catch itself.
+##'}
 ##' 
 
 ##' 
@@ -327,12 +355,12 @@ modelforecast <- function(fit, ...){
 ##' There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. Unlike the forecast function, no value should be given for the base year.
 ##' Internally, the old specification is translated such that "fval=x" becomes "F=x", "fscale=x" becomes "F=x*", "catchval=x" becomes "C=x", "nextssb=x" becomes "SSB=x", and "landval=x" becomes "L=x".
 ##'
-##' @section Forecasts using Laplace approximation or simulations
-##' 
+##' @section Forecasts using Laplace approximation or simulations:
+##' Forecasts can be made using either a Laplace approximation projection (nosim=0) or simulations (nosim > 0). When using the Laplace approximation, the most likely projected trajectory of the processes along with a confidence interval is returned. In contrast, simulation based forecasts will return individual simulated trajectories and summarize using the function given as the estimate argument along with an interval covering 95% of the simulations.
 ##'
 ##' @section Warnings:
 ##' Long term forecasts with random walk recruitment can lead to unstable behaviour and difficulties finding suitable F values for the constraints.
-##' If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN. Likewise, forecasts leading to high F values in some years may cause problems for the optimization as they will be used as starting values for the next years.
+##' If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN. Likewise, forecasts leading to high F values in some years (or large changes from one year to another) may cause problems for the optimization as they will be used as starting values for the next years.
 ##' Since the model works on log space, all target values should be strictly positive. Values too close to zero may cause problems.
 ##'
 ##'
@@ -395,7 +423,7 @@ modelforecast.sam <- function(fit,
     
 
     if(!is.null(nosim) && nosim > 0){ 
-        estimateLabel <- deparse1(substitute(estimate))
+        estimateLabel <- paste(deparse(substitute(estimate), 500L), collapse = " ")
     }else{
         estimateLabel <- "mostLikelyTrajectory"
     }

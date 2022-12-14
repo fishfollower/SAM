@@ -1,7 +1,6 @@
 SAM_DEPENDS(define)
 SAM_DEPENDS(incidence)
 SAM_DEPENDS(recruitment)
-SAM_DEPENDS(forecast)
 SAM_DEPENDS(refpointset)
 SAM_DEPENDS(derived)
 SAM_DEPENDS(predn)

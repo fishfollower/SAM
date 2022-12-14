@@ -1074,7 +1074,7 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
 
     if(rm == RecruitmentConvenience::RecruitmentModel::NoRecruit){
       r = Recruitment<Type>("zero",std::make_shared<RecruitmentConvenience::Rec_None<Type> >());
-    
+   
       ////////////////////////////////////////// The Beginning //////////////////////////////////////////
     
     }else if(rm == RecruitmentConvenience::RecruitmentModel::LogRandomWalk){

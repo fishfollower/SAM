@@ -1069,7 +1069,8 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
         mu <- c(log(S)[i],log(R)[i])
         Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
                                   c(idxS[i], n + idxR[i])]
-        if(!all(is.finite(Sig))){
+        Cor <- cov2cor(Sig)
+        if(!all(is.finite(Cor))){
             return(list(x=mu[1],y=mu[2],col=NA,border=NA))
         }
         r <- ellipse::ellipse(Sig,centre=mu, level = CIlevel)

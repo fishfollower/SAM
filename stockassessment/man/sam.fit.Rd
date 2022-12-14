@@ -16,6 +16,8 @@ sam.fit(
   sim.condRE = TRUE,
   ignore.parm.uncertainty = FALSE,
   rel.tol = 1e-10,
+  eval.max = 2000,
+  iter.max = 1000,
   penalizeSpline = FALSE,
   fullDerived = FALSE,
   ...
@@ -43,6 +45,10 @@ sam.fit(
 \item{ignore.parm.uncertainty}{option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties}
 
 \item{rel.tol}{option passed to stats:::nlminb sets the convergence criteria}
+
+\item{eval.max}{option passed to stats:::nlminb sets the maximum number of function evaluations}
+
+\item{iter.max}{option passed to stats:::nlminb sets the maximum number of iterations}
 
 \item{penalizeSpline}{Add penalization to spline recruitment?}
 
