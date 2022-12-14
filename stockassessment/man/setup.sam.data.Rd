@@ -19,7 +19,8 @@ setup.sam.data(
   land.frac = NULL,
   recapture = NULL,
   sum.residual.fleets = NULL,
-  keep.all.ages = FALSE
+  keep.all.ages = FALSE,
+  average.sampleTimes.survey = TRUE
 )
 }
 \arguments{
