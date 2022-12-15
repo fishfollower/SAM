@@ -42,7 +42,6 @@
 template<class Type>
 Type objective_function<Type>::operator() ()
 {
-
   dataSet<Type> dataset;
   DATA_INTEGER(noFleets); dataset.noFleets=noFleets; 
   DATA_IVECTOR(fleetTypes); dataset.fleetTypes=fleetTypes;    
@@ -248,12 +247,14 @@ Type objective_function<Type>::operator() ()
 
   // Prepare Laplace trajectory forecast
   MortalitySet<Type> mort(dataset, confset, paraset, logF, logitFseason);
-  forecast.calculateForecast(logF,logN,logitFseason, dataset, confset, paraset, recruit, mort);    
+
+  forecast.calculateForecast(logF,logN,logitFseason, dataset, confset, paraset, recruit, mort);
 
   ans += nllP(confset, paraset, logP, keep, this);
 
   ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
   ans += nllSeason(dataset, confset, paraset, forecast, logitFseason, keep, this);
+
   // Update mortalities if simulating
   SIMULATE_F(this){
     if(confset.simFlag(0)==0){
@@ -261,20 +262,13 @@ Type objective_function<Type>::operator() ()
     }
   }
 
-  REPORT(mort.totalZseason);
-  REPORT(mort.totalZ);
-  REPORT(mort.logFleetSurvival_before);
-  REPORT(mort.fleetCumulativeIncidence);
-  REPORT(mort.otherCumulativeIncidence);
-  REPORT(mort.ssbSurvival_before);
-  
-  
-
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, logitFseason, recruit,mort, this);
 
+  
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, recruit, mort, keep,reportingLevel, this);
 
+  
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
 
 

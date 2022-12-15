@@ -258,6 +258,7 @@ modelforecast <- function(fit, ...){
 ##' @param estimate the summary function used (typically mean or median) for simulations
 ##' @param silent Passed to MakeADFun. Should the TMB object be silent?
 ##' @param newton_config Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.
+##' @param custom_pl Parameter list. By default, the parameter list from fit is used.
 ##' @details
 ##' Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process for each simulation. Therefore, catch constraints are not matched exactly in individual simulations. Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
 ##' By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
@@ -623,8 +624,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }
     d0 <- dim(pl$logitFseason)
     lfsOld <- pl$logitFseason
-    pl$logitFseason <- array(0, c(d0[1:2],nYears+d0[3]))
-    pl$logitFseason[,,1:d0[3]] <- lfsOld
+    pl$logitFseason <- array(0, c(d0[1],nYears+d0[2], d0[3]))
+    pl$logitFseason[,1:d0[2],] <- lfsOld
     args$parameters <- pl
     args$random <- unique(names(obj0$env$par[obj0$env$random]))
     args$data$reportingLevel <- 0

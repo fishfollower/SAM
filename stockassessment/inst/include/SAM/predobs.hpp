@@ -196,6 +196,12 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      break;
 
 		    case 80:	// Catch/Landing proportion in part of year
+		      // if(a == -1){ // Total
+		      // 	Type N
+		      // 	pred += mort.logFleetSurvival_before(a,y,f-1) + log(mort.fleetCumulativeIncidence(a,y,f-1));
+		      // }else{
+			
+		      // }
 		      Rf_error("Not implemented yet");
 		      break;		      
 
