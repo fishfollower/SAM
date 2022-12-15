@@ -429,7 +429,7 @@ refit <- function(fit, newConf, startingValues, ...){
     dp <- defpar(fit2$data,fit2$conf)
     for(i in intersect(names(dp),names(fit2$pl))){
         if(length(dp[[i]]) == length(fit2$pl[[i]]))
-            dp[[i]] <- fit2$pl[[i]]
+            dp[[i]][] <- fit2$pl[[i]][]
     }
     if(!missing(startingValues)){
         for(i in intersect(names(dp),names(startingValues)))
@@ -442,9 +442,11 @@ refit <- function(fit, newConf, startingValues, ...){
     
     ##runwithout(fit2, ...)
     fitNew <- sam.fit(fit2$data, fit2$conf, dp, ...)
-    ld <- abs(as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
-    if(ld > 1e-4)
-        warning(sprintf("Optimized likelihoods differ by %f. Check the results carefully.",ld))
+    if(class(fitNew) == "sam"){
+        ld <- abs(as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
+        if(ld > 1e-4)
+            warning(sprintf("Optimized likelihoods differ by %f. Check the results carefully.",ld))
+    }
     fitNew
 }
 
