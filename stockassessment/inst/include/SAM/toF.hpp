@@ -125,12 +125,12 @@ namespace ConstrainCalculations {
     Type logCat = R_NegInf;
     // Type cat = 0.0;
     int f0 = 0;
-    int f1 = conf.keyLogFsta.dim(0);
+    int f1 = conf.keyLogFsta.dim(0)-1;
     if(fleet > (-1)){
       f0 = fleet;
       f1 = fleet;
     }
-    for(int f = f0; f < f1; ++f){
+    for(int f = f0; f <= f1; ++f){
       if(dat.fleetTypes(f) == 0){
 	for(int a=a0; a<=a1; a++){
 	  if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
@@ -153,12 +153,12 @@ namespace ConstrainCalculations {
     Type logCat = R_NegInf;
     // Type cat = 0.0;
     int f0 = 0;
-    int f1 = conf.keyLogFsta.dim(0);
+    int f1 = conf.keyLogFsta.dim(0)-1;
     if(fleet > (-1)){
       f0 = fleet;
       f1 = fleet;
     }
-    for(int f = f0; f < f1; ++f){
+    for(int f = f0; f <= f1; ++f){
       if(dat.fleetTypes(f) == 0){
 	for(int a=a0; a<=a1; a++){
 	  if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
