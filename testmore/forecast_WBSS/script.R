@@ -49,7 +49,7 @@ cat(fit$opt$objective,"\n", file="res.out")
 
 checkNum <- function(val,test){
     test <- rep(test, length.out = length(val))
-    isTRUE(all.equal.numeric(val,test, check.attributes=FALSE))
+    isTRUE(all.equal.numeric(val,test, check.attributes=FALSE, tol = 1e-4))
 }
 
 ## Test of multi fleet constrained forecast
@@ -66,9 +66,9 @@ cat(checkNum(tail(fbartable(v)[,1],-1),0.31),"\n", file="res.out", append=TRUE)
 Ctab <- attr(v,"catchby")
 CtabMed <- Ctab[rownames(Ctab) %in% "mostLikelyTrajectory",]
 CtabRel <- CtabMed / rowSums(CtabMed)[row(CtabMed)]
-cat(checkNum(CtabMed[-1,1],6142),"\n", file="res.out", append=TRUE)
-cat(checkNum(CtabMed[-1,3],1),"\n", file="res.out", append=TRUE)
-cat(checkNum(CtabRel[-1,4],0.5),"\n", file="res.out", append=TRUE)
+cat(checkNum(round(CtabMed[-1,1]),6142),"\n", file="res.out", append=TRUE)
+cat(checkNum(round(CtabMed[-1,3]),1),"\n", file="res.out", append=TRUE)
+cat(checkNum(round(CtabRel[-1,4],3),0.5),"\n", file="res.out", append=TRUE)
 
 suppressWarnings(v <- modelforecast(fit,rep("F=0.2",5),
                    rec.years = tail(fit$data$years,5),

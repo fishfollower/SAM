@@ -42,7 +42,7 @@ par<-defpar(dat,conf)
 fit<-sam.fit(dat,conf,par)
 
 
-tol <- 1e-6
+tol <- 1e-4
 ## Test fscale
 target <- c(0.9,0.9,0.9,1.1,1.1,1.1,1,1,1)
 fv <- modelforecast(fit, fscale = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 0)
@@ -76,11 +76,11 @@ fvs <- modelforecast(fit, catchval = target, biasCorrect = FALSE,ave.years = max
 
 ## Test landval
 target <- round(c(0.1,0.1)*mean(tail(rep(catchtable(fit)[,1],4))))
-fv <- modelforecast(fit, landval=target, biasCorrect = FALSE, splitLD = TRUE,ave.years = max(fit$data$years)+(-4:0), rec.years = max(fit$data$years)+(-4:0), nosim = 0)
+fv <- modelforecast(fit, landval=target, biasCorrect = FALSE, splitLD = TRUE,ave.years = max(fit$data$years)+(-4:0), nosim = 0)
 cat("landval tab:\t",paste(all.equal(target,
                      round(attr(fv,"tab")[-1,"Land:mostLikelyTrajectory"]), check.attributes = FALSE, tolerance = tol), collapse = ", "),"\n", file="res.out", append = TRUE) 
 
-fvs <- modelforecast(fit, landval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 100, progress=FALSE)
+fvs <- modelforecast(fit, landval = target, biasCorrect = FALSE,ave.years = max(fit$data$years)+(-4:0), nosim = 100, progress=FALSE, splitLD=TRUE)
 
 ## Test fmodel
 target <- rep(NA,5)
