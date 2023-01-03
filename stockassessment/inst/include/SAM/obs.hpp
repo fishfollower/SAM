@@ -9,6 +9,8 @@ SAM_DEPENDS(survival)
 SAM_DEPENDS(predobs)
 SAM_DEPENDS(reproductive)
 SAM_DEPENDS(equilibrium)
+SAM_DEPENDS(empirical_pr)
+SAM_DEPENDS(dirichlet)
 
 template <class Type>
 matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec)SOURCE({
@@ -86,7 +88,7 @@ vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Typ
 				      }
 
 				      for(int f=0; f<dat.noFleets; ++f){
-					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6))){ 
+					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90))){ 
 					  int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
 					  if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
 					  matrix<Type> cov(thisdim,thisdim);
@@ -250,7 +252,7 @@ namespace obs_fun {
 #endif
 
 template <class Type>
-Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, array<Type>& logP,
+Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logN, array<Type> &logF, array<Type>& logP, array<Type>& logitFseason,
 	    Recruitment<Type> &recruit,
 	    MortalitySet<Type>& mort,
 	    data_indicator<vector<Type>,Type> &keep,
@@ -272,14 +274,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       matrix<Type> catAge = logCatchAge.array().exp().matrix();
 
       array<Type> catchByFleet = catchByFleetFun(dat, conf, logN, logF, mort);
-      array<Type> logCatchByFleet(dat.catchMeanWeight.dim(0), conf.keyLogFsta.dim(0));
+      array<Type> logCatchByFleet = catchByFleet;
       for(int i=0; i<logCatchByFleet.dim(0); ++i){
 	for(int j=0; j<logCatchByFleet.dim(1); ++j){
 	  logCatchByFleet(i,j)=log(catchByFleet(i,j));
 	}
       }
 
-      array<Type> catchByFleetAge = catchByFleetFunAge(dat, conf, logN, logF, mort);
+      // For caytable
+      array<Type> catchByFleetAge = catchByFleetFunAgeNum(dat, conf, logN, logF, mort);
       array<Type> logCatchByFleetAge = catchByFleetAge;
       for(int i=0; i<logCatchByFleetAge.dim(0); ++i){
 	for(int j=0; j<logCatchByFleetAge.dim(1); ++j){
@@ -350,10 +353,17 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  ADREPORT_F(logSPR, of);
 	  ADREPORT_F(logSe, of);
 	  ADREPORT_F(logB0, of);
+
+	  vector<Type> logEmpiricalSPR = empiricalSPR(dat, conf, logN, mort, true);
+	  ADREPORT_F(logEmpiricalSPR,of);
+	  vector<Type> logEmpiricalYPR = empiricalYPR(dat, conf, logN, mort, 0, true);
+	  ADREPORT_F(logEmpiricalYPR,of);
+
+	  
 	}
       }
 
-      vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, logfbar, noYearsLAI);
+      vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, logitFseason, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, logfbar, noYearsLAI);
       vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
 
       vector<Type> recapturePhi(par.logitRecapturePhi.size());
@@ -362,9 +372,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       if(par.logitRecapturePhi.size()>0){
 	recapturePhi=invlogit(par.logitRecapturePhi);
 	for(int j=0; j<dat.nobs; ++j){
-	  if(!isNAINT(dat.aux(j,7))){
-	    recapturePhiVec(j)=recapturePhi(dat.aux(j,7)-1);
-	    logitRecapturePhiVec(j) = par.logitRecapturePhi(dat.aux(j,7)-1);
+	  int indx = CppAD::Integer(dat.auxData(j,4));
+	  if(!isNAINT(indx) && dat.fleetTypes(dat.aux(j,1)-1) == 5){
+	    recapturePhiVec(j)=recapturePhi(indx-1);
+	    logitRecapturePhiVec(j) = par.logitRecapturePhi(indx-1);
 	  }
 	}
       }
@@ -374,7 +385,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
 
-	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6))){
+	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90))){
 	    if(!isNAINT(dat.idx1(f,y))){
 	      int idxfrom=dat.idx1(f,y);
 	      int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
@@ -538,6 +549,62 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		}
 	      }
 	    }
+	  }else if(dat.fleetTypes(f)==80){
+	    if(!isNAINT(dat.idx1(f,y))){	    
+	      int iMin = dat.idx1(f,y);
+	      int iMax = dat.idx2(f,y);
+	      // Setup response and prediction vectors
+	      int nSeasons = CppAD::Integer(dat.auxData(iMin,5));
+	      vector<Type> log_X(nSeasons);
+	      log_X.setZero();
+	      vector<Type> log_P(nSeasons);
+	      log_P.setZero();
+	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
+		log_X(CppAD::Integer(dat.auxData(i,4))-1) = dat.logobs(i);
+		log_P(CppAD::Integer(dat.auxData(i,4))-1) = predObs(i);
+	      }
+	      log_X(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.segment(0,nSeasons-1)));
+	      log_P(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
+	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
+	      //NOTE: need to handle keep to pass correct part!
+	      nll -= ddirichlet(log_X,log_P,log_alpha,keep.segment(iMin,iMax-iMin+1),true);
+	    }
+	  }else if(dat.fleetTypes(f) == 81){ 
+	    if(!isNAINT(dat.idx1(f,y))){
+	      int iMin = dat.idx1(f,y);
+	      int iMax = dat.idx2(f,y);
+	      // Setup response and prediction vectors
+	      int nSeasons = CppAD::Integer(dat.auxData(iMin,5));
+	      int minAge = dat.minAgePerFleet(f);
+	      int maxAge = dat.maxAgePerFleet(f);
+	      matrix<Type> log_X(nSeasons, maxAge-minAge+1);
+	      log_X.setZero();
+	      matrix<Type> log_P(nSeasons, maxAge-minAge+1);
+	      log_P.setZero();
+	      matrix<int> nObs(nSeasons,maxAge-minAge+1);
+	      nObs.setZero();
+	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){		
+		log_X(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = dat.logobs(i);
+		log_P(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = predObs(i);
+		nObs(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) += 1;
+	      }
+	      // Sum to one and alpha
+	      vector<Type> log_alpha(maxAge-minAge+1);
+	      log_alpha.setConstant(R_NaReal);
+	      for(int i = 0; i < log_X.cols(); ++i){
+		if(nObs(nSeasons-1,i)==0){
+		  log_X(nSeasons-1,i) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.col(i).segment(0,nSeasons-1)));
+		  log_P(nSeasons-1,i) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.col(i).segment(0,nSeasons-1)));
+		}
+		log_alpha(i) = par.logSdLogObs(conf.keyVarObs(f,i + minAge - conf.minAge));
+		//NOTE: need to handle keep to pass correct part!
+		nll -= ddirichlet((vector<Type>)log_X.col(i),(vector<Type>)log_P.col(i),(Type)log_alpha(i),keep.segment(iMin,iMax-iMin+1),true);
+		Rcout << y << " - " << i <<"\n";
+		Rcout << ((vector<Type>)log_X.col(i)).exp() <<"\n";
+		Rcout << ((vector<Type>)log_P.col(i)).exp() << "\n";
+		Rcout << exp((Type)log_alpha(i)) << "\n";
+	      }	      	      
+	    }
 	  }else{
 	    Rf_error("Fleet type not implemented");
 	  }   
@@ -548,6 +615,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(logN,of);
 	vector<Type> logobs=dat.logobs; 
 	REPORT_F(logobs,of);
+
+	vector<Type> logEmpiricalSPR = empiricalSPR(dat, conf, logN, mort, true);
+	REPORT_F(logEmpiricalSPR,of);
+	vector<Type> logEmpiricalYPR = empiricalYPR(dat, conf, logN, mort, 0, true);
+	REPORT_F(logEmpiricalYPR,of);
+	vector<Type> logEmpiricalYPR_L = empiricalYPR(dat, conf, logN, mort, 1, true);
+	REPORT_F(logEmpiricalYPR_L,of);
+	vector<Type> logEmpiricalYPR_D = empiricalYPR(dat, conf, logN, mort, 2, true);
+	REPORT_F(logEmpiricalYPR_D,of);
       }
       // REPORT_F(obsCov,of);
       REPORT_F(predObs,of);
@@ -634,5 +710,5 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
     }
     )
 
-SAM_SPECIALIZATION(double nllObs(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, array<double>&, Recruitment<double>&, MortalitySet<double>&, data_indicator<vector<double>,double>&, int, objective_function<double>*));
-SAM_SPECIALIZATION(TMBad::ad_aug nllObs(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, int, objective_function<TMBad::ad_aug>*));
+SAM_SPECIALIZATION(double nllObs(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, array<double>&,  array<double>&, Recruitment<double>&, MortalitySet<double>&, data_indicator<vector<double>,double>&, int, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllObs(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, int, objective_function<TMBad::ad_aug>*));

@@ -187,6 +187,30 @@ array<Type> catchByFleetFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &l
 SAM_SPECIALIZATION(array<double> catchByFleetFunAge(dataSet<double>&, confSet&, array<double>&, array<double>&, MortalitySet<double>&));
 SAM_SPECIALIZATION(array<TMBad::ad_aug> catchByFleetFunAge(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&));
 
+template <class Type>
+array<Type> catchByFleetFunAgeNum(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort)SOURCE({
+  int len=logN.dim(1);
+  int noFleets=conf.keyLogFsta.dim(0);
+  //array<Type> totF=totFFun(dat, conf, logF);
+  array<Type> cat(conf.maxAge - conf.minAge + 1, len, noFleets);
+  cat.setZero();
+  for(int y=0;y<len;y++){
+    for(int a=conf.minAge;a<=conf.maxAge;a++){  
+      for(int f=0; f<noFleets;f++){
+	if(dat.fleetTypes(f) == 0){ // Only catch fleets
+	  // cat(a-conf.minAge, y) += exp(logN(a-conf.minAge, y)) * mort.fleetCumulativeIncidence(a-conf.minAge,y, f) * dat.catchMeanWeight(y, a-conf.minAge, f);
+	  cat(a-conf.minAge, y, f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f)));
+	}
+      }
+    }
+  }
+  return cat;
+  });
+
+
+SAM_SPECIALIZATION(array<double> catchByFleetFunAgeNum(dataSet<double>&, confSet&, array<double>&, array<double>&, MortalitySet<double>&));
+SAM_SPECIALIZATION(array<TMBad::ad_aug> catchByFleetFunAgeNum(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&));
+
 
 
 template <class Type>

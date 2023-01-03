@@ -125,7 +125,7 @@ predict.rpscurvefit <- function(x,newF,...){
     as.numeric(pM)  
 }
 
-.getDoSim <- function(logf1, fit, nYears, aveYears, selYears, pl, logCustomSel = NULL,...){
+.getDoSim <- function(logf1, fit, nYears, aveYears, selYears, pl, logCustomSel = NULL, constraint = "F=%f",...){
    if(length(logCustomSel) > 0){
         sel <- exp(logCustomSel)
     }else if(length(selYears) == 0){   
@@ -134,7 +134,7 @@ predict.rpscurvefit <- function(x,newF,...){
         sel <- exp(.logFtoSel(pl$logF, match(selYears, fit$data$years) - 1, fit$conf))
     }
    suppressWarnings(invisible(doSim <- modelforecast(fit,
-                                                     rep(sprintf("F=%f",exp(logf1)), nYears),
+                                                     rep(sprintf(constraint,exp(logf1)), nYears),
                                                      nosim = 1,
                                                      progress = FALSE,
                                                      returnObj = 2,
@@ -145,7 +145,7 @@ predict.rpscurvefit <- function(x,newF,...){
    doSim
 }
 
-.perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = NULL, nTail = 1,incpb=NULL, doSim = NULL, label="", ...){    
+.perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = NULL, nTail = 1,incpb=NULL, doSim = NULL, label="", constraint = "F=%f", ...){    
     ## pl$missing <- NULL
     ## attr(pl,"what") <- NULL
     ## f2 <- sam.fit(fit$data,fit$conf,pl, run = FALSE)
@@ -170,22 +170,26 @@ predict.rpscurvefit <- function(x,newF,...){
 
     
     do.call("rbind",lapply(logf, function(lf){
-        v <- doSim(sprintf("F=%f",exp(lf)))
+        v <- doSim(sprintf(constraint,exp(lf)))
         logRe <- tail(v$logN[1,],nTail)
         logSe <- tail(v$logssb,nTail)
+        logSPR <- tail(v$logEmpiricalSPR,nTail)
         if(ct == 0){
             logYe <- tail(v$logCatch,nTail)
+            logYPR <- tail(v$logEmpiricalYPR,nTail)
         }else if(ct == 1){
             logYe <- tail(v$logLand,nTail)
+            logYPR <- tail(v$logEmpiricalYPR_L,nTail)
         }else{
             logYe <- tail(log(exp(v$logCatch)-(v$logLand)),nTail)
+            logYPR <- tail(v$logEmpiricalYPR_D,nTail)
         }
         logLE <- NA_real_ # tail(v$logLifeExpectancy,nTail)
         logYL <- NA_real_ #tail(v$logYLTF,nTail)
 
         res <- list(logF = rep(lf,length.out = nTail),
-                logYPR = NA_real_,
-                logSPR = NA_real_,
+                logYPR = logYPR,
+                logSPR = logSPR,
                 logSe = logSe,
                 logRe = logRe,
                 logYe = logYe,
@@ -223,7 +227,7 @@ predict.rpscurvefit <- function(x,newF,...){
 }
 
 #' @importFrom stats runif predict
-.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",...){
+.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f",...){
     rfv <- function(n,a,b){
         u <- stats::runif(n)
         v1 <- exp(stats::runif(n,log(ifelse(a==0,0.002,a)), log(b)))
@@ -242,6 +246,7 @@ predict.rpscurvefit <- function(x,newF,...){
                             incpb = incpb,
                             doSim = doSim,
                             label=sprintf("%s equilibrium simulations",label),
+                            constraint = constraint,
                             ...)  
 ###### Different for different RP's
     getOneRP <- function(rp){
@@ -408,6 +413,7 @@ predict.rpscurvefit <- function(x,newF,...){
                                                        incpb=incpb,
                                                        doSim = doSim,
                                                        label = sprintf("%s derived values",label),
+                                                       constraint = constraint,
                                                        ...))[c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost")],
                           exp),
                           function(x){ if(all(is.na(x))) return(NA); MT$derivedSummarizer}))
@@ -550,6 +556,7 @@ stochasticReferencepoints.sam <- function(fit,
                                           nosim_ci = 200,
                                           derivedSummarizer = NA,
                                           nTail = 1,
+                                          constraint = "F=%f",
                                           ...){
 
 
@@ -582,20 +589,19 @@ stochasticReferencepoints.sam <- function(fit,
     if(!nosim > 0)
         stop("nosim must be a positive integer")
 
-    doSim <- .getDoSim(logf1=tail(log(fbartable(fit)[,1]),1),
-                       fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl,...)
- 
-     ## Get RPs for best fit
+    ## Get RPs for best fit
     rpArgs <- Reduce(.refpointMerger,
                      lapply(referencepoints, .refpointParser, cutoff = 0.1),
                      list())
     invisible(lapply(rpArgs,.refpointCheckRecruitment,fit=fit))
 
+    doSim <- .getDoSim(logf1=tail(log(fbartable(fit)[,1]),1),
+                       fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl, constraint=constraint,...)
+ 
     pb <- .SAMpb(min = 0, max = nosim * (nosim_ci + 1 + is.function(derivedSummarizer)*length(rpArgs)))
     incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
 
-    
-    v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:", ...)
+    v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint, ...)
 
     ## Sample to get CIs
     if(nosim_ci > 0){
@@ -604,7 +610,7 @@ stochasticReferencepoints.sam <- function(fit,
             oN <- fit$obj
             a <- capture.output(invisible(oN$fn(par)))
             pl <- oN$env$parList(par,oN$env$last.par)
-            v <- try({.refpointSFitCriteria(rpArgs,pl=pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Confidence intervals:", ...)}, silent = TRUE)
+            v <- try({.refpointSFitCriteria(rpArgs,pl=pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Confidence intervals:",constraint=constraint, ...)}, silent = TRUE)
  
             v
         })

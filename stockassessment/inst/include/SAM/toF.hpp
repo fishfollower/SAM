@@ -246,7 +246,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
       // matrix<ad> llogF = toFleetMatrix(dat, conf, lastLogF, (vector<ad>)(logFs * ad(0.0)));
       // vector<ad> llfs = (vector<ad>)(lastLogF - lastLFB);
       // matrix<ad> logF = toFleetMatrix(dat, conf, lastLogF, logFs);
-    
+
       vector<ad> newLogF = historicalLogF.col(y-1);
    
       vector<bool> done(newLogF.size());
@@ -261,8 +261,9 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	  }
 	}
       }
-      
+
       for(int i = 0; i < cstrs.size(); ++i){
+
 	FConstraint<ad> cstr = cstrs(i);
 	if(cstr.cstr == ConstraintType::Constrain_NONE){
 	  continue;
@@ -509,59 +510,67 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 
   // Make data one longer
   dataSet<Type> newDat = dat;
-  int nMYears = dat.propMat.dim(0);
-  int nYears = 10;
-  // propMat
-  extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, true);
-  // stockMeanWeight
-  extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, true);
-  // catchMeanWeight
-  extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, true);
-  // natMor
-  extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, true);
-  // landFrac (No biopar process)
-  extendArray(newDat.landFrac, nMYears, nYears, aveYears, true);
-  // disMeanWeight (No biopar process)
-  extendArray(newDat.disMeanWeight, nMYears, nYears, aveYears, true);
-  // landMeanWeight (No biopar process)
-  extendArray(newDat.landMeanWeight, nMYears, nYears, aveYears, true);
-  // propF (No biopar process)
-  extendArray(newDat.propF, nMYears, nYears, aveYears, true);
-  // propM (No biopar process)
-  extendArray(newDat.propM, nMYears, nYears, aveYears, true);
-  newDat.noYears = nYears+nMYears;
+  array<Type> logN2;
+  array<Type> logF2;
+  array<Type> logitFseason2;
+  if(y >= logN.dim(1)-1){
+    int nMYears = dat.propMat.dim(0);
+    int nYears = 1;
+    // propMat
+    extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, true);
+    // stockMeanWeight
+    extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, true);
+    // catchMeanWeight
+    extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, true);
+    // natMor
+    extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, true);
+    // landFrac (No biopar process)
+    extendArray(newDat.landFrac, nMYears, nYears, aveYears, true);
+    // disMeanWeight (No biopar process)
+    extendArray(newDat.disMeanWeight, nMYears, nYears, aveYears, true);
+    // landMeanWeight (No biopar process)
+    extendArray(newDat.landMeanWeight, nMYears, nYears, aveYears, true);
+    // propF (No biopar process)
+    extendArray(newDat.propF, nMYears, nYears, aveYears, true);
+    // propM (No biopar process)
+    extendArray(newDat.propM, nMYears, nYears, aveYears, true);
+    newDat.noYears = nYears+nMYears;
 
   
-  // Make logN, histLogF, and logitFseason one longer in the year direction
-  array<Type> logN2(logN.dim(0),logN.dim(1)+nYears);
-  for(int i = 0; i < logN2.dim(0); ++i){
-    for(int j = 0; j < logN2.dim(1); ++j){
-      int j2 = std::min(j,logN.dim(1)-1);
-      logN2(i,j) = logN(i,j2);
+    // Make logN, histLogF, and logitFseason one longer in the year direction
+    logN2 = array<Type>(logN.dim(0),logN.dim(1)+nYears);
+    for(int i = 0; i < logN2.dim(0); ++i){
+      for(int j = 0; j < logN2.dim(1); ++j){
+	int j2 = std::min(j,logN.dim(1)-1);
+	logN2(i,j) = logN(i,j2);
+      }
     }
-  }
-  array<Type> logF2(logF.dim(0),logF.dim(1)+nYears);
-  for(int i = 0; i < logF2.dim(0); ++i){
-    for(int j = 0; j < logF2.dim(1); ++j){
-      int j2 = std::min(j,logF.dim(1)-1);
-      logF2(i,j) = logF(i,j2);
+    logF2 = array<Type>(logF.dim(0),logF.dim(1)+nYears);
+    for(int i = 0; i < logF2.dim(0); ++i){
+      for(int j = 0; j < logF2.dim(1); ++j){
+	int j2 = std::min(j,logF.dim(1)-1);
+	logF2(i,j) = logF(i,j2);
+      }
+      logF2(i,logF2.dim(0)-1) = logF(i,logF.dim(0)-1);
     }
-    logF2(i,logF2.dim(0)-1) = logF(i,logF.dim(0)-1);
-  }
-  array<Type> logitFseason2(logitFseason.dim(0),logitFseason.dim(1)+nYears,logitFseason.dim(2));
-  for(int i = 0; i < logitFseason2.dim(0); ++i){
-    for(int k = 0; k < logitFseason2.dim(2); ++k){
-      for(int j = 0; j < logitFseason2.dim(1); ++j){
-	int j2 = std::min(j,logitFseason.dim(1)-1);
-      logitFseason2(i,j,k) = logitFseason(i,j2,k);
-      }      
+    logitFseason2 = array<Type>(logitFseason.dim(0),logitFseason.dim(1)+nYears,logitFseason.dim(2));
+    for(int i = 0; i < logitFseason2.dim(0); ++i){
+      for(int k = 0; k < logitFseason2.dim(2); ++k){
+	for(int j = 0; j < logitFseason2.dim(1); ++j){
+	  int j2 = std::min(j,logitFseason.dim(1)-1);
+	  logitFseason2(i,j,k) = logitFseason(i,j2,k);
+	}      
+      }
     }
+  }else{
+    logN2 = logN;
+    logF2 = logF;
+    logitFseason2 = logitFseason;
   }
-    
-  
+
   // Should be deleted by NewtonWrapper
   std::shared_ptr<NewtonFunctor> p_fc(new ConstrainCalculations::ForecastF(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2,y));
-  
+ 
   // vector<double> s0(cFleets.size());
   // s0.setConstant(0);
   // vector<Type> start(tryStart(fc,s0,200));
@@ -583,6 +592,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
       }
     }
   }
+
   return newLogF;
 				})
 

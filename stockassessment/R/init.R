@@ -91,7 +91,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$rhop = if(length(conf$keyVarLogP)>0){0.5}else{numeric(0)}
 
   ret$logScale=if(conf$noScaledYears==0){numeric(0)}else{numeric(max(conf$keyParScaledYA)+1)}
-  ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$aux[!is.na(dat$aux[,8]),8])))
+  ret$logitReleaseSurvival=if(any(dat$fleetTypes==5)){numeric(length(unique(dat$auxData[!is.na(dat$auxData[,5]),5])))
                            }else{numeric(0)}
   ret$logitRecapturePhi=if(any(dat$fleetTypes==5)){numeric(length(ret$logitReleaseSurvival))
                         }else{numeric(0)}

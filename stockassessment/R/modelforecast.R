@@ -743,6 +743,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                    land = sapply(simvals,function(x) exp(x$logLand[ii])),
                                    fbarL = sapply(simvals,function(x) exp(x$logfbarL[ii])),
                                    tsb = sapply(simvals,function(x) exp(x$logtsb[ii])),
+                                   logEmpiricalSPR  = sapply(simvals,function(x) (x$logEmpiricalSPR[ii])),
+                                   logEmpiricalYPR  = sapply(simvals,function(x) (x$logEmpiricalYPR[ii])),
+                                   logEmpiricalYPR_L  = sapply(simvals,function(x) (x$logEmpiricalYPR_L[ii])),
+                                   logEmpiricalYPR_D  = sapply(simvals,function(x) (x$logEmpiricalYPR_D[ii])),
                                    year=y)
             rownames(simlist[[i+1]]$catchatage) <- seq(fit$conf$minAge,fit$conf$maxAge,1)
         }
@@ -824,7 +828,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         for(i in 0:(length(FModel))){
             y<-year.base+i 
             simlist[[i+1]] <- list(sim=NA, fbar=NA, catch=NA, ssb=NA, rec=NA,
-                                   cwF=NA, catchatage=NA, catchbyfleet=NA, fbarbyfleet=NA, land=NA, fbarL=NA, tsb=NA, year=y)
+                                   cwF=NA, catchatage=NA, catchbyfleet=NA, fbarbyfleet=NA, land=NA, fbarL=NA, tsb=NA, logEmpiricalSPR=NA, logEmpiricalYPR=NA, year=y)
         }
 
         attr(simlist, "fit")<-fit
@@ -859,7 +863,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             tsb <- toCI(ssdr[rownames(ssdr) %in% "logtsb",indx])
             tab<-cbind(tab,tsb)
         }
-        
+       
         ## Handle cwF !!
         
         ## Row and column names on table

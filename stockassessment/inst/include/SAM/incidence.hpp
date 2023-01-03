@@ -199,21 +199,23 @@ SOURCE(
 	 Type logPS = 0.0;
 	 int i = conf.keyLogFsta(fleet,a);
 	 if(i < 0)
-	   return 0.0;
-	 int j = conf.keyLogFseason(fleet,a);	
+	   return R_NegInf;
+	 int j = conf.keyLogFseason(fleet,a);
+	 Type STS = std::max(t0,dat.sampleTimesStart(fleet));
+	 Type STE = std::min(t1,dat.sampleTimesEnd(fleet));
 	 for(int s = 0; s < nSeason; ++s){
 	   // Survival * F / Z * (1-exp(-Z*dt))
 	   // If season does not end before fleet starts
 	   // and season does not start before fleet ends
-	   if(!(conf.seasonTimes(s+1) <= dat.sampleTimesStart(fleet)) &&
-	      !(conf.seasonTimes(s) >= dat.sampleTimesEnd(fleet))){
+	   if(!(conf.seasonTimes(s+1) <= STS) &&
+	      !(conf.seasonTimes(s) >= STE)){
 	     // Start time is maximum of season and fleet start (no parameters)
-	     Type As = std::max((Type)conf.seasonTimes(s),(Type)dat.sampleTimesStart(fleet));
+	     Type As = std::max((Type)conf.seasonTimes(s),(Type)STS);
 	     // End time is minimum of seson and fleet end (no parameters)
-	     Type Ae = std::min((Type)conf.seasonTimes(s+1),(Type)dat.sampleTimesEnd(fleet));
+	     Type Ae = std::min((Type)conf.seasonTimes(s+1),(Type)STE);
 	     Type logFs = logF(i,y) + Fseason(s,y,j+1);
-	     if((Type)conf.seasonTimes(s) > (Type)dat.sampleTimesStart(fleet) &&
-		(Type)dat.sampleTimesEnd(fleet) > (Type)conf.seasonTimes(s+1)){
+	     if((Type)conf.seasonTimes(s) > (Type)STS &&
+		(Type)STE > (Type)conf.seasonTimes(s+1)){
 	       // Full season
 	       if(conf.isFishingSeason(s) && Ae > As)
 		 vCIF += exp(logPS + logFs - log(totalZseason(s,a,y))) * (1.0 - exp(-totalZseason(s,a,y) * (Ae-As)));
@@ -240,7 +242,7 @@ SOURCE(
 		   }
 		 }
 		 //if(dat.natMor(y,a) > 0)
-		   vCIF += exp(logPS + logFs - log(tmpZ)) * (1.0 - exp(-tmpZ * (Ae-As)));
+		 vCIF += exp(logPS + logFs - log(tmpZ)) * (1.0 - exp(-tmpZ * (Ae-As)));
 	       }
 	       logPS -= tmpZ;	       
 	     }
@@ -380,7 +382,7 @@ SOURCE(
 	     // Calculate survival before fleet starts and CIF
 	     for(int f = 0; f < nFleet; ++f){
 	       logFleetSurvival_before(a,y,f) = this->logSurvival(dat, conf, par, logF, a, y, (Type)dat.sampleTimesStart(f));
-	       fleetCumulativeIncidence(a,y,f) = this->CIF(dat, conf, par, logF, f, a, y, (Type)dat.sampleTimesStart(f), (Type)dat.sampleTimesStart(f));
+	       fleetCumulativeIncidence(a,y,f) = this->CIF(dat, conf, par, logF, f, a, y, (Type)dat.sampleTimesStart(f), (Type)dat.sampleTimesEnd(f));
 	       int i = conf.keyLogFsta(f,a);
 	       if(i > (-1))
 		 vssb += exp(logF(i,y)) * dat.propF(y,a,f);
