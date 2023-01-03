@@ -396,6 +396,8 @@ refit <- function(fit, newConf, startingValues, ...){
         fit2$data$sampleTimesStart <- ifelse(fit2$data$fleetTypes == 0, 0, fit2$data$sampleTimes)
     if(is.null(fit2$data$sampleTimesEnd))
         fit2$data$sampleTimesEnd <- ifelse(fit2$data$fleetTypes == 0, 1, fit2$data$sampleTimes)
+    if(is.null(fit2$data$auxData))      #Will not work for tagging data!
+        fit2$data$auxData <- matrix(NA_real_,nrow(fit2$data$aux),0)
 
                 
     toArray <- function(x){
