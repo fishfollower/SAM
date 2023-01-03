@@ -308,7 +308,7 @@ read.data.files<-function(dir="."){
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL,
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL, aux.fleets=NULL,
                            keep.all.ages = FALSE,
                            average.sampleTimes.survey = TRUE){
   # Function to write records in state-space assessment format and create 
@@ -326,7 +326,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   weight<-NULL
   sumKey<-NULL
   doone<-function(m, average.sampleTimes){
-    year<-rownames(m)[row(m)]
+    year<-as.integer(rownames(m)[row(m)])
     fleet.idx<<-fleet.idx+1
     fleet<-rep(fleet.idx,length(year))
     age<-as.integer(colnames(m)[col(m)])
@@ -438,7 +438,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
       ##time<-c(time,rep(0,length(sum.residual.fleets)))
       name<-c(name,unlist(lapply(sum.residual.fleets,function(x)paste0("Fleet(", paste0(attr(x,"sumof"), collapse="+"),")"))))
     }
-  }
+  }    
 
   ii <- type[dat[,"fleet"]]%in%c(0,7)
   ynam <- min(dat[ii,"year"]):max(dat[ii,"year"])
@@ -489,9 +489,12 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     fleet.idx <- fleet.idx+1
     tag$fleet <- fleet.idx
     tag$age <- recapture$ReleaseY-recapture$Yearclass
+    fleetAges[[fleet.idx]] <- as.integer(unique(tag$age))            
     tag$aux <- exp(recapture$r)
     tag <- cbind(tag, recapture[,c("RecaptureY", "Yearclass", "Nscan", "R", "Type")])
-    dat[names(tag)[!names(tag)%in%names(dat)]]<-NA_integer_
+    colnames(tag)[-(1:4)] <- paste0("aux_",seq_len(ncol(tag)-4))
+    tag[names(dat)[!names(dat)%in%names(tag)]]<-NA_real_
+    dat[names(tag)[!names(tag)%in%names(dat)]]<-NA_real_
     dat<-rbind(dat, tag)
     weight<-c(weight,rep(NA_real_,nrow(tag)))
     type<-c(type,5)
@@ -499,11 +502,74 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     timeEnd<-c(timeEnd,1)
     name<-c(name,"Recaptures")
   }
+    if(!is.null(aux.fleets)){
+        dooneAUX <- function(x){
+            type <<- c(type,x[1,1])
+            year<- x[,2]
+            fleet.idx<<-fleet.idx+1
+            fleet<-rep(fleet.idx,length(year))
+            age<-as.integer(x[,3])
+            fleetAges[[fleet.idx]] <<- as.integer(unique(age))
+            audat <- cbind(data.frame(year = year,
+                                      fleet = fleet,
+                                      age = age,
+                                      aux = exp(x[,4])),
+                           x[,-(1:4),drop=FALSE])
+            colnames(audat)[-(1:4)] <- paste0("aux_",seq_len(ncol(audat)-4))
+            audat[names(dat)[!names(dat)%in%names(audat)]]<-NA_real_
+            dat[names(audat)[!names(audat)%in%names(dat)]]<-NA_real_
+            dat <<- rbind(dat, audat)
+            if("weight"%in%names(attributes(x))){
+                weight<<-c(weight,as.vector(attr(x,"weight")))
+            }else{
+                if("cov"%in%names(attributes(x))){
+                    weigthTmp = do.call(rbind,lapply(attr(x,"cov"),diag))
+                    weight<<-c(weight,as.vector(weigthTmp))
+                }else{
+                    if("cov-weight"%in%names(attributes(x))){
+                        weigthTmp = do.call(rbind,lapply(attr(x,"cov-weight"),diag))
+                        weight<<-c(weight,1/as.vector(weigthTmp))
+                    }
+                    else{
+                        weight<<-c(weight,rep(NA_real_,length(year)))
+                    }
+                }
+            }
+            if("cov"%in%names(attributes(x))){
+                attr(x,"cor") <- lapply(attr(x,"cov"),cov2cor)
+            }
+            if("cov-weight"%in%names(attributes(x))){
+                attr(x,"cor")<-lapply(attr(x,"cov-weight"),cov2cor)
+            }    
+            if("cor"%in%names(attributes(x))){
+                thisCorList <- attr(x,"cor")
+                whichCorOK <- which(unlist(lapply(thisCorList, function(xx)!any(is.na(xx)))))
+                thisCorList <- thisCorList[whichCorOK]
+                corList <<- c(corList,thisCorList)
+                nextIdx <- if(all(is.na(idxCor))){0}else{max(idxCor,na.rm=TRUE)}
+                idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
+            }
+            if("time"%in%names(attributes(x))){
+                tt <- attr(x,"time")
+                ## if(average.sampleTimes){
+                ##     tt <- rep(mean(tt),2)
+                ## }
+                timeStart <<- c(timeStart,tt[1])
+                timeEnd <<- c(timeEnd,tt[2])        
+            }else{
+                timeStart <<- c(timeStart,0)
+                timeEnd <<- c(timeEnd,1)
+            }
+        }
+        if(!is.list(aux.fleets))
+            aux.fleets <- list(aux.fleets)
+        lapply(aux.fleets, dooneAUX)
+    }
 
-  cc <- which(complete.cases(dat[,1:3])==T)
+  cc <- which(complete.cases(dat[,1:3])==T | (dat[,2] %in% type == 80))
   ccc<- which(complete.cases(dat[,1:4])==F & dat[,2] %in% which(type==6))
   keep <- cc[which(!cc %in% ccc)]
-  dat<-dat[keep,]
+        dat<-dat[keep,]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
   attr(dat,'type')<-type
@@ -560,7 +626,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     }
     sumKey[idxone] <- 1
   }
-  attr(dat,'sumKey')<-sumKey
+    attr(dat,'sumKey')<-sumKey
+
+    auxData <- matrix(NA_real_,nrow(dat),0)
+    if(ncol(dat) > 4)
+        auxData <- do.call(cbind,lapply(dat[,-(1:4)],as.numeric))
 
   ret<-list(
     noFleets=length(attr(dat,'type')),
@@ -575,7 +645,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
     idxCor=idxCor,
-    aux=do.call(cbind,lapply(dat[,-4],as.integer)),
+    aux=do.call(cbind,lapply(dat[,1:3],as.integer)),
+    auxData=auxData,
     minWeek=attr(dat,'minWeek'),
     maxWeek=attr(dat,'maxWeek'),
     logobs=log(dat[,4]),

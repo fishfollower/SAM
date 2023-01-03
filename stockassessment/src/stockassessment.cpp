@@ -58,6 +58,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(minWeek); dataset.minWeek=minWeek;
   DATA_IVECTOR(maxWeek); dataset.maxWeek=maxWeek;
   DATA_IARRAY(aux); dataset.aux=aux; 
+  DATA_ARRAY(auxData); dataset.auxData=auxData; 
   DATA_VECTOR(logobs); dataset.logobs=logobs; 
   DATA_VECTOR(weight); dataset.weight=weight; 
   DATA_VECTOR_INDICATOR(keep, logobs); //dataset.keep=keep; 
@@ -258,6 +259,16 @@ Type objective_function<Type>::operator() ()
   // Prepare Laplace trajectory forecast
   MortalitySet<Type> mort(dataset, confset, paraset, logF, logitFseason);
 
+  REPORT(mort.totalZ);
+  REPORT(mort.totalF);
+  REPORT(mort.totalZseason);
+  REPORT(mort.totalFseason);
+  REPORT(mort.logFleetSurvival_before);
+  REPORT(mort.fleetCumulativeIncidence);
+  REPORT(mort.otherCumulativeIncidence);
+  REPORT(mort.ssbSurvival_before);
+  REPORT(mort.Fseason);
+  
   forecast.calculateForecast(logF,logN,logitFseason, dataset, confset, paraset, recruit, mort);
 
   ans += nllP(confset, paraset, logP, keep, this);
@@ -276,7 +287,7 @@ Type objective_function<Type>::operator() ()
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, logitFseason, recruit,mort, this);
 
   
-  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, recruit, mort, keep,reportingLevel, this);
+  ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, logitFseason, recruit, mort, keep,reportingLevel, this);
 
   
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);

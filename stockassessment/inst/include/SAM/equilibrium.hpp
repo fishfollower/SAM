@@ -74,12 +74,12 @@ PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& co
     logF.col(i) = logSel + logFbar;
 
   // Make logitF season array
-  array<Type> logitFseason(par.seasonMu.rows(), par.seasonMu.cols(),nYears);
+  array<Type> logitFseason(par.seasonMu.rows(), nYears, par.seasonMu.cols());
   logitFseason.setZero();
   for(int i = 0; i < nYears; ++i)
     for(int j = 0; j < par.seasonMu.cols(); ++j)
       for(int k = 0; k < par.seasonMu.rows(); ++k)
-	logitFseason(k,j,i) = par.seasonMu(k,j);
+	logitFseason(k,i,j) = par.seasonMu(k,j);
       
 
   // Make logN array - start with one recruit

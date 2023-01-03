@@ -9,8 +9,8 @@
 ##' 
 ##' @export
 write.ices <- function(x, fileout, writeToOne = TRUE, ...){
-    writeOne <- function(x, fileout, sampleTimes=c("",""), ...){
-        top <- paste0(fileout, " auto written\n1 2\n", paste0(range(as.integer(rownames(x))), collapse="  "),"\n",paste0(range(as.integer(colnames(x))),sampleTimes, collapse="  "), "\n1")    
+    writeOne <- function(x, fileout, ...){
+        top <- paste0(fileout, " auto written\n1 2\n", paste0(range(as.integer(rownames(x))), collapse="  "),"\n",paste0(range(as.integer(colnames(x))), collapse="  "), "\n1")    
         write(top,fileout,...)
         write(t(x),fileout,ncolumns=ncol(x),append=TRUE,sep="  \t",...)
         if(any(!(names(attributes(x)) %in% c("dim","dimnames")))){
@@ -66,6 +66,7 @@ getFleet <- function(fit, fleet, pred="FALSE"){
   tmp <- outer(yr, ar, Vectorize(.goget))
   dimnames(tmp)[[1]] <- yr
   dimnames(tmp)[[2]] <- ar
+  attr(tmp, "time") <- c(fit$data$sampleTimesStart[fleet],fit$data$sampleTimesEnd[fleet])
   return(tmp)
 }
 
@@ -111,8 +112,9 @@ write.surveys <- function(fit,fileout,...){
     yr <- range(as.integer(rownames(S)))
     ar <- range(as.integer(colnames(S)))
     write(paste0(yr[1], " ", yr[2]), fileout, append=TRUE, ...)
-    st <- fit$data$sampleTimes[s]
-    write(paste0(1," ", 1, " ", st, " ", st), fileout, append=TRUE, ...)
+    stS <- fit$data$sampleTimesStart[s]
+    stE <- fit$data$sampleTimesEnd[s]
+    write(paste0(1," ", 1, " ", stS, " ", stE), fileout, append=TRUE, ...)
     write(paste0(ar[1], " ", ar[2]), fileout, append=TRUE, ...)
     x <- cbind(1,S)
     write(t(x),fileout,ncolumns=ncol(x),append=TRUE,sep="  \t",...)

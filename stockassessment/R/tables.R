@@ -297,7 +297,7 @@ caytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
     }
     ret <- Reduce("+",lapply(fleet,getfleet)) 
     colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
-    rownames(ret) <- fit$data$years
+    rownames(ret) <- fit$data$years[seq_len(nrow(ret))]
     return(ret)
 }
 

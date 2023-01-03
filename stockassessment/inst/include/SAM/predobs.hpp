@@ -16,6 +16,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		array<Type>& logF,
 		array<Type>& logN,
 		array<Type>& logPs,
+		array<Type>& logitFseason,
 		vector<Type>& varAlphaSCB,
 		MortalitySet<Type>& mort,
 		Type logssb,
@@ -24,9 +25,10 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		Type logCatch,
 		Type logLand,
 		Type logfbar,
-		Type tagv1,	     // dat.aux(i,5)
-		Type tagv2,	     // dat.aux(i,6)
-		Type releaseSurvival // releaseSurvivalVec(i)
+		// Type tagv1,	     // dat.aux(i,5)
+		// Type tagv2,	     // dat.aux(i,6)
+		Type releaseSurvival, // releaseSurvivalVec(i)
+		vector<Type> auxData // dat.aux.block(i,5,1,?)
 		)SOURCE({
 		    int f, ft, a, y, yy, scaleIdx, ma, pg;  // a is no longer just ages, but an attribute (e.g. age or length) 
 		    y=year - minYear;
@@ -181,9 +183,11 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      return 0;
 		      break;
   
-		    case 5:// tags  
+		    case 5:// tags
+		      // (0) RecaptureY, (1) Yearclass, (2) Nscan, (3) R, (4) Type
+		      SAM_ASSERT(auxData.size() >= 5,"aux is not large enough for fleet type 5");
 		      if((a+conf.minAge)>conf.maxAge){a=conf.maxAge-conf.minAge;} 
-		      pred=exp(log(tagv2)+log(tagv1)-logN(a,y)-log(1000.0))*releaseSurvival;
+		      pred=exp(log(auxData(3))+log(auxData(2))-logN(a,y)-log(1000.0))*releaseSurvival;
 		      break;
   
 		    case 6:
@@ -208,16 +212,40 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      pred+=log(sumF);
 		      break;
 
-		    case 80:	// Catch/Landing proportion in part of year
-		      // if(a == -1){ // Total
-		      // 	Type N
-		      // 	pred += mort.logFleetSurvival_before(a,y,f-1) + log(mort.fleetCumulativeIncidence(a,y,f-1));
-		      // }else{
-			
-		      // }
-		      Rf_error("Not implemented yet");
+		    case 80:	// Catch/Landing proportion in part of year for total stock
+		      {
+		      SAM_ASSERT(auxData.size() >= 6,"aux is not large enough for fleet type 80");
+		      Type Ctotal = 0.0;
+		      Type Cseason = 0.0;
+		      for(int aa = 0; aa < (conf.maxAge-conf.minAge + 1); ++aa){
+			Type Cttmp = exp(logN(a,y)) * mort.totalCIF(dat,conf,par,logF,CppAD::Integer(auxData(0))-1,aa,y);
+			Type Cstmp = exp(logN(a,y)) * mort.partialCIF(dat,conf,par,logF, logitFseason,CppAD::Integer(auxData(0))-1,aa,y, auxData(1), auxData(2));
+			if(CppAD::Integer(auxData(3)) == 1){ // Catch weight
+			  Cttmp *= dat.catchMeanWeight(y,aa);
+			  Cstmp *= dat.catchMeanWeight(y,aa);
+			}else if(CppAD::Integer(auxData(3)) == 2){ // Landing numbers
+			  Cttmp *= dat.landFrac(y,aa);
+			  Cstmp *= dat.landFrac(y,aa);
+			}else if(CppAD::Integer(auxData(3)) == 3){ // Landing weight
+			  Cttmp *= dat.landFrac(y,aa) * dat.landMeanWeight(y,aa);
+			  Cstmp *= dat.landFrac(y,aa) * dat.landMeanWeight(y,aa);
+			}
+			Ctotal += Cttmp;
+			Cseason += Cstmp;
+		      }
+		      pred = log(Cseason) - log(Ctotal);		      
+		      break;
+		      }
+		    case 81:	// Catch/Landing proportion in part of year per age
+		      {
+		      // aux: (0) catch fleet, (1) this season start, (2) this season end, (3) catch Type (4) season number, (5) number of seasons
+		      SAM_ASSERT(auxData.size() >= 6,"aux is not large enough for fleet type 81");
+		      // Within an age/year, landing fraction and weights are (currently) constant, so catch type is irrelevant
+		      Type v81a = mort.CIF(dat,conf,par,logF,CppAD::Integer(auxData(0))-1,a,y,Type(0.0),Type(1.0));
+		      Type v81b = mort.partialCIF(dat,conf,par,logF,logitFseason,CppAD::Integer(auxData(0))-1,a,y,auxData(1),auxData(2));		      
+		      pred = log(v81b) - log(v81a);
 		      break;		      
-
+		      }
 		    case 90:	// Stock composition in catch/landing
 		      Rf_error("Reserved for multiStockassessment");
 		      break;
@@ -230,12 +258,12 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		    return pred;
 		  });
 		  
-SAM_SPECIALIZATION(double predOneObs(int, int,int,int,int, int,dataSet<double>&,confSet&,paraSet<double>&,array<double>&, array<double>&, array<double>&, vector<double>& ,MortalitySet<double>&,double,double,double,double,double,double,double,double,double));
-SAM_SPECIALIZATION(TMBad::ad_aug predOneObs(int, int,int,int,int, int,dataSet<TMBad::ad_aug>&,confSet&,paraSet<TMBad::ad_aug>&,array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&,MortalitySet<TMBad::ad_aug>&,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug));
+SAM_SPECIALIZATION(double predOneObs(int, int,int,int,int, int,dataSet<double>&,confSet&,paraSet<double>&,array<double>&, array<double>&, array<double>&,array<double>&, vector<double>& ,MortalitySet<double>&,double,double,double,double,double,double,double,vector<double>));
+SAM_SPECIALIZATION(TMBad::ad_aug predOneObs(int, int,int,int,int, int,dataSet<TMBad::ad_aug>&,confSet&,paraSet<TMBad::ad_aug>&,array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&,MortalitySet<TMBad::ad_aug>&,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,vector<TMBad::ad_aug>));
 
 
 template <class Type>
-vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, array<Type>& logPs, vector<Type>& varAlphaSCB, MortalitySet<Type>& mort, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand, vector<Type> &logfbar, int noYearsLAI)SOURCE({
+vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, array<Type>& logPs, array<Type>& logitFseason, vector<Type>& varAlphaSCB, MortalitySet<Type>& mort, vector<Type> &logssb, vector<Type> &logtsb, vector<Type> &logfsb, vector<Type> &logCatch, vector<Type> &logLand, vector<Type> &logfbar, int noYearsLAI)SOURCE({
     vector<Type> pred(dat.nobs);
     pred.setConstant(R_NegInf);
 
@@ -244,8 +272,9 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     if(par.logitReleaseSurvival.size()>0){
       releaseSurvival=invlogit(par.logitReleaseSurvival);
       for(int j=0; j<dat.nobs; ++j){
-	if(!isNAINT(dat.aux(j,7))){
-	  releaseSurvivalVec(j)=releaseSurvival(dat.aux(j,7)-1);
+	int indx = CppAD::Integer(dat.auxData(j,4));
+	if(!isNAINT(indx) && dat.fleetTypes(dat.aux(j,1)-1) == 5){
+	  releaseSurvivalVec(j)=releaseSurvival(indx-1);
 	}
       }
     }
@@ -255,12 +284,11 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     // int minYear=dat.aux(0,0);
     // Type logzz=Type(R_NegInf);
     for(int i=0;i<dat.nobs;i++){
-      Type tagv1 = 0.0;
-      Type tagv2 = 0.0;
-      if(dat.aux.cols() >= 7){
-	tagv1 = dat.aux(i,5);
-	tagv2 = dat.aux(i,6);
-      }
+
+      vector<Type> auxData(dat.auxData.cols());
+      for(int q = 0; q < auxData.size(); ++q)
+	auxData(q) = dat.auxData(i,q);
+      
       int y = dat.aux(i,0)-dat.aux(0,0);
       Type lfsb = R_NaReal;
       if(y < logfsb.size())
@@ -283,17 +311,19 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 			   logF,
 			   logN,
 			   logPs,
+			   logitFseason,
 			   varAlphaSCB,
 			   mort,
 			   logssb(y),
-			   logtsb(dat.aux(i,0)-dat.aux(0,0)),
+			   logtsb(y),
 			   lfsb,
 			   lctch,
 			   lland,
 			   logfbar(y),
-			   tagv1,
-			   tagv2,	     
-			   releaseSurvivalVec(i) // releaseSurvival
+			   // tagv1,
+			   // tagv2,	     
+			   releaseSurvivalVec(i), // releaseSurvival
+			   auxData
 			   );
 
     }
@@ -301,5 +331,5 @@ vector<Type> predObsFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
     return pred;
   });
 
-SAM_SPECIALIZATION(vector<double> predObsFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, array<double>&, vector<double>&, MortalitySet<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, int));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> predObsFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int));
+SAM_SPECIALIZATION(vector<double> predObsFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, array<double>&, array<double>&, vector<double>&, MortalitySet<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, vector<double>&, int));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> predObsFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int));
