@@ -61,6 +61,7 @@ struct dataSet{
   vector<int> minWeek;
   vector<int> maxWeek;
   array<int> aux;
+  array<Type> auxData;
   vector<Type> logobs;
   vector<Type> weight;
   // data_indicator<vector<Type>,Type> keep;
@@ -92,6 +93,7 @@ struct dataSet{
     minWeek(),
     maxWeek(),
     aux(),
+    auxData(),
     logobs(),		
     weight(),  // Good
     propMat(), //(x.propMat),
@@ -125,6 +127,7 @@ struct dataSet{
     minWeek(x.minWeek),
     maxWeek(x.maxWeek),
     aux(x.aux, x.aux.dim),
+    auxData(x.auxData, x.auxData.dim),
     logobs(x.logobs),		
     weight(x.weight),  // Good
     propMat(x.propMat,x.propMat.dim), //(x.propMat),
@@ -160,6 +163,7 @@ SOURCE(
       minWeek = asVector<int>(getListElement(x,"minWeek",  &Rf_isNumeric));
       maxWeek = asVector<int>(getListElement(x,"maxWeek",  &Rf_isNumeric));
       aux = asArray<int>(getListElement(x,"aux", &Rf_isArray));
+      auxData = asArray<Type>(getListElement(x,"auxData", &Rf_isArray));
       logobs = asVector<Type>(getListElement(x,"logobs",  &Rf_isNumeric));
       weight = asVector<Type>(getListElement(x,"weight",  &Rf_isNumeric));
       propMat = asArray<Type>(getListElement(x,"propMat", &Rf_isArray));

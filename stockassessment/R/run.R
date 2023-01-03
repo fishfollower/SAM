@@ -417,6 +417,11 @@ refit <- function(fit, newConf, startingValues, ...){
         update.structure(fit2$conf[[n]], dc[[n]])
     })
     names(fit2$conf) <- nms
+    ## Fix maxAgePlusGroup
+    if(length(fit2$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
+        fit2$conf$maxAgePlusGroup[] <- 0
+        fit2$conf$maxAgePlusGroup[fit2$data$maxAgePerFleet==fit2$conf$maxAge] <- fit$conf$maxAgePlusGroup[1]
+    }
     
     ## Update parameters
     dp <- defpar(fit2$data,fit2$conf)
