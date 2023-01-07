@@ -43,7 +43,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
     if(forecast.simFlag(0) == 0){
       Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
       logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
-      mort.updateYear(dat,conf,par,logF, logitFseason,indx);
+      mort.updateYear(dat, conf, par, logF, logitFseason,indx);
     }
     // Simulate N
     if(forecast.simFlag(1) == 0){

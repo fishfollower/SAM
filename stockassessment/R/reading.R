@@ -459,8 +459,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
       }else{
         ret <- array(fill, dim=c(yd,ad,fd), dimnames=list(yn,an,fn))
       }
-    }
-    if(length(dim(X))==2){ # matrix or data.frame
+    }else if(length(dim(X))==2){ # matrix or data.frame
       if(dim(X)[1]!=yd) stop(paste("Please check year range of", substitute(X)))
       if(dim(X)[2]!=ad) stop(paste("Please check age range of", substitute(X)))
       ret <- array(X, dim=c(yd,ad,fd), dimnames=list(yn,an,fn))
@@ -478,7 +477,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   prop.f <- d3verify(prop.f, yd=ydim2, ad=adim2, yn=ynam2, an=anam2, fill=0)
 
   if(is.null(prop.m)){
-    prop.m<-matrix(0,nrow=nrow(residual.fleets), ncol=ncol(residual.fleets)) 
+    prop.m<-matrix(0,nrow=ydim2, ncol=adim2,dimnames=list(ynam2,anam2)) 
   }
     
   dat$aux[which(dat$aux<=0)] <- NA_integer_
@@ -564,12 +563,13 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
         if(!is.list(aux.fleets))
             aux.fleets <- list(aux.fleets)
         lapply(aux.fleets, dooneAUX)
+        name<-c(name,paste0("Auxiliary fleet ", 1:length(aux.fleets)))
     }
 
   cc <- which(complete.cases(dat[,1:3])==T | (dat[,2] %in% type == 80))
   ccc<- which(complete.cases(dat[,1:4])==F & dat[,2] %in% which(type==6))
   keep <- cc[which(!cc %in% ccc)]
-        dat<-dat[keep,]
+    dat<-dat[keep,]
   
   o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
   attr(dat,'type')<-type

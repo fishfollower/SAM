@@ -217,18 +217,22 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      SAM_ASSERT(auxData.size() >= 6,"aux is not large enough for fleet type 80");
 		      Type Ctotal = 0.0;
 		      Type Cseason = 0.0;
-		      for(int aa = 0; aa < (conf.maxAge-conf.minAge + 1); ++aa){
-			Type Cttmp = exp(logN(a,y)) * mort.totalCIF(dat,conf,par,logF,CppAD::Integer(auxData(0))-1,aa,y);
-			Type Cstmp = exp(logN(a,y)) * mort.partialCIF(dat,conf,par,logF, logitFseason,CppAD::Integer(auxData(0))-1,aa,y, auxData(1), auxData(2));
-			if(CppAD::Integer(auxData(3)) == 1){ // Catch weight
-			  Cttmp *= dat.catchMeanWeight(y,aa);
-			  Cstmp *= dat.catchMeanWeight(y,aa);
-			}else if(CppAD::Integer(auxData(3)) == 2){ // Landing numbers
-			  Cttmp *= dat.landFrac(y,aa);
-			  Cstmp *= dat.landFrac(y,aa);
-			}else if(CppAD::Integer(auxData(3)) == 3){ // Landing weight
-			  Cttmp *= dat.landFrac(y,aa) * dat.landMeanWeight(y,aa);
-			  Cstmp *= dat.landFrac(y,aa) * dat.landMeanWeight(y,aa);
+		      int flt = CppAD::Integer(auxData(0))-1; // TODO: allow auxData(0)==0 to sum over all fleets
+		      int aMin = dat.minAgePerFleet(flt);
+		      int aMax = dat.maxAgePerFleet(flt);
+		      for(int aa = aMin - conf.minAge; aa < aMax - conf.minAge; ++aa){
+		      	Type Cttmp = exp(logN(aa,y)) * mort.CIF(flt,aa,y,Type(0.0),Type(1.0));
+			Type Cstmp = exp(logN(aa,y)) * mort.partialCIF(flt,aa,y, auxData(1), auxData(2));
+			// 0: Catch numbers
+			if(CppAD::Integer(auxData(3)) == 1){ // 1: Catch weight
+			  Cttmp *= dat.catchMeanWeight(y,aa, flt);
+			  Cstmp *= dat.catchMeanWeight(y,aa, flt);
+			}else if(CppAD::Integer(auxData(3)) == 2){ // 2: Landing numbers
+			  Cttmp *= dat.landFrac(y,aa, flt);
+			  Cstmp *= dat.landFrac(y,aa, flt);
+			}else if(CppAD::Integer(auxData(3)) == 3){ // 3: Landing weight
+			  Cttmp *= dat.landFrac(y,aa, flt) * dat.landMeanWeight(y,aa, flt);
+			  Cstmp *= dat.landFrac(y,aa, flt) * dat.landMeanWeight(y,aa, flt);
 			}
 			Ctotal += Cttmp;
 			Cseason += Cstmp;
@@ -241,8 +245,9 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      // aux: (0) catch fleet, (1) this season start, (2) this season end, (3) catch Type (4) season number, (5) number of seasons
 		      SAM_ASSERT(auxData.size() >= 6,"aux is not large enough for fleet type 81");
 		      // Within an age/year, landing fraction and weights are (currently) constant, so catch type is irrelevant
-		      Type v81a = mort.CIF(dat,conf,par,logF,CppAD::Integer(auxData(0))-1,a,y,Type(0.0),Type(1.0));
-		      Type v81b = mort.partialCIF(dat,conf,par,logF,logitFseason,CppAD::Integer(auxData(0))-1,a,y,auxData(1),auxData(2));		      
+		      // TODO: allow auxData(0)==0  to sum over all fleets
+		      Type v81a = mort.CIF(CppAD::Integer(auxData(0))-1,a,y,Type(0.0),Type(1.0));
+		      Type v81b = mort.partialCIF(CppAD::Integer(auxData(0))-1,a,y,auxData(1),auxData(2));		      
 		      pred = log(v81b) - log(v81a);
 		      break;		      
 		      }

@@ -416,7 +416,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  if(dat.sumKey(f,ff)==1){
 		    ++element; 
 		    for(int aa=dat.minAgePerFleet(ff); aa<=dat.maxAgePerFleet(ff); ++aa){
-		      //zz = mort.totalZ(aa-conf.minAge, y); //dat.natMor(y,aa-conf.minAge)+totF(aa-conf.minAge,y);
+		      //zz = dat.natMor(y,aa-conf.minAge)+totF(aa-conf.minAge,y);
 		      Type ci = mort.fleetCumulativeIncidence(aa-conf.minAge,y,ff);
 		      muMat(aa-dat.minAgePerFleet(f),element)= exp(logN(aa-conf.minAge,y)) * ci; //exp(logN(aa-conf.minAge,y)-log(zz)+log(1-exp(-zz))+logF(conf.keyLogFsta(ff,aa-conf.minAge),y));
 		      muSum(aa-dat.minAgePerFleet(f)) += muMat(aa-dat.minAgePerFleet(f),element);
@@ -437,6 +437,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		}
 		REPORT_F(VV,of);
 		combiCov = G.transpose()*VV*G;
+		REPORT_F(combiCov,of);
 		nllVec(f).setSigma(combiCov);
 	      }
 	      // ----------------updating of covariance matrix done
@@ -567,15 +568,18 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      log_X.setZero();
 	      vector<Type> log_P(nSeasons);
 	      log_P.setZero();
+	      vector<Type> Keep(nSeasons);
+	      Keep.setZero();
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
 		log_X(CppAD::Integer(dat.auxData(i,4))-1) = dat.logobs(i);
 		log_P(CppAD::Integer(dat.auxData(i,4))-1) = predObs(i);
+	        Keep(CppAD::Integer(dat.auxData(i,4))-1) = keep(i);
 	      }
 	      log_X(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.segment(0,nSeasons-1)));
 	      log_P(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
 	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
 	      //NOTE: need to handle keep to pass correct part!
-	      nll -= ddirichlet(log_X,log_P,log_alpha,keep.segment(iMin,iMax-iMin+1),true);
+	      nll -= ddirichlet(log_X,log_P,log_alpha,Keep,true);
 	    }
 	  }else if(dat.fleetTypes(f) == 81){ 
 	    if(!isNAINT(dat.idx1(f,y))){
@@ -589,11 +593,14 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      log_X.setZero();
 	      matrix<Type> log_P(nSeasons, maxAge-minAge+1);
 	      log_P.setZero();
+	      matrix<Type> Keep(nSeasons, maxAge-minAge+1);
+	      Keep.setZero();
 	      matrix<int> nObs(nSeasons,maxAge-minAge+1);
 	      nObs.setZero();
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){		
 		log_X(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = dat.logobs(i);
 		log_P(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = predObs(i);
+		Keep(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep(i);
 		nObs(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) += 1;
 	      }
 	      // Sum to one and alpha
@@ -605,12 +612,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  log_P(nSeasons-1,i) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.col(i).segment(0,nSeasons-1)));
 		}
 		log_alpha(i) = par.logSdLogObs(conf.keyVarObs(f,i + minAge - conf.minAge));
-		//NOTE: need to handle keep to pass correct part!
-		nll -= ddirichlet((vector<Type>)log_X.col(i),(vector<Type>)log_P.col(i),(Type)log_alpha(i),keep.segment(iMin,iMax-iMin+1),true);
-		Rcout << y << " - " << i <<"\n";
-		Rcout << ((vector<Type>)log_X.col(i)).exp() <<"\n";
-		Rcout << ((vector<Type>)log_P.col(i)).exp() << "\n";
-		Rcout << exp((Type)log_alpha(i)) << "\n";
+		nll -= ddirichlet((vector<Type>)log_X.col(i),(vector<Type>)log_P.col(i),(Type)log_alpha(i),(vector<Type>)Keep.col(i),true);
 	      }	      	      
 	    }
 	  }else{
