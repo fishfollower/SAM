@@ -44,7 +44,7 @@
     stop("Wrong specification of relative value. Relative values can only specify a fleet")
 }
 
-.parseForecast <- function(s, FbarRange, fleetTypes, ageRange){
+.parseForecast <- function(s, FbarRange, fleetTypes, ageRange, useNonLinearityCorrection){
     nCF <- sum(fleetTypes == 0)
     ## Split constraints
     sL <- strsplit(s,"[[:space:]]*&+[[:space:]]*")
@@ -142,7 +142,8 @@
                           Fcap = hcrConf$FC,
                           Borigin = hcrConf$BO,
                           Bcap = hcrConf$BC,
-                          Btrigger = triggerValue)
+                          Btrigger = triggerValue),
+             useNonLinearityCorrection = as.logical(useNonLinearityCorrection)
              )
     }
     parseOne <- function(ss){
@@ -186,7 +187,8 @@
                   relative = rel,
                   cstr = as.numeric(type)-1,
                   target = target,
-                  settings = c(compareLag = lag))
+                  settings = c(compareLag = lag),
+                  useNonLinearityCorrection = as.logical(useNonLinearityCorrection))
         v
     }
     cstr <- lapply(sL,function(x)lapply(x,parseOne))
@@ -205,7 +207,8 @@
              relative = as.numeric(f2)-1,
              cstr = as.numeric(factor("KeepRelF",forecastEnum))-1,
              target = 0,
-             settings = c(compareLag = 1))  
+             settings = c(compareLag = 1),
+             useNonLinearityCorrection = as.logical(useNonLinearityCorrection))  
     }
     cToAdd <- lapply(ft,function(x){
         ii <- unname(which(x[-1]==0))
@@ -259,6 +262,7 @@ modelforecast <- function(fit, ...){
 ##' @param silent Passed to MakeADFun. Should the TMB object be silent?
 ##' @param newton_config Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.
 ##' @param custom_pl Parameter list. By default, the parameter list from fit is used.
+##' @param useNonLinearityCorrection Should a non linearity correction be added to transformation of logF? See Details - Non-linearity correction.
 ##' @details
 ##' Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process for each simulation. Therefore, catch constraints are not matched exactly in individual simulations. Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
 ##' By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
@@ -348,8 +352,9 @@ modelforecast <- function(fit, ...){
 ##' ##' \subsection{Process variability:}{
 ##' In the forecast, constraints are used to set the predicted F value in year y based on information available until year y-1. Therefore, constraints using predicted values for year y, such as catch, will not be matched exactly by the realized catch due to process variability in F, N, biological processes and catch itself.
 ##'}
+##'
+##' @section Non-linearity correction:
 ##' 
-
 ##' 
 ##' @section Old specification:
 ##' It is also possible to specify forecast constraints in a way similar to the \link{forecast} function. 
@@ -402,6 +407,7 @@ modelforecast.sam <- function(fit,
                               silent = TRUE,
                               newton_config = NULL,
                               custom_pl = NULL,
+                              useNonLinearityCorrection = FALSE,
                               ...
                               ){
     ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
@@ -532,7 +538,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     
     nYears <- length(constraints)
     cstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
-    cstr[!is.na(constraints)] <- .parseForecast(constraints[!is.na(constraints)], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge))
+    cstr[!is.na(constraints)] <- .parseForecast(constraints[!is.na(constraints)], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)
 
     ## Use custom selectivity?
     if(is.null(customSel)){
@@ -693,7 +699,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             if(!is.null(re_constraint)){
                 ## Check length of constraints?
                 cstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
-                cstr[!is.na(re_constraint)] <- .parseForecast(re_constraint[!is.na(re_constraint)], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge))                
+                cstr[!is.na(re_constraint)] <- .parseForecast(re_constraint[!is.na(re_constraint)], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)                
                 obj2$env$data$forecast$constraints <- cstr
             }
             sim0 <- est 
@@ -805,6 +811,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist, "nosim") <- nosim
         class(simlist) <- "samforecast"
         attr(simlist,"estimateLabel") <- estimateLabel
+        attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
         ## Done with reporting
         incpb()
         if(progress)
@@ -925,6 +932,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist,"nosim") <- 0
         class(simlist) <- "samforecast"
         attr(simlist,"estimateLabel") <- estimateLabel
+        attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
         return(simlist)    
     }
 }

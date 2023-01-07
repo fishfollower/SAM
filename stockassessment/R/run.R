@@ -377,6 +377,7 @@ refit <- function(fit, newConf, startingValues, ...){
     }else{
         stop("fit must be a sam fit or the name of a fit from stockassessment.org")
     }
+    fit <- fit2
     if(is.null(fit2$data$minWeek)){
         fit2$data$minWeek <- -1
     }
@@ -393,8 +394,13 @@ refit <- function(fit, newConf, startingValues, ...){
         fit2$data$sampleTimesStart <- ifelse(fit2$data$fleetTypes == 0, 0, fit2$data$sampleTimes)
     if(is.null(fit2$data$sampleTimesEnd))
         fit2$data$sampleTimesEnd <- ifelse(fit2$data$fleetTypes == 0, 1, fit2$data$sampleTimes)
-    if(is.null(fit2$data$auxData))      #Will not work for tagging data!
-        fit2$data$auxData <- matrix(NA_real_,nrow(fit2$data$aux),0)
+    if(is.null(fit2$data$auxData))
+        if(ncol(fit2$data$aux) > 3){
+            fit2$data$auxData <- fit2$data$aux[,-(1:3),drop=FALSE]
+            fit2$data$aux <- fit2$data$aux[,(1:3),drop=FALSE]            
+        }else{
+            fit2$data$auxData <- matrix(NA_real_,nrow(fit2$data$aux),0)
+        }
 
                 
     toArray <- function(x){
@@ -420,7 +426,7 @@ refit <- function(fit, newConf, startingValues, ...){
     })
     names(fit2$conf) <- nms
     ## Fix maxAgePlusGroup
-    if(length(fit2$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
+    if(length(fit$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
         fit2$conf$maxAgePlusGroup[] <- 0
         fit2$conf$maxAgePlusGroup[fit2$data$maxAgePerFleet==fit2$conf$maxAge] <- fit$conf$maxAgePlusGroup[1]
     }

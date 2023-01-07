@@ -8,7 +8,8 @@ namespace rec_atomic {
   T logspace_add2_raw (const T &logx, const T &logy) {
     // Was:
     //  fmax2 (logx, logy) + log1p (exp (-fabs (logx - logy)));
-    if(logx == logy)
+    //if(logx == logy)
+    if(fabs(logx - logy) < 1e-16)
       return 2.0 + logx;
     if(logx == R_NegInf)
       return(logy);
@@ -26,12 +27,14 @@ namespace rec_atomic {
 
   template<class T>
   T logspace_sub2_raw (const T &logx, const T &logy) {
-    if(logx == logy)
+    if(fabs(logx - logy) <= 1e-8)
       return R_NegInf;
     if(logy == R_NegInf)
       return(logx);
-    if(logx < logy)
-      Rf_error("logx < logy in logspace_sub2");
+    if(logx < logy+1e-8){
+      Rf_warning("logx < logy in logspace_sub2 (logx=%.9f, logy=%.9f, fabs=%.9f)",logx,logy,(logx-logy));
+      return(R_NaReal);
+    }
     return logx + atomic::robust_utils::R_Log1_Exp(logy - logx);
   }
 

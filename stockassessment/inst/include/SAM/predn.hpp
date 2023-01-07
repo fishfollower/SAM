@@ -49,11 +49,11 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   }
 		       
   for(int j=1; j<stateDimN; ++j){
-    predN(j)=logN(j-1,i-1) - mort.totalZ(j-1,i-1); //totF(j-1,i-1)-dat.natMor(i-1,j-1); 
+    predN(j)=logN(j-1,i-1) - mort.cumulativeHazard(j-1,i-1); //totF(j-1,i-1)-dat.natMor(i-1,j-1); 
   }
   if(conf.maxAgePlusGroup(0)==1){// plusgroup adjustment if catches need them 
     Type v1 = predN(stateDimN-1); // Already updated above
-    Type v2 = logN(stateDimN-1,i-1) - mort.totalZ(stateDimN-1,i-1); //totF(stateDimN-1,i-1) - dat.natMor(i-1,stateDimN-1); // Remaining in plus group from last year
+    Type v2 = logN(stateDimN-1,i-1) - mort.cumulativeHazard(stateDimN-1,i-1); //totF(stateDimN-1,i-1) - dat.natMor(i-1,stateDimN-1); // Remaining in plus group from last year
     predN(stateDimN-1) = logspace_add_SAM(v1,v2);
   }
 
