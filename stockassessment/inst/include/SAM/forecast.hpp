@@ -339,7 +339,6 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
   // Correct input selectivity to have Fbar == 1
   Type inputFbar = 0.0;
   if(forecast.selectivity.size() > 0){
-    // Rcout << "Using custom selectivity!\n";
     for(int a = fbarFirst; a <= fbarLast; ++a){  
       if(forecast.selectivity.size() == logF.rows()){
 	for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
