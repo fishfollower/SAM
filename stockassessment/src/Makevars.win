@@ -7,13 +7,12 @@ SRC_FILES = $(filter-out $(wildcard A_*.cpp),$(wildcard *.cpp))
 
 OBJECTS = $(SAM_SRC:.cpp=.o) $(SRC_FILES:.cpp=.o)
 
-
-all: $(SAM_SRC) $(SAM_HEADER) SAM.h $(SHLIB)
-
 writeToFile = echo $(2) $(1)
 fileToFile = cat $(2) $(1)
 
-all: $(SAM_SRC) $(SAM_HEADER) SAM.h $(SHLIB)
+all: $(SHLIB)
+$(SHLIB): $(SAM_SRC) $(SAM_HEADER) SAM.h
+
 
 ./A_%.h: ../inst/include/SAM/%.hpp
 	@echo Generating $@

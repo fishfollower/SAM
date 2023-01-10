@@ -75,6 +75,7 @@ struct MortalitySet {
   
   // TODO: Switch to log-scale calculations?
   matrix<Type> cumulativeHazard;		// age x year
+  array<Type> cumulativeHazard_F;		// age x year x fleet
   // matrix<Type> totalF;
   // array<Type> totalZseason;	// season x age x year
   // array<Type> totalFseason;
@@ -97,6 +98,7 @@ struct MortalitySet {
   
   inline MortalitySet():
     cumulativeHazard(),
+    cumulativeHazard_F(),
     // totalF(),
     // totalZseason(),
     // totalFseason(),
@@ -117,6 +119,7 @@ struct MortalitySet {
   
   template<class T>
   inline MortalitySet(const MortalitySet<T> x) : cumulativeHazard(x.cumulativeHazard),
+						 cumulativeHazard_F(x.cumulativeHazard_F),
 						 // totalF(x.totalF),
 						 // totalZseason(x.totalZseason),
 						 // totalFseason(x.totalFseason),
@@ -181,6 +184,8 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<
 
   vector<Type> tmpCumHaz(nAges);
   tmpCumHaz.setZero();
+  matrix<Type> tmpCumHaz_F(nAges,nFleet);
+  tmpCumHaz_F.setZero();
   for(int i = 0; i < nIntervals; ++i){
     int s = activeHazard_season(i);
     Type dt = activeHazard_breakpoints[i+1] - activeHazard_breakpoints[i];
@@ -200,8 +205,10 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<
 	    logFs += Fseason(s,y,j+1);
 	  Hazard_breakpoints(a,y,i) += exp(logFs);
 	  Hazard_F_breakpoints(a,y,f,i) += exp(logFs);
+	  tmpCumHaz_F(a,f) += Hazard_F_breakpoints(a,y,f,i) * dt;
 	}
       }
+      tmpCumHaz(a) += Hazard_breakpoints(a,y,i) * dt;
       // Calculate CIF M
       CIF_M_breakpoints(a,y,0,i) = 0.0;
       if(activeHazard_M(i,a,0))
@@ -218,11 +225,12 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<
 	  CIF_F_breakpoints(a,y,f,i) = exp(logFs) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
 	}
       }
-      tmpCumHaz(a) += Hazard_breakpoints(a,y,i) * dt;
     }
   }
   for(int a = 0; a < nAges; ++a){
     cumulativeHazard(a,y) = tmpCumHaz(a);
+    for(int f = 0; f < nFleet; ++f)
+      cumulativeHazard_F(a,y,f) = tmpCumHaz_F(a,f);
   }
   return;
 }
@@ -248,60 +256,6 @@ SOURCE(
 	   logS0 -= Hazard_breakpoints(a,y,i) * (Aend - Astart);
 	 }
 	 return logS0;
-	 // // Survival until t
-	 // int nFleet = conf.keyLogFsta.dim(0);
-	 // // int nAge = conf.keyLogFsta.dim(1);
-	 // // int nYear = dat.natMor.dim(0);
-	 // int nSeason = conf.seasonTimes.size()-1;
-	 // Type logS0 = 0.0;
-	 // for(int s = 0; s < nSeason; ++s){	   
-	 //   if(conf.seasonTimes(s+1) < t){
-	 //     // If season ends before t0, add full period hazard
-	 //     logS0 -= totalZseason(s,a,y);
-	 //   }else if(conf.seasonTimes(s) > t){
-	 //     // If season starts after t0, do nothing
-	 //   }else{
-	 //     // If season ends after t0 and starts before t0
-	 //     // Natural mortality for period
-	 //     //logS0 -= dat.natMor(y,a) * (std::min((Type)t,(Type)conf.seasonTimes(s+1)) - conf.seasonTimes(s));
-	 //     logS0 -= dat.natMor(y,a) * (t - conf.seasonTimes(s));
-	 //     if(conf.isFishingSeason(s)){
-	 //       // Loop over fleets
-	 //       for(int f = 0; f < nFleet; ++f){
-	 // 	 int i = conf.keyLogFsta(f,a);
-	 // 	 if(i > (-1)){
-	 // 	   int j = conf.keyLogFseason(f,a);
-	 // 	   // If fleet starts before t0
-	 // 	   if((Type)dat.sampleTimesStart(f) < t){
-	 // 	     // Start time is maximum of season and fleet start (no parameters)
-	 // 	     Type As = std::max((Type)conf.seasonTimes(s),(Type)dat.sampleTimesStart(f));
-	 // 	     // End time is minimum of fleet end and t0 (no parameters)
-	 // 	     Type Ae = std::min((Type)t,(Type)dat.sampleTimesEnd(f));
-	 // 	     logS0 -= exp(logF(i,y) + Fseason(s,y,j+1)) * (Ae - As);
-
-	 // 	     /*
-	 // 	   // If fleet overlaps season
-	 // 	   // If season does not end before fleet starts
-	 // 	   // and season does not start before fleet ends
-	 // 	   if(!(conf.seasonTimes(s+1) <= (Type)dat.sampleTimesStart(f)) &&
-	 // 	      !(conf.seasonTimes(s) >= dat.sampleTimesEnd(f))){
-	 // 	     // Fleet/Season Start time is maximum of season and fleet start (no parameters)
-	 // 	     Type As = std::max((Type)conf.seasonTimes(s),(Type)dat.sampleTimesStart(f));
-	 // 	     // Fleet/Season Start time is maximum of season and fleet start (no parameters)
-	 // 	     Type Ae = std::min((Type)conf.seasonTimes(s),(Type)dat.sampleTimesEnd(f));
-	 // 	     if(As < t){ // If fleet starts before t
-	 // 	       // End time is minimum of fleet/season end and t0 (no parameters)
-	 // 	       Ae = std::min((Type)t,(Type)Ae);
-	 // 	       logS0 -= exp(logF(i,y) + Fseason(s,y,j+1)) * (Ae - As);
-	 // 	     }
-	 // 	     */
-	 // 	   }
-	 // 	 }
-	 //       }
-	 //     }
-	 //   }
-	 // }
-	 // return logS0;
        }
        )
 
@@ -343,69 +297,6 @@ SOURCE(
 	   logS0 -= Hazard_breakpoints(a,y,i) * (Aend - Astart);
 	 }
 	 return vCIF;
-
-
-	 
-       // 	 int nFleet = conf.keyLogFsta.dim(0);
-       // 	 // int nAge = conf.keyLogFsta.dim(1);
-       // 	 // int nYear = dat.natMor.dim(0);
-       // 	 int nSeason = conf.seasonTimes.size()-1;
-       // 	 Type vCIF = 0.0;
-       // 	 Type logPS = 0.0;
-       // 	 int i = conf.keyLogFsta(fleet,a);
-       // 	 if(i < 0)
-       // 	   return 0.0;
-       // 	 int j = conf.keyLogFseason(fleet,a);
-       // 	 Type STS = std::max(t0,dat.sampleTimesStart(fleet));
-       // 	 Type STE = std::min(t1,dat.sampleTimesEnd(fleet));
-       // 	 for(int s = 0; s < nSeason; ++s){
-       // 	   // Survival * F / Z * (1-exp(-Z*dt))
-       // 	   // If season does not end before fleet starts
-       // 	   // and season does not start before fleet ends
-       // 	   if(!(conf.seasonTimes(s+1) <= STS) &&
-       // 	      !(conf.seasonTimes(s) >= STE)){
-       // 	     // Start time is maximum of season and fleet start (no parameters)
-       // 	     Type As = std::max((Type)conf.seasonTimes(s),(Type)STS);
-       // 	     // End time is minimum of seson and fleet end (no parameters)
-       // 	     Type Ae = std::min((Type)conf.seasonTimes(s+1),(Type)STE);
-       // 	     Type logFs = logF(i,y) + Fseason(s,y,j+1);
-       // 	     if((Type)conf.seasonTimes(s) > (Type)STS &&
-       // 		(Type)STE > (Type)conf.seasonTimes(s+1)){
-       // 	       // Full season (totalZseason is already scaled in time
-       // 	       if(conf.isFishingSeason(s) && Ae > As)
-       // 		 vCIF += exp(logPS + logFs - log(totalZseason(s,a,y))) * (1.0 - exp(-totalZseason(s,a,y))); // * (Ae-As)));
-       // 	       logPS -= totalZseason(s,a,y);// * (Ae-As);
-       // 	     }else{
-       // 	       // Find Z for this part of season
-       // 	       // NOTE: A loop is needed to account for fleets with zero F in part of season!
-       // 	       Type dt = Ae - As;
-       // 	       Type tmpZ = dat.natMor(y,a) * dt;
-       // 	       if(conf.isFishingSeason(s)){
-       // 		 for(int ff = 0; ff < nFleet; ++ff){
-       // 		   int ii = conf.keyLogFsta(ff,a);
-       // 		   Type STSs = std::max(t0,dat.sampleTimesStart(ff));
-       // 		   Type STEs = std::min(t1,dat.sampleTimesEnd(ff));		     
-       // 		   if(ii > (-1) &&
-       // 		      (!(conf.seasonTimes(s+1) <= STS) &&
-       // 		       !(conf.seasonTimes(s) >= STE))){
-       // 		     int jj = conf.keyLogFseason(ff,a);
-       // 		     // Start time is maximum of season and fleet start (no parameters)
-       // 		     Type Ass = std::max(As,STSs);
-       // 		     // End time is minimum of season and fleet end (no parameters)
-       // 		     Type Aee = std::min(Ae,STEs);
-       // 		     Type Fs = exp(logF(ii,y) + Fseason(s,y,jj+1)) * (Aee - Ass);
-       // 		     if(conf.isFishingSeason(s))
-       // 		       tmpZ += Fs;
-       // 		   }
-       // 		 }
-       // 		 //if(dat.natMor(y,a) > 0)
-       // 		 vCIF += exp(logPS + logFs - log(tmpZ)) * (1.0 - exp(-tmpZ * (Ae-As)));
-       // 	       }
-       // 	       logPS -= tmpZ;	       
-       // 	     }
-       // 	     }
-       // 	 }
-       // 	 return vCIF;
        }
        )
 
@@ -414,10 +305,6 @@ SOURCE(
        template<class Type>
        Type MortalitySet<Type>::partialCIF(int fleet, int a, int y, Type t0, Type t1){
 	 // Probability of survival until t0 and dying from fishing in (t0,t1)
-	 // int nFleet = conf.keyLogFsta.dim(0);
-	 // int nAge = conf.keyLogFsta.dim(1);
-	 // int nYear = dat.natMor.dim(0);
-	 // int nSeason = conf.seasonTimes.size()-1;
 	 Type logS0 = this->logSurvival(a,y,(Type)0.0,t0);
 	 Type vCIF = this->CIF(fleet,a,y,t0,t1);
 	 return exp(logS0) * vCIF;
@@ -429,6 +316,7 @@ SOURCE(
 	 template<class Type>
 	 MortalitySet<Type>::MortalitySet(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason) :
 	 cumulativeHazard(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 cumulativeHazard_F(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
 	 // totalF(totFFun(dat,conf,logF).matrix()),
 	 // totalZseason(conf.seasonTimes.size()-1, conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 // totalFseason(conf.seasonTimes.size()-1, conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
@@ -449,6 +337,7 @@ SOURCE(
 	 {
 	   int nYear = dat.natMor.dim(0);
 	   cumulativeHazard.setZero();
+	   cumulativeHazard_F.setZero();
 	   Fseason.setZero();
 	   // totalZseason.setZero();
 	   // totalFseason.setZero();
@@ -464,8 +353,11 @@ SOURCE(
 	   ahb_tmp.push_back(1.0);
 	   // Fleets
 	   for(int f = 0; f < dat.sampleTimesStart.size(); ++f){
-	     ahb_tmp.push_back(dat.sampleTimesStart(f));
-	     ahb_tmp.push_back(dat.sampleTimesEnd(f));
+	     // only changes hazards if fleet type is 0
+	     if(dat.fleetTypes(f) == 0){
+	       ahb_tmp.push_back(dat.sampleTimesStart(f));
+	       ahb_tmp.push_back(dat.sampleTimesEnd(f));
+	     }
 	   }
 	   // Seasons
 	   for(int s = 0; s < conf.seasonTimes.size(); ++s){

@@ -176,7 +176,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
   PARAMETER_VECTOR(meanLogSW); paraset.meanLogSW=meanLogSW;
   PARAMETER_VECTOR(logSdLogSW); paraset.logSdLogSW=logSdLogSW;
-  PARAMETER_VECTOR(logPhiCW); paraset.logPhiCW=logPhiCW;
+  PARAMETER_MATRIX(logPhiCW); paraset.logPhiCW=logPhiCW;
   PARAMETER_VECTOR(logSdProcLogCW); paraset.logSdProcLogCW=logSdProcLogCW;
   PARAMETER_VECTOR(meanLogCW); paraset.meanLogCW=meanLogCW;
   PARAMETER_VECTOR(logSdLogCW); paraset.logSdLogCW=logSdLogCW;
@@ -259,24 +259,7 @@ Type objective_function<Type>::operator() ()
   // Prepare Laplace trajectory forecast
   MortalitySet<Type> mort(dataset, confset, paraset, logF, logitFseason);
 
-  REPORT(mort.cumulativeHazard);
-  // REPORT(mort.totalF);
-  // REPORT(mort.totalZseason);
-  // REPORT(mort.totalFseason);
-  REPORT(mort.logFleetSurvival_before);
-  REPORT(mort.fleetCumulativeIncidence);
-  REPORT(mort.otherCumulativeIncidence);
-  REPORT(mort.ssbSurvival_before);
-  REPORT(mort.Fseason);
-  vector<Type> brk(mort.activeHazard_breakpoints);
-  REPORT(brk);
-  REPORT(mort.activeHazard_season);
-  REPORT(mort.activeHazard_F);
-  REPORT(mort.activeHazard_M);
-  REPORT(mort.Hazard_breakpoints);
-  REPORT(mort.CIF_F_breakpoints);
-  REPORT(mort.CIF_M_breakpoints);
-  
+ 
   forecast.calculateForecast(logF,logN,logitFseason, dataset, confset, paraset, recruit, mort);
 
   ans += nllP(confset, paraset, logP, keep, this);
@@ -300,6 +283,23 @@ Type objective_function<Type>::operator() ()
   
   reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
 
+  REPORT(mort.cumulativeHazard);
+  REPORT(mort.cumulativeHazard_F);
+  REPORT(mort.logFleetSurvival_before);
+  REPORT(mort.fleetCumulativeIncidence);
+  REPORT(mort.otherCumulativeIncidence);
+  REPORT(mort.ssbSurvival_before);
+  REPORT(mort.Fseason);
+  vector<Type> brk(mort.activeHazard_breakpoints);
+  REPORT(brk);
+  REPORT(mort.activeHazard_season);
+  REPORT(mort.activeHazard_F);
+  REPORT(mort.activeHazard_M);
+  REPORT(mort.Hazard_breakpoints);
+  REPORT(mort.CIF_F_breakpoints);
+  REPORT(mort.CIF_M_breakpoints);
+  
+  
 
   return ans;
 }
