@@ -413,24 +413,32 @@ refit <- function(fit, newConf, startingValues, ...){
     fit2$data$catchMeanWeight <- toArray(fit2$data$catchMeanWeight)
     fit2$data$landFrac <- toArray(fit2$data$landFrac)
     fit2$data$propF <- toArray(fit2$data$propF)
+
+    ## Fix maxAgePlusGroup
+    if(length(fit$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
+        fit2$conf$maxAgePlusGroup[] <- 0
+        fit2$conf$maxAgePlusGroup[fit2$data$maxAgePerFleet==fit2$conf$maxAge] <- fit$conf$maxAgePlusGroup[1]
+    }   
+
     
     if(!missing(newConf))
         fit2$conf[names(newConf)] <- newConf
+    
     ## Add missing parts from defcon
     dc <- defcon(fit2$data)
     nm <- setdiff(names(dc),names(fit2$conf))
     fit2$conf[nm] <- dc[nm]
     nms <- names(fit2$conf)
     fit2$conf <- lapply(nms, function(n){
-        update.structure(fit2$conf[[n]], dc[[n]])
+        if(n %in% c("keyScaledYears","keyParScaledYA"))
+            return(fit2$conf[[n]])
+        if(length(fit2$conf[[n]]) == length(dc[[n]]))
+            return(update.structure(fit2$conf[[n]], dc[[n]]))
+        warning(sprintf("%s has different length than default configuration. Ensure this is correct.",n))
+        return(fit2$conf[[n]])
     })
     names(fit2$conf) <- nms
-    ## Fix maxAgePlusGroup
-    if(length(fit$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
-        fit2$conf$maxAgePlusGroup[] <- 0
-        fit2$conf$maxAgePlusGroup[fit2$data$maxAgePerFleet==fit2$conf$maxAge] <- fit$conf$maxAgePlusGroup[1]
-    }
-    
+  
     ## Update parameters
     dp <- defpar(fit2$data,fit2$conf)
     for(i in intersect(names(dp),names(fit2$pl)))
