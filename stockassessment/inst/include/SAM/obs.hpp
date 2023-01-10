@@ -553,7 +553,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }else if(dat.fleetTypes(f)==80){
 	    if(!isNAINT(dat.idx1(f,y))){	    
 	      int iMin = dat.idx1(f,y);
-	      int iMax = dat.idx2(f,y);
+	      // int iMax = dat.idx2(f,y);
 	      // Setup response and prediction vectors
 	      int nSeasons = CppAD::Integer(dat.auxData(iMin,5));
 	      vector<Type> log_X(nSeasons);
