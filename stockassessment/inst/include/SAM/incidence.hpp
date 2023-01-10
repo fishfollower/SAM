@@ -156,7 +156,7 @@ SOURCE(
        template<class Type>
        void MortalitySet<Type>::updateSeasons(confSet& conf, array<Type>& logitFseason, int y){
 	 //Fseason.setZero();
-	 Type NFseason = conf.isFishingSeason.sum();
+	 // Type NFseason = conf.isFishingSeason.sum();
 	 // If no season info, use constant (i.e. 0)
 	 for(int s = 0; s < Fseason.dim(0); ++s){
 	   Fseason(s,y,0) = 0.0; //(Type)log(conf.isFishingSeason(s)) - log(NFseason);
@@ -434,7 +434,7 @@ SOURCE(
 	 int nFleet = conf.keyLogFsta.dim(0);
 	 int nAge = conf.keyLogFsta.dim(1);
 	 int nYear = dat.natMor.dim(0);
-	 int nSeason = conf.seasonTimes.size()-1;
+	 // int nSeason = conf.seasonTimes.size()-1;
 	 if(y > nYear || y < 0)
 	   Rf_error("MortalitySet.updateYear: Year not in range");
 
