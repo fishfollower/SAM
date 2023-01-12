@@ -45,8 +45,22 @@ AC_ARG_ENABLE(compileunits,
 	[AS_IF([test $enableval = "yes"],[HEADERONLY="yes"],[HEADERONLY="no"])],
 	[HEADERONLY="no"])
 
+
 AS_IF([test ${HEADERONLY} = "yes"],[AC_MSG_NOTICE([Compiling using header only library])],[AC_MSG_NOTICE([Compiling using compilation units])])
 
+
+: ${R_HOME=`R RHOME`}
+if test -z "${R_HOME}"; then
+  echo "could not determine R_HOME"
+  exit 1
+fi
+dnl NOTE: There is an issue if TMB is precompiled with CppAD
+AC_MSG_NOTICE([${R_HOME}])
+PRECOMPILE=`${R_HOME}/bin/Rscript -e "v<-if(file.size(system.file('include/precompile.hpp',package='TMB'))>0){cat('-DTMB_ALREADY_PRECOMPILED')}else{cat('')}"`
+
+AC_MSG_NOTICE([${PRECOMPILE}])
+
+AS_IF([test -z "${PRECOMPILE}"],[AC_MSG_NOTICE([TMB pre-compilation not found])],[AC_MSG_NOTICE([Using TMB pre-compilation])])
 
 
 
@@ -54,6 +68,7 @@ AC_SUBST(CXX14)
 AC_SUBST(CXX14PICFLAGS)
 AC_SUBST(DBG)
 AC_SUBST(HEADERONLY)
+AC_SUBST(PRECOMPILE)
 AC_CONFIG_FILES([src/Makevars])
 
 

@@ -1789,7 +1789,7 @@ if test -z "${R_HOME}"; then
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: ${R_HOME}" >&5
 printf "%s\n" "$as_me: ${R_HOME}" >&6;}
-PRECOMPILE=`${R_HOME}/bin/Rscript -e "v<-if(file.size(system.file('include/precompile.hpp',package='TMB'))>0){cat('-DTMB_ALREADY_PRECOMPILED')}else{cat('')}"`
+PRECOMPILE=`${R_HOME}/bin/Rscript -e "v<-if(file.size(system.file('include/precompile.hpp',package='TMB'))>0){cat('-DTMB_PRECOMPILE')}else{cat('')}"`
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: ${PRECOMPILE}" >&5
 printf "%s\n" "$as_me: ${PRECOMPILE}" >&6;}
