@@ -354,7 +354,9 @@ modelforecast <- function(fit, ...){
 ##'}
 ##'
 ##' @section Non-linearity correction:
-##' 
+##' In the model forecasts, constraints are calculated to set the mean of the log(F) process, corresponding to the median F-at-ages. Typically, the constraints are non-linear functions of log(F)-at-age. Therefore, when stochasticity is added to log(F) (i.e., deterministicF=FALSE), target values will correspond to a transformation of the median, and not the median of the transformation. For example, a target for the average fishing mortality (Fbar) will correspond to the average of the median F at age, which will be different from the median Fbar.
+##'
+##' The "useNonLinearityCorrection" argument can be used to shift the target from a function of the mean log(F) (median F) towards the log-mean of the function of log(F), which is approximately the median of the function of log(F). 
 ##' 
 ##' @section Old specification:
 ##' It is also possible to specify forecast constraints in a way similar to the \link{forecast} function. 
@@ -407,7 +409,7 @@ modelforecast.sam <- function(fit,
                               silent = TRUE,
                               newton_config = NULL,
                               custom_pl = NULL,
-                              useNonLinearityCorrection = FALSE,
+                              useNonLinearityCorrection = (nosim > 0 && !deterministicF),
                               ...
                               ){
     ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
