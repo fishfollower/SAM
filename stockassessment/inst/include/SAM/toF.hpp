@@ -351,8 +351,12 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	  return trgt;
 
       }else if(cstr.cstr == ConstraintType::Constrain_KeepRelF){
-	// Handled elsewhere
-	return 0.0;
+	SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total");
+	SAM_ASSERT(cstr.relative >= 0 && cstr.fleet != cstr.relative, "Keep relative can only be used relative to other fleets in same year");
+	vector<ad> lastLogF = historicalLogF.col(y-compareLag);   
+	// Previous F values
+	vector<ad> lastFleetLogFbar = getFleetLogFbar(dat, conf, cFleets, lastLogF, cstr.Amin, cstr.Amax);	
+	return (lastFleetLogFbar(cstr.fleet) - lastFleetLogFbar(cstr.relative));
 
       }else if(cstr.cstr == ConstraintType::Constrain_HCR){
 	// Give error if the relative flag makes it this far:
@@ -469,10 +473,12 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
   	  return logL;
 
   	}else if(cstr.cstr == ConstraintType::Constrain_KeepRelF){
-  	  // Handle elsewhere
-  	  return 0.0;
 
-  	}else if(cstr.cstr == ConstraintType::Constrain_HCR){
+	  SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total");
+	  SAM_ASSERT(cstr.relative >= 0 && cstr.fleet != cstr.relative, "Keep relative can only be used relative to other fleets in same year");	  
+  	  return (fleetLogFbar(cstr.fleet) - fleetLogFbar(cstr.relative));
+
+	}else if(cstr.cstr == ConstraintType::Constrain_HCR){
 	  int targetType = CppAD::Integer(cstr.settings(2));
   	  if(targetType == 0){	  // F target
   	    if(cstr.fleet == (-1)){	// Total
@@ -542,39 +548,25 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	  continue;
 	}
 
-	if(cstr.cstr == ConstraintType::Constrain_KeepRelF){
-	  int compareLag = CppAD::Integer(cstr.settings(0));
-	  vector<ad> fleetLogFbar = getFleetLogFbar(dat, conf, cFleets, newLogF, cstr.Amin, cstr.Amax);
-	  //ad logFbar = logspace_sum(fleetLogFbar);
+	// Functor
+	ForecastF_Fun F(dat, conf, par, cFleets, recruit, cstr, logN, historicalLogF, logitFseason, y);
+	// Target
+	ad trgt = F.getTarget(newLogF);	  
+	// Transformed F
+	ad transF = F(newLogF);
 
-	  vector<ad> lastLogF = historicalLogF.col(y-compareLag);	  
-	  // Previous F values
-	  vector<ad> lastFleetLogFbar = getFleetLogFbar(dat, conf, cFleets, lastLogF, cstr.Amin, cstr.Amax);
-	  SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total");
-	  SAM_ASSERT(cstr.relative >= 0 && cstr.fleet != cstr.relative, "Keep relative can only be used relative to other fleets in same year");
-	  ad tmp = (lastFleetLogFbar(cstr.fleet) - lastFleetLogFbar(cstr.relative)) - (fleetLogFbar(cstr.fleet) - fleetLogFbar(cstr.relative));
-	  kappa += tmp * tmp;
-	}else{
-
-	  // Functor
-	  ForecastF_Fun F(dat, conf, par, cFleets, recruit, cstr, logN, historicalLogF, logitFseason, y);
-	  // Target
-	  ad trgt = F.getTarget(newLogF);	  
-	  // Transformed F
-	  ad transF = F(newLogF);
-
-	  // Stochastic correction
-	  ad v = 0.0;
-	  if(cstr.useNonLinearityCorrection){
-	    matrix<ad> H = autodiff::hessian(F, newLogF);
-	    ad cx1 = (newLogF*(vector<ad>(H*newLogF))).sum();
-	    ad tr = (H.vec() * fvar.vec()).sum();
-	    v = 0.5 * (tr + cx1);
-	  }
-	  ad tmp = transF + v - trgt;
-	  kappa += tmp * tmp;
-	  
+	// Stochastic correction
+	ad v = 0.0;
+	if(cstr.useNonLinearityCorrection){
+	  matrix<ad> H = autodiff::hessian(F, newLogF);
+	  //ad cx1 = (newLogF*(vector<ad>(H*newLogF))).sum();
+	  ad tr = (H.vec() * fvar.vec()).sum();
+	  v = 0.5 * tr; // (tr + cx1);
 	}
+	ad tmp = transF + v - trgt;
+	kappa += tmp * tmp;
+	  
+      }
 	// int compareLag = CppAD::Integer(cstr.settings(0));
 	// // New F values
 	// vector<ad> fleetLogFbar = getFleetLogFbar(dat, conf, cFleets, newLogF, cstr.Amin, cstr.Amax);
@@ -768,8 +760,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	//   }
 	// }else{
 	//   Rf_error("Constraint type not implemented");
-	// }
-      }
+	// }      
       return kappa;
     }
    
