@@ -310,7 +310,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
                            natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL, aux.fleets=NULL,
                            keep.all.ages = FALSE,
-                           average.sampleTimes.survey = TRUE){
+                           average.sampleTimes.survey = TRUE,
+                           fleetnames.remove.space = TRUE){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -384,8 +385,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     }else{
       dummy<-lapply(residual.fleets,doone, average.sampleTimes=FALSE)
       type<-c(type,rep(0,length(residual.fleets)))
-      #time<-c(time,rep(0,length(residual.fleets)))
-      name<-c(name,paste0("Fleet w.o. effort ", 1:length(residual.fleets)))
+      ##time<-c(time,rep(0,length(residual.fleets)))      
+      if(is.null(names(residual.fleets))){
+          name<-c(name,paste0("Fleet w.o. effort ", 1:length(dummy)))
+      }else{
+          if(fleetnames.remove.space)
+              names(dummy) <- gsub("\\s", "", names(dummy))
+          name <- c(name,names(dummy))
+      }
     }
   }
   if(!is.null(fleets)){
@@ -398,7 +405,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
       dummy<-lapply(fleets,doone, average.sampleTimes=FALSE)
       type<-c(type,rep(1,length(fleets)))
       ## time<-c(time,rep(0,length(fleets)))
-      name<-c(name,strtrim(gsub("\\s", "", names(dummy)), 50))
+      if(fleetnames.remove.space)
+          names(dummy) <- gsub("\\s", "", names(dummy))
+      name<-c(name,strtrim(names(dummy), 50))          
     }
   }
   if(!is.null(surveys)){

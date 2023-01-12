@@ -125,7 +125,7 @@ predict.rpscurvefit <- function(x,newF,...){
     as.numeric(pM)  
 }
 
-.getDoSim <- function(logf1, fit, nYears, aveYears, selYears, pl, logCustomSel = NULL, constraint = "F=%f",...){
+.getDoSim <- function(logf1, fit, nYears, aveYears, selYears, pl, logCustomSel = NULL, constraint = "F=%f", deterministicF = TRUE,...){
    if(length(logCustomSel) > 0){
         sel <- exp(logCustomSel)
     }else if(length(selYears) == 0){   
@@ -141,11 +141,12 @@ predict.rpscurvefit <- function(x,newF,...){
                                                      ave.years = aveYears,
                                                      custom_pl = pl,
                                                      cstomSel = sel,
+                                                     deterministicF = deterministicF,
                                                      ...)))
    doSim
 }
 
-.perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = NULL, nTail = 1,incpb=NULL, doSim = NULL, label="", constraint = "F=%f", ...){    
+.perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = NULL, nTail = 1,incpb=NULL, doSim = NULL, label="", constraint = "F=%f", deterministicF=TRUE, ...){    
     ## pl$missing <- NULL
     ## attr(pl,"what") <- NULL
     ## f2 <- sam.fit(fit$data,fit$conf,pl, run = FALSE)
@@ -153,7 +154,7 @@ predict.rpscurvefit <- function(x,newF,...){
     ## f2$sdrep <- fit$sdrep[c("estY","covY")]
     ## class(f2) <- "sam"
     if(is.null(doSim))
-        doSim <- .getDoSim(logf[1], fit, nYears, aveYears, selYears, pl, logCustomSel)
+        doSim <- .getDoSim(logf[1], fit, nYears, aveYears, selYears, pl, logCustomSel, deterministicF)
     if(isTRUE(all.equal(pl,fit$pl))){
         re_pl <- NULL
     }else{
@@ -227,7 +228,7 @@ predict.rpscurvefit <- function(x,newF,...){
 }
 
 #' @importFrom stats runif predict
-.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f",...){
+.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f", deterministicF = TRUE, ...){
     rfv <- function(n,a,b){
         u <- stats::runif(n)
         v1 <- exp(stats::runif(n,log(ifelse(a==0,0.002,a)), log(b)))
@@ -247,6 +248,7 @@ predict.rpscurvefit <- function(x,newF,...){
                             doSim = doSim,
                             label=sprintf("%s equilibrium simulations",label),
                             constraint = constraint,
+                            deterministicF = deterministicF,
                             ...)  
 ###### Different for different RP's
     getOneRP <- function(rp){
@@ -414,6 +416,7 @@ predict.rpscurvefit <- function(x,newF,...){
                                                        doSim = doSim,
                                                        label = sprintf("%s derived values",label),
                                                        constraint = constraint,
+                                                       deterministicF = deterministicF,
                                                        ...))[c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost")],
                           exp),
                           function(x){ if(all(is.na(x))) return(NA); MT$derivedSummarizer}))
@@ -536,6 +539,9 @@ stochasticReferencepoints <- function(fit,
 ##' @param formula Formula to estimate optimization criteria as a function of F
 ##' @param nosim_ci Number of simulations for bootstrap confidence intervals
 ##' @param derivedSummarizer Function to summarize derived per-recruit values
+##' @param nTail Number of years from the simulation to include in calculations
+##' @param constraint Format of forecast constraint. "%f" is replaced by F values.
+##' @param deterministicF If FALSE, modelled logF process noise will be added to target logF in forecasts.
 ##' @param ... additional parameters that can be passed on
 ##' @return reference point object
 ##' @rdname stochasticReferencepoints
@@ -557,6 +563,7 @@ stochasticReferencepoints.sam <- function(fit,
                                           derivedSummarizer = NA,
                                           nTail = 1,
                                           constraint = "F=%f",
+                                          deterministicF = TRUE,
                                           ...){
 
 
@@ -596,12 +603,12 @@ stochasticReferencepoints.sam <- function(fit,
     invisible(lapply(rpArgs,.refpointCheckRecruitment,fit=fit))
 
     doSim <- .getDoSim(logf1=tail(log(fbartable(fit)[,1]),1),
-                       fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl, constraint=constraint,...)
+                       fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl, constraint=constraint,deterministicF=deterministicF,...)
  
     pb <- .SAMpb(min = 0, max = nosim * (nosim_ci + 1 + is.function(derivedSummarizer)*length(rpArgs)))
     incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
 
-    v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint, ...)
+    v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint,deterministicF=deterministicF, ...)
 
     ## Sample to get CIs
     if(nosim_ci > 0){
@@ -610,7 +617,7 @@ stochasticReferencepoints.sam <- function(fit,
             oN <- fit$obj
             a <- capture.output(invisible(oN$fn(par)))
             pl <- oN$env$parList(par,oN$env$last.par)
-            v <- try({.refpointSFitCriteria(rpArgs,pl=pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Confidence intervals:",constraint=constraint, ...)}, silent = TRUE)
+            v <- try({.refpointSFitCriteria(rpArgs,pl=pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Confidence intervals:",constraint=constraint,deterministicF=deterministicF, ...)}, silent = TRUE)
  
             v
         })
