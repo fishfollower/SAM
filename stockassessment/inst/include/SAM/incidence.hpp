@@ -186,6 +186,7 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<
   tmpCumHaz.setZero();
   matrix<Type> tmpCumHaz_F(nAges,nFleet);
   tmpCumHaz_F.setZero();
+
   for(int i = 0; i < nIntervals; ++i){
     int s = activeHazard_season(i);
     Type dt = activeHazard_breakpoints[i+1] - activeHazard_breakpoints[i];
