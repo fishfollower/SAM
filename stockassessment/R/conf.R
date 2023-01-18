@@ -85,7 +85,7 @@ defcon<-function(dat, level=1){
         if(fleetTypes[i]%in%c(0,1,2,3,6,81)){
             x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- lastMax+1
             lastMax <- max(x)
-        }else if(fleetTypes[i]%in%c(80)){
+        }else if(fleetTypes[i]%in%c(80,90)){
             x[i,] <- -1
             x[i,1] <- lastMax+1
             lastMax <- max(x)

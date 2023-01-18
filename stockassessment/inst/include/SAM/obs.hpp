@@ -563,14 +563,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      vector<Type> Keep(nSeasons);
 	      Keep.setZero();
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
-		log_X(CppAD::Integer(dat.auxData(i,4))-1) = dat.logobs(i);
+		log_X(CppAD::Integer(dat.auxData(i,4))-1) = exp(dat.logobs(i));
 		log_P(CppAD::Integer(dat.auxData(i,4))-1) = predObs(i);
 	        Keep(CppAD::Integer(dat.auxData(i,4))-1) = keep(i);
 	      }
-	      log_X(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.segment(0,nSeasons-1)));
+	      log_X(nSeasons-1) = 1.0; //logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.segment(0,nSeasons-1)));
+	      log_X /= log_X.sum();
+	      log_X = log_X.log();
 	      log_P(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
 	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
-	      //NOTE: need to handle keep to pass correct part!
 	      nll -= ddirichlet(log_X,log_P,log_alpha,Keep,true);
 	    }
 	  }else if(dat.fleetTypes(f) == 81){ 
@@ -607,6 +608,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		nll -= ddirichlet((vector<Type>)log_X.col(i),(vector<Type>)log_P.col(i),(Type)log_alpha(i),(vector<Type>)Keep.col(i),true);
 	      }	      	      
 	    }
+	  }else if(dat.fleetTypes(f) == 90){
+	    // Do nothing
 	  }else{
 	    Rf_error("Fleet type not implemented");
 	  }   

@@ -1799,8 +1799,8 @@ then :
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: TMB pre-compilation not found" >&5
 printf "%s\n" "$as_me: TMB pre-compilation not found" >&6;}
 else $as_nop
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Using TMB pre-compilation" >&5
-printf "%s\n" "$as_me: Using TMB pre-compilation" >&6;}
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: TMB pre-compilation will not be used" >&5
+printf "%s\n" "$as_me: TMB pre-compilation will not be used" >&6;}
 fi
 
 
