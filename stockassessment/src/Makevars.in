@@ -21,6 +21,7 @@ perRecruit.o: SAM.h
 spline.o: SAM.h
 polynomial.o: SAM.h
 stockassessment.o: SAM.h
+TMB.o: TMB.h
 
 A_%.d: ../inst/include/SAM/%.hpp
 	@echo Generating $@
