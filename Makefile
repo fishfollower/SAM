@@ -28,6 +28,17 @@ endif
 
 testfiles := $(foreach dir,$(ARGS),$(dir)/OK)
 
+NPROCS:=1
+OS:=$(shell uname -s)
+
+ifeq ($(OS),Linux)
+  #NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
+# Use number of physical cores -1 instead of number of threads
+  NPROCS:=$(shell grep 'cpu cores' /proc/cpuinfo | uniq | sed "s/.*: //g" | xargs -n 1 expr -1 + )
+endif
+
+
+
 .PHONY: webtestfromfile webtestone webtest test testmoreseq testonemore testmore $(SUBDIRS) all updateData qi quick-install vignette-update 
 
 all:
@@ -64,17 +75,20 @@ $(TARBALL): $(PACKAGE)/NAMESPACE $(CPP_SRC) $(PACKAGE)/R/*.R $(PACKAGE)/configur
 	sed -i /RoxygenNote/d $(PACKAGE)/DESCRIPTION
 
 install: $(TARBALL)
-	$(R) CMD INSTALL --preclean --html $<
+	MAKE="$(MAKE) -j$(NPROCS)" $(R) CMD INSTALL --preclean --html $<
 	@touch $@
 
 qi:	$(PACKAGE)/configure
-	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp')" | $(R) --slave
-	$(R) CMD INSTALL $(PACKAGE)
+	$(error This will not work as intended. Use 'make quick-install' instead)
+	 cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp')" | $(R) --slave
+	MAKE="$(MAKE) -j$(NPROCS)" $(R) CMD INSTALL $(PACKAGE)
 
 quick-install: $(CPP_SRC) $(PACKAGE)/configure $(R_FILES)
-	$(R) CMD INSTALL $(PACKAGE)
+	$(info Running R CMD INSTALL with ${NPROCS} threads)
+	MAKE="$(MAKE) -j$(NPROCS)" $(R) CMD INSTALL $(PACKAGE)
 
 $(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp $(CPP_SRC) $(PACKAGE)/configure
+	$(error This will not work as intended. Use 'make quick-install' instead)
 	touch $(PACKAGE)/src/stockassessment.cpp
 	cd $(PACKAGE)/src; echo "library(TMB); compile('stockassessment.cpp','-O0 -g', libinit=FALSE)" | $(R) --slave
 
@@ -85,13 +99,13 @@ $(PACKAGE).pdf: $(PACKAGE)/man/*.Rd
 	$(R) CMD Rd2pdf --no-preview $(PACKAGE)
 
 build:
-	$(R) CMD build $(PACKAGE)
+	MAKE="$(MAKE) -j$(NPROCS)" $(R) CMD build $(PACKAGE)
 
 check: $(TARBALL)
-	$(R) CMD check $(TARBALL)
+	MAKE="$(MAKE) -j$(NPROCS)" $(R) CMD check $(TARBALL)
 
 check-cran: $(TARBALL)
-	$(R) CMD check --as-cran $(TARBALL)
+	MAKE="$(MAKE) -j$(NPROCS)" $(R) CMD check --as-cran $(TARBALL)
 
 quick-check: quick-install ex-test
 
@@ -123,19 +137,13 @@ updateDocs:
 	      fn<-dir('$(PACKAGE)/man'); \
 	      d<-sapply(fn, function(f)Rd2markdown(paste0('$(PACKAGE)/man/',f), sub('Rd','md',paste0('docs/',f))));\
 	      file.copy(paste0(find.package('$(PACKAGE)'),'/html/00Index.html'), 'docs/index.html')" | $(R) --slave
-	R CMD Rdconv -t html $(PACKAGE)/man/sam.fit.Rd -o temp.html
+	$(R) CMD Rdconv -t html $(PACKAGE)/man/sam.fit.Rd -o temp.html
 	sed -i '/page for sam.fit/d' temp.html
 	pandoc temp.html -t markdown_github -o docs/sam.fit.md; rm temp.html;
 	cd docs; sed -i '/<img/d; /DESCRIPTION/d; /User guides/d; s/html/md/' index.html
 	cd docs; pandoc index.html -t markdown_github -o index.md
 	cd docs; rm index.html
 
-NPROCS:=1
-OS:=$(shell uname -s)
-
-ifeq ($(OS),Linux)
-  NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
-endif
 
 MAKEFLAGS += --silent
 
