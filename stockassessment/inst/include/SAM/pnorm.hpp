@@ -315,7 +315,8 @@ namespace pnorm_atomic {
   {
     int lower_tail = (int)trunc(lower_tail_);
     int log_p = (int)trunc(log_p_);
-    Float p, cp;
+    Float p = 0;
+    Float cp = 0;
 
     /* Note: The structure of these checks has been carefully thought through.
      * For example, if x == mu and sigma == 0, we get the correct answer 1.

@@ -32,6 +32,10 @@ Type ddirichlet_vtri(vector<Type> x, vector<Type> alpha, int give_log)
   }
     })
 
+SAM_SPECIALIZATION(double ddirichlet_vtri(vector<double>, vector<double>,  int));
+SAM_SPECIALIZATION(TMBad::ad_aug ddirichlet_vtri(vector<TMBad::ad_aug>, vector<TMBad::ad_aug>, int));
+
+  
 template<class Type>
 Type ddirichlet(vector<Type> log_x, vector<Type> log_p, Type log_s, data_indicator<vector<Type>, Type> keep, int give_log DEFARG(=0))SOURCE({
   SAM_ASSERT(log_x.size() == log_p.size(), "ddirichlet: x and p must have the same length");
