@@ -528,6 +528,30 @@ SAM_SPECIALIZATION(matrix<double> fbarByFleet(confSet&, array<double>&, bool));
 SAM_SPECIALIZATION(matrix<TMBad::ad_aug> fbarByFleet(confSet&, array<TMBad::ad_aug>&, bool));
 
 
+template<class Type>
+vector<Type> Effective_fbar(dataSet<Type>& dat, confSet &conf, MortalitySet<Type>& mort, bool give_log DEFARG(= false))SOURCE({
+    int timeSteps=mort.FullYear_survival.cols();
+  vector<Type> res(timeSteps);
+  res.setZero();
+  for(int y=0;y<timeSteps;y++){
+    Type logfbar = R_NegInf;
+    for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){
+      logfbar = logspace_add(logfbar, mort.Effective_logF(a-conf.minAge,y));
+    }
+    logfbar -= log(Type(conf.fbarRange(1)-conf.fbarRange(0)+1.0));
+    if(give_log){
+      res(y) = logfbar;
+    }else{
+      res(y) = exp(logfbar);
+    }    
+  }
+  return res;
+  })
+
+SAM_SPECIALIZATION(vector<double> Effective_fbar(dataSet<double>&, confSet&, MortalitySet<double>&, bool));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> Effective_fbar(dataSet<TMBad::ad_aug>&, confSet&, MortalitySet<TMBad::ad_aug>&, bool));
+
+
 
 template <class Type>
   vector<Type> landFbarFun(dataSet<Type> &dat, confSet &conf, array<Type> &logF)SOURCE({
