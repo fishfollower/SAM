@@ -76,6 +76,11 @@ struct MortalitySet {
   // TODO: Switch to log-scale calculations?
   matrix<Type> cumulativeHazard;		// age x year
   array<Type> cumulativeHazard_F;		// age x year x fleet
+  matrix<Type> FullYear_cumulativeIncidence_Fishing;		// age x year
+  matrix<Type> FullYear_cumulativeIncidence_Other;		// age x year
+  matrix<Type> FullYear_survival;		// age x year
+  matrix<Type> Effective_logF;
+  matrix<Type> Effective_logM;
   // matrix<Type> totalF;
   // array<Type> totalZseason;	// season x age x year
   // array<Type> totalFseason;
@@ -99,6 +104,11 @@ struct MortalitySet {
   inline MortalitySet():
     cumulativeHazard(),
     cumulativeHazard_F(),
+    FullYear_cumulativeIncidence_Fishing(),
+    FullYear_cumulativeIncidence_Other(),
+    FullYear_survival(),
+    Effective_logF(),
+    Effective_logM(),
     // totalF(),
     // totalZseason(),
     // totalFseason(),
@@ -120,6 +130,11 @@ struct MortalitySet {
   template<class T>
   inline MortalitySet(const MortalitySet<T> x) : cumulativeHazard(x.cumulativeHazard),
 						 cumulativeHazard_F(x.cumulativeHazard_F),
+						 FullYear_cumulativeIncidence_Fishing(x.FullYear_cumulativeIncidence_Fishing),
+						 FullYear_cumulativeIncidence_Other(x.FullYear_cumulativeIncidence_Other),
+						 FullYear_survival(x.FullYear_survival),
+						 Effective_logF(x.Effective_logF),
+						 Effective_logM(x.Effective_logM),
 						 // totalF(x.totalF),
 						 // totalZseason(x.totalZseason),
 						 // totalFseason(x.totalFseason),
@@ -187,6 +202,13 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<
   matrix<Type> tmpCumHaz_F(nAges,nFleet);
   tmpCumHaz_F.setZero();
 
+  vector<Type> tmpFYCIF_F(nAges);
+  tmpFYCIF_F.setZero();
+
+  vector<Type> tmpFYCIF_Other(nAges);
+  tmpFYCIF_Other.setZero();
+
+  
   for(int i = 0; i < nIntervals; ++i){
     int s = activeHazard_season(i);
     Type dt = activeHazard_breakpoints[i+1] - activeHazard_breakpoints[i];
@@ -209,11 +231,13 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<
 	  tmpCumHaz_F(a,f) += Hazard_F_breakpoints(a,y,f,i) * dt;
 	}
       }
+      Type Stmp = exp(-tmpCumHaz(a));
       tmpCumHaz(a) += Hazard_breakpoints(a,y,i) * dt;
       // Calculate CIF M
       CIF_M_breakpoints(a,y,0,i) = 0.0;
       if(activeHazard_M(i,a,0))
 	CIF_M_breakpoints(a,y,0,i) = dat.natMor(y,a) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
+      tmpFYCIF_Other(a) += Stmp * CIF_M_breakpoints(a,y,0,i);
       // Calculate CIF F
       for(int f = 0; f < nFleet; ++f){
 	CIF_F_breakpoints(a,y,f,i) = 0.0;
@@ -225,13 +249,22 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<
 	    logFs += Fseason(s,y,j+1);
 	  CIF_F_breakpoints(a,y,f,i) = exp(logFs) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
 	}
+	tmpFYCIF_F(a) += Stmp * CIF_F_breakpoints(a,y,f,i);
       }
     }
   }
   for(int a = 0; a < nAges; ++a){
     cumulativeHazard(a,y) = tmpCumHaz(a);
+    FullYear_survival(a,y) = exp(-tmpCumHaz(a));
+    FullYear_cumulativeIncidence_Fishing(a,y) = tmpFYCIF_F(a);
+    FullYear_cumulativeIncidence_Other(a,y) = tmpFYCIF_Other(a);
     for(int f = 0; f < nFleet; ++f)
       cumulativeHazard_F(a,y,f) = tmpCumHaz_F(a,f);
+    // Update effective F and M
+    Type v = FullYear_survival(a,y);
+    Type u = FullYear_cumulativeIncidence_Fishing(a,y);
+    Effective_logF(a,y) = log(-log(v)) + log(u) - log(1.0 - v);
+    Effective_logM(a,y) = log(-log(v)) + log(1.0 - u - v) - log(1.0 - v);
   }
   return;
 }
@@ -318,6 +351,12 @@ SOURCE(
 	 MortalitySet<Type>::MortalitySet(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason) :
 	 cumulativeHazard(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 cumulativeHazard_F(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
+	 FullYear_cumulativeIncidence_Fishing(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 FullYear_cumulativeIncidence_Other(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 FullYear_survival(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 Effective_logF(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 Effective_logM(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+
 	 // totalF(totFFun(dat,conf,logF).matrix()),
 	 // totalZseason(conf.seasonTimes.size()-1, conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 // totalFseason(conf.seasonTimes.size()-1, conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
@@ -339,6 +378,12 @@ SOURCE(
 	   int nYear = dat.natMor.dim(0);
 	   cumulativeHazard.setZero();
 	   cumulativeHazard_F.setZero();
+	   FullYear_cumulativeIncidence_Fishing.setZero();
+	   FullYear_cumulativeIncidence_Other.setZero();
+	   FullYear_survival.setZero();
+	   Effective_logF.setConstant(R_NegInf);
+	   Effective_logM.setConstant(R_NegInf);
+	   
 	   Fseason.setZero();
 	   // totalZseason.setZero();
 	   // totalFseason.setZero();

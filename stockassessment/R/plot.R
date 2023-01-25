@@ -360,23 +360,31 @@ fbarplot<-function(fit,...){
 ##' @method fbarplot sam
 ##' @param plot true if fbar should be plotted
 ##' @export
-fbarplot.sam <- function(fit,partial = TRUE, drop=NULL, pcol="lightblue", page=NULL, plot = TRUE,...){
+fbarplot.sam <- function(fit,partial = TRUE, drop=NULL, pcol="lightblue", page=NULL, plot = TRUE, effectiveF = any(!fit$conf$seasonTimes%in%c(0,1)),...){
      if(is.null(drop)){
         drop=max(fit$data$aux[,"year"])-max(fit$data$aux[fit$data$aux[,"fleet"]==1,"year"])
     }  
-    fbarRange<-fit$conf$fbarRange
-    fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
+     fbarRange<-fit$conf$fbarRange
+     if(effectiveF){
+         fbarlab=substitute(Effective~bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
+     }else{         
+         fbarlab=substitute(bar(F)[X-Y],list(X=fbarRange[1],Y=fbarRange[2]))
+     }
     fmat<-t(faytable(fit))#fitlocal$pl$logF[fitlocal$conf$keyLogFsta[1,]+1,]
     if(is.null(page)){
         page<-fbarRange[1]:fbarRange[2]
     }
     idx <- which(fit$conf$minAge:fit$conf$maxAge %in% page)
     exx <- if(partial){fmat[idx,]}else{numeric(0)}
-    if(plot){
-        plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
-        if(partial){
-            idxx <- 1:(length(fit$data$years)-drop)
-            matplot(fit$data$years[idxx], t(fmat[idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(page))
+     if(plot){
+         if(effectiveF){
+             plotit(fit, "logfbar_Effective", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)
+         }else{
+             plotit(fit, "logfbar", ylab=fbarlab, trans=exp, ex=exx, drop=drop, ...)         
+             if(partial){
+                 idxx <- 1:(length(fit$data$years)-drop)
+                 matplot(fit$data$years[idxx], t(fmat[idx,idxx]), add=TRUE, type="b", col=pcol, pch=as.character(page))
+             }
         }
     }
     invisible(list(drop=drop,fbarRange=fbarRange,fbarlab=fbarlab,fmat=fmat,page=page,idx=idx,exx=exx))

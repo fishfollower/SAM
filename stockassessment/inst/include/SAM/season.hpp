@@ -14,7 +14,7 @@ Type nllSeason(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSe
     
     for(int p = 0; p < nProcesses; ++p){
       	for(int s = 0; s < nSeasonPar; ++s){
-	  Type b = toInterval((Type)par.seasonLogitRho(p), Type(0.0), Type(1.0), Type(1.0));
+	  Type b = toInterval((Type)par.seasonLogitRho(p), Type(0.0), Type(1.0), Type(2.0));
 	  Type mu = par.seasonMu(s,p);
 	  Type sd = exp(par.seasonLogSd(p));
 	  // Stationary initial state
