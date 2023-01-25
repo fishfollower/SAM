@@ -209,7 +209,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      int aMax = dat.maxAgePerFleet(flt);
 		      for(int aa = aMin - conf.minAge; aa < aMax - conf.minAge; ++aa){
 		      	//Type Cttmp = exp(logN(aa,y)) * mort.CIF(flt,aa,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
-			Type Cttmp = exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,flt) + mort.fleetCumulativeIncidence(aa,y,flt));
+			Type Cttmp = exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,flt) + log(mort.fleetCumulativeIncidence(aa,y,flt)));
 			Type Cstmp = exp(logN(aa,y)) * mort.partialCIF(flt,aa,y, auxData(1), auxData(2));
 			// 0: Catch numbers
 			if(CppAD::Integer(auxData(3)) == 1){ // 1: Catch weight
@@ -236,7 +236,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      // TODO: allow auxData(0)==0  to sum over all fleets
 		      int flt = CppAD::Integer(auxData(0))-1;
 		      //Type v81a = mort.CIF(flt,a,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
-		      Type v81a = exp(mort.logFleetSurvival_before(a,y,flt) + mort.fleetCumulativeIncidence(a,y,flt));
+		      Type v81a = exp(mort.logFleetSurvival_before(a,y,flt) + log(mort.fleetCumulativeIncidence(a,y,flt)));
 		      Type v81b = mort.partialCIF(flt,a,y,auxData(1),auxData(2));		      
 		      pred = log(v81b) - log(v81a);
 		      break;		      

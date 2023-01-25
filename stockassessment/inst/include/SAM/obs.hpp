@@ -307,6 +307,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 
       vector<Type> fbar = fbarFun(dat,conf, logF);
       vector<Type> logfbar = log(fbar);
+      vector<Type> logfbar_Effective = Effective_fbar(dat,conf,mort,true);
 
       vector<Type> fbarL = landFbarFun(dat, conf, logF);
       vector<Type> logfbarL = log(fbarL);
@@ -561,7 +562,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      vector<Type> log_P(nSeasons);
 	      log_P.setZero();
 	      vector<Type> Keep(nSeasons);
-	      Keep.setZero();
+	      Keep.setConstant(1);
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
 		log_X(CppAD::Integer(dat.auxData(i,4))-1) = exp(dat.logobs(i));
 		log_P(CppAD::Integer(dat.auxData(i,4))-1) = predObs(i);
@@ -572,7 +573,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      log_X = log_X.log();
 	      log_P(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
 	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
-	      nll -= ddirichlet(log_X,log_P,log_alpha,Keep,true);
+	      nll -= ddirichlet(log_X,log_P,log_alpha,Keep,true);	      
+	      //nll -= ddirichlet_vtri((vector<Type>)log_X.exp(), (vector<Type>)(log_P.exp() * exp(log_alpha)), true);
 	    }
 	  }else if(dat.fleetTypes(f) == 81){ 
 	    if(!isNAINT(dat.idx1(f,y))){
@@ -585,13 +587,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      matrix<Type> log_X(nSeasons, maxAge-minAge+1);
 	      log_X.setZero();
 	      matrix<Type> log_P(nSeasons, maxAge-minAge+1);
-	      log_P.setZero();
+	      log_P.setConstant(R_NegInf);
 	      matrix<Type> Keep(nSeasons, maxAge-minAge+1);
-	      Keep.setZero();
+	      Keep.setConstant(1);
 	      matrix<int> nObs(nSeasons,maxAge-minAge+1);
 	      nObs.setZero();
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){		
-		log_X(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = dat.logobs(i);
+		log_X(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = exp(dat.logobs(i));
 		log_P(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = predObs(i);
 		Keep(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep(i);
 		nObs(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) += 1;
@@ -601,7 +603,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      log_alpha.setConstant(R_NaReal);
 	      for(int i = 0; i < log_X.cols(); ++i){
 		if(nObs(nSeasons-1,i)==0){
-		  log_X(nSeasons-1,i) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.col(i).segment(0,nSeasons-1)));
+		  log_X(nSeasons-1,i) = 1.0; //logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.col(i).segment(0,nSeasons-1)));
+		  Type xs = log_X.col(i).sum();
+		  for(int j = 0; j < log_X.rows(); ++j){
+		    log_X(j,i) /= xs;
+		    log_X(j,i) = log(log_X(j,i));
+		  }
 		  log_P(nSeasons-1,i) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.col(i).segment(0,nSeasons-1)));
 		}
 		log_alpha(i) = par.logSdLogObs(conf.keyVarObs(f,i + minAge - conf.minAge));
@@ -634,6 +641,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       REPORT_F(predObs,of);
       ADREPORT_F(logssb,of);
       ADREPORT_F(logfbar,of);
+      ADREPORT_F(logfbar_Effective,of);
       ADREPORT_F(logCatch,of);
       ADREPORT_F(logCatchByFleet,of);
       ADREPORT_F(logLand,of);
