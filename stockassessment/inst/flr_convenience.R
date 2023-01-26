@@ -8,46 +8,64 @@ as.matrix.FLQuant <- function(v){
     xx
 }
 
+
+.SAM_FLR_HELP_toFLQ <- function(x, unit = "NA"){
+    if(length(dim(x))==3 && dim(x)[3]==1)
+        x <- x[ , , 1, drop =TRUE]
+    unm <- "unique"
+    ap <- c(2,1)
+    if(length(dim(x)) == 3){
+        unm <- dimnames(x)[[3]]
+        ap <- c(2,1,3)
+    }
+    FLQuant(aperm(x,ap),dimnames=list(age=as.numeric(colnames(x)),
+                                      year=as.numeric(rownames(x)),
+                                      unit=unm,
+                                      season="all",
+                                      area="unique",
+                                      iter=1),
+            units = unit)
+}
+.SAM_FLR_HELP_na2zero <- function(x){
+    x[is.na(x)] <- 0
+    x
+}
+.SAM_FLR_HELP_resize <- function(x, ages, years, replicate = FALSE){
+    if(length(dim(x))==2)
+        x <- array(x, dim = c(dim(x),1), dimnames = c(dimnames(x),NULL))
+    
+    x1 <- array(NA,dim = c(length(years),length(ages),dim(x)[3]), dimnames = list(years,ages,dimnames(x)[3]))
+    x1[match(rownames(x),rownames(x1)),match(colnames(x),colnames(x1)),] <- x
+    if(replicate){
+        ## Years
+        ii <- which(!match(rownames(x1),rownames(x), FALSE))
+        if(length(ii) > 0){
+            isAfter <- as.numeric(rownames(x1)[ii]) > max(as.numeric(rownames(x)))
+            x1[ii,,] <- x[c(1,nrow(x))[as.numeric(isAfter)+1],,]
+        }
+        ## Ages
+        ii <- which(!match(colnames(x1),colnames(x), FALSE))
+        if(length(ii) > 0){
+            isAfter <- as.numeric(colnames(x1)[ii]) > max(as.numeric(colnames(x)))
+            x1[,ii,] <- x[,c(1,ncol(x))[as.numeric(isAfter)+1],]
+        }
+    }
+    x1
+}
+
+
+
 as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted = FALSE){
     require(FLCore)
-    toFLQ <- function(x, unit = "NA"){
-        FLQuant(t(x),dimnames=list(age=as.numeric(colnames(x)),
-                                   year=as.numeric(rownames(x)),
-                                   unit="unique",
-                                   season="all",
-                                   area="unique",
-                                   iter=1),
-                units = unit)
-    }
-    na2zero <- function(x){
-        x[is.na(x)] <- 0
-        x
-    }
-    resize <- function(x, ages, years, replicate = FALSE){
-        x1 <- matrix(NA,length(years),length(ages))
-        colnames(x1) <- ages
-        rownames(x1) <- years
-        x1[match(rownames(x),rownames(x1)),match(colnames(x),colnames(x1))] <- x
-        if(replicate){
-            ## Years
-            ii <- which(!match(rownames(x1),rownames(x), FALSE))
-            if(length(ii) > 0){
-                isAfter <- as.numeric(rownames(x1)[ii]) > max(as.numeric(rownames(x)))
-                x1[ii,] <- x[c(1,nrow(x))[as.numeric(isAfter)+1],]
-            }
-            ## Ages
-            ii <- which(!match(colnames(x1),colnames(x), FALSE))
-            if(length(ii) > 0){
-                isAfter <- as.numeric(colnames(x1)[ii]) > max(as.numeric(colnames(x)))
-                x1[,ii] <- x[,c(1,ncol(x))[as.numeric(isAfter)+1]]
-            }
-        }
-        x1
-    }
+    toFLQ <- .SAM_FLR_HELP_toFLQ
+    resize <- .SAM_FLR_HELP_resize
+    na2zero <- .SAM_FLR_HELP_na2zero
+    
     ## catch.n
     ages <- fit$conf$minAge:fit$conf$maxAge
     years <- fit$data$years
-    CN <- toFLQ(resize(na2zero(getFleet(fit,1, predicted)),ages,years))
+    CN_all <- simplify2array(lapply(which(fit$data$fleetTypes %in% c(0,1,7)),function(i)getFleet(fit,i, predicted)))
+    CN <- toFLQ(resize(na2zero(CN_all),ages,years))
     LF <- toFLQ(resize(fit$data$landFrac,ages,years,TRUE))
     ## mat
     MA <- toFLQ(resize(fit$data$propMat,ages,years,TRUE))
