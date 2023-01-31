@@ -359,6 +359,7 @@ fbarplot<-function(fit,...){
 ##' @rdname fbarplot
 ##' @method fbarplot sam
 ##' @param plot true if fbar should be plotted
+##' @param effectiveF If TRUE, effective full year F based on catch and survival is plotted. If FALSE, full year F based on survival is plotted.
 ##' @export
 fbarplot.sam <- function(fit,partial = TRUE, drop=NULL, pcol="lightblue", page=NULL, plot = TRUE, effectiveF = any(!fit$conf$seasonTimes%in%c(0,1)),...){
      if(is.null(drop)){
@@ -1538,7 +1539,7 @@ componentplot.sam <- function(fit, onlyComponentYears = FALSE, ylab = "Compositi
     allYears <-  fit$data$years
     cyRange <- range(fit$data$aux[fit$data$aux[,2] %in% cf,1])
     compYears <- seq(cyRange[1],cyRange[2],1)
-    xlim <- if(onlyComponentYears){ range(cYearsUse) }else{ range(allYears)}
+    xlim <- if(onlyComponentYears){ range(compYears) }else{ range(allYears)}
     plot(0,0, type = "n", ylab = ylab, xlab = "Year", xlim = xlim, ylim = c(0,1),  xaxs="i",yaxs="i")
     for(i in 1:(nrow(cp)-1)){
         polygon(c(compYears,rev(compYears)), c(cp[i,],rev(cp[i+1,])), border = NA, col = colSet[i])

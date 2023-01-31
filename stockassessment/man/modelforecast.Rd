@@ -36,6 +36,7 @@ modelforecast(fit, ...)
   silent = TRUE,
   newton_config = NULL,
   custom_pl = NULL,
+  useNonLinearityCorrection = (nosim > 0 && !deterministicF),
   ...
 )
 }
@@ -95,6 +96,10 @@ modelforecast(fit, ...)
 \item{silent}{Passed to MakeADFun. Should the TMB object be silent?}
 
 \item{newton_config}{Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.}
+
+\item{custom_pl}{Parameter list. By default, the parameter list from fit is used.}
+
+\item{useNonLinearityCorrection}{Should a non linearity correction be added to transformation of logF? See Details - Non-linearity correction.}
 }
 \value{
 an object of type samforecast
@@ -194,6 +199,13 @@ Catch constraints specified as specific values are inherently different from cat
 ##' \subsection{Process variability:}{
 In the forecast, constraints are used to set the predicted F value in year y based on information available until year y-1. Therefore, constraints using predicted values for year y, such as catch, will not be matched exactly by the realized catch due to process variability in F, N, biological processes and catch itself.
 }
+}
+
+\section{Non-linearity correction}{
+
+In the model forecasts, constraints are calculated to set the mean of the log(F) process, corresponding to the median F-at-ages. Typically, the constraints are non-linear functions of log(F)-at-age. Therefore, when stochasticity is added to log(F) (i.e., deterministicF=FALSE), target values will correspond to a transformation of the median, and not the median of the transformation. For example, a target for the average fishing mortality (Fbar) will correspond to the average of the median F at age, which will be different from the median Fbar.
+
+The "useNonLinearityCorrection" argument can be used to shift the target from a function of the mean log(F) (median F) towards the log-mean of the function of log(F), which is approximately the median of the function of log(F).
 }
 
 \section{Old specification}{

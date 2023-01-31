@@ -3,7 +3,7 @@ State-Space Assessment Model
 
 ------------------------------------------------------------------------
 
-Documentation for package ‘stockassessment’ version 0.12.0
+Documentation for package ‘stockassessment’ version 0.12.1
 ----------------------------------------------------------
 
 [Package NEWS](../NEWS).
@@ -66,14 +66,14 @@ Help Pages
 <span id="D">-- D --</span>
 ---------------------------
 
-|                                                                         |                                                                                          |
-|-------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| [dataplot](dataplot.md)                                                 | SAM Data plot                                                                            |
-| [dataplot.sam](dataplot.md)                                             | SAM Data plot                                                                            |
-| [defcon](defcon.md)                                                     | Setup basic minimal configuration for sam assessment                                     |
-| [defpar](defpar.md)                                                     | Setup initial values for all model parameters and random effects.                        |
-| [deterministicReferencepoints](deterministicReferencepoints.md)         | Function to calculate reference points for the embedded deterministic model of a SAM fit |
-| [deterministicReferencepoints.sam](deterministicReferencepoints.sam.md) | Function to calculate reference points for the embedded deterministic model of a SAM fit |
+|                                                                     |                                                                                          |
+|---------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| [dataplot](dataplot.md)                                             | SAM Data plot                                                                            |
+| [dataplot.sam](dataplot.md)                                         | SAM Data plot                                                                            |
+| [defcon](defcon.md)                                                 | Setup basic minimal configuration for sam assessment                                     |
+| [defpar](defpar.md)                                                 | Setup initial values for all model parameters and random effects.                        |
+| [deterministicReferencepoints](deterministicReferencepoints.md)     | Function to calculate reference points for the embedded deterministic model of a SAM fit |
+| [deterministicReferencepoints.sam](deterministicReferencepoints.md) | Function to calculate reference points for the embedded deterministic model of a SAM fit |
 
 <span id="E">-- E --</span>
 ---------------------------

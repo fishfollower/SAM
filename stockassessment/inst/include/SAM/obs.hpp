@@ -563,17 +563,24 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      log_P.setZero();
 	      vector<Type> Keep(nSeasons);
 	      Keep.setConstant(1);
+	      vector<Type> LCDF(nSeasons);
+	      LCDF.setConstant(0);
+	      vector<Type> HCDF(nSeasons);
+	      HCDF.setConstant(0);	      
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
 		log_X(CppAD::Integer(dat.auxData(i,4))-1) = exp(dat.logobs(i));
 		log_P(CppAD::Integer(dat.auxData(i,4))-1) = predObs(i);
 	        Keep(CppAD::Integer(dat.auxData(i,4))-1) = keep(i);
+	        LCDF(CppAD::Integer(dat.auxData(i,4))-1) = keep.cdf_lower(i);
+		HCDF(CppAD::Integer(dat.auxData(i,4))-1) = keep.cdf_upper(i);
 	      }
+	      vector<int> OCDF = order_keep(Keep);
 	      log_X(nSeasons-1) = 1.0; //logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.segment(0,nSeasons-1)));
 	      log_X /= log_X.sum();
 	      log_X = log_X.log();
 	      log_P(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
 	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
-	      nll -= ddirichlet(log_X,log_P,log_alpha,Keep,true);	      
+	      nll -= ddirichlet(log_X,log_P,log_alpha,Keep,LCDF,HCDF,OCDF,true);	      
 	      //nll -= ddirichlet_vtri((vector<Type>)log_X.exp(), (vector<Type>)(log_P.exp() * exp(log_alpha)), true);
 	    }
 	  }else if(dat.fleetTypes(f) == 81){ 
@@ -590,12 +597,18 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      log_P.setConstant(R_NegInf);
 	      matrix<Type> Keep(nSeasons, maxAge-minAge+1);
 	      Keep.setConstant(1);
+	      matrix<Type> LCDF(nSeasons, maxAge-minAge+1);
+	      LCDF.setConstant(0);
+	      matrix<Type> HCDF(nSeasons, maxAge-minAge+1);
+	      HCDF.setConstant(0);
 	      matrix<int> nObs(nSeasons,maxAge-minAge+1);
 	      nObs.setZero();
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){		
 		log_X(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = exp(dat.logobs(i));
 		log_P(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = predObs(i);
 		Keep(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep(i);
+		LCDF(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep.cdf_lower(i);
+		HCDF(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep.cdf_upper(i);
 		nObs(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) += 1;
 	      }
 	      // Sum to one and alpha
@@ -612,7 +625,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  log_P(nSeasons-1,i) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.col(i).segment(0,nSeasons-1)));
 		}
 		log_alpha(i) = par.logSdLogObs(conf.keyVarObs(f,i + minAge - conf.minAge));
-		nll -= ddirichlet((vector<Type>)log_X.col(i),(vector<Type>)log_P.col(i),(Type)log_alpha(i),(vector<Type>)Keep.col(i),true);
+		vector<int> OCDF = order_keep((vector<Type>)Keep.col(i));
+		nll -= ddirichlet((vector<Type>)log_X.col(i),(vector<Type>)log_P.col(i),(Type)log_alpha(i),(vector<Type>)Keep.col(i),(vector<Type>)LCDF.col(i),(vector<Type>)HCDF.col(i),OCDF,true);
 	      }	      	      
 	    }
 	  }else if(dat.fleetTypes(f) == 90){

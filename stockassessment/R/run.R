@@ -362,6 +362,7 @@ rerun<-function(fit){
 ##' @param newConf list changes to the configuration
 ##' @param startingValues list of parameter values to use as starting values
 ##' @param ... Arguments passed to sam.fit
+##' @importFrom methods is
 ##' @return A new sam fit
 refit <- function(fit, newConf, startingValues, ...){
     
@@ -455,7 +456,7 @@ refit <- function(fit, newConf, startingValues, ...){
     
     ##runwithout(fit2, ...)
     fitNew <- sam.fit(fit2$data, fit2$conf, dp, ...)
-    if(class(fitNew) == "sam"){
+    if(methods::is(fitNew,"sam")){
         ld <- abs(as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
         if(ld > 1e-4)
             warning(sprintf("Optimized likelihoods differ by %f. Check the results carefully.",ld))

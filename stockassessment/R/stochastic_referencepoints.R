@@ -12,6 +12,8 @@
     pb$up(value,label)
     invisible(oldval)
 }
+
+##' @importFrom utils flush.console
 .SAMpb <- function (min = 0, max = 1, initial = 0, char = "=", width = NA, 
     title, label="", format = "| %.3f%%",...) {
     file <- ""
@@ -40,7 +42,7 @@
         cat(paste(c(sprintf("\r %s |",label), rep.int(char, nb), rep.int(" ", 
             nw * (width - nb)), sprintf(format, pc)), collapse = ""), 
             file = file)
-        flush.console()
+        utils::flush.console()
         .nb <<- nb
         .pc <<- pc
     }
@@ -484,6 +486,9 @@ predict.rpscurvefit <- function(x,newF,...){
 ##' Estimate stochastic reference points
 ##'
 ##' The function estimates reference points based on stochastic model forecasts.
+##'
+##'
+##' @details
 ##' The following reference points are implemented:
 ##' \describe{
 ##'    \item{F=x}{F fixed to x, e.g., \code{"F=0.3"} (NOT IMPLEMENTED YET)}
@@ -496,16 +501,13 @@ predict.rpscurvefit <- function(x,newF,...){
 ##'    \item{0.xSPR}{F such that spawners per recruit is 0.x times spawners per recruit at F=0, e.g., \code{"0.35SPR"} (NOT IMPLEMENTED YET)}
 ##'    \item{0.xB0}{F such that biomass is 0.x times the biomass at F=0, e.g., \code{"0.2B0"} (NOT IMPLEMENTED YET)}
 ##' }
-##'
 ##' Reference points can be estimated using these methods:
-##'
 ##' \describe{
 ##'    \item{Mean}{Use least squares to estimate mean equilibrium values}
 ##'    \item{Q0.x}{Use quantile regression to estimate the 0.x quantile of equilibrium values}
 ##'    \item{Median}{Identical to Q0.5}
 ##'    \item{Mode}{(NOT IMPLEMENTED YET)}
 ##' }
-##'
 ##' To estimate median equilibrium yield, as required by ICES, the method "Q0.5" should be used.
 ##' 
 ##' @examples
@@ -515,7 +517,23 @@ predict.rpscurvefit <- function(x,newF,...){
 ##' @param fit a sam fit
 ##' @param referencepoints a character vector of reference points to estimate (see Details)
 ##' @param ... Additional arguments passed on
-##' @return sam reference point object
+##' @param method estimation method (See Details)
+##' @param catchType catch type: catch, landing, discard
+##' @param nYears Number of years to forecast
+##' @param Frange Range of F values to consider
+##' @param nosim Number of simulations for estimation
+##' @param aveYears Years to average over for biological input
+##' @param constraint Format of forecast constraint. "\%f" is replaced by F values.
+##' @param deterministicF If FALSE, modelled logF process noise will be added to target logF in forecasts.
+##' @param ... additional parameters that can be passed on
+##' @param selYears Years to average over for selectivity
+##' @param newton.control List of control parameters for optimization
+##' @param seed Seed for simulations
+##' @param formula Formula to estimate optimization criteria as a function of F
+##' @param nosim_ci Number of simulations for bootstrap confidence intervals
+##' @param derivedSummarizer Function to summarize derived per-recruit values
+##' @param nTail Number of years from the simulation to include in calculations
+##' @return reference point object
 ##' @export
 stochasticReferencepoints <- function(fit,
                                        referencepoints,
@@ -525,25 +543,7 @@ stochasticReferencepoints <- function(fit,
 
 
 
-##' @param fit a sam fit
-##' @param referencepoints a character vector of reference points to estimate (see Details)
-##' @param method estimation method (See Details)
-##' @param catchType catch type: catch, landing, discard
-##' @param nYears Number of years to forecast
-##' @param Frange Range of F values to consider
-##' @param nosim Number of simulations for estimation
-##' @param aveYears Years to average over for biological input
-##' @param selYears Years to average over for selectivity
-##' @param newton.control List of control parameters for optimization
-##' @param seed Seed for simulations
-##' @param formula Formula to estimate optimization criteria as a function of F
-##' @param nosim_ci Number of simulations for bootstrap confidence intervals
-##' @param derivedSummarizer Function to summarize derived per-recruit values
-##' @param nTail Number of years from the simulation to include in calculations
-##' @param constraint Format of forecast constraint. "%f" is replaced by F values.
-##' @param deterministicF If FALSE, modelled logF process noise will be added to target logF in forecasts.
-##' @param ... additional parameters that can be passed on
-##' @return reference point object
+
 ##' @rdname stochasticReferencepoints
 ##' @method stochasticReferencepoints sam
 ##' @export

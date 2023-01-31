@@ -19,6 +19,7 @@ list(list("fbarplot"), list("sam"))(
   pcol = "lightblue",
   page = NULL,
   plot = TRUE,
+  effectiveF = any(!fit$conf$seasonTimes %in% c(0, 1)),
   ...
 )
 list(list("fbarplot"), list("samset"))(
@@ -59,6 +60,7 @@ Argument      |Description
 `pcol`     |     color of partial lines
 `page`     |     partial ages to plot
 `plot`     |     true if fbar should be plotted
+`effectiveF`     |     If TRUE, effective full year F based on catch and survival is plotted. If FALSE, full year F based on survival is plotted.
 
 
 ## Details

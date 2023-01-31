@@ -23,6 +23,8 @@ stochasticReferencepoints(fit, referencepoints, ...)
   nosim_ci = 200,
   derivedSummarizer = NA,
   nTail = 1,
+  constraint = "F=\%f",
+  deterministicF = TRUE,
   ...
 )
 }
@@ -56,14 +58,20 @@ stochasticReferencepoints(fit, referencepoints, ...)
 \item{nosim_ci}{Number of simulations for bootstrap confidence intervals}
 
 \item{derivedSummarizer}{Function to summarize derived per-recruit values}
+
+\item{nTail}{Number of years from the simulation to include in calculations}
+
+\item{constraint}{Format of forecast constraint. "\%f" is replaced by F values.}
+
+\item{deterministicF}{If FALSE, modelled logF process noise will be added to target logF in forecasts.}
 }
 \value{
-sam reference point object
-
 reference point object
 }
 \description{
 The function estimates reference points based on stochastic model forecasts.
+}
+\details{
 The following reference points are implemented:
 \describe{
    \item{F=x}{F fixed to x, e.g., \code{"F=0.3"} (NOT IMPLEMENTED YET)}
@@ -76,17 +84,13 @@ The following reference points are implemented:
    \item{0.xSPR}{F such that spawners per recruit is 0.x times spawners per recruit at F=0, e.g., \code{"0.35SPR"} (NOT IMPLEMENTED YET)}
    \item{0.xB0}{F such that biomass is 0.x times the biomass at F=0, e.g., \code{"0.2B0"} (NOT IMPLEMENTED YET)}
 }
-}
-\details{
 Reference points can be estimated using these methods:
-
 \describe{
    \item{Mean}{Use least squares to estimate mean equilibrium values}
    \item{Q0.x}{Use quantile regression to estimate the 0.x quantile of equilibrium values}
    \item{Median}{Identical to Q0.5}
    \item{Mode}{(NOT IMPLEMENTED YET)}
 }
-
 To estimate median equilibrium yield, as required by ICES, the method "Q0.5" should be used.
 }
 \examples{
