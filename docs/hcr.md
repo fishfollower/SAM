@@ -52,7 +52,7 @@ Argument      |Description
 `ave.years`     |     vector of years to average for weights, maturity, M and such
 `rec.years`     |     vector of years to use to resample recruitment from. If an empty vector is given, recruitment is based on the fitted model.
 `preForecast`     |     list of forecast parameters (i.e., fval, fscale, catchval, landval, or nextssb) to use before the HCR
-`currentSSB`     |     if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB at the begining of the previous year is used.
+`currentSSB`     |     if TRUE, SSB at the begining of the control rule year is used. If FALSE, SSB in the previous year is used. If any propF > 0, currentSSB must be FALSE.
 
 
 ## Value

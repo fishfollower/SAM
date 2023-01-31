@@ -26,7 +26,10 @@ setup.sam.data(
   land.frac = NULL,
   recapture = NULL,
   sum.residual.fleets = NULL,
-  keep.all.ages = FALSE
+  aux.fleets = NULL,
+  keep.all.ages = FALSE,
+  average.sampleTimes.survey = TRUE,
+  fleetnames.remove.space = TRUE
 )
 ```
 
@@ -49,7 +52,10 @@ Argument      |Description
 `land.frac`     |     ...
 `recapture`     |     ...
 `sum.residual.fleets`     |     ...
+`aux.fleets`     |     ...
 `keep.all.ages`     |     ...
+`average.sampleTimes.survey`     |     Should sample times for surveys be averaged?
+`fleetnames.remove.space`     |     Should white space in fleet names be removed?
 
 
 ## Details

@@ -12,6 +12,8 @@ write.data.files(dat, dir = ".", writeToOne = TRUE, ...)
 \item{dir}{Directory where the files are written}
 
 \item{writeToOne}{Write multi fleet data to one file if data is equal for all fleets}
+
+\item{...}{other arguments passes to write.ices}
 }
 \description{
 Write all data files from a list as created by 'setup.sam.data'

@@ -156,7 +156,7 @@ struct MortalitySet {
   
   MortalitySet(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason);
 
-  void updateSeasons(confSet& conf, array<Type>& logitFseason, int y);
+  void updateSeasons(dataSet<Type>& dat, confSet& conf, array<Type>& logitFseason, int y);
   void updateHazards(dataSet<Type>& dat, confSet& conf, array<Type>& logF, int y);
   // For simulation based forecast
   void updateYear(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason, int y);
@@ -169,7 +169,7 @@ struct MortalitySet {
 
 SOURCE(
        template<class Type>
-       void MortalitySet<Type>::updateSeasons(confSet& conf, array<Type>& logitFseason, int y){
+       void MortalitySet<Type>::updateSeasons(dataSet<Type>& dat, confSet& conf, array<Type>& logitFseason, int y){
 	 //Fseason.setZero();
 	 // Type NFseason = conf.isFishingSeason.sum();
 	 // If no season info, use constant (i.e. 0)
@@ -179,11 +179,16 @@ SOURCE(
 	 }
 	 // Loop over processes
 	 for(int p = 0; p < logitFseason.dim(2); ++p){
-	   vector<Type> x0(logitFseason.dim(0));
-	   for(int qq = 0; qq < x0.size(); ++qq) x0(qq) = logitFseason(qq,y,p);
-	   vector<Type> tfs = toLogSeasonEffect(x0, conf.isFishingSeason, conf.seasonTimes);
-	   for(int s = 0; s < Fseason.dim(0); ++s)
-	     Fseason(s,y,p+1) = tfs(s);
+	   if(y + dat.years(0) <= (Type)conf.seasonFirstYear){
+	     for(int s = 0; s < Fseason.dim(0); ++s)
+	       Fseason(s,y,p+1) = 0.0;
+	   }else{
+	     vector<Type> x0(logitFseason.dim(0));
+	     for(int qq = 0; qq < x0.size(); ++qq) x0(qq) = logitFseason(qq,y,p);
+	     vector<Type> tfs = toLogSeasonEffect(x0, conf.isFishingSeason, conf.seasonTimes);
+	     for(int s = 0; s < Fseason.dim(0); ++s)
+	       Fseason(s,y,p+1) = tfs(s);
+	   }
 	 }
 	 return;
        }
@@ -485,7 +490,7 @@ SOURCE(
 	   Rf_error("MortalitySet.updateYear: Year not in range");
 
 	 // Update Fseason
-	 this->updateSeasons(conf,logitFseason,y);
+	 this->updateSeasons(dat, conf,logitFseason,y);
 	 // Update hazards
 	 this->updateHazards(dat,conf,logF,y);
 

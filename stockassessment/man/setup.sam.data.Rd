@@ -19,8 +19,10 @@ setup.sam.data(
   land.frac = NULL,
   recapture = NULL,
   sum.residual.fleets = NULL,
+  aux.fleets = NULL,
   keep.all.ages = FALSE,
-  average.sampleTimes.survey = TRUE
+  average.sampleTimes.survey = TRUE,
+  fleetnames.remove.space = TRUE
 )
 }
 \arguments{
@@ -52,7 +54,13 @@ setup.sam.data(
 
 \item{sum.residual.fleets}{...}
 
+\item{aux.fleets}{...}
+
 \item{keep.all.ages}{...}
+
+\item{average.sampleTimes.survey}{Should sample times for surveys be averaged?}
+
+\item{fleetnames.remove.space}{Should white space in fleet names be removed?}
 }
 \description{
 Combine the data sources to SAM readable object

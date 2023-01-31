@@ -11,7 +11,7 @@ Setup basic minimal configuration for sam assessment
 ## Usage
 
 ```r
-defcon(dat)
+defcon(dat, level = 1)
 ```
 
 
@@ -20,6 +20,7 @@ defcon(dat)
 Argument      |Description
 ------------- |----------------
 `dat`     |     sam data object
+`level`     |     1 or 2 (1 most basic configuration, 2 configuration with AR correlation structure on surveys)
 
 
 ## Details

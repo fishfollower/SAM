@@ -17,6 +17,7 @@ fbarplot(fit, ...)
   pcol = "lightblue",
   page = NULL,
   plot = TRUE,
+  effectiveF = any(!fit$conf$seasonTimes \%in\% c(0, 1)),
   ...
 )
 
@@ -64,6 +65,8 @@ fbarplot(fit, ...)
 \item{page}{partial ages to plot}
 
 \item{plot}{true if fbar should be plotted}
+
+\item{effectiveF}{If TRUE, effective full year F based on catch and survival is plotted. If FALSE, full year F based on survival is plotted.}
 }
 \description{
 SAM Fbar plot

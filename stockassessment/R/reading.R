@@ -301,7 +301,10 @@ read.data.files<-function(dir="."){
 ##' @param land.frac ...
 ##' @param recapture ...
 ##' @param sum.residual.fleets ...
+##' @param aux.fleets ...
 ##' @param keep.all.ages ...
+##' @param average.sampleTimes.survey Should sample times for surveys be averaged?
+##' @param fleetnames.remove.space Should white space in fleet names be removed?
 ##' @importFrom stats complete.cases
 ##' @details ...
 ##' @export
@@ -555,7 +558,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                 thisCorList <- thisCorList[whichCorOK]
                 corList <<- c(corList,thisCorList)
                 nextIdx <- if(all(is.na(idxCor))){0}else{max(idxCor,na.rm=TRUE)}
-                idxCor[fleet.idx,colnames(idxCor)%in%rownames(m)][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
+                idxCor[fleet.idx,colnames(idxCor)%in%year][whichCorOK] <<- nextIdx:(nextIdx+length(thisCorList)-1)
             }
             if("time"%in%names(attributes(x))){
                 tt <- attr(x,"time")

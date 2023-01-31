@@ -22,6 +22,7 @@ Argument      |Description
 `dat`     |     A list as created by 'setup.sam.data'
 `dir`     |     Directory where the files are written
 `writeToOne`     |     Write multi fleet data to one file if data is equal for all fleets
+`...`     |     other arguments passes to write.ices
 
 
 ## Details
