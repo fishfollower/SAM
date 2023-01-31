@@ -269,7 +269,7 @@ forecast <- function(fit,
             if(fit$conf$logNMeanAssumption[2] == 1){ # Mean on natural scale
                 N <- N + c(0,-0.5 * exp(2.0 * fit$pl$logSdLogN[conf$keyVarLogN[-1]]))
             }else if(fit$conf$logNMeanAssumption[2] == 2){ # Mode on natural scale
-                N <- N + c(0,exp(2.0 * fit$pl$logSdLogN[conf$keyVarLogN[-1]]))                
+                N <- N + c(0,exp(2.0 * fit$pl$logSdLogN[fit$conf$keyVarLogN[-1]]))                
             }
         }
         xx <- rep(NA,length=length(x))
@@ -618,8 +618,8 @@ forecast <- function(fit,
             ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
             theta <- rep(1,length(ii)+1)
             if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.cv")
-            lsfun <- function(logth) {
-                th<-exp(logth)
+            lsfun <- function(th_in) {
+                th<-exp(th_in)
                 s <- rep(NA, noCatchFleets)
                 s[ii] <- th[1:length(ii)]
                 s[-ii] <- th[length(ii) + 1]
@@ -646,7 +646,8 @@ forecast <- function(fit,
             ii <- which(apply(rbind(cv,cf),2,function(x)any(!is.na(x))))
             theta <- rep(1,length(ii)+1)
             if(length(theta)>noCatchFleets)stop("Over-specified in cf.cv.keep.fv")
-            lsfun <- function(th){
+            lsfun <- function(th_in){
+                th <- th_in
                 s <- rep(NA,noCatchFleets)
                 s[ii] <- th[1:length(ii)]
                 s[-ii] <- th[length(ii)+1]

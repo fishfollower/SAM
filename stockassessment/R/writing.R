@@ -125,6 +125,7 @@ write.surveys <- function(fit,fileout,...){
 ##' @param dat A list as created by 'setup.sam.data'
 ##' @param dir Directory where the files are written
 ##' @param writeToOne Write multi fleet data to one file if data is equal for all fleets
+##' @param ... other arguments passes to write.ices
 ##' @details
 ##' 
 ##' Write all data files from a list as created by 'setup.sam.data'

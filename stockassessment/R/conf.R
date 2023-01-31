@@ -162,6 +162,7 @@ defcon<-function(dat, level=1){
     ret$keyLogFseason <- xOff - 1
     ret$seasonTimes <- c(0,1)
     ret$isFishingSeason <- 1
+    ret$seasonFirstYear <- -Inf
     return(ret) 
 }
 
@@ -251,7 +252,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
         txt$keyMortalityObsVar <- "Coupling of natural mortality observation variance parameters (not used if mortalityModel==0)"
         txt$keyXtraSd<-"An integer matrix with 4 columns (fleet year age coupling), which allows additional uncertainty to be estimated for the specified observations"
         txt$logNMeanAssumption <- "Flags indicating what the population model should correspond to. 0: Median, 1: Mean, 2: Mode. Two values are are given to differentiate recruitment and other ages."
-        txt$ínitState <- "Flag indicating whether initial parameters should be added for the latent processes."
+        txt$initState <- "Flag indicating whether initial parameters should be added for the latent processes."
         txt$recruitmentAutocorrelation <- "Number of auto-correlation parameters for recruitment. The auto-regressive process is forced to be stationary with real characteristic roots."
         nam<-names(x)
         dummy<-lapply(1:length(nam), function(i){
