@@ -3,6 +3,18 @@ SAM_DEPENDS(define)
 SAM_DEPENDS(incidence)
 
 
+#ifndef COMPILING_FROM_MSAM
+void msam_reserved()SOURCE({
+  return;
+  })
+#else
+void msam_reserved()SOURCE({
+  Rf_warning("Reserved for multiStockassessment");
+  return;
+  })
+#endif
+
+
 template<class Type>
 Type predOneObs(int fleet,	// obs.aux(i,1)
 		int fleetType,	// obs.fleetTypes(f-1)
@@ -241,8 +253,17 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      pred = log(v81b) - log(v81a);
 		      break;		      
 		      }
-		    case 90:	// Stock composition in catch/landing
-		      Rf_warning("Reserved for multiStockassessment");
+		    case 90:	// Total Stock composition in catch/landing
+		      msam_reserved();
+		      pred = 0.0;
+		      break;
+		    case 91:	// Age-wise Stock composition in catch/landing
+		      msam_reserved();
+		      pred = 0.0;
+		      break;
+		    case 92:	// Total area/Stock composition in catch/landing
+		      msam_reserved();
+		      pred = 0.0;
 		      break;
 		      
 		    default:
