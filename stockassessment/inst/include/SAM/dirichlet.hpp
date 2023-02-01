@@ -118,7 +118,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug ddirichlet(vector<TMBad::ad_aug>, vector<TMBad:
 
 
 template <class Type>
-Type ddirichlet_osa(vector<Type> x, vector<Type> alpha, data_indicator<vector<Type>, Type> keep, int give_log DEFARG(=0))
+Type ddirichlet_osa(vector<Type>& x, vector<Type>& alpha, data_indicator<vector<Type>, Type>& keep, int give_log DEFARG(=0))
   SOURCE({
   vector<Type> k=keep;
   vector<Type> l=keep.cdf_lower;
@@ -161,5 +161,5 @@ Type ddirichlet_osa(vector<Type> x, vector<Type> alpha, data_indicator<vector<Ty
 )
 
 
-SAM_SPECIALIZATION(double ddirichlet_osa(vector<double>, vector<double>, data_indicator<vector<double>, double>, int));
-SAM_SPECIALIZATION(TMBad::ad_aug ddirichlet_osa(vector<TMBad::ad_aug>, vector<TMBad::ad_aug>, data_indicator<vector<TMBad::ad_aug>, TMBad::ad_aug>, int));
+SAM_SPECIALIZATION(double ddirichlet_osa(vector<double>&, vector<double>&, data_indicator<vector<double>, double>&, int));
+SAM_SPECIALIZATION(TMBad::ad_aug ddirichlet_osa(vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>, TMBad::ad_aug>&, int));
