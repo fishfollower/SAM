@@ -566,21 +566,30 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      vector<Type> LCDF(nSeasons);
 	      LCDF.setConstant(0);
 	      vector<Type> HCDF(nSeasons);
-	      HCDF.setConstant(0);	      
+	      HCDF.setConstant(0);
+	      data_indicator<vector<Type>, Type> K2 = keep.segment(dat.idx1(f,y),dat.idx2(f,y)-dat.idx1(f,y)+1);
+	      Type xs = 1.0;
+	      Type ps = 0.0;
+	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
 		log_X(CppAD::Integer(dat.auxData(i,4))-1) = exp(dat.logobs(i));
-		log_P(CppAD::Integer(dat.auxData(i,4))-1) = predObs(i);
+		xs += exp(dat.logobs(i));
+		log_P(CppAD::Integer(dat.auxData(i,4))-1) = exp(log_alpha + predObs(i));
+		ps += exp(predObs(i));
 	        Keep(CppAD::Integer(dat.auxData(i,4))-1) = keep(i);
 	        LCDF(CppAD::Integer(dat.auxData(i,4))-1) = keep.cdf_lower(i);
 		HCDF(CppAD::Integer(dat.auxData(i,4))-1) = keep.cdf_upper(i);
 	      }
 	      vector<int> OCDF = order_keep(Keep);
 	      log_X(nSeasons-1) = 1.0; //logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.segment(0,nSeasons-1)));
-	      log_X /= log_X.sum();
-	      log_X = log_X.log();
-	      log_P(nSeasons-1) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
-	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
-	      nll -= ddirichlet(log_X,log_P,log_alpha,Keep,LCDF,HCDF,OCDF,true);	      
+	      // log_X /= log_X.sum();
+	      // log_X = log_X.log();
+	      for(int i = 0; i < log_X.size(); ++i)
+		log_X(i) /= xs;
+	      log_P(nSeasons-1) = exp(log_alpha) * (1.0 - squeeze(ps)); // logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
+
+	      nll -= ddirichlet_osa(log_X,log_P,K2,true);
+	      //nll -= ddirichlet(log_X,log_P,log_alpha,Keep,LCDF,HCDF,OCDF,true);	      
 	      //nll -= ddirichlet_vtri((vector<Type>)log_X.exp(), (vector<Type>)(log_P.exp() * exp(log_alpha)), true);
 	    }
 	  }else if(dat.fleetTypes(f) == 81){ 
