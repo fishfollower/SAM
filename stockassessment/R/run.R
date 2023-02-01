@@ -115,6 +115,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
            !is.na(conf$hockeyStickCurve) &
            conf$stockRecruitmentModelCode == 63)
             args$map$rec_pars = factor(c(1,2,NA))
+    if(conf$seasonFixedEffect){
+        args$map$logitFseason <- factor(NA * args$parameters$logitFseason)
+    }
 
     obj <- do.call(MakeADFun,args)
     

@@ -147,8 +147,13 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$initN <- numeric((conf$maxAge-conf$minAge+1) * (conf$initState > 0))
 
   ret$seasonMu <- matrix(0,length(conf$seasonTimes)-2, max(conf$keyLogFseason)+1)
-  ret$seasonLogitRho <- numeric(max(conf$keyLogFseason)+1)
-  ret$seasonLogSd <- numeric(max(conf$keyLogFseason)+1)
+  if(conf$seasonFixedEffect){
+      ret$seasonLogitRho <- numeric(0)
+      ret$seasonLogSd <- numeric(0)
+  }else{
+      ret$seasonLogitRho <- numeric(max(conf$keyLogFseason)+1)
+      ret$seasonLogSd <- numeric(max(conf$keyLogFseason)+1)
+  }
   
   ## Reference points
   ret$logFScaleMSY <- 0

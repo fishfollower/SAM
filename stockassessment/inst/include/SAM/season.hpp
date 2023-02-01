@@ -5,32 +5,36 @@ SAM_DEPENDS(forecast)
 
 template <class Type>
 Type nllSeason(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logitFseason, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
-
+   
     int nSeasonPar = logitFseason.dim[0];
     int timeSteps = logitFseason.dim[1];
-   int nProcesses = logitFseason.dim[2];
- 
+    int nProcesses = logitFseason.dim[2];
+
     Type nll = 0.0;
-    
     for(int p = 0; p < nProcesses; ++p){
       	for(int s = 0; s < nSeasonPar; ++s){
-	  Type b = toInterval((Type)par.seasonLogitRho(p), Type(0.0), Type(1.0), Type(2.0));
 	  Type mu = par.seasonMu(s,p);
-	  Type sd = exp(par.seasonLogSd(p));
 	  // Stationary initial state
-	  nll -= dnorm(logitFseason(s,0,p), mu, sd / sqrt(1 - b*b), true);
-	  for(int i = 1; i < timeSteps; ++i){
-	    Type pred = mu + b * (logitFseason(s,i-1,p) - mu);
-
-	    nll -= dnorm(logitFseason(s, i, p), pred, sd, true);
-	    if(!(forecast.nYears > 0 && forecast.forecastYear(i) > 0)){
-	      // if(forecast.nYears == 0){
-	      SIMULATE_F(of){
-		if(conf.simFlag(0)==0){
-		  // Do pre-forecast simulation here
-		  logitFseason(s,i,p) = rnorm(pred, exp(par.seasonLogSd(p)));
-		}
-	      }
+	  if(conf.seasonFixedEffect){
+	    for(int i = 0; i < timeSteps; ++i){
+	      nll -= dnorm(logitFseason(s, i, p),Type(0.0),Type(1.0 / sqrt(2.0 * M_PI)),true);
+	      logitFseason(s,i,p) = mu;
+	    }
+	  }else{
+	    Type b = toInterval((Type)par.seasonLogitRho(p), Type(0.0), Type(1.0), Type(2.0));
+	    Type sd = exp(par.seasonLogSd(p));	  
+	    nll -= dnorm(logitFseason(s,0,p), mu, sd / sqrt(1 - b*b), true);
+	    for(int i = 1; i < timeSteps; ++i){
+	      Type pred = mu + b * (logitFseason(s,i-1,p) - mu);
+	      nll -= dnorm(logitFseason(s, i, p), pred, sd, true);
+	      if(!(forecast.nYears > 0 && forecast.forecastYear(i) > 0)){
+		// if(forecast.nYears == 0){
+		SIMULATE_F(of){
+		  if(conf.simFlag(0)==0){
+		    // Do pre-forecast simulation here
+		    logitFseason(s,i,p) = rnorm(pred, exp(par.seasonLogSd(p)));
+		  }
+		}	  
 	      // }else if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
 	      //   SIMULATE_F(of){
 	      //     if(conf.simFlag(0)==0){
@@ -38,6 +42,7 @@ Type nllSeason(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSe
 	      // 	logitFseason(s,i,p) = rnorm(1, pred, exp(par.seasonLogSd(s,p)))(0);
 	      //     }
 	      //   }
+	      }
 	    }
 	  }
 	}
