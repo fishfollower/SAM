@@ -32,7 +32,7 @@ namespace rec_atomic {
     if(logy == R_NegInf)
       return(logx);
     if(logx < logy+1e-8){
-      Rf_warning("logx < logy in logspace_sub2 (logx=%.9f, logy=%.9f, fabs=%.9f)",logx,logy,(logx-logy));
+      Rf_warning("logx < logy in logspace_sub2 (logx=%.9f, logy=%.9f, fabs=%.9f)",asDouble(logx),asDouble(logy),asDouble(logx-logy));
       return(R_NaReal);
     }
     return logx + atomic::robust_utils::R_Log1_Exp(logy - logx);

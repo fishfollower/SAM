@@ -146,8 +146,8 @@ SOURCE(
 	 }
 	 )
 
-SAM_SPECIALIZATION(struct MVMIX_t<double>);
-SAM_SPECIALIZATION(struct MVMIX_t<TMBad::ad_aug>);
+SAM_SPECIALIZATION(class MVMIX_t<double>);
+SAM_SPECIALIZATION(class MVMIX_t<TMBad::ad_aug>);
 
 SAM_SPECIALIZATION(struct tmbutils::vector<MVMIX_t<double> >);
 SAM_SPECIALIZATION(struct tmbutils::vector<MVMIX_t<TMBad::ad_aug> >);
