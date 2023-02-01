@@ -144,6 +144,8 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyLogFseason); confset.keyLogFseason = keyLogFseason;
   DATA_VECTOR(seasonTimes); vector<double> seasonTimesDouble(seasonTimes.size()); for(int i=0; i<seasonTimes.size(); ++i){seasonTimesDouble(i)=asDouble(seasonTimes(i));} confset.seasonTimes=seasonTimesDouble; 
   DATA_IVECTOR(isFishingSeason); confset.isFishingSeason = isFishingSeason;
+  DATA_SCALAR(seasonFirstYear); confset.seasonFirstYear = asDouble(seasonFirstYear);
+  DATA_INTEGER(seasonFixedEffect); confset.seasonFixedEffect = seasonFixedEffect;
   
   DATA_INTEGER(reportingLevel);
 

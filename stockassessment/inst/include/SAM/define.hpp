@@ -265,6 +265,7 @@ struct confSet{
   vector<double> seasonTimes;
   vector<int> isFishingSeason;
   double seasonFirstYear;
+  int seasonFixedEffect;
   
   confSet();
 
@@ -324,6 +325,7 @@ SOURCE(
 	 seasonTimes = asVector<double>(getListElement(x,"seasonTimes", &Rf_isNumeric));
 	 isFishingSeason = asVector<int>(getListElement(x,"isFishingSeason", &Rf_isNumeric));
 	 seasonFirstYear = Rf_asReal(getListElement(x,"seasonFirstYear", &isNumericScalar));
+	 seasonFixedEffect = Rf_asInteger(getListElement(x,"seasonFixedEffect", &isNumericScalar));
        }
        )
 
@@ -376,7 +378,8 @@ SOURCE(
 	 keyLogFseason(),
 	 seasonTimes(),
 	 isFishingSeason(),
-	 seasonFirstYear()
+	 seasonFirstYear(),
+	 seasonFixedEffect()
 	 {}
 	 );
 
@@ -429,7 +432,8 @@ SOURCE(
 	 keyLogFseason(other.keyLogFseason),
 	 seasonTimes(other.seasonTimes),
 	 isFishingSeason(other.isFishingSeason),
-	 seasonFirstYear(other.seasonFirstYear)
+	 seasonFirstYear(other.seasonFirstYear),
+	 seasonFixedEffect(other.seasonFixedEffect)
 	 {}
 	 );
 

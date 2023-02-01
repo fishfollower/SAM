@@ -86,7 +86,7 @@ defcon<-function(dat, level=1){
             x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- lastMax+1
             lastMax <- max(x)
         }else if(fleetTypes[i]%in%c(80,90)){
-            x[i,] <- -1
+            x[i,] <- 0
             x[i,1] <- lastMax+1
             lastMax <- max(x)
         }
@@ -163,6 +163,7 @@ defcon<-function(dat, level=1){
     ret$seasonTimes <- c(0,1)
     ret$isFishingSeason <- 1
     ret$seasonFirstYear <- -Inf
+    ret$seasonFixedEffect <- 0
     return(ret) 
 }
 
