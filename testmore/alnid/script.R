@@ -8,7 +8,7 @@ nscodConf$obsCorStruct[3]<-"ID"
 
 par<-defpar(nscodData,nscodConf)
 
-fit<-sam.fit(nscodData,nscodConf,par)
+fit<-sam.fit(nscodData,nscodConf,par, run=TRUE)
 
 ## Test that simulation does not give error
 s <- simulate(fit,1)

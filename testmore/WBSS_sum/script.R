@@ -58,7 +58,7 @@ par<-defpar(dat,conf)
 par$itrans_rho <- c(5,1,1)
 ### Changes below compared to 2019 to solve convergence problem for logSdLogFsta fleet C in 2020
 mymap <- list( itrans_rho = factor(c(NA,0,1)), logSdLogFsta=factor(c(1,1,1,1)))
-fit<-sam.fit(dat,conf,par,map=mymap)
+fit<-sam.fit(dat,conf,par,map=mymap, newtonsteps=0)
 
 
 mymap <- list( itrans_rho = factor(c(NA,0,1)))

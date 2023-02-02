@@ -63,7 +63,7 @@ dir_sf <- file.path(dir,"sf")
 write.data.files(dat,dir_sf)
 
 cat("Single","\n",file = "res.out",append=TRUE)
-cat(all.equal(toNA(cn),read.ices(file.path(dir_sf,"cn.dat")), tolerance= tol),"\n",file = "res.out",append=TRUE)
+cat(all.equal(toNA(cn),read.ices(file.path(dir_sf,"cn.dat")), tolerance= tol, check.attributes=FALSE),"\n",file = "res.out",append=TRUE)
 cat(all.equal((cw),read.ices(file.path(dir_sf,"cw.dat")), tolerance= tol),"\n",file = "res.out", append=TRUE)
 cat(all.equal((dw),read.ices(file.path(dir_sf,"dw.dat")), tolerance= tol), "\n", file = "res.out", append=TRUE)
 cat(all.equal((lw),read.ices(file.path(dir_sf,"lw.dat")), tolerance= tol), "\n", file = "res.out", append=TRUE)
@@ -129,10 +129,10 @@ write.data.files(dat,dir_mf, writeToOne = FALSE)
 
 cat("Multi1","\n",file = "res.out",append=TRUE)
 ## CN
-cat(all.equal(toNA(cnA),read.ices(file.path(dir_mf,"cn_00001.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnC),read.ices(file.path(dir_mf,"cn_00002.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnD),read.ices(file.path(dir_mf,"cn_00003.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnF),read.ices(file.path(dir_mf,"cn_00004.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnA),read.ices(file.path(dir_mf,"cn_00001.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnC),read.ices(file.path(dir_mf,"cn_00002.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnD),read.ices(file.path(dir_mf,"cn_00003.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnF),read.ices(file.path(dir_mf,"cn_00004.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
 ## CW
 cat(all.equal((cw),read.ices(file.path(dir_mf,"cw_00001.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
 cat(all.equal((cw),read.ices(file.path(dir_mf,"cw_00002.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
@@ -174,10 +174,10 @@ write.data.files(dat,dir_mf2, writeToOne = TRUE)
 
 cat("Multi2","\n",file = "res.out",append=TRUE)
 ## CN
-cat(all.equal(toNA(cnA),read.ices(file.path(dir_mf2,"cn_00001.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnC),read.ices(file.path(dir_mf2,"cn_00002.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnD),read.ices(file.path(dir_mf2,"cn_00003.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnF),read.ices(file.path(dir_mf2,"cn_00004.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnA),read.ices(file.path(dir_mf2,"cn_00001.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnC),read.ices(file.path(dir_mf2,"cn_00002.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnD),read.ices(file.path(dir_mf2,"cn_00003.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnF),read.ices(file.path(dir_mf2,"cn_00004.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
 ## CW
 cat(all.equal((cw),read.ices(file.path(dir_mf2,"cw.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
 
@@ -265,17 +265,17 @@ list.files(dir_mf3)
 
 cat("Multi3","\n",file = "res.out",append=TRUE)
 ## CN
-cat(all.equal(toNA(cnA),read.ices(file.path(dir_mf3,"cn_00001.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnC),read.ices(file.path(dir_mf3,"cn_00002.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnD),read.ices(file.path(dir_mf3,"cn_00003.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
-cat(all.equal(toNA(cnF),read.ices(file.path(dir_mf3,"cn_00004.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnA),read.ices(file.path(dir_mf3,"cn_00001.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnC),read.ices(file.path(dir_mf3,"cn_00002.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnD),read.ices(file.path(dir_mf3,"cn_00003.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(cnF),read.ices(file.path(dir_mf3,"cn_00004.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
 ## CW
 cat(all.equal((cwA),read.ices(file.path(dir_mf3,"cw_00001.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
 cat(all.equal((cwC),read.ices(file.path(dir_mf3,"cw_00002.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
 cat(all.equal((cwD),read.ices(file.path(dir_mf3,"cw_00003.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
 cat(all.equal((cwF),read.ices(file.path(dir_mf3,"cw_00004.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
 ## CN sum
-cat(all.equal(toNA(sumACDF),read.ices(file.path(dir_mf3,"cn_sum.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
+cat(all.equal(toNA(sumACDF),read.ices(file.path(dir_mf3,"cn_sum.dat")), tolerance= tol, check.attributes=FALSE), "\n", file = "res.out", append = TRUE)
 ## DW
 cat(all.equal((dw),read.ices(file.path(dir_mf3,"dw.dat")), tolerance= tol), "\n", file = "res.out", append = TRUE)
 ## LW
