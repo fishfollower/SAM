@@ -11,6 +11,8 @@ par<-defpar(nscodData,nscodConf)
 
 fit<-sam.fit(nscodData,nscodConf,par)
 
+d <- deterministicReferencepoints(fit,"Max")
+
 ## Test that simulation does not give error
 s <- simulate(fit,1)
 
