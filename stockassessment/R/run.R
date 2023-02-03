@@ -310,6 +310,11 @@ clean.void.catches<-function(dat, conf){
 }
 
 
+##' @export
+jit <- function(fit, nojit=10, ...){
+    UseMethod("jit")
+}
+
 ##' Jitter runs 
 ##' @param fit a fitted model object as returned from sam.fit
 ##' @param nojit a list of vectors. Each element in the list specifies a run where the fleets mentioned are omitted
@@ -320,8 +325,10 @@ clean.void.catches<-function(dat, conf){
 ##' @details ...
 ##' @importFrom parallel detectCores makeCluster clusterEvalQ parLapply stopCluster
 ##' @importFrom stats rnorm
+##' @rdname jit
+##' @method jit sam
 ##' @export
-jit <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=detectCores()){
+jit.sam <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=detectCores()){
   parv <- unlist(par)
   pars <- lapply(1:nojit, function(i)relist(parv+rnorm(length(parv),sd=sd), par))
   if(ncores>1){
