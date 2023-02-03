@@ -582,8 +582,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   ccc<- which(complete.cases(dat[,1:4])==F & dat[,2] %in% which(type==6))
   keep <- cc[which(!cc %in% ccc)]
     dat<-dat[keep,]
-  
-  o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age))
+
+    xtr <- rep(0,nrow(dat)); xtr[type[dat$fleet] >= 80] <- dat[type[dat$fleet] >= 80,9]
+  o<-order(as.numeric(dat$year),as.numeric(dat$fleet),as.numeric(dat$age), xtr)
   attr(dat,'type')<-type
   names(timeStart)<-NULL
   attr(dat,'timeStart')<-timeStart
