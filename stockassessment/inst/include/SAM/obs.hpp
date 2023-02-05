@@ -88,7 +88,7 @@ vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Typ
 				      }
 
 				      for(int f=0; f<dat.noFleets; ++f){
-					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90))){ 
+					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){ // Maybe easier to switch to inclusive instead of exclusive test 
 					  int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
 					  if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
 					  matrix<Type> cov(thisdim,thisdim);
@@ -386,7 +386,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
 
-	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90))){
+	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){
 	    if(!isNAINT(dat.idx1(f,y))){
 	      int idxfrom=dat.idx1(f,y);
 	      int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
@@ -647,6 +647,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      }	      	      
 	    }
 	  }else if(dat.fleetTypes(f) == 90){
+	    // Do nothing
+	  }else if(dat.fleetTypes(f) == 92){
 	    // Do nothing
 	  }else{
 	    Rf_error("Fleet type not implemented");

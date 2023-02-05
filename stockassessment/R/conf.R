@@ -28,7 +28,7 @@ defcon<-function(dat, level=1){
     fleetTypes <- dat$fleetTypes    
     ##ages <- do.call(rbind,tapply(dat$aux[,3], INDEX=dat$aux[,2], FUN=range))
     ages <- cbind(dat$minAgePerFleet, dat$maxAgePerFleet)    
-    ages[fleetTypes%in%c(3,5,6,80,90),] <- NA
+    ages[fleetTypes%in%c(3,5,6,80,90,92),] <- NA
     minAge <- min(ages, na.rm=TRUE)
     maxAge <- max(ages, na.rm=TRUE)
     ages[is.na(ages)] <- minAge
@@ -85,7 +85,7 @@ defcon<-function(dat, level=1){
         if(fleetTypes[i]%in%c(0,1,2,3,6,81)){
             x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- lastMax+1
             lastMax <- max(x)
-        }else if(fleetTypes[i]%in%c(80,90)){
+        }else if(fleetTypes[i]%in%c(80,90,92)){
             x[i,] <- 0
             x[i,1] <- lastMax+1
             lastMax <- max(x)

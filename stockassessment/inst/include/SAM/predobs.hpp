@@ -229,26 +229,35 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      SAM_ASSERT(auxData.size() >= 6,"aux is not large enough for fleet type 80");
 		      Type Ctotal = 0.0;
 		      Type Cseason = 0.0;
-		      int flt = CppAD::Integer(auxData(0))-1; // TODO: allow auxData(0)==0 to sum over all fleets
-		      int aMin = dat.minAgePerFleet(flt);
-		      int aMax = dat.maxAgePerFleet(flt);
-		      for(int aa = aMin - conf.minAge; aa < aMax - conf.minAge; ++aa){
-		      	//Type Cttmp = exp(logN(aa,y)) * mort.CIF(flt,aa,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
-			Type Cttmp = exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,flt) + log(mort.fleetCumulativeIncidence(aa,y,flt)));
-			Type Cstmp = exp(logN(aa,y)) * mort.partialCIF(flt,aa,y, auxData(1), auxData(2));
-			// 0: Catch numbers
-			if(CppAD::Integer(auxData(3)) == 1){ // 1: Catch weight
-			  Cttmp *= dat.catchMeanWeight(y,aa, flt);
-			  Cstmp *= dat.catchMeanWeight(y,aa, flt);
-			}else if(CppAD::Integer(auxData(3)) == 2){ // 2: Landing numbers
-			  Cttmp *= dat.landFrac(y,aa, flt);
-			  Cstmp *= dat.landFrac(y,aa, flt);
-			}else if(CppAD::Integer(auxData(3)) == 3){ // 3: Landing weight
-			  Cttmp *= dat.landFrac(y,aa, flt) * dat.landMeanWeight(y,aa, flt);
-			  Cstmp *= dat.landFrac(y,aa, flt) * dat.landMeanWeight(y,aa, flt);
+		      int flt0 = CppAD::Integer(auxData(0))-1; // TODO: allow auxData(0)==0 to sum over all fleets
+		      int flt1 = flt0;
+		      if(flt0 < 0){
+			flt0 = 0;
+			flt1 = dat.fleetTypes.size()-1;
+		      }
+		      for(int flt = flt0; flt <= flt1; ++flt){
+			if(dat.fleetTypes(flt) == 0){
+			int aMin = dat.minAgePerFleet(flt);
+			int aMax = dat.maxAgePerFleet(flt);
+			for(int aa = aMin - conf.minAge; aa < aMax - conf.minAge; ++aa){
+			  //Type Cttmp = exp(logN(aa,y)) * mort.CIF(flt,aa,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
+			  Type Cttmp = exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,flt) + log(mort.fleetCumulativeIncidence(aa,y,flt)));
+			  Type Cstmp = exp(logN(aa,y)) * mort.partialCIF(flt,aa,y, auxData(1), auxData(2));
+			  // 0: Catch numbers
+			  if(CppAD::Integer(auxData(3)) == 1){ // 1: Catch weight
+			    Cttmp *= dat.catchMeanWeight(y,aa, flt);
+			    Cstmp *= dat.catchMeanWeight(y,aa, flt);
+			  }else if(CppAD::Integer(auxData(3)) == 2){ // 2: Landing numbers
+			    Cttmp *= dat.landFrac(y,aa, flt);
+			    Cstmp *= dat.landFrac(y,aa, flt);
+			  }else if(CppAD::Integer(auxData(3)) == 3){ // 3: Landing weight
+			    Cttmp *= dat.landFrac(y,aa, flt) * dat.landMeanWeight(y,aa, flt);
+			    Cstmp *= dat.landFrac(y,aa, flt) * dat.landMeanWeight(y,aa, flt);
+			  }
+			  Ctotal += Cttmp;
+			  Cseason += Cstmp;
 			}
-			Ctotal += Cttmp;
-			Cseason += Cstmp;
+			}
 		      }
 		      pred = log(Cseason) - log(Ctotal);		      
 		      break;
@@ -259,10 +268,21 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      SAM_ASSERT(auxData.size() >= 6,"aux is not large enough for fleet type 81");
 		      // Within an age/year, landing fraction and weights are (currently) constant, so catch type is irrelevant
 		      // TODO: allow auxData(0)==0  to sum over all fleets
-		      int flt = CppAD::Integer(auxData(0))-1;
-		      //Type v81a = mort.CIF(flt,a,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
-		      Type v81a = exp(mort.logFleetSurvival_before(a,y,flt) + log(mort.fleetCumulativeIncidence(a,y,flt)));
-		      Type v81b = mort.partialCIF(flt,a,y,auxData(1),auxData(2));		      
+		      int flt0 = CppAD::Integer(auxData(0))-1; // TODO: allow auxData(0)==0 to sum over all fleets
+		      int flt1 = flt0;
+		      if(flt0 < 0){
+			flt0 = 0;
+			flt1 = dat.fleetTypes.size()-1;
+		      }
+		      Type v81a = 0.0;
+		      Type v81b = 0.0;
+		      for(int flt = flt0; flt <= flt1; ++flt){
+			if(dat.fleetTypes(flt) == 0){
+			//Type v81a = mort.CIF(flt,a,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
+			v81a += exp(mort.logFleetSurvival_before(a,y,flt) + log(mort.fleetCumulativeIncidence(a,y,flt)));
+			v81b += mort.partialCIF(flt,a,y,auxData(1),auxData(2));
+			}
+		      }
 		      pred = log(v81b) - log(v81a);
 		      break;		      
 		      }
