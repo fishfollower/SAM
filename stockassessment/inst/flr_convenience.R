@@ -55,7 +55,7 @@ as.matrix.FLQuant <- function(v){
 
 
 
-as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted = FALSE){
+as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted = FALSE, biopar = TRUE){
     require(FLCore)
     toFLQ <- .SAM_FLR_HELP_toFLQ
     resize <- .SAM_FLR_HELP_resize
@@ -68,13 +68,31 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
     CN <- toFLQ(resize(na2zero(CN_all),ages,years))
     LF <- toFLQ(resize(fit$data$landFrac,ages,years,TRUE))
     ## mat
-    MA <- toFLQ(resize(fit$data$propMat,ages,years,TRUE))
+    if(biopar && fit$conf$matureModel > 0){
+        xx <- fit$rep$propMat
+        dimnames(xx) <- dimnames(fit$data$propMat)
+        MA <- toFLQ(resize(xx,ages,years,TRUE))
+    }else{
+        MA <- toFLQ(resize(fit$data$propMat,ages,years,TRUE))
+    }
     ## stock.wt
-    SW <- toFLQ(resize(fit$data$stockMeanWeight,ages,years,TRUE), unit.w)
+    if(biopar && fit$conf$stockWeightModel > 0){
+        xx <- fit$rep$stockMeanWeight
+        dimnames(xx) <- dimnames(fit$data$stockMeanWeight)
+        SW <- toFLQ(resize(xx,ages,years,TRUE))
+    }else{
+        SW <- toFLQ(resize(fit$data$stockMeanWeight,ages,years,TRUE), unit.w)
+    }
     ## stock.n
     SN <- toFLQ(resize(ntable(fit),ages,years))
     ## catch.wt
-    CW <- toFLQ(resize(fit$data$catchMeanWeight,ages,years,TRUE), unit.w)
+    if(biopar && fit$conf$catchWeightModel > 0){
+        xx <- fit$rep$catchMeanWeight
+        dimnames(xx) <- dimnames(fit$data$catchMeanWeight)
+        CW <- toFLQ(resize(xx,ages,years,TRUE))
+    }else{
+        CW <- toFLQ(resize(fit$data$catchMeanWeight,ages,years,TRUE), unit.w)
+    }
     ## discards.wt
     DW <- toFLQ(resize(fit$data$disMeanWeight,ages,years,TRUE), unit.w)
     ## discards.n
@@ -84,7 +102,13 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
     ## landings.n
     LN <- CN * LF
     ## m
-    M <- toFLQ(resize(fit$data$natMor,ages,years,TRUE))
+    if(biopar && fit$conf$mortalityModel > 0){
+        xx <- fit$rep$natMor
+        dimnames(xx) <- dimnames(fit$data$natMor)
+        M <- toFLQ(resize(xx,ages,years,TRUE))
+    }else{
+        M <- toFLQ(resize(fit$data$natMor,ages,years,TRUE))
+    }
     ## harvest.spwn
     PF <- toFLQ(resize(fit$data$propF,ages,years,TRUE))
     ## m.spwn
