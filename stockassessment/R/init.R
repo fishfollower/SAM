@@ -15,9 +15,9 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logSdLogN=numeric(max(conf$keyVarLogN)+1)-.35
   ret$logSdLogP=if(length(conf$keyVarLogP)>0){numeric(max(conf$keyVarLogP)+1)-.7} else { numeric(0)}
   ret$logSdLogObs=numeric(max(conf$keyVarObs)+1)-.35
-  ret$logSdLogTotalObs=numeric(sum(conf$obsLikelihoodFlag %in% c("ALN")))
+  ret$logSdLogTotalObs=numeric(sum(conf$obsLikelihoodFlag %in% c("ALN") & dat$fleetTypes < 80))
   ret$transfIRARdist=if(all(is.na(conf$keyCorObs)))numeric(0) else numeric(max(conf$keyCorObs,na.rm=TRUE)+1)+0.05
-  nbyfleet = (!is.na(conf$obsCorStruct) & conf$obsCorStruct=="US")*(dat$maxAgePerFleet-dat$minAgePerFleet+1-(conf$obsLikelihoodFlag=="ALN"))
+  nbyfleet = (!is.na(conf$obsCorStruct) & conf$obsCorStruct=="US")*(dat$fleetCovarianceSize-as.numeric(conf$obsLikelihoodFlag=="ALN" & dat$fleetTypes < 80))
   ret$sigmaObsParUS=numeric(sum(nbyfleet*(nbyfleet-1)/2))
 
 

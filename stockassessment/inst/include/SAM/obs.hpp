@@ -13,10 +13,10 @@ SAM_DEPENDS(empirical_pr)
 SAM_DEPENDS(dirichlet)
 
 template <class Type>
-matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxAgeFleet, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec)SOURCE({
+matrix<Type> setupVarCovMatrix(int dim, int offset, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec)SOURCE({
 
-    int dim = maxAgeFleet-minAgeFleet+1;
-    int offset = minAgeFleet-minAge;
+    // int dim = maxAgeFleet-minAgeFleet+1;
+    // int offset = minAgeFleet-minAge;
     matrix<Type> ret(dim,dim);
     ret.setZero();
 
@@ -42,8 +42,8 @@ matrix<Type> setupVarCovMatrix(int minAge, int maxAge, int minAgeFleet, int maxA
     return ret;
   });
 
-SAM_SPECIALIZATION(matrix<double> setupVarCovMatrix(int, int, int, int, vector<int>, vector<double>, vector<int>, vector<double>));
-SAM_SPECIALIZATION(matrix<TMBad::ad_aug> setupVarCovMatrix(int, int, int, int, vector<int>, vector<TMBad::ad_aug>, vector<int>, vector<TMBad::ad_aug>));
+SAM_SPECIALIZATION(matrix<double> setupVarCovMatrix(int, int, vector<int>, vector<double>, vector<int>, vector<double>));
+SAM_SPECIALIZATION(matrix<TMBad::ad_aug> setupVarCovMatrix(int, int,vector<int>, vector<TMBad::ad_aug>, vector<int>, vector<TMBad::ad_aug>));
 
 
 
@@ -72,13 +72,13 @@ vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Typ
 				      vector< vector<Type> > sigmaObsParVec(dat.noFleets);
 				      vector< matrix<Type> > obsCov(dat.noFleets); // for reporting
 
-				      int nfleet = dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
+				      int nfleet = dat.fleetCovarianceSize(0); //dat.maxAgePerFleet(0)-dat.minAgePerFleet(0)+1;
 				      int dn=nfleet*(nfleet-1)/2;
 				      int from=-dn, to=-1; 
 				      for(int f=0; f<dat.noFleets; f++){
 					if(conf.obsCorStruct(f)!=2) continue; // skip if not US 
-					nfleet = dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
-					if(conf.obsLikelihoodFlag(f) == 1) nfleet-=1; // ALN has dim-1
+					nfleet = dat.fleetCovarianceSize(f); //dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+					if(conf.obsLikelihoodFlag(f) == 1 && dat.fleetTypes(f) < 80) nfleet-=1; // ALN has dim-1 (but not for proportion fleets)
 					dn = nfleet*(nfleet-1)/2;
 					from=to+1;
 					to=to+dn;
@@ -88,18 +88,28 @@ vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Typ
 				      }
 
 				      for(int f=0; f<dat.noFleets; ++f){
-					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){ // Maybe easier to switch to inclusive instead of exclusive test 
-					  int thisdim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
-					  if(conf.obsLikelihoodFlag(f) == 1) thisdim-=1; // ALN has dim-1
+					if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==7)||(dat.fleetTypes(f)==6))){
+					  //||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){ // Maybe easier to switch to inclusive instead of exclusive test 
+					  int thisdim= dat.fleetCovarianceSize(f); //dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+					  int offset = 0;
+					  if(dat.minAgePerFleet(f) > conf.minAge)
+					    offset = dat.minAgePerFleet(f) - conf.minAge;
+					  if(conf.obsLikelihoodFlag(f) == 1 && dat.fleetTypes(f) < 80) thisdim-=1; // ALN has dim-1 (but not for proportion fleets)
+					  if(conf.obsLikelihoodFlag(f) == 2){
+					    matrix<Type> dummy(1,1);
+					    dummy(0,0) = R_NaReal;
+					    obsCov(f) = dummy;
+					    continue;
+					  }
 					  matrix<Type> cov(thisdim,thisdim);
 					  cov.setZero();
 					  if(conf.obsCorStruct(f)==0){//ID (independent)  
 					    for(int i=0; i<thisdim; ++i){
-					      int aidx = i+dat.minAgePerFleet(f)-conf.minAge;
+					      int aidx = i+offset;
 					      cov(i,i)=varLogObs(conf.keyVarObs(f,aidx));
 					    }
-					  } else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
-					    cov = setupVarCovMatrix(conf.minAge, conf.maxAge, dat.minAgePerFleet(f), dat.maxAgePerFleet(f), conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
+					  }else if(conf.obsCorStruct(f)==1){//(AR) irregular lattice AR
+					     cov = setupVarCovMatrix(dat.fleetCovarianceSize(f), offset, conf.keyCorObs.transpose().col(f), IRARdist, conf.keyVarObs.transpose().col(f) , exp(par.logSdLogObs) );
 					    if(conf.obsLikelihoodFlag(f) == 1){ // ALN has dim-1
 					      cov.conservativeResize(thisdim,thisdim); // resize, keep contents but drop last row/col
 					    }
@@ -108,8 +118,7 @@ vector< MVMIX_t<Type> > getnllVec(dataSet<Type> &dat, confSet &conf, paraSet<Typ
 					    neg_log_densityObsUnstruc(f) = getCorrObj(sigmaObsParVec(f));  
 					    matrix<Type> tmp = neg_log_densityObsUnstruc(f).cov();
   
-					    tmp.setZero();
-					    int offset = dat.minAgePerFleet(f)-conf.minAge;
+					    tmp.setZero();					   
 					    obsCovScaleVec(f).resize(tmp.rows());
 					    for(int i=0; i<tmp.rows(); i++) {
 					      tmp(i,i) = sqrt(varLogObs(conf.keyVarObs(f,i+offset)));
@@ -234,6 +243,32 @@ namespace obs_fun {
   SAM_SPECIALIZATION(double jacobianDet(vector<double>,vector<double>));
   SAM_SPECIALIZATION(TMBad::ad_aug jacobianDet(vector<TMBad::ad_aug>,vector<TMBad::ad_aug>));
 
+
+ template<class Type>
+  matrix<Type> buildJacProportions(vector<Type> x)SOURCE({
+    matrix<Type> res(x.size(),x.size()-1); 
+    for(int i = 0; i < res.cols(); ++i)
+      res(i,i) = Type(1.0)/x(i);
+    for(int j = 0; j < res.cols(); ++j){
+      res(res.rows()-1,j) = Type(-1.0)/x(x.size()-1);
+    }
+    return res;
+    })
+
+
+  SAM_SPECIALIZATION(matrix<double> buildJacProportions(vector<double>));
+  SAM_SPECIALIZATION(matrix<TMBad::ad_aug> buildJacProportions(vector<TMBad::ad_aug>));
+
+  
+  template <class Type>
+  Type jacobianDetProportions(vector<Type> x)SOURCE({
+    return buildJacProportions(x).determinant();
+    })
+
+  SAM_SPECIALIZATION(double jacobianDetProportions(vector<double>));
+  SAM_SPECIALIZATION(TMBad::ad_aug jacobianDetProportions(vector<TMBad::ad_aug>));
+
+  
 
   template <class Type>
   Type findLinkV(Type k, int n DEFARG(=0))SOURCE({
@@ -386,7 +421,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
 
-	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==81)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){
+	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){
 	    if(!isNAINT(dat.idx1(f,y))){
 	      int idxfrom=dat.idx1(f,y);
 	      int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
@@ -395,7 +430,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	      if(dat.fleetTypes(f)==7){
 		//array<Type> totF=totFFun(dat,conf, logF);             
 		//Type zz=0;
-		int thisDim=dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
+		int thisDim=dat.fleetCovarianceSize(f); //dat.maxAgePerFleet(f)-dat.minAgePerFleet(f)+1;
 		int Nparts=0;
 		int offset=0;
 		int setoff=0;
@@ -516,6 +551,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		}
 		totalParKey++;
 		break;
+	      case 2: //Dirichlet
+		Rf_error("Dirichlet distribution can only be used for fleet types 80, 90, 92");
 	      default:
 		Rf_error("Unknown obsLikelihoodFlag");
 	      }
@@ -562,89 +599,42 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }else if(dat.fleetTypes(f)==80){
 	    if(!isNAINT(dat.idx1(f,y))){	    
 	      int iMin = dat.idx1(f,y);
-	      // int iMax = dat.idx2(f,y);
-	      // Setup response and prediction vectors
 	      int nSeasons = CppAD::Integer(dat.auxData(iMin,5));
+	      // Observation on additive logistic scale
 	      vector<Type> log_X(nSeasons);
-	      log_X.setZero();
+	      log_X.setConstant(R_NegInf);
+	      // Prediction on log-proportion scale
 	      vector<Type> log_P(nSeasons);
-	      log_P.setZero();
-	      vector<Type> Keep(nSeasons);
-	      Keep.setConstant(1);
-	      vector<Type> LCDF(nSeasons);
-	      LCDF.setConstant(0);
-	      vector<Type> HCDF(nSeasons);
-	      HCDF.setConstant(0);
+	      log_P.setConstant(R_NegInf);
 	      data_indicator<vector<Type>, Type> K2 = keep.segment(dat.idx1(f,y),dat.idx2(f,y)-dat.idx1(f,y)+1);
 	      Type xs = 1.0;
 	      Type ps = 0.0;
-	      Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
 	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){
-		log_X(CppAD::Integer(dat.auxData(i,4))-1) = exp(dat.logobs(i));
+		log_X(CppAD::Integer(dat.auxData(i,4))-1) = dat.logobs(i);
 		xs += exp(dat.logobs(i));
-		log_P(CppAD::Integer(dat.auxData(i,4))-1) = exp(log_alpha + predObs(i));
+		log_P(CppAD::Integer(dat.auxData(i,4))-1) = predObs(i);
 		ps += exp(predObs(i));
-	        Keep(CppAD::Integer(dat.auxData(i,4))-1) = keep(i);
-	        LCDF(CppAD::Integer(dat.auxData(i,4))-1) = keep.cdf_lower(i);
-		HCDF(CppAD::Integer(dat.auxData(i,4))-1) = keep.cdf_upper(i);
 	      }
-	      vector<int> OCDF = order_keep(Keep);
-	      log_X(nSeasons-1) = 1.0; //logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.segment(0,nSeasons-1)));
-	      // log_X /= log_X.sum();
-	      // log_X = log_X.log();
-	      for(int i = 0; i < log_X.size(); ++i)
-		log_X(i) /= xs;
-	      log_P(nSeasons-1) = exp(log_alpha) * (1.0 - squeeze(ps)); // logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.segment(0,nSeasons-1)));
-
-	      nll -= ddirichlet_osa(log_X,log_P,K2,true);
-	      //nll -= ddirichlet(log_X,log_P,log_alpha,Keep,LCDF,HCDF,OCDF,true);	      
-	      //nll -= ddirichlet_vtri((vector<Type>)log_X.exp(), (vector<Type>)(log_P.exp() * exp(log_alpha)), true);
-	    }
-	  }else if(dat.fleetTypes(f) == 81){ 
-	    if(!isNAINT(dat.idx1(f,y))){
-	      int iMin = dat.idx1(f,y);
-	      int iMax = dat.idx2(f,y);
-	      // Setup response and prediction vectors
-	      int nSeasons = CppAD::Integer(dat.auxData(iMin,5));
-	      int minAge = dat.minAgePerFleet(f);
-	      int maxAge = dat.maxAgePerFleet(f);
-	      matrix<Type> log_X(nSeasons, maxAge-minAge+1);
-	      log_X.setZero();
-	      matrix<Type> log_P(nSeasons, maxAge-minAge+1);
-	      log_P.setConstant(R_NegInf);
-	      matrix<Type> Keep(nSeasons, maxAge-minAge+1);
-	      Keep.setConstant(1);
-	      matrix<Type> LCDF(nSeasons, maxAge-minAge+1);
-	      LCDF.setConstant(0);
-	      matrix<Type> HCDF(nSeasons, maxAge-minAge+1);
-	      HCDF.setConstant(0);
-	      matrix<int> nObs(nSeasons,maxAge-minAge+1);
-	      nObs.setZero();
-	      for(int i=dat.idx1(f,y); i<=dat.idx2(f,y); ++i){		
-		log_X(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = exp(dat.logobs(i));
-		log_P(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = predObs(i);
-		Keep(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep(i);
-		LCDF(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep.cdf_lower(i);
-		HCDF(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) = keep.cdf_upper(i);
-		nObs(CppAD::Integer(dat.auxData(i,4))-1, dat.aux(i,2) - minAge) += 1;
+	      log_X(nSeasons-1) = 0.0;
+	      log_P(nSeasons-1) = log(1.0 - squeeze(ps));
+	      if(conf.obsLikelihoodFlag(f) == 1){ // Additive logistic normal
+		// Keep free observations, already on correct scale
+		vector<Type> logXuse = log_X.segment(0,nSeasons-1);
+		// Additive logistic transformation of predicted proportions
+		vector<Type> logPuse = log_P.segment(0,nSeasons-1) - log_P(nSeasons-1);
+		// Quick fix for now
+		for(int i = 0; i < logXuse.size(); ++i)
+		  nll += nllVec(f)((vector<Type>)(logXuse - logPuse), K2);	       
+	      }else if(conf.obsLikelihoodFlag(f) == 2){ // Dirichlet
+		Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
+		// Transform log_X to log proportions
+		for(int i = 0; i < log_X.size(); ++i)
+		  log_X(i) -= log(xs);
+		Type d = obs_fun::jacobianDetProportions((vector<Type>)log_X.exp());
+		nll -= ddirichlet(log_X,log_P,-log_alpha,K2,true) + log(fabs(d));
+	      }else{
+		Rf_error("Fleet type 80 must use obsLikelihoodFlag ALN or Dirichlet");
 	      }
-	      // Sum to one and alpha
-	      vector<Type> log_alpha(maxAge-minAge+1);
-	      log_alpha.setConstant(R_NaReal);
-	      for(int i = 0; i < log_X.cols(); ++i){
-		if(nObs(nSeasons-1,i)==0){
-		  log_X(nSeasons-1,i) = 1.0; //logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_X.col(i).segment(0,nSeasons-1)));
-		  Type xs = log_X.col(i).sum();
-		  for(int j = 0; j < log_X.rows(); ++j){
-		    log_X(j,i) /= xs;
-		    log_X(j,i) = log(log_X(j,i));
-		  }
-		  log_P(nSeasons-1,i) = logspace_sub_SAM(Type(0.0), logspace_sum((vector<Type>)log_P.col(i).segment(0,nSeasons-1)));
-		}
-		log_alpha(i) = par.logSdLogObs(conf.keyVarObs(f,i + minAge - conf.minAge));
-		vector<int> OCDF = order_keep((vector<Type>)Keep.col(i));
-		nll -= ddirichlet((vector<Type>)log_X.col(i),(vector<Type>)log_P.col(i),(Type)log_alpha(i),(vector<Type>)Keep.col(i),(vector<Type>)LCDF.col(i),(vector<Type>)HCDF.col(i),OCDF,true);
-	      }	      	      
 	    }
 	  }else if(dat.fleetTypes(f) == 90){
 	    // Do nothing

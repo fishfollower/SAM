@@ -289,24 +289,32 @@ getUpperBounds<-function(parameters, conf){
 clean.void.catches<-function(dat, conf){
     if(!any(dat$fleetTypes == 0))
         return(dat)       
-  cfidx <- which(dat$fleetTypes==0)
-  aidx <- unique(dat$aux[dat$aux[,2]%in%cfidx,3]-conf$minAge+1)
-  faidx <- as.matrix(expand.grid(cfidx, aidx))
-  faidx <- faidx[which(conf$keyLogFsta[faidx]== -1),,drop=FALSE]
-  ## rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
-  rmidx <- paste0(dat$aux[,2],"x",dat$aux[,3]-conf$minAge+1) %in%  paste0(faidx[,1],"x",faidx[,2])
-  dat$aux <- dat$aux[!rmidx,]
-  dat$logobs <- dat$logobs[!rmidx]
-  dat$weight <- dat$weight[!rmidx]
-  dat$nobs<-sum(!rmidx)
-  dat$minAgePerFleet<-as.integer(tapply(dat$aux[,"age"], INDEX=dat$aux[,"fleet"], FUN=min))
-  dat$maxAgePerFleet<-as.integer(tapply(dat$aux[,"age"], INDEX=dat$aux[,"fleet"], FUN=max))
-  newyear<-min(as.numeric(dat$aux[,"year"])):max(as.numeric(dat$aux[,"year"]))
-  newfleet<-min(as.numeric(dat$aux[,"fleet"])):max(as.numeric(dat$aux[,"fleet"]))
-  mmfun<-function(f,y, ff){idx<-which(dat$aux[,"year"]==y & dat$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
-  dat$idx1<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=min)
-  dat$idx2<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=max)
-  dat
+    cfidx <- which(dat$fleetTypes==0)
+    aidx <- unique(dat$aux[dat$aux[,2]%in%cfidx,3]-conf$minAge+1)
+    faidx <- as.matrix(expand.grid(cfidx, aidx))
+    faidx <- faidx[which(conf$keyLogFsta[faidx]== -1),,drop=FALSE]
+    ## rmidx <- ((dat$aux[,3]%in%(conf$minAge:conf$maxAge)[which(conf$keyLogFsta[1,]==(-1))])&dat$aux[,2]==1)
+    rmidx <- paste0(dat$aux[,2],"x",dat$aux[,3]-conf$minAge+1) %in%  paste0(faidx[,1],"x",faidx[,2])
+    dat$aux <- dat$aux[!rmidx,,drop=FALSE]
+    dat$auxData <- dat$auxData[!rmidx,,drop=FALSE]
+    dat$logobs <- dat$logobs[!rmidx]
+    dat$weight <- dat$weight[!rmidx]
+    dat$nobs<-sum(!rmidx)
+    dat$minAgePerFleet<-as.integer(tapply(dat$aux[,"age"], INDEX=dat$aux[,"fleet"], FUN=min))
+    dat$maxAgePerFleet<-as.integer(tapply(dat$aux[,"age"], INDEX=dat$aux[,"fleet"], FUN=max))
+    if(any(dat$fleetTypes >= 80)){
+        xtrMin <- as.integer(tapply(dat$auxData[,5], INDEX=dat$aux[,"fleet"], FUN=min))
+        xtrMax <- as.integer(tapply(dat$auxData[,5], INDEX=dat$aux[,"fleet"], FUN=max))
+        dat$fleetCovarianceSize <- ifelse(dat$fleetTypes >= 80,xtrMax-xtrMin+1,dat$maxAgePerFleet - dat$minAgePerFleet + 1)
+    }else{
+        dat$fleetCovarianceSize <- dat$maxAgePerFleet - dat$minAgePerFleet + 1
+    }
+    newyear<-min(as.numeric(dat$aux[,"year"])):max(as.numeric(dat$aux[,"year"]))
+    newfleet<-min(as.numeric(dat$aux[,"fleet"])):max(as.numeric(dat$aux[,"fleet"]))
+    mmfun<-function(f,y, ff){idx<-which(dat$aux[,"year"]==y & dat$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
+    dat$idx1<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=min)
+    dat$idx2<-outer(newfleet, newyear, Vectorize(mmfun,c("f","y")), ff=max)
+    dat
 }
 
 
@@ -415,8 +423,16 @@ refit <- function(fit, newConf, startingValues, ...){
         }else{
             fit2$data$auxData <- matrix(NA_real_,nrow(fit2$data$aux),0)
         }
-
-                
+    if(is.null(fit2$data$fleetCovarianceSize)){
+        if(any(dat$fleetTypes >= 80)){
+            xtrMin <- as.integer(tapply(dat$auxData[,5], INDEX=dat$aux[,"fleet"], FUN=min))
+            xtrMax <- as.integer(tapply(dat$auxData[,5], INDEX=dat$aux[,"fleet"], FUN=max))
+            dat$fleetCovarianceSize <- ifelse(dat$fleetTypes >= 80,xtrMax-xtrMin+1,dat$maxAgePerFleet - dat$minAgePerFleet + 1)
+        }else{
+            dat$fleetCovarianceSize <- dat$maxAgePerFleet - dat$minAgePerFleet + 1
+        }
+    }
+    
     toArray <- function(x){
         if(length(dim(x))==2)
             return(array(x,c(dim(x),1), dimnames = c(dimnames(x),"Residual catch")))

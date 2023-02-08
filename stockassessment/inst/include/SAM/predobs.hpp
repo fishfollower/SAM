@@ -239,6 +239,10 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 			if(dat.fleetTypes(flt) == 0){
 			int aMin = dat.minAgePerFleet(flt);
 			int aMax = dat.maxAgePerFleet(flt);
+			if(age > -1){
+			  aMin = age;
+			  aMax = age;
+			}
 			for(int aa = aMin - conf.minAge; aa < aMax - conf.minAge; ++aa){
 			  //Type Cttmp = exp(logN(aa,y)) * mort.CIF(flt,aa,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
 			  Type Cttmp = exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,flt) + log(mort.fleetCumulativeIncidence(aa,y,flt)));
@@ -261,36 +265,8 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      }
 		      pred = log(Cseason) - log(Ctotal);		      
 		      break;
-		      }
-		    case 81:	// Catch/Landing proportion in part of year per age
-		      {
-		      // aux: (0) catch fleet, (1) this season start, (2) this season end, (3) catch Type (4) season number, (5) number of seasons
-		      SAM_ASSERT(auxData.size() >= 6,"aux is not large enough for fleet type 81");
-		      // Within an age/year, landing fraction and weights are (currently) constant, so catch type is irrelevant
-		      // TODO: allow auxData(0)==0  to sum over all fleets
-		      int flt0 = CppAD::Integer(auxData(0))-1; // TODO: allow auxData(0)==0 to sum over all fleets
-		      int flt1 = flt0;
-		      if(flt0 < 0){
-			flt0 = 0;
-			flt1 = dat.fleetTypes.size()-1;
-		      }
-		      Type v81a = 0.0;
-		      Type v81b = 0.0;
-		      for(int flt = flt0; flt <= flt1; ++flt){
-			if(dat.fleetTypes(flt) == 0){
-			//Type v81a = mort.CIF(flt,a,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
-			v81a += exp(mort.logFleetSurvival_before(a,y,flt) + log(mort.fleetCumulativeIncidence(a,y,flt)));
-			v81b += mort.partialCIF(flt,a,y,auxData(1),auxData(2));
-			}
-		      }
-		      pred = log(v81b) - log(v81a);
-		      break;		      
-		      }
+		      }		 
 		    case 90:	// Total Stock composition in catch/landing
-		      msam_reserved();
-		      pred = 0.0;
-		      break;
-		    case 91:	// Age-wise Stock composition in catch/landing
 		      msam_reserved();
 		      pred = 0.0;
 		      break;
