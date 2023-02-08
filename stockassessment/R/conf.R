@@ -33,6 +33,7 @@ defcon<-function(dat, level=1){
     maxAge <- max(ages, na.rm=TRUE)
     ages[is.na(ages)] <- minAge
     nAges <- maxAge-minAge+1
+    nCov <- max(dat$fleetCovarianceSize)
     nFleets <- nrow(ages)
     ret <- list()
     ret$minAge <- minAge
@@ -79,31 +80,34 @@ defcon<-function(dat, level=1){
     if(any(fleetTypes==6))
         ret$keyVarLogP<- seq(1,length(which(fleetTypes==6))-1)-1
 
-    x <- matrix(0, nrow=nFleets, ncol=nAges)
+    xO <- matrix(0, nrow=nFleets, ncol=pmax(nAges,nCov))
     lastMax <- 0
-    for(i in 1:nrow(x)){
-        if(fleetTypes[i]%in%c(0,1,2,3,6,81)){
-            x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- lastMax+1
-            lastMax <- max(x)
+    for(i in 1:nrow(xO)){
+        if(fleetTypes[i]%in%c(0,1,2,3,6)){
+            xO[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- lastMax+1
+            lastMax <- max(xO)
         }else if(fleetTypes[i]%in%c(80,90,92)){
-            x[i,] <- 0
-            x[i,1] <- lastMax+1
-            lastMax <- max(x)
+            xO[i,seq_len(dat$fleetCovarianceSize[i])] <- lastMax+1
+            lastMax <- max(xO)
         }
                                         #    if(fleetTypes[i]==6 & i == max(which(fleetTypes==6)))
                                         #      x[i,(ages[i,1]-minAge+1):(ages[i,2]-minAge+1)] <- 0
     }  
-    ret$keyVarObs <- x - 1
+    ret$keyVarObs <- xO - 1
 
     ret$obsCorStruct <- factor(rep("ID",nFleets),levels=c("ID","AR","US"))
     if(level==2){
         ret$obsCorStruct[fleetTypes==2]<-"AR"
     }
     ret$obsCorStruct[fleetTypes==7] <- NA
-    ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=nAges-1)
-    colnames(ret$keyCorObs)<-paste(minAge:(maxAge-1),(minAge+1):maxAge,sep="-")
+    ret$keyCorObs <- matrix(-1, nrow=nFleets, ncol=pmax(nAges,nCov)-1)
+    if(nCov <= maxAge-minAge+1){
+        colnames(ret$keyCorObs)<-paste(minAge:(maxAge-1),(minAge+1):maxAge,sep="-")
+    }else{
+        colnames(ret$keyCorObs)<-paste(seq_len(nCov-1),tail(seq_len(nCov),-1),sep="-")
+    }
     nextpar<-0
-    for(i in 1:nrow(x)){
+    for(i in 1:nrow(xO)){
         if(fleetTypes[i]!=7){
             if(ages[i,1]<ages[i,2]){
                 if((level==2)&(fleetTypes[i]==2)){
@@ -129,7 +133,7 @@ defcon<-function(dat, level=1){
     ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
     ret$fbarRange <- ifelse(is.finite(ret$fbarRange), ret$fbarRange, c(ret$minAge,ret$maxAge))
     ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
-    ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
+    ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN","Dirichlet"))
     ret$fixVarToWeight <- 0
     ret$fracMixF <- 0
     ret$fracMixN <- rep(0,nAges)

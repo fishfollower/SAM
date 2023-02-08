@@ -612,6 +612,14 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                                            INDEX=factor(dat[,"fleet"],seq_len(fleet.idx)),
                                            FUN=max)
     }
+    if(any(type >= 80)){
+        minXtr <- sapply(split(xtr[o], dat$fleet), min)
+        maxXtr <- sapply(split(xtr[o], dat$fleet), max)
+    }else{
+        minXtr <- rep(NA, length(attr(dat,"minAgePerFleet")))
+        minXtr <- rep(NA, length(attr(dat,"maxAgePerFleet")))
+    }
+    attr(dat, "fleetCovarianceSize") <- unname(ifelse(type >= 80, maxXtr-minXtr+1, attr(dat,"maxAgePerFleet")-attr(dat,"minAgePerFleet")+1))
   attr(dat,"minWeek") <- minWeek
   attr(dat,"maxWeek") <- maxWeek
   attr(dat,'year')<-newyear
@@ -654,6 +662,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     years=attr(dat,'year'),
     minAgePerFleet=attr(dat,"minAgePerFleet"),
     maxAgePerFleet=attr(dat,"maxAgePerFleet"),
+    fleetCovarianceSize = attr(dat, "fleetCovarianceSize"),
     nobs=nrow(dat),
     idx1=attr(dat,'idx1'),
     idx2=attr(dat,'idx2'),
