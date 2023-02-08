@@ -244,29 +244,29 @@ namespace obs_fun {
   SAM_SPECIALIZATION(TMBad::ad_aug jacobianDet(vector<TMBad::ad_aug>,vector<TMBad::ad_aug>));
 
 
- template<class Type>
-  matrix<Type> buildJacProportions(vector<Type> x)SOURCE({
-    matrix<Type> res(x.size(),x.size()-1); 
-    for(int i = 0; i < res.cols(); ++i)
-      res(i,i) = Type(1.0)/x(i);
-    for(int j = 0; j < res.cols(); ++j){
-      res(res.rows()-1,j) = Type(-1.0)/x(x.size()-1);
-    }
-    return res;
-    })
+ // template<class Type>
+ //  matrix<Type> buildJacProportions(vector<Type> x)SOURCE({
+ //    matrix<Type> res(x.size(),x.size()); 
+ //    for(int i = 0; i < res.cols(); ++i)
+ //      res(i,i) = Type(1.0)/x(i);
+ //    for(int j = 0; j < res.cols(); ++j){
+ //      res(res.rows()-1,j) = Type(-1.0)/x(x.size()-1);
+ //    }
+ //    return res;
+ //    })
 
 
-  SAM_SPECIALIZATION(matrix<double> buildJacProportions(vector<double>));
-  SAM_SPECIALIZATION(matrix<TMBad::ad_aug> buildJacProportions(vector<TMBad::ad_aug>));
+ //  SAM_SPECIALIZATION(matrix<double> buildJacProportions(vector<double>));
+ //  SAM_SPECIALIZATION(matrix<TMBad::ad_aug> buildJacProportions(vector<TMBad::ad_aug>));
 
   
-  template <class Type>
-  Type jacobianDetProportions(vector<Type> x)SOURCE({
-    return buildJacProportions(x).determinant();
-    })
+ //  template <class Type>
+ //  Type jacobianDetProportions(vector<Type> x)SOURCE({
+ //    return buildJacProportions(x).determinant();
+ //    })
 
-  SAM_SPECIALIZATION(double jacobianDetProportions(vector<double>));
-  SAM_SPECIALIZATION(TMBad::ad_aug jacobianDetProportions(vector<TMBad::ad_aug>));
+ //  SAM_SPECIALIZATION(double jacobianDetProportions(vector<double>));
+ //  SAM_SPECIALIZATION(TMBad::ad_aug jacobianDetProportions(vector<TMBad::ad_aug>));
 
   
 
@@ -622,8 +622,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		// Transform log_X to log proportions
 		for(int i = 0; i < log_X.size(); ++i)
 		  log_X(i) -= log(xs);
-		Type d = obs_fun::jacobianDetProportions((vector<Type>)log_X.exp());
-		nll -= ddirichlet(log_X,log_P,-log_alpha,K2,true) + log(fabs(d));
+		// Type d = obs_fun::jacobianDetProportions((vector<Type>)log_X.exp());
+		// nll -= ddirichlet(log_X,log_P,-log_alpha,K2,true) + log(fabs(d));
+		nll -= ddirichlet(log_X,log_P,-log_alpha,K2,true);
 	      }else{
 		Rf_error("Fleet type 80 must use obsLikelihoodFlag ALN or Dirichlet");
 	      }
