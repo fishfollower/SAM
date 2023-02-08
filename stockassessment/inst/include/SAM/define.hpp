@@ -54,6 +54,7 @@ struct dataSet{
   vector<Type> years;
   vector<int> minAgePerFleet;
   vector<int> maxAgePerFleet;
+  vector<int> fleetCovarianceSize;
   int nobs;
   array<int> idx1;
   array<int> idx2;
@@ -86,6 +87,7 @@ struct dataSet{
     years(),
     minAgePerFleet(),
     maxAgePerFleet(),
+    fleetCovarianceSize(),
     nobs(),
     idx1(),
     idx2(),
@@ -120,6 +122,7 @@ struct dataSet{
     years(x.years),
     minAgePerFleet(x.minAgePerFleet),
     maxAgePerFleet(x.maxAgePerFleet),
+    fleetCovarianceSize(x.fleetCovarianceSize),
     nobs(x.nobs),
     idx1(x.idx1, x.idx1.dim),
     idx2(x.idx2, x.idx2.dim),
@@ -156,6 +159,7 @@ SOURCE(
       years = asVector<Type>(getListElement(x,"years",  &Rf_isNumeric));
       minAgePerFleet = asVector<int>(getListElement(x,"minAgePerFleet",  &Rf_isNumeric));
       maxAgePerFleet = asVector<int>(getListElement(x,"maxAgePerFleet",  &Rf_isNumeric));
+      fleetCovarianceSize = asVector<int>(getListElement(x,"fleetCovarianceSize",  &Rf_isNumeric));
       nobs = Rf_asInteger(getListElement(x,"nobs", &isNumericScalar));
       idx1 = asArray<int>(getListElement(x,"idx1", &Rf_isArray));
       idx2 = asArray<int>(getListElement(x,"idx2", &Rf_isArray));

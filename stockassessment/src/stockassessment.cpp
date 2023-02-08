@@ -49,8 +49,9 @@ Type objective_function<Type>::operator() ()
   DATA_VECTOR(sampleTimesEnd); dataset.sampleTimesEnd=sampleTimesEnd;
   DATA_INTEGER(noYears); dataset.noYears=noYears; 
   DATA_VECTOR(years); dataset.years=years; 
-  DATA_IVECTOR(minAgePerFleet); dataset.minAgePerFleet=minAgePerFleet; 
+  DATA_IVECTOR(minAgePerFleet); dataset.minAgePerFleet=minAgePerFleet;
   DATA_IVECTOR(maxAgePerFleet); dataset.maxAgePerFleet=maxAgePerFleet; 
+  DATA_IVECTOR(fleetCovarianceSize); dataset.fleetCovarianceSize=fleetCovarianceSize; 
   DATA_INTEGER(nobs); dataset.nobs=nobs; 
   DATA_IARRAY(idx1); dataset.idx1=idx1;     // minimum index of obs by fleet x year
   DATA_IARRAY(idx2); dataset.idx2=idx2;     // maximum index of obs by fleet x year
