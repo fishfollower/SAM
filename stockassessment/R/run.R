@@ -422,11 +422,11 @@ refit <- function(fit, newConf, startingValues, ...){
         }
     if(is.null(fit2$data$fleetCovarianceSize)){
         if(any(dat$fleetTypes >= 80)){
-            xtrMin <- as.integer(tapply(dat$auxData[,5], INDEX=dat$aux[,"fleet"], FUN=min))
-            xtrMax <- as.integer(tapply(dat$auxData[,5], INDEX=dat$aux[,"fleet"], FUN=max))
-            dat$fleetCovarianceSize <- ifelse(dat$fleetTypes >= 80,xtrMax-xtrMin+1,dat$maxAgePerFleet - dat$minAgePerFleet + 1)
+            xtrMin <- as.integer(tapply(fit2$data$auxData[,5], INDEX=fit2$data$aux[,"fleet"], FUN=min))
+            xtrMax <- as.integer(tapply(fit2$data$auxData[,5], INDEX=fit2$data$aux[,"fleet"], FUN=max))
+            fit2$data$fleetCovarianceSize <- ifelse(fit2$data$fleetTypes >= 80,xtrMax-xtrMin+1,fit2$data$maxAgePerFleet - fit2$data$minAgePerFleet + 1)
         }else{
-            dat$fleetCovarianceSize <- dat$maxAgePerFleet - dat$minAgePerFleet + 1
+            fit2$data$fleetCovarianceSize <- fit2$data$maxAgePerFleet - fit2$data$minAgePerFleet + 1
         }
     }
     
