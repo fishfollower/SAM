@@ -421,7 +421,7 @@ refit <- function(fit, newConf, startingValues, ...){
             fit2$data$auxData <- matrix(NA_real_,nrow(fit2$data$aux),0)
         }
     if(is.null(fit2$data$fleetCovarianceSize)){
-        if(any(dat$fleetTypes >= 80)){
+        if(any(fit2$data$fleetTypes >= 80)){
             xtrMin <- as.integer(tapply(fit2$data$auxData[,5], INDEX=fit2$data$aux[,"fleet"], FUN=min))
             xtrMax <- as.integer(tapply(fit2$data$auxData[,5], INDEX=fit2$data$aux[,"fleet"], FUN=max))
             fit2$data$fleetCovarianceSize <- ifelse(fit2$data$fleetTypes >= 80,xtrMax-xtrMin+1,fit2$data$maxAgePerFleet - fit2$data$minAgePerFleet + 1)
