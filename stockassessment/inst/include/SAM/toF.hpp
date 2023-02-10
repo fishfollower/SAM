@@ -869,7 +869,8 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   }
 
   // Should be deleted by NewtonWrapper
-  std::shared_ptr<NewtonFunctor> p_fc(new ConstrainCalculations::ForecastF(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2,y));
+  std::shared_ptr<ConstrainCalculations::ForecastF> p_fc0 = std::make_shared<ConstrainCalculations::ForecastF>(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2,y);
+  std::shared_ptr<NewtonFunctor> p_fc = std::dynamic_pointer_cast<NewtonFunctor>(p_fc0);
  
   // vector<double> s0(cFleets.size());
   // s0.setConstant(0);
