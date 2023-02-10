@@ -62,14 +62,14 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
 
       }
     }
-    
+
     array<Type> mP(nrow,ncol);
     for(int i=0; i<nrow; ++i){
       for(int j=0; j<ncol; ++j){
 	mP(i,j)=meanVec(keyMeanVec(j));
       }
     }
-    
+
     vector<Type> phi=exp(logPhi);
     matrix<Type> I(Wc.rows(),Wc.cols());
     I.setIdentity();
@@ -77,7 +77,7 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
     if(logPhi.size()==3){
       Q-=phi(2)*Wp;
     }
-
+    
     // Conditional distribution of last time given one before
     matrix<Type> Qlast(2*ncol,2*ncol); Qlast.setZero();
     idx = 0;
@@ -90,6 +90,7 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
 	    Qlast(ki,kj) = Q(i,j);
 	  }
     Qlast *= exp(-2.0 * logSdP);
+
     // matrix<Type> SigmaLast = atomic::matinv(Qlast);
     // // Conditioning  on first column
     // matrix<Type> SigmaLast_Ran_Cond = SigmaLast.block(ncol,0,ncol,ncol);
@@ -104,11 +105,11 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
     for(int j=0; j<ncol; ++j){
 	mu(j)=meanVec(keyMeanVec(j));
     }
-
+    
     Type nll = density::SCALE(density::GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
 
     bioResult<Type> res(nll, Sigma_RR, MeanAdjScale, mu);
-    
+
     return res;
   });
 
@@ -155,6 +156,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug nllSW(array<TMBad::ad_aug>&, dataSet<TMBad::ad_
 template <class Type>
 Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, objective_function<Type> *of) SOURCE( {
   if(conf.catchWeightModel>=1){
+
     Type nll=0;
     array<Type> cw=dat.catchMeanWeight;
     for(int k = 0; k < logCW.dim[2]; ++k){
@@ -168,7 +170,7 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	for(int j=0; j<cw.dim[1]; ++j){
 	  if(!isNA(cw(i,j,k))){
 	    nll += -dnorm(log(cw(i,j,k)),logCW(i,j,k),exp(par.logSdLogCW(conf.keyCatchWeightObsVar(k,j))),true);
-	  }	 
+	  }
 	  dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
 	}
 	SIMULATE_F(of){
@@ -176,7 +178,7 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	    vector<Type> v = logCW.col(k).matrix().row(i-1);
 	    vector<Type> p = br.simulate(v);
 	    for(int j=0; j<cw.dim[1]; ++j){
-	      logCW(i,j) = p(j);
+	      logCW(i,j,k) = p(j);
 	      dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
 	    }
 	  }
