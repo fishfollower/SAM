@@ -1,3 +1,25 @@
+##' Parallel replicate for modelforecast
+##'
+##' @param n number of replicates
+##' @param expr expression
+##' @param simplify simplify passes to sapply
+##' @param ncores number of cores
+##' @return output
+##' @importFrom parallel makeCluster clusterSetRNGStream parSapply stopCluster
+.SAM_replicate <- function(n, expr, simplify = "array", ncores = 1, env = parent.frame(n+1)){
+    if(ncores > 1){
+        cl <- parallel::makeCluster(ncores)
+        parallel::clusterSetRNGStream(cl)
+        v <- parallel::parSapply(cl, integer(n), eval(substitute(function(...) expr),env), 
+                                 simplify = simplify)
+        parallel::stopCluster(cl)
+    }else{
+        v <- sapply(integer(n), eval(substitute(function(...) expr),env), 
+                    simplify = simplify)
+    }
+    v
+
+}
 
 .forecastDefault <- function(){
     ## list(specification = "DEFAULT_NOT_TO_BE_USED",
@@ -410,6 +432,7 @@ modelforecast.sam <- function(fit,
                               newton_config = NULL,
                               custom_pl = NULL,
                               useNonLinearityCorrection = (nosim > 0 && !deterministicF),
+                              ncores = 1,
                               ...
                               ){
     ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
@@ -734,7 +757,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         }
         if(as.integer(returnObj)==2)
             return(doSim)
-        simvals <- replicate(nosim, doSim(), simplify = FALSE)
+        simvals <- .SAM_replicate(nosim, doSim(), simplify = FALSE, ncores = ncores, env = environment(doSim))
         simlist <- vector("list",length(FModel) + 1)
         for(i in 0:(length(FModel))){
             y<-year.base+i
