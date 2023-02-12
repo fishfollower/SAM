@@ -182,7 +182,7 @@ recruitmentProperties <- function(fit){
     
 }
 
-.refpointStartingValue <- function(rparg, fit, Fsequence, fay = faytable(fit), fbar = fbartable(fit)[,1]){
+.refpointStartingValue <- function(rparg, fit, Fsequence, fay = faytable(fit), fbar = fbartable(fit)[,1], checkValidity = TRUE){
     .refpointCheckRecruitment(rparg,fit)
     
     if(rparg$rpType == -99){            # None
@@ -217,7 +217,7 @@ recruitmentProperties <- function(fit){
     rpType <- rparg$rpType
     if(rpType == 1){ ## MSY
         logF0 <- logF[which.max(logYe)]
-        if(logF0 == max(logF))
+        if(checkValidity && logF0 == max(logF))
             stop("The stock does not appear to have a well-defined F~MSY~. Increase the upper bound of Fsequence to try again, or remove MSY from the list.")
     }else if(rpType == 2){ ## MSYRange
         logFmsy <- logF[which.max(logYe)]
@@ -234,7 +234,7 @@ recruitmentProperties <- function(fit){
         logF0 <- c(logFmsy, as.vector(logFx))
     }else if(rpType == 3){ ## Max
         logF0 <- logF[which.max(logYPR)]
-        if(logF0 == max(logF))
+        if(checkValidity && logF0 == max(logF))
             stop("The stock does not appear to have a well-defined F~Max~. Increase the upper bound of Fsequence to try again, or remove Max from the list.")
     }else if(rpType == 4){ ## xdYPR
         if(any(rparg$xVal <= 0 | rparg$xVal >= 1))
@@ -256,7 +256,7 @@ recruitmentProperties <- function(fit){
         Arng <- fit$conf$maxAge - fit$conf$minAge + 1
         v <- logYe - log(1.0 + exp(logYearsLost - log(Arng)))        
         logF0 <- logF[which.max(v)]
-        if(logF0 == max(logF))
+        if(checkValidity && logF0 == max(logF))
             stop("The stock does not appear to have a well-defined F~MYPYLdiv~. Increase the upper bound of Fsequence to try again, or remove MYPYLdiv from the list.")
     }else if(rpType == 8){ ## MYPYLprod
         if(any(rparg$xVal < 0))
@@ -267,7 +267,7 @@ recruitmentProperties <- function(fit){
             logF[which.max(v)]
         })
         if(any(logF0 == max(logF)))
-            stop("The stock does not appear to have a well-defined F~MYPYL~. Increase the upper bound of Fsequence to try again, or remove MYPYL from the list.")
+            stop(checkValidity && "The stock does not appear to have a well-defined F~MYPYL~. Increase the upper bound of Fsequence to try again, or remove MYPYL from the list.")
     }else if(rpType == 9){ ## MDY
         logF0 <- logF[which.max(logDiscYe)]
         if(logF0 == max(logF))
