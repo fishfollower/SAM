@@ -97,25 +97,26 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      break;
       
 		    case 2:
-		      if((pg!=conf.maxAgePlusGroup(0))&&(a==(conf.maxAge-conf.minAge))){
-			Rf_error("When maximum age for the fleet is the same as maximum age in the assessment it must be treated the same way as catches w.r.t. plusgroup configuration");
-		      }
+		      //if((pg!=conf.maxAgePlusGroup(0))&&(a==(conf.maxAge-conf.minAge))){
+		      //	Rf_error("When maximum age for the fleet is the same as maximum age in the assessment it must be treated the same way as catches w.r.t. plusgroup configuration");
+		      //}
 
 		      if((ma==1) && (pg==1)){
 			pred=0;
 			for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
-			  // logzz = log(dat.natMor(y,aa));
-			  // for(int fx = 0; fx < conf.keyLogFsta.dim[0]; ++fx)
-			  //   if(conf.keyLogFsta(fx,aa)>(-1)){
-			  //   logzz = logspace_add2(logzz, logF(conf.keyLogFsta(fx,aa),y));
-			  // }
-			  // pred+=exp(logN(aa,y)-exp(logzz)*dat.sampleTimes(f-1));
 			  pred += exp(logN(aa,y)) * mort.fleetSurvival_before(aa,y,f-1);
 			}
 			pred=log(pred);
 		      }else{
-			//pred=logN(a,y)-exp(logzz)*dat.sampleTimes(f-1);
-			pred = logN(a,y) + log(mort.fleetSurvival_before(a,y,f-1));
+  		        if((ma==1) && (pg==0) && (a==(conf.maxAge-conf.minAge))){
+			  if(y==0){
+			    pred=logN(a-1,y)-mort.totalZ(a-1,y)+log(mort.fleetSurvival_before(a,y,f-1));
+			  }else{
+                            pred=logN(a-1,y-1)-mort.totalZ(a-1,y-1)+log(mort.fleetSurvival_before(a,y,f-1));
+			  }
+		        }else{
+			  pred = logN(a,y) + log(mort.fleetSurvival_before(a,y,f-1));
+		        }
 		      }
 		      if(conf.keyQpow(f-1,a)>(-1)){
 			pred*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
