@@ -452,6 +452,9 @@ modelforecast.sam <- function(fit,
     nCatchAverageYears  <-  1
     if(!is.na(match("nCatchAverageYears",names(dots))))
         nCatchAverageYears <- dots[[match("nCatchAverageYears",names(dots))]]
+    fastFixedF <- FALSE
+    if(!is.na(match("fastFixedF",names(dots))))
+        fastFixedF <- dots[[match("fastFixedF",names(dots))]]
     
 
     if(!is.null(nosim) && nosim > 0){ 
@@ -558,6 +561,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     ## })
     FModel <- rep(0,nYears)
     FModel[!is.na(constraints)] <- 1
+    if(fastFixedF)
+        FModel[!is.na(constraints)] <- 2
     FModel[!is.na(findMSY)] <- 3
     FModel[!is.na(hcr)] <- 4
     

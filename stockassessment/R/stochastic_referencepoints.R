@@ -144,6 +144,7 @@ predict.rpscurvefit <- function(x,newF,...){
                                                      custom_pl = pl,
                                                      cstomSel = sel,
                                                      deterministicF = deterministicF,
+                                                     fastFixedF = grepl("[[:space:]]*F[[:space:]]*=[[:space:]]*%f[[:space:]]*",constraint),
                                                      ...)))
    doSim
 }
