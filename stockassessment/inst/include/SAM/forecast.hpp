@@ -14,16 +14,17 @@ HEADER(
 struct forecastSet {
 
   enum FModelType {
-		   asFModel,
+		   asFModel = 0,
 		   // useFscale,
 		   // useFval,
 		   // useCatchval,
 		   // useNextssb,
 		   // useLandval,
-		   constrainedF,
-		   findMSY,
-		   HCR,
-		   customHCR
+		   constrainedF = 1,
+		   fastFixedF = 2,
+		   findMSY = 3,
+		   HCR = 4,
+		   customHCR = 99
   };
   enum recModelType {
 		     asRecModel,
@@ -164,6 +165,9 @@ SOURCE(
 	     break;
 	   case constrainedF:
 	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),logN,logF,logitFseason, aveYears, indx, cfg);    
+	     break;
+	   case fastFixedF:
+	     forecastCalculatedMedian.col(i) = constraints(i)(0).target + log(sel);
 	     break;
 	   case findMSY:
 	     forecastCalculatedMedian.col(i) = par.logFScaleMSY + log(initialFbar) + log(sel); // 
@@ -322,14 +326,15 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
   // Calculate initial Fbar
   int fbarFirst = conf.fbarRange(0) - conf.minAge;
   int fbarLast = conf.fbarRange(1) - conf.minAge;
-  forecast.initialFbar = 0.0;
-  array<Type> totF = totFFun(dat,conf, logF);
-  for(int a = fbarFirst; a <= fbarLast; ++a){  
-    //forecast.initialFbar += exp(logF(conf.keyLogFsta(0,a),forecast.forecastYear.size() - nFYears - 1));
-    forecast.initialFbar += totF(a,forecast.forecastYear.size() - nFYears - 1);
-  }
-  forecast.initialFbar /= Type(fbarLast - fbarFirst + 1);
-
+  // forecast.initialFbar = 0.0;
+  // array<Type> totF = totFFun(dat,conf, logF);
+  // for(int a = fbarFirst; a <= fbarLast; ++a){  
+  //   //forecast.initialFbar += exp(logF(conf.keyLogFsta(0,a),forecast.forecastYear.size() - nFYears - 1));
+  //   forecast.initialFbar += totF(a,forecast.forecastYear.size() - nFYears - 1);
+  // }
+  // forecast.initialFbar /= Type(fbarLast - fbarFirst + 1);
+  forecast.initialFbar = fbari(dat,conf,logF,forecast.forecastYear.size() - nFYears - 1,false);
+  
   // Calculate selectivity
   forecast.sel = vector<Type>(logF.rows());
   forecast.sel.setZero();
