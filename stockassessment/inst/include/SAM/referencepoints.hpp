@@ -47,17 +47,21 @@ struct RPD_Base : NewtonFunctor {
     par(par_),
     rp(rp_){}
 
-  PERREC_t<ad> getPerRec(const ad& logFbar){
+  virtual PERREC_t<ad> getPerRec(const ad& logFbar){
     vector<ad> ls = rp.getLogSelectivity();
     PERREC_t<ad> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
     return r;
   }
 
-  template<class T>
-  vector<T> par2logF(const vector<T>& x){
+  virtual vector<ad> par2logF(const vector<ad>& x){
     return x;
   }
 
+  virtual vector<double> par2logF(const vector<double>& x){
+    return x;
+  }
+
+  
   virtual ad operator()(const vector<ad>& logFbar) = 0;
   
 };
@@ -339,7 +343,9 @@ public:
 		     referencepointSet<Type>& rp,			\
 		     newton::newton_config cfg = newton::newton_config()) : \
     RefPointD_Numeric<Type>(dat,conf,par,rp,std::make_shared<RPD_##NAME>(dat,conf,par,rp),cfg) {}; \
-  }
+    using RefPointD_Numeric<Type>::getPerRecruit;				\
+    using RefPointD_Numeric<Type>::par2logF;				\
+}
   
 
   //////////////////////////////// Specializations ////////////////////////////////
@@ -381,10 +387,23 @@ public:
     USING_RPD_BASE_0(MSYrange);
 
     // Does not report MSY
-    template<class T>
-    vector<T> par2logF(const vector<T>& x){
+    vector<ad> par2logF(const vector<ad>& x){
       SAM_ASSERT((x.size()%2)==1,"In reference point MSYrange, length of F must be odd.");
-      vector<T>r(x.size()-1);
+      vector<ad>r(x.size()-1);
+      r.setConstant(x(0));
+      for(int i = 1; i < x.size(); ++i){
+	if((i%2)==1){		// lower
+	  r(i-1) -= exp(-x(i));
+	}else{			// upper
+	  r(i-1) += exp(x(i));	  
+	}
+      }
+      return r;
+    }
+    
+    vector<double> par2logF(const vector<double>& x){
+      SAM_ASSERT((x.size()%2)==1,"In reference point MSYrange, length of F must be odd.");
+      vector<double>r(x.size()-1);
       r.setConstant(x(0));
       for(int i = 1; i < x.size(); ++i){
 	if((i%2)==1){		// lower

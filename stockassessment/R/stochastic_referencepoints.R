@@ -278,8 +278,8 @@ predict.rpscurvefit <- function(x,newF,...){
                 }
                 xMSY <- exp(utils::head(x,1))
                 x2 <- matrix(utils::tail(x,-1),2)
-                x3 <- rbind(xMSY - exp(x2[1,]),
-                            xMSY + exp(x2[2,]))
+                x3 <- rbind(xMSY + exp(-exp(x2[1,])),
+                            xMSY + exp(exp(x2[2,])))
                 if(keepMSY)
                     return(c(xMSY, x3))
                 if(report){
@@ -301,7 +301,8 @@ predict.rpscurvefit <- function(x,newF,...){
                 f0 <- apply(c2,2,function(cc){
                     fl <- Fseq[Fseq < fmsy][which.min(cc[Fseq < fmsy])]
                     fu <- Fseq[Fseq > fmsy][which.min(cc[Fseq > fmsy])]
-                    c(log(fmsy-fl),log(fu-fmsy))
+                    ##c(log(fmsy-fl),log(fu-fmsy))
+                    c(log(-log(log(fl)-log(fmsy))), log(log(log(fu)-log(fmsy))))
                 })
                 c(log(fmsy),f0)
             }
