@@ -278,8 +278,8 @@ predict.rpscurvefit <- function(x,newF,...){
                 }
                 xMSY <- exp(utils::head(x,1))
                 x2 <- matrix(utils::tail(x,-1),2)
-                x3 <- rbind(xMSY - exp(x2[1,]),
-                            xMSY + exp(x2[2,]))
+                x3 <- rbind(exp(log(xMSY) - exp(-x2[1,])),
+                            exp(log(xMSY) + exp(x2[2,])))
                 if(keepMSY)
                     return(c(xMSY, x3))
                 if(report){
@@ -429,12 +429,12 @@ predict.rpscurvefit <- function(x,newF,...){
         }
     }
     Forig <- lapply(rpArgs, getOneRP)
-    F <- simplify2array(Forig)
+    F <- Reduce("c",(Forig))
     Curves <- lapply(Forig, attr, which = "curve_fit")
-    names(Curves) <- names(F)
+    ##names(Curves) <- names(rpArgs)
     D <- sapply(F, getDerivedValues)    
     res <- rbind(logF=unname(F),D)
-    colnames(res) <- names(F)
+    colnames(res) <- Reduce("c",lapply(Forig,names))
     rownames(res) <- gsub("^log","",rownames(res))
     ## Fseq <- seq(min(Fvals),max(Fvals),len=200)
     ## GraphVals <- rbind(logF=Fseq,sapply(Fseq, getDerivedValues))
@@ -553,7 +553,7 @@ stochasticReferencepoints.sam <- function(fit,
                                           referencepoints,
                                           method = "Q0.5",
                                           catchType = "catch",
-                                          nYears = 300,
+                                          nYears = 50,
                                           Frange = c(0,2),
                                           nosim = 1000,
                                           aveYears = c(), #max(fit$data$years)+(-9:0),
@@ -561,11 +561,12 @@ stochasticReferencepoints.sam <- function(fit,
                                           newton.control = list(),
                                           seed = .timeToSeed(),
                                           formula = ~ibc(F,5),
-                                          nosim_ci = 200,
+                                          nosim_ci = 30,
                                           derivedSummarizer = NA,
                                           nTail = 1,
                                           constraint = "F=%f",
                                           deterministicF = TRUE,
+                                          ci_deltaMethod = FALSE,
                                           ...){
 
 
@@ -629,9 +630,31 @@ stochasticReferencepoints.sam <- function(fit,
         ii <- logical(0)
     }
     if(sum(!ii) > 0){
-        nan2na <- function(x)ifelse(is.nan(x),NA,x)
+        nan2na <- function(x)ifelse(is.nan(unlist(x)),NA,unlist(x))
         resTabs <- lapply(rownames(vv[!ii][[1]]$Estimates), function(nm){
-            tab <- cbind(v0$Estimate[nm,],t(apply(do.call("rbind",lapply(vv[!ii], function(x) nan2na(x$Estimates[nm,]))),2,quantile, prob = c(0.025,0.975), na.rm=TRUE)))
+            if(ci_deltaMethod){
+                ## DOI:10.1109/WSC.2006.323107
+                Sigma <- fit$sdrep$cov.fixed
+                doOneCI <- function(jj){
+                    Theta <- do.call("rbind",lapply(vv[!ii], function(x) nan2na(x$Estimates[nm,jj])))
+                    dPar <- as.data.frame(do.call("rbind",plRep[!ii]))
+                    dParM <- sapply(dPar,mean)
+                    colnames(dPar) <- paste0(seq_len(ncol(dPar)),"_",colnames(dPar))
+                    d0 <- cbind(data.frame(Theta = log(Theta)), dPar)
+                    if(nrow(dPar) > ncol(dPar)){
+                        gr0 <- tail(coef(lm(Theta~.,data=d0)),-1)
+                    }else{
+                        gr0 <- sapply(seq_len(ncol(dPar)), function(kk){ sum((dPar[,kk]-dParM[kk])*(Theta-mean(Theta))) / sum((dPar[,kk]-dParM[kk])^2) })
+                    }
+                    sdErr <- as.numeric(t(gr0) %*% Sigma %*% (gr0))
+                    exp(log(v0$Estimates[nm,jj])+ 2 * c(-1,1) * sdErr)
+                }
+                CIest <- t(sapply(seq_len(ncol(v0$Estimates)), doOneCI))
+                rownames(CIest) <- colnames(v0$Estimates)
+            }else{
+                CIest <- t(apply(do.call("rbind",lapply(vv[!ii], function(x) nan2na(x$Estimates[nm,]))),2,quantile, prob = c(0.025,0.975), na.rm=TRUE))
+            }
+            tab <- cbind(v0$Estimate[nm,],CIest)
             colnames(tab) <- c("Estimate","Low","High")
             rownames(tab) <- colnames(v0$Estimate)
             tab

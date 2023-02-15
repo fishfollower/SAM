@@ -228,7 +228,11 @@ recruitmentProperties <- function(fit){
             lfLow <- ff[which.min((yy - (YeMSY+log(x)))^2)]
             ff <- logF[logF > logFmsy]
             yy <- logYe[logF > logFmsy]
-            lfUp <- ff[which.min((yy - (YeMSY+log(x)))^2)]
+            if(length(yy) == 0){
+                lfUp <- logFmsy + 0.1
+            }else{
+                lfUp <- ff[which.min((yy - (YeMSY+log(x)))^2)]
+            }
             c(-log(logFmsy-lfLow), log(lfUp-logFmsy))
         })
         logF0 <- c(logFmsy, as.vector(logFx))
