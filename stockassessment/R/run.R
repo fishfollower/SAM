@@ -53,7 +53,7 @@
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 ##' @references
 ##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, eval.max=2000,iter.max=1000, penalizeSpline = FALSE, fullDerived = FALSE, ...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, eval.max=2000,iter.max=1000, penalizeSpline = FALSE, fullDerived = FALSE, pre.clean=TRUE, ...){
     if(length(conf$maxAgePlusGroup)==1){
         tmp <- conf$maxAgePlusGroup    
         conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
@@ -64,7 +64,8 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         warning("Initial values are not consistent, so running with default init values from defpar()")
         parameters<-definit
     }
-    data<-clean.void.catches(data,conf)
+    if(pre.clean)
+        data<-clean.void.catches(data,conf)
     
     confTmp = defcon(data)
     for(i in 1:length(confTmp)){
