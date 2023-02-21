@@ -11,6 +11,7 @@ ypr(
   Fdelta = 0.01,
   aveYears = min(15, length(fit$data$years)),
   ageLimit = 100,
+  sprProp = 0.35,
   ...
 )
 
@@ -20,6 +21,7 @@ ypr(
   Fdelta = 0.01,
   aveYears = min(15, length(fit$data$years)),
   ageLimit = 100,
+  sprProp = 0.35,
   ...
 )
 }
@@ -33,6 +35,8 @@ ypr(
 \item{aveYears}{Number of years back to use when calculating averages (selection, weights, ...)}
 
 \item{ageLimit}{Oldest age used (should be high)}
+
+\item{sprProp}{Proportion of SPR at F=0, for example 0.35 if F0.35SPR}
 
 \item{...}{extra arguments not currently used}
 }
