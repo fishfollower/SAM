@@ -413,15 +413,16 @@ qtable.sam<-function(fit,...){
 ##' @param Fdelta increments on the Fbar axis 
 ##' @param aveYears Number of years back to use when calculating averages (selection, weights, ...)
 ##' @param ageLimit Oldest age used (should be high)
+##' @param sprProp Proportion of SPR at F=0, for example 0.35 if F0.35SPR
 ##' @param ... extra arguments not currently used
 ##' @export
-ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100,...){
+ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100, sprProp=0.35, ...){
     UseMethod("ypr")
 }
 ##' @rdname ypr
 ##' @method ypr sam
 ##' @export
-ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100,...){
+ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100, sprProp=0.35, ...){
   barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
   last.year.used=max(fit$data$years)
   idxno<-which(fit$data$years==last.year.used)
@@ -497,12 +498,12 @@ ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$
   f01idx<-which.min((deltaY/delta-0.1*deltaY[1]/deltafirst)^2)+1
   f01<-scales[f01idx]
 
-  f35spridx<-which.min((ssbs-0.35*ssbs[1])^2)+1
+  f35spridx<-which.min((ssbs-sprProp*ssbs[1])^2)+1
   f35<-scales[f35spridx]
   
   fbarlab <- substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2]))
-  ret<-list(fbar=scales, ssb=ssbs, yield=yields, fbarlab=fbarlab, f35=f35, f01=f01, fmax=fmax, 
-            f35Idx=f35spridx, f01Idx=f01idx, fmaxIdx=fmaxidx)
+  ret<-list(fbar=scales, ssb=ssbs, yield=yields, fbarlab=fbarlab, fsprProp=f35, f01=f01, fmax=fmax, 
+            fsprPropIdx=f35spridx, f01Idx=f01idx, fmaxIdx=fmaxidx, sprProp=sprProp)
   class(ret)<-"samypr"
   return(ret)
 }

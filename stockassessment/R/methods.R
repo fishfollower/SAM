@@ -552,10 +552,10 @@ plot.samypr<-function(x, ...){
   axis(4,at=ssbat, labels=ssbtick)
   mtext('SSB per recruit', side=4, line=2)
 
-  lines(c(x$f35,x$f35), c(par('usr')[1],x$ssb[x$f35Idx]*ssbscale), lwd=3, col='green')
+  lines(c(x$fsprProp,x$fsprProp), c(par('usr')[1],x$ssb[x$fsprPropIdx]*ssbscale), lwd=3, col='green')
 
-  title(eval(substitute(expression(F[max]==fmax~ ~ ~ ~ ~F[0.10]==f01~ ~ ~ ~ ~F[0.35*SPR]==f35), 
-                        list(fmax=round(x$fmax,2), f01=round(x$f01,2), f35=round(x$f35,2)))))
+  title(eval(substitute(expression(F[max]==fmax~ ~ ~ ~ ~F[0.10]==f01~ ~ ~ ~ ~F[sprProp*SPR]==fsprProp), 
+                        list(fmax=round(x$fmax,2), f01=round(x$f01,2), fsprProp=round(x$fsprProp,2), sprProp=x$sprProp))))
 }
 
 
@@ -566,9 +566,9 @@ plot.samypr<-function(x, ...){
 ##' @details ...
 ##' @export
 print.samypr <- function(x, ...){
-  idx <- c(x$fmaxIdx, x$f01Idx, x$f35Idx)
+  idx <- c(x$fmaxIdx, x$f01Idx, x$fsprPropIdx)
   ret <- cbind(x$fbar[idx],x$ssb[idx],x$yield[idx])
-  rownames(ret) <- c("Fmax", "F01", "F35")
+  rownames(ret) <- c("Fmax", "F01", paste0("F", x$sprProp*100))
   colnames(ret) <- c("Fbar", "SSB", "Yield")
   print(ret)
 }
