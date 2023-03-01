@@ -25,6 +25,8 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
 
   // Setup for F
   matrix<Type> fvar = get_fvar(dat, conf, par, logF);
+  if(forecast.FEstCov.cols() > 0)
+    fvar = forecast.FEstCov;
   MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
 
   // Setup for N
@@ -35,18 +37,22 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
 
   int nYears = forecast.nYears;
   for(int i = 0; i < nYears; ++i){
-    int indx = forecast.forecastYear.size() - nYears + i;
+    int indx = forecast.preYears + i;//forecast.forecastYear.size() - nYears + i;
     // Update forecast
-    forecast.updateForecast(i, logF, logN, logitFseason, dat, conf, par, recruit, mort);
+    forecast.updateForecast(i, logF, logN, logitFseason, dat, conf, par, recruit, mort, of->do_simulate);
     // Simulate F
     // int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
     if(forecast.simFlag(0) == 0){
       Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
-      logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
+      if(forecast.fsdTimeScaleModel(i) == forecast.fixedDeviation){
+	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i);
+      }else{
+	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
+      }
       mort.updateYear(dat, conf, par, logF, logitFseason,indx);
     }
     // Simulate N
-    if(forecast.simFlag(1) == 0){
+    if(forecast.simFlag(1) == 0 && (forecast.fixFirstN || i > 0)){
       vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort,indx);
       vector<Type> Nscale(logN.rows());
       Nscale.setConstant((Type)1.0);

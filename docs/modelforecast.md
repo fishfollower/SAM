@@ -6,8 +6,6 @@ Model based forecast function
 ## Description
 
 Model based forecast function
- 
- Model based forecast function
 
 
 ## Usage
@@ -24,12 +22,15 @@ list(list("modelforecast"), list("sam"))(
   landval = NULL,
   nosim = 0,
   year.base = max(fit$data$years),
-  ave.years = c(),
+  ave.years = max(fit$data$years) + (-9:0),
+  overwriteBioModel = FALSE,
   rec.years = c(),
   label = NULL,
   overwriteSelYears = NULL,
   deterministicF = FALSE,
   processNoiseF = FALSE,
+  fixedFdeviation = FALSE,
+  useFHessian = FALSE,
   resampleFirst = !is.null(nosim) && nosim > 0,
   customSel = NULL,
   lagR = FALSE,
@@ -44,6 +45,7 @@ list(list("modelforecast"), list("sam"))(
   newton_config = NULL,
   custom_pl = NULL,
   useNonLinearityCorrection = (nosim > 0 && !deterministicF),
+  ncores = 1,
   ...
 )
 ```
@@ -53,7 +55,7 @@ list(list("modelforecast"), list("sam"))(
 
 Argument      |Description
 ------------- |----------------
-`fit`     |     an assessment object of type sam, as returned from the function sam.fit
+`fit`     |     SAM model fit
 `...`     |     other variables used by the methods
 `constraints`     |     a character vector of forecast constraint specifications
 `fscale`     |     a vector of f-scales. See details.
@@ -64,11 +66,14 @@ Argument      |Description
 `nosim`     |     number of simulations. If 0, the Laplace approximation is used for forecasting.
 `year.base`     |     starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before
 `ave.years`     |     vector of years to average for weights, maturity, M and such
+`overwriteBioModel`     |     Overwrite GMRF models with ave.years?
 `rec.years`     |     vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.
 `label`     |     optional label to appear in short table
 `overwriteSelYears`     |     if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 `deterministicF`     |     option to set F variance to (almost) zero (not recommended)
 `processNoiseF`     |     option to turn off process noise in F
+`fixedFdeviation`     |     Use a fixed F deviation from target?
+`useFHessian`     |     Use the covariance of F estimates instead of the estimated process covariance for forecasting?
 `resampleFirst`     |     Resample base year when nosim > 0?
 `customSel`     |     supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
 `lagR`     |     if the second youngest age should be reported as recruits
@@ -95,6 +100,140 @@ Function to forecast the model under specified catch constraints. In the forecas
 ## Value
 
 an object of type samforecast
+
+
+## Forecast constraints
+
+
+### F based constraints
+
+Forecasts for F values are specified by the format "F[f,a0-a1]=x" where f is the residual catch fleet and a0-a1 is an age range. For example, "F[2,2-4]=0.3" specifies that the average F for the second fleet over ages 2-4 should be 0.3.
+If an "*" is added to the target value, the target will be relative to the year before. For example, "F[2,2-4]=0.9*" specifies that the average F for the second fleet over ages 2-4 should be 90% of the year before. Further, the target for a fleet can be relative to the total by adding "*F" or to another fleet by adding "*F[f]" where f is the fleet number. The same age range will always be used.
+If the fleet is omitted (e.g., F[2-4]), the target is for the total F.
+If the age range is omitted (e.g., F[2]), the fbar range of the model is used.
+Likewise, both fleet and age range can be omited (e.g., F=0.3) to specify a value for total F with the range used in the model.
+
+For example:
+
+"F=0.2"
+: Will set the median average total fishing mortality rate to 0.2
+"F[1]=0.2"
+: Will set the median average fishing mortality rate of the first fleet to 0.2
+"F[2-4]=0.2"
+: Will set the median average total fishing mortality rate over ages 2 to 4 to 0.2
+"F[3,2-4]=0.2"
+: Will set the median average fishing mortality rate over ages 2 to 4 for the third fleet to 0.2
+
+### Catch/Landing based constraints
+
+Forecasts for catch and landing values are specified by the format "C[f,a0-a1]=x" for catch and "L[f,a0-a1]" for landings. If the age range is omitted, all modelled ages are used. Otherwise, the format is similar to F based scenarios.
+If an "*" is added to the target value, the target will be relative to the year before.
+Further, the catch target for a fleet can be relative to the total by adding "*C" or to another fleet by adding "*C[f]" where f is the fleet number. The same age range will always be used. Likewise, relative landing targets can be specified using "*", "*L", or "*L[f]" for targets relative to last year, the total, or fleet f, respectively.
+
+For example:
+
+"C=100000"
+: Will scale F such that the total predicted catch is 100000
+"C[1]=100000"
+: Will scale F such that the predicted catch of the first fleet is 100000
+"C[2-4]=100000"
+: Will scale F such that the total predicted catch for ages 2 to 4 is 100000
+"C[3,2-4]=100000"
+: Will scale F such that the predicted catch for ages 2 to 4 in the third fleet is 100000
+"L=100000"
+: Will scale F such that the total predicted landing is 100000
+"L[1]=100000"
+: Will scale F such that the predicted landing of the first fleet is 100000
+"L[2-4]=100000"
+: Will scale F such that the total predicted landing for ages 2 to 4 is 100000
+"L[3,2-4]=100000"
+: Will scale F such that the predicted landing for ages 2 to 4 in the third fleet is 100000
+
+
+### Next year's SSB/TSB based constraints:
+
+Forecasts for spawning stock biomass (SSB) and total stock biomass (TSB) values are specified by the format "SSB[a0-a1]=x" for SSB and "TSB[a0-a1]" for TSB. For setting F in year y, the relevant biomass for year y+1 is predicted for the constraint. If spawning is not at the beginning of the year, F is assumed to be the same for year y and y+1 in the prediction.
+The format is similar to catch/landing based scenarios. However, fleets have no effect. If an age range is omitted, the full age range of the model is used.
+If an "*" is added to the target value, the target will be relative to the year before. That is, when setting F in year y, the predicted biomass in year y+1 will be relative to the biomass in year y-1.
+Note that since SSB and TSB used for catch constraints are predicted, the input constraint will differ from the output SSB and TSB estimates due to process variability.
+
+For example:
+
+SSB=200000
+: Will scale F such that the predicted SSB at the beginning of the next year is 200000}
+SSB[3-9]=200000
+: Will scale F such that the predicted SSB for ages 3 to 9 at the beginning of the next year is 200000
+TSB=200000
+: Will scale F such that the predicted TSB at the beginning of the next year is 200000
+TSB[3-9]=200000
+: Will scale F such that the predicted TSB for ages 3 to 9 at the beginning of the next year is 200000
+
+### Harvest control rule based constraints
+
+Harvest control rules can be specified for forecasts using the format "HCR=x~y" where x is the target and y is the biomass trigger (see ?hcr for full details on the form of the harvest control rule). Further, the target can be specified as an F target ("HCR=xF~y"), catch target ("HCR=xC~y"), or landing target ("HCR=xL~y"). Likewise the trigger can either be for SSB ("HCR=x~ySSB") or TSB ("HCR=x~yTSB"). Age ranges can be set for both triggers and targets and a fleet can be set for the target. The notation and defaults are similar to the F based and SSB/TSB based constraints, respectively.
+When setting F in year y, the projected biomass in year y is used by default. To use the (at this time known) biomass in a previous year, a time lag can be specified. To specify a time lag of, e.g., 1 year for SSB the format is "HCR=x~ySSB-1".
+Finally, the origin and cap for the HCR can be set using "HCR[FO=a,FC=b,BO=d,BC=e]=x~y", where FO is the F (or catch or landing) value at origin, BO is the biomass at origin, FC is the F (or catch or landing) value when the HCR is capped and BC is the biomass at which the HCR is capped. See ?hcr for further details on the shape of the HCR.
+For a HCR similar to the ICES advice rule, the specification is on the form "HCR[BC=Blim] = fmsy~MSYBtrigger". Note that, unlike an ICES advice rule, the HCR does not do a forecast to determine if fishing can continue below Blim.
+
+For example:
+
+HCR=0.9~100000
+: Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB
+HCR=10000C~100000
+: Will apply a harvest control rule with a catch target of 10000 and a biomass trigger of 100000 on SSB
+HCR=0.9~100000SSB
+: Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB
+HCR=0.9F[1,2-4]~100000SSB
+: Will apply a harvest control rule with an F target on the first fleet ages 2-4 of 0.9 and a biomass trigger of 100000 on SSB
+HCR=0.9~100000TSB[0-4]
+: Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on TSB for ages 0 to 4
+HCR[FC=1e-9,BC=20000]=0.9~100000
+: Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB where biomass values below 20000 will give an F of 1e-9
+HCR[FO=0,BO=30000]=0.9~100000
+: Will apply a harvest control rule with an F target of 0.9 and a biomass trigger of 100000 on SSB where the slope on which F is reduced goes to zero F at a biomass of 30000
+
+### Combining constraints
+
+Constraints for different fleets can be combined by "&".
+For example, "F[2-4]=0.5 & C[2]=10000" specifies that total Fbar over ages 2-4 should be 0.5 while the catch for the second residual catch fleet should be 10,000t.
+The constraints cannot affect within-fleet selectivity. Therefore, a fleet can at most have one constraint per year, and the total number of constraints cannot exceed the number of catch fleets. That is, if a constraint is given for the sum of fleets, there must be at least one fleet without any constraints.
+For fleets where no constraints are given, a constraint is set to keep their relative Fs constant.
+
+
+### Values relative to previous year
+
+Catch constraints specified as specific values are inherently different from catch constraints specified as relative values, even if they lead to the same F. Catch constraints specified as relative values will propagate the uncertainty in, e.g, F from previous years whereas constraints specified as specific values will not. This is different from the \link{forecast} function where, for example, a forecast using fval is the same as a forecast using fscale, if they lead to the same F. 
+
+
+
+### Process variability
+In the forecast, constraints are used to set the predicted F value in year y based on information available until year y-1. Therefore, constraints using predicted values for year y, such as catch, will not be matched exactly by the realized catch due to process variability in F, N, biological processes and catch itself.
+
+## Non-linearity correction
+
+In the model forecasts, constraints are calculated to set the mean of the log(F) process, corresponding to the median F-at-ages. Typically, the constraints are non-linear functions of log(F)-at-age. Therefore, when stochasticity is added to log(F) (i.e., deterministicF=FALSE), target values will correspond to a transformation of the median, and not the median of the transformation. For example, a target for the average fishing mortality (Fbar) will correspond to the average of the median F at age, which will be different from the median Fbar.
+
+The "useNonLinearityCorrection" argument can be used to shift the target from a function of the mean log(F) (median F) towards the log-mean of the function of log(F), which is approximately the median of the function of log(F).
+}
+
+## Old specification
+
+It is also possible to specify forecast constraints in a way similar to the \link{forecast} function. 
+There are four ways to specify a scenario. If e.g. four F values are specified (e.g. fval=c(.1,.2,.3,4)), then the first value is used in the year after the last assessment year (base.year + 1), and the three following in the three following years. Alternatively F's can be specified by a scale, or a target catch. Only one option can be used per year. So for instance to set a catch in the first year and an F-scale in the following one would write catchval=c(10000,NA,NA,NA), fscale=c(NA,1,1,1). If only NA's are specified in a year, the F model is used for forecasting. The length of the vector specifies how many years forward the scenarios run. Unlike the forecast function, no value should be given for the base year.
+Internally, the old specification is translated such that "fval=x" becomes "F=x", "fscale=x" becomes "F=x*", "catchval=x" becomes "C=x", "nextssb=x" becomes "SSB=x", and "landval=x" becomes "L=x".
+
+
+## Forecasts using Laplace approximation or simulations
+
+Forecasts can be made using either a Laplace approximation projection (nosim=0) or simulations (nosim > 0). When using the Laplace approximation, the most likely projected trajectory of the processes along with a confidence interval is returned. In contrast, simulation based forecasts will return individual simulated trajectories and summarize using the function given as the estimate argument along with an interval covering 95% of the simulations.
+
+
+## Warnings
+
+Long term forecasts with random walk recruitment can lead to unstable behaviour and difficulties finding suitable F values for the constraints.
+If no suitable F value can be found, an error message will be shown, and F values will be NA or NaN. Likewise, forecasts leading to high F values in some years (or large changes from one year to another) may cause problems for the optimization as they will be used as starting values for the next years.
+Since the model works on log space, all target values should be strictly positive. Values too close to zero may cause problems.
+
 
 
 ## Seealso

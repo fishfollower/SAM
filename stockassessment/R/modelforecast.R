@@ -9,10 +9,12 @@
 .SAM_replicate <- function(n, expr, simplify = "array", ncores = 1, env = parent.frame(n+1)){
     if(ncores > 1){
         cl <- parallel::makeCluster(ncores)
+        on.exit(parallel::stopCluster(cl))
         parallel::clusterSetRNGStream(cl)
+        eval(expression(2+2),env)
+        parallel::clusterExport(cl, "env", environment())
         v <- parallel::parSapply(cl, integer(n), eval(substitute(function(...) expr),env), 
-                                 simplify = simplify)
-        parallel::stopCluster(cl)
+                                 simplify = simplify)        
     }else{
         v <- sapply(integer(n), eval(substitute(function(...) expr),env), 
                     simplify = simplify)
@@ -257,6 +259,7 @@ modelforecast <- function(fit, ...){
 }
 
 ##' Model based forecast function
+##' @param fit SAM model fit
 ##' @param constraints a character vector of forecast constraint specifications
 ##' @param fscale a vector of f-scales. See details.  
 ##' @param catchval a vector of target catches. See details "old specification".
@@ -266,11 +269,14 @@ modelforecast <- function(fit, ...){
 ##' @param nosim number of simulations. If 0, the Laplace approximation is used for forecasting.
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
+##' @param overwriteBioModel Overwrite GMRF models with ave.years?
 ##' @param rec.years vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.
 ##' @param label optional label to appear in short table
 ##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 ##' @param deterministicF option to set F variance to (almost) zero (not recommended)
 ##' @param processNoiseF option to turn off process noise in F
+##' @param fixedFdeviation Use a fixed F deviation from target?
+##' @param useFHessian Use the covariance of F estimates instead of the estimated process covariance for forecasting?
 ##' @param resampleFirst Resample base year when nosim > 0?
 ##' @param customSel supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
 ##' @param lagR if the second youngest age should be reported as recruits
@@ -412,13 +418,17 @@ modelforecast.sam <- function(fit,
                               landval = NULL,
                               nosim = 0,
                               year.base = max(fit$data$years),
-                              ave.years = c(),
+                              ave.years = max(fit$data$years)+(-9:0),
+                              overwriteBioModel = FALSE,
                               rec.years = c(), #max(fit$data$years)+(-9:0),
                               label = NULL,
                               overwriteSelYears = NULL,
                               deterministicF = FALSE,
                               processNoiseF = FALSE,
+                              fixedFdeviation = FALSE,                              
+                              useFHessian = FALSE,
                               resampleFirst = !is.null(nosim) && nosim > 0,
+                              fixFirstN = TRUE,
                               customSel = NULL,
                               lagR = FALSE,
                               splitLD = FALSE,
@@ -475,15 +485,15 @@ modelforecast.sam <- function(fit,
     if(year.base > max(fit$data$years)){
         stop("")
     }else if(year.base < max(fit$data$years)){
-        warning("year.base is ignored for now")
+        ## warning("year.base is ignored for now")
     }
 
-    if(length(ave.years) == 0){
-        useModelBio <- TRUE
-        ave.years = max(fit$data$years)+(-4:0)
-    }else{
-        useModelBio <- FALSE
-    }
+    ## if(length(ave.years) == 0){
+    useModelBio <- !overwriteBioModel
+    ##     ave.years = max(fit$data$years)+(-9:0)
+    ## }else{
+    ##     useModelBio <- FALSE
+    ## }
 
     ## Checks
     if(deterministicF && length(fscale) > 0 && any(!is.na(fscale)) && is.null(customSel))
@@ -604,6 +614,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     fsdTimeScaleModel <- rep(0,nYears)
     if(deterministicF){ ## 'Zero' variance of F process
         fsdTimeScaleModel <- rep(2,nYears)
+    }else if(fixedFdeviation){
+        fsdTimeScaleModel <- rep(3,nYears)
     }else if(!processNoiseF){ ## Constant variance of F process
         fsdTimeScaleModel <- rep(1,nYears)
     }
@@ -617,6 +629,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     if(any(is.na(ave.years)))
         stop("ave.years has years without data.")
 
+    ## Find base year number
+    preYears <- match(year.base, fit$data$years)
+    postYears <- nYears - (fit$data$noYears - preYears)
+
     ## Prepare forecast
     obj0 <- fit$obj
     invisible(obj0$fn(fit$opt$par))
@@ -629,46 +645,62 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }else{
         pl <- custom_pl
     }
-    pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),nYears))
-    pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),nYears))
+    pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),postYears))
+    pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),postYears))
     if(useModelBio){
         splitArray <- function(a){
             nr <- dim(a)[1]; nc <- dim(a)[2]; na <- dim(a)[3]
             lapply(split(a,rep(seq_len(na),each=nr*nc)), matrix, nrow = nr, ncol = nc)
         }
-        extendBio <- function(x) rbind(x,matrix(x[nrow(x)],nYears,ncol(x)))
+        extendBio <- function(x) rbind(x,matrix(x[nrow(x)],postYears,ncol(x)))
         if(nrow(pl$logitMO) > 0){            
             pl$logitMO <- extendBio(pl$logitMO)
         }else{
-            warning(sprintf("No MO random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+            #warning(sprintf("No MO random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
         }
         if(nrow(pl$logNM) > 0){            
             pl$logNM <- extendBio(pl$logNM)
         }else{
-            warning(sprintf("No NM random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+            #warning(sprintf("No NM random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
         }
         if(nrow(pl$logSW) > 0){            
             pl$logSW <- extendBio(pl$logSW)
         }else{
-            warning(sprintf("No SW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+            #warning(sprintf("No SW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
         }
         if(dim(pl$logCW)[1] > 0){            
             pl$logCW <- simplify2array(lapply(splitArray(pl$logCW), extendBio))
         }else{
-            warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+            #warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
         }
     }
     d0 <- dim(pl$logitFseason)
     lfsOld <- pl$logitFseason
-    pl$logitFseason <- array(0, c(d0[1],nYears+d0[2], d0[3]))
+    pl$logitFseason <- array(0, c(d0[1],postYears+d0[2], d0[3]))
     pl$logitFseason[,1:d0[2],] <- lfsOld
     args$parameters <- pl
     args$random <- unique(names(obj0$env$par[obj0$env$random]))
     args$data$reportingLevel <- 0
+
+    if(useFHessian){
+        if(year.base==max(fit$data$years)){
+            est <- fit$sdrep$estY
+            FEstCov <- fit$sdrep$covY[grepl("LogF$",names(est)),grepl("LogF$",names(est))]
+        }else if(year.base==(max(fit$data$years)-1)){
+            est <- fit$sdrep$estYm1
+            FEstCov <- fit$sdrep$covYm1[grepl("LogF$",names(est)),grepl("LogF$",names(est))]
+        }else{
+            stop("year.base not implemented yet more than one year before end of assessment.")           
+        }
+    }else{
+        FEstCov <- matrix(0,0,0)
+    }
+    
     args$data$forecast <- list(nYears = as.numeric(nYears),
+                               preYears = as.numeric(preYears),
                                nCatchAverageYears = as.numeric(nCatchAverageYears),
                                aveYears = as.numeric(ave.years),
-                               forecastYear = as.numeric(c(rep(0,fit$data$noYears),seq(1,nYears,length=nYears))),
+                               forecastYear = as.numeric(c(rep(0,preYears),seq(1,nYears,length=nYears))),
                                FModel = as.numeric(FModel),
                                ##target = as.numeric(target),
                                constraints = cstr,                               
@@ -680,7 +712,11 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
                                simFlag = c(0,0),
                                hcrConf = hcrConf,
-                               hcrCurrentSSB = hcrCurrentSSB)
+                               hcrCurrentSSB = hcrCurrentSSB,
+                               Fdeviation = rnorm(nrow(pl$logF)),
+                               FdeviationCov = diag(1,nrow(pl$logF),nrow(pl$logF)),
+                               FEstCov = FEstCov,
+                               fixFirstN = fixFirstN)
 
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
@@ -708,11 +744,11 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         if(year.base==max(fit$data$years)){
             est <- fit$sdrep$estY
             cov <- fit$sdrep$covY
-        }
-        if(year.base==(max(fit$data$years)-1)){
-            stop("year.base before last assessment year is not implemented yet")
+        }else if(year.base==(max(fit$data$years)-1)){
             est <- fit$sdrep$estYm1
             cov <- fit$sdrep$covYm1
+        }else{
+            stop("year.base not implemented yet more than one year before end of assessment.")           
         }
         names(est) <- gsub("(^.*[lL]ast)(Log[NF]$)","\\2",names(est))
         i0 <- which(fit$data$year == year.base)
@@ -732,10 +768,12 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 cstr[!is.na(re_constraint)] <- .parseForecast(re_constraint[!is.na(re_constraint)], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)                
                 obj2$env$data$forecast$constraints <- cstr
             }
-            sim0 <- est 
-            if(resampleFirst)
-                sim0 <- rmvnorm(1, mu=est, Sigma=cov)
-            estList0 <- split(as.vector(sim0), names(est))
+            sim0 <- 0*est 
+            if(resampleFirst){
+                sim0 <- rmvnorm(1, mu=0*est, Sigma=cov)
+            }
+            dList0 <- split(as.vector(sim0), names(est))
+            estList0 <- split(as.vector(sim0+est), names(est))
             if(!is.null(re_pl)){
                 plMap2 <- re_pl
                 map <- fit$obj$env$map
@@ -755,6 +793,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             indxF <- matrix(which(names(p) %in% "logF"),nrow=length(estList0$LogF))[,i0]
             p[indxN] <- estList0$LogN
             p[indxF] <- estList0$LogF
+            obj2$env$data$forecast$Fdeviation[] <- dList0$LogF
+            obj2$env$data$forecast$FdeviationCov <- cov[names(est) %in% "LogF",names(est) %in% "LogF"]
             v <- obj2$simulate(par = p)
             sniii <<- sniii+1
             incpb()
