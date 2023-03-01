@@ -12,7 +12,7 @@ stochasticReferencepoints(fit, referencepoints, ...)
   referencepoints,
   method = "Q0.5",
   catchType = "catch",
-  nYears = 300,
+  nYears = 50,
   Frange = c(0, 2),
   nosim = 1000,
   aveYears = c(),
@@ -20,11 +20,12 @@ stochasticReferencepoints(fit, referencepoints, ...)
   newton.control = list(),
   seed = .timeToSeed(),
   formula = ~ibc(F, 5),
-  nosim_ci = 200,
+  nosim_ci = 30,
   derivedSummarizer = NA,
   nTail = 1,
   constraint = "F=\%f",
   deterministicF = TRUE,
+  ci_deltaMethod = FALSE,
   ...
 )
 }

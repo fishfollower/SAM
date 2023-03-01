@@ -27,6 +27,7 @@ Fit SAM model
       iter.max = 1000,
       penalizeSpline = FALSE,
       fullDerived = FALSE,
+      pre.clean = TRUE,
       ...
     )
 

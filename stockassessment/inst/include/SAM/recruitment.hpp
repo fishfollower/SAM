@@ -1255,3 +1255,10 @@ SAM_SPECIALIZATION(Recruitment<TMBad::ad_aug> makeRecruitmentFunction<TMBad::ad_
 
   
  
+template<class Type>
+Recruitment<Type> makeICESrecruitment(Type lm, Type sd)SOURCE({
+  return Recruitment<Type>("ICES",std::make_shared<RecruitmentConvenience::Rec_ICESforecast<Type> >(lm,sd));
+  })
+
+  SAM_SPECIALIZATION(Recruitment<double> makeICESrecruitment<double>(double, double));
+SAM_SPECIALIZATION(Recruitment<TMBad::ad_aug> makeICESrecruitment<TMBad::ad_aug>(TMBad::ad_aug, TMBad::ad_aug));

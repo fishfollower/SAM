@@ -76,8 +76,9 @@ namespace extend_fun {
       }
     }
 
-    if(nave == 0)
-      Rf_error("ave.years does not cover the data period.");
+    // if(nave == 0)
+    //   Rf_error("ave.years does not cover the data period.");
+    SAM_ASSERT(nave > 0, "ave.years does not cover the data period.");
   
     ave /= nave;
 

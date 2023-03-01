@@ -17,12 +17,15 @@ modelforecast(fit, ...)
   landval = NULL,
   nosim = 0,
   year.base = max(fit$data$years),
-  ave.years = c(),
+  ave.years = max(fit$data$years) + (-9:0),
+  overwriteBioModel = FALSE,
   rec.years = c(),
   label = NULL,
   overwriteSelYears = NULL,
   deterministicF = FALSE,
   processNoiseF = FALSE,
+  fixedFdeviation = FALSE,
+  useFHessian = FALSE,
   resampleFirst = !is.null(nosim) && nosim > 0,
   customSel = NULL,
   lagR = FALSE,
@@ -37,11 +40,12 @@ modelforecast(fit, ...)
   newton_config = NULL,
   custom_pl = NULL,
   useNonLinearityCorrection = (nosim > 0 && !deterministicF),
+  ncores = 1,
   ...
 )
 }
 \arguments{
-\item{fit}{an assessment object of type sam, as returned from the function sam.fit}
+\item{fit}{SAM model fit}
 
 \item{...}{other variables used by the methods}
 
@@ -63,6 +67,8 @@ modelforecast(fit, ...)
 
 \item{ave.years}{vector of years to average for weights, maturity, M and such}
 
+\item{overwriteBioModel}{Overwrite GMRF models with ave.years?}
+
 \item{rec.years}{vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.}
 
 \item{label}{optional label to appear in short table}
@@ -72,6 +78,10 @@ modelforecast(fit, ...)
 \item{deterministicF}{option to set F variance to (almost) zero (not recommended)}
 
 \item{processNoiseF}{option to turn off process noise in F}
+
+\item{fixedFdeviation}{Use a fixed F deviation from target?}
+
+\item{useFHessian}{Use the covariance of F estimates instead of the estimated process covariance for forecasting?}
 
 \item{resampleFirst}{Resample base year when nosim > 0?}
 

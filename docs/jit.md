@@ -1,4 +1,4 @@
-# `jit`
+# `jit.sam`
 
 Jitter runs
 
@@ -11,7 +11,7 @@ Jitter runs
 ## Usage
 
 ```r
-jit(
+list(list("jit"), list("sam"))(
   fit,
   nojit = 10,
   par = defpar(fit$data, fit$conf),
