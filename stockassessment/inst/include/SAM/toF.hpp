@@ -517,7 +517,8 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
     int y;
     matrix<ad> fvar;		// NOTE: does not include timeScale
     
-    ForecastF(dataSet<ad> dat_, confSet conf_, paraSet<ad> par_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, array<ad> logN_, array<ad> histLogF_, array<ad> lfs_, int y_) : dat(dat_), conf(conf_), par(par_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), logN(logN_), historicalLogF(histLogF_), logitFseason(lfs_), y(y_), fvar(get_fvar(dat, conf, par, histLogF_)) {};
+    ForecastF(dataSet<ad> dat_, confSet conf_, paraSet<ad> par_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, array<ad> logN_, array<ad> histLogF_, array<ad> lfs_, int y_, matrix<ad> fvar_) : dat(dat_), conf(conf_), par(par_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), logN(logN_), historicalLogF(histLogF_), logitFseason(lfs_), y(y_), fvar(fvar_) {};
+    
 
     ad operator()(const vector<ad>& logFs){
       ad kappa = 0.0;
@@ -800,11 +801,17 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 			      array<Type>& logF,
 			      array<Type>& logitFseason,
 			      vector<int>& aveYears,
+			      matrix<Type>& fvar,
+			      vector<Type>& ICESrec,
 			      int y,
 			      newton::newton_config& cfg)SOURCE({
   
-  paraSet<TMBad::ad_aug> parad(par);
+  paraSet<TMBad::ad_aug> parad(par);  
   Recruitment<TMBad::ad_aug> recruit = makeRecruitmentFunction(conf,parad);
+  if(ICESrec.size() == 2){
+    confSet c2(conf);
+    recruit = makeICESrecruitment(TMBad::ad_aug(ICESrec(0)),TMBad::ad_aug(ICESrec(1)));
+  }
 
   vector<int> cFleets = getCatchFleets(dat.fleetTypes);
 
@@ -869,7 +876,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   }
 
   // Should be deleted by NewtonWrapper
-  std::shared_ptr<ConstrainCalculations::ForecastF> p_fc0 = std::make_shared<ConstrainCalculations::ForecastF>(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2,y);
+  std::shared_ptr<ConstrainCalculations::ForecastF> p_fc0 = std::make_shared<ConstrainCalculations::ForecastF>(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2, y, fvar);
   std::shared_ptr<NewtonFunctor> p_fc = std::dynamic_pointer_cast<NewtonFunctor>(p_fc0);
  
   // vector<double> s0(cFleets.size());
@@ -897,6 +904,6 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   return newLogF;
 				})
 
-SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, array<double>&,array<double>&,array<double>&, vector<int>&, int, newton::newton_config&));
-  SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,vector<int>&, int, newton::newton_config&));
+SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, array<double>&,array<double>&,array<double>&, vector<int>&, matrix<double>&, vector<double>&, int, newton::newton_config&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,vector<int>&,matrix<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, newton::newton_config&));
 
