@@ -417,7 +417,9 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
     }
     
     ad operator()(const vector<ad>& nlf){
-      vector<ad> newLogF = nlf;
+      vector<ad> logN1eps = nlf.segment(0,logN.rows());
+      vector<ad> logN2eps = nlf.segment(logN.rows(),logN.rows());
+      vector<ad> newLogF = nlf.segment(2*logN.rows(), historicalLogF.rows());
       // Return transformation of logF used to set constraints
       	if(cstr.cstr == ConstraintType::Constrain_NONE){
   	  return 0.0;
@@ -434,8 +436,8 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
   	hLogF2.col(y+1) = newLogF;
   	MortalitySet<ad> mort(dat, conf, par, hLogF2, logitFseason);
   	array<ad> logN2 = logN;
-  	logN2.col(y) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y);
-  	logN2.col(y+1) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y+1);
+  	logN2.col(y) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y) + logN1eps;
+  	logN2.col(y+1) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y+1) + logN2eps;
 	
   	// Add constraint
   	if(cstr.cstr == ConstraintType::Constrain_Fbar){
@@ -515,9 +517,11 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
     array<ad> historicalLogF;
     array<ad> logitFseason;
     int y;
-    matrix<ad> fvar;		// NOTE: does not include timeScale
+    matrix<ad> fvar;
+    matrix<ad> nvar;
+    vector<ad> logSel;
     
-    ForecastF(dataSet<ad> dat_, confSet conf_, paraSet<ad> par_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, array<ad> logN_, array<ad> histLogF_, array<ad> lfs_, int y_, matrix<ad> fvar_) : dat(dat_), conf(conf_), par(par_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), logN(logN_), historicalLogF(histLogF_), logitFseason(lfs_), y(y_), fvar(fvar_) {};
+    ForecastF(dataSet<ad> dat_, confSet conf_, paraSet<ad> par_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, array<ad> logN_, array<ad> histLogF_, array<ad> lfs_, int y_, matrix<ad> fvar_, matrix<ad> nvar_, vector<ad> logSel_) : dat(dat_), conf(conf_), par(par_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), logN(logN_), historicalLogF(histLogF_), logitFseason(lfs_), y(y_), fvar(fvar_), nvar(nvar_), logSel(logSel_) {};
     
 
     ad operator()(const vector<ad>& logFs){
@@ -527,7 +531,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
       // vector<ad> llfs = (vector<ad>)(lastLogF - lastLFB);
       // matrix<ad> logF = toFleetMatrix(dat, conf, lastLogF, logFs);
 
-      vector<ad> newLogF = historicalLogF.col(y-1);
+      vector<ad> newLogF = logSel;
    
       vector<bool> done(newLogF.size());
       done.setConstant(false);
@@ -552,16 +556,24 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	// Functor
 	ForecastF_Fun F(dat, conf, par, cFleets, recruit, cstr, logN, historicalLogF, logitFseason, y);
 	// Target
+	vector<ad> nlf(2*logN.rows() + historicalLogF.rows());
+	nlf.setZero();
+	nlf.segment(2*logN.rows(), historicalLogF.rows()) = newLogF;
 	ad trgt = F.getTarget(newLogF);	  
 	// Transformed F
-	ad transF = F(newLogF);
+	ad transF = F(nlf);
 
 	// Stochastic correction
 	ad v = 0.0;
 	if(cstr.useNonLinearityCorrection){
-	  matrix<ad> H = autodiff::hessian(F, newLogF);
+	  matrix<ad> H = autodiff::hessian(F, nlf);
+	  matrix<ad> Sigma(2*logN.rows() + historicalLogF.rows(),2*logN.rows() + historicalLogF.rows());
+	  Sigma.setZero();
+	  Sigma.block(0,0,logN.rows(),logN.rows()) = nvar;
+	  Sigma.block(logN.rows(),logN.rows(),logN.rows(),logN.rows()) = nvar;
+	  Sigma.block(2*logN.rows(),2*logN.rows(),historicalLogF.rows(),historicalLogF.rows()) = fvar; 
 	  //ad cx1 = (newLogF*(vector<ad>(H*newLogF))).sum();
-	  ad tr = (H.vec() * fvar.vec()).sum();
+	  ad tr = (H.vec() * Sigma.vec()).sum();
 	  v = 0.5 * tr; // (tr + cx1);
 	}
 	ad tmp = transF + v - trgt;
@@ -802,7 +814,9 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 			      array<Type>& logitFseason,
 			      vector<int>& aveYears,
 			      matrix<Type>& fvar,
+			      matrix<Type> nvar,
 			      vector<Type>& ICESrec,
+			      vector<Type>& logSel,
 			      int y,
 			      newton::newton_config& cfg)SOURCE({
   
@@ -811,6 +825,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   if(ICESrec.size() == 2){
     confSet c2(conf);
     recruit = makeICESrecruitment(TMBad::ad_aug(ICESrec(0)),TMBad::ad_aug(ICESrec(1)));
+    nvar(0,0) = ICESrec(1) * ICESrec(1);
   }
 
   vector<int> cFleets = getCatchFleets(dat.fleetTypes);
@@ -876,7 +891,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   }
 
   // Should be deleted by NewtonWrapper
-  std::shared_ptr<ConstrainCalculations::ForecastF> p_fc0 = std::make_shared<ConstrainCalculations::ForecastF>(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2, y, fvar);
+  std::shared_ptr<ConstrainCalculations::ForecastF> p_fc0 = std::make_shared<ConstrainCalculations::ForecastF>(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2, y, fvar, nvar, logSel);
   std::shared_ptr<NewtonFunctor> p_fc = std::dynamic_pointer_cast<NewtonFunctor>(p_fc0);
  
   // vector<double> s0(cFleets.size());
@@ -886,7 +901,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   start.setConstant(0.0);
   
   vector<Type> res = SAM_Newton(p_fc, start, cfg);
-  vector<Type> newLogF = logF.col(y-1);// - lastLogFbar;
+  vector<Type> newLogF = logSel; //logF.col(y-1);// - lastLogFbar;
 
   vector<bool> done(newLogF.size());
   done.setConstant(false);
@@ -904,6 +919,6 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   return newLogF;
 				})
 
-SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, array<double>&,array<double>&,array<double>&, vector<int>&, matrix<double>&, vector<double>&, int, newton::newton_config&));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,vector<int>&,matrix<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, newton::newton_config&));
+SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, array<double>&,array<double>&,array<double>&, vector<int>&, matrix<double>&, matrix<double>, vector<double>&, vector<double>&, int, newton::newton_config&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,vector<int>&,matrix<TMBad::ad_aug>&, matrix<TMBad::ad_aug>, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, newton::newton_config&));
 
