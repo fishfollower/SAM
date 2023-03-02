@@ -65,6 +65,7 @@ struct forecastSet {
   vector<Type> sel;
   vector<Type> selFull;
   Type initialFbar;
+	 matrix<Type> nvar;
 
 	 matrix<Type> cumEpsilon;
   
@@ -147,6 +148,7 @@ SOURCE(
 	   lastFepsilon = (vector<Type>)logF.col(indx-1) - (vector<Type>)logF.col(indx-2);
 	   cumEpsilon.col(i) = lastFepsilon;
 	 }
+	 
 	   
 	 // vector<Type> lastShortLogF(logF.rows());
 	 // if(i == 0){
@@ -177,7 +179,9 @@ SOURCE(
 	   fvar = get_fvar(dat, conf, par, logF);
 	 }
 	 if(fsdTimeScaleModel(i) == rwScale){
-	   fvar *= (i+1);
+	   fvar *= (i+2);
+	   // for(int j = 0; j < logSelUse.size(); ++j)
+	   //   logSelUse(j) += cumEpsilon(j,i);
 	 }
 
 	   vector<Type> ICESrec;
@@ -198,7 +202,7 @@ SOURCE(
 	     forecastCalculatedMedian.col(i) = predF;// logF.col(indx - 1);
 	     break;
 	   case constrainedF:
-	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),logN,logF,logitFseason, aveYears, fvar, ICESrec, indx, cfg);    
+	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),logN,logF,logitFseason, aveYears, fvar, nvar, ICESrec, logSelUse, indx, cfg);    
 	     break;
 	   case fastFixedF:
 	     forecastCalculatedMedian.col(i) = constraints(i)(0).target + logSelUse;
@@ -401,6 +405,11 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
 
   forecast.cumEpsilon = matrix<Type>(logF.rows(), forecast.nYears);
   forecast.cumEpsilon.setZero();
+
+  forecast.nvar = matrix<Type>(logN.rows(), logN.rows());
+  forecast.nvar.setZero();
+  for(int i = 0; i < forecast.nvar.rows(); ++i)
+    forecast.nvar(i,i) = exp(2.0 * par.logSdLogN(conf.keyVarLogN(i)));
 
   // Calculate initial Fbar
   int fbarFirst = conf.fbarRange(0) - conf.minAge;
