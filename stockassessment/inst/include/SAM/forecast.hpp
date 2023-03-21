@@ -372,7 +372,7 @@ SAM_SPECIALIZATION(struct forecastSet<TMBad::ad_aug>);
 
 
 template <class Type>
-void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logN, Recruitment<Type>& recruit)SOURCE({
+void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logN, Recruitment<Type>& recruit, objective_function<Type>* of)SOURCE({
     if(forecast.nYears == 0)
       return;
     int nFYears = forecast.nYears - (dat.noYears - forecast.preYears);
@@ -380,22 +380,31 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
     vector<int> aveYears = forecast.aveYears;
   // propMat 
   extendArray(dat.propMat, nMYears, nFYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, true);
+  REPORT_F(dat.propMat, of);
   // stockMeanWeight
   extendArray(dat.stockMeanWeight, nMYears, nFYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, true);
+  REPORT_F(dat.stockMeanWeight, of);
   // catchMeanWeight
   extendArray(dat.catchMeanWeight, nMYears, nFYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, true);
+  REPORT_F(dat.catchMeanWeight, of);
   // natMor
   extendArray(dat.natMor, nMYears, nFYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, true);
+  REPORT_F(dat.natMor, of);
   // landFrac (No biopar process)
   extendArray(dat.landFrac, nMYears, nFYears, aveYears, true);
+  REPORT_F(dat.landFrac, of);
   // disMeanWeight (No biopar process)
   extendArray(dat.disMeanWeight, nMYears, nFYears, aveYears, true);
+  REPORT_F(dat.disMeanWeight, of);
   // landMeanWeight (No biopar process)
   extendArray(dat.landMeanWeight, nMYears, nFYears, aveYears, true);
+  REPORT_F(dat.landMeanWeight, of);
   // propF (No biopar process)
   extendArray(dat.propF, nMYears, nFYears, aveYears, true);
+  REPORT_F(dat.propF, of);
   // propM (No biopar process)
   extendArray(dat.propM, nMYears, nFYears, aveYears, true);
+  REPORT_F(dat.propM, of);
   
   // Prepare forecastCalculated...
   forecast.forecastCalculatedMedian = matrix<Type>(logF.rows(), forecast.nYears);
@@ -472,6 +481,6 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
   return;  
   })
 
-SAM_SPECIALIZATION(void prepareForForecast(forecastSet<double>&, dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, Recruitment<double>&));
-SAM_SPECIALIZATION(void prepareForForecast(forecastSet<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&));
+SAM_SPECIALIZATION(void prepareForForecast(forecastSet<double>&, dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, Recruitment<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(void prepareForForecast(forecastSet<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
 
