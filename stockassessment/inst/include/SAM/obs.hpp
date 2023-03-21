@@ -416,8 +416,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	}
       }
 
-      //eval likelihood 
-      for(int y=0;y<dat.noYears;y++){
+      //eval likelihood
+      int noYears = dat.noYears + forecast.nYears;
+      for(int y=0;y<noYears;y++){
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
 
@@ -511,7 +512,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
 		  nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 		  SIMULATE_F(of){
-		    dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+		    if((conf.simFlag(2)==0 && y < dat.noYears) ||
+		       (forecast.nYears > 0 &&
+			forecast.forecastYear(y) > 0 &&
+			forecast.simFlag(2)==0 &&
+			y >= dat.noYears)){
+		      dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+		    }
 		  }
 		}else{
 		  int thisdim=currentVar.size();
@@ -526,7 +533,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  nll+= thisnll((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW, keep.segment(idxfrom,idxlength));              
 		  nll+= (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 		  SIMULATE_F(of){
-		    dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
+		    if((conf.simFlag(2)==0 && y < dat.noYears) ||
+		       (forecast.nYears > 0 &&
+			forecast.forecastYear(y) > 0 &&
+			forecast.simFlag(2)==0 &&
+			y >= dat.noYears)){
+		      dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
+		    }
 		  }
 		}
 		break;
@@ -540,14 +553,20 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		nll -= log(fabs(obs_fun::jacobianDet((vector<Type>)dat.logobs.segment(idxfrom,idxlength).exp())));
 		nll -= dat.logobs.segment(idxfrom,idxlength).sum();
 		SIMULATE_F(of){
-		  vector<Type> logProb(idxlength);
-		  logProb.setZero();
-		  logProb.segment(0,idxlength-1) = obs_fun::addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
-		  Type logDenom = obs_fun::logExpSum(logProb);
-		  logProb -= logDenom;
-		  Type logTotal = rnorm(log(obs_fun::log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
-					exp(par.logSdLogTotalObs(totalParKey)));
-		  dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal; 
+		  if((conf.simFlag(2)==0 && y < dat.noYears) ||
+		     (forecast.nYears > 0 &&
+		      forecast.forecastYear(y) > 0 &&
+		      forecast.simFlag(2)==0 &&
+		      y >= dat.noYears)){
+		    vector<Type> logProb(idxlength);
+		    logProb.setZero();
+		    logProb.segment(0,idxlength-1) = obs_fun::addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
+		    Type logDenom = obs_fun::logExpSum(logProb);
+		    logProb -= logDenom;
+		    Type logTotal = rnorm(log(obs_fun::log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
+					  exp(par.logSdLogTotalObs(totalParKey)));
+		    dat.logobs.segment(idxfrom,idxlength) = logProb + logTotal;
+		  }
 		}
 		totalParKey++;
 		break;
@@ -565,7 +584,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		Type log_var_minus_mu = log_mu - logitRecapturePhiVec(i);	      
 		nll += -keep(i)*dnbinom_robust(dat.logobs(i),log_mu,log_var_minus_mu,true);
 		SIMULATE_F(of){
-		  dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
+		  if((conf.simFlag(2)==0 && y < dat.noYears) ||
+		     (forecast.nYears > 0 &&
+		      forecast.forecastYear(y) > 0 &&
+		      forecast.simFlag(2)==0 &&
+		      y >= dat.noYears)){
+		    dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
+		  }
 		}
 	      }
 	    }
@@ -584,7 +609,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		}  
 		nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
 		SIMULATE_F(of){
-		  dat.logobs(i) = rnorm(predObs(i),sd);
+		  if((conf.simFlag(2)==0 && y < dat.noYears) ||
+		     (forecast.nYears > 0 &&
+		      forecast.forecastYear(y) > 0 &&
+		      forecast.simFlag(2)==0 &&
+		      y >= dat.noYears)){
+		    dat.logobs(i) = rnorm(predObs(i),sd);
+		  }
 		}
 	      }
 	    }

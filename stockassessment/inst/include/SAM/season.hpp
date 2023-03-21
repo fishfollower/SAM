@@ -55,6 +55,9 @@ Type nllSeason(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSe
     // 	}
     //   }
     // }
+    SIMULATE_F(of){
+      REPORT_F(logitFseason,of);
+    }
     return nll;
   }
   )

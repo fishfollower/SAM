@@ -233,7 +233,7 @@ Type objective_function<Type>::operator() ()
 
   Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
 
-  prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit);
+  prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit, this);
 
   Type ans=0.0; //negative log-likelihood
 
