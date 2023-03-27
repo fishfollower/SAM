@@ -417,7 +417,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       }
 
       //eval likelihood
-      int noYears = dat.noYears + forecast.nYears;
+      int noYears = dat.idx1.dim(1); //dat.noYears; Also works when forecast has new data
       for(int y=0;y<noYears;y++){
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){

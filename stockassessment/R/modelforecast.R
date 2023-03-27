@@ -756,6 +756,9 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         args$random <- NULL
     }
 
+    if(returnObj == -1)
+        return(args)
+    
     ## Done with initial work chunk
     incpb()
 
@@ -1047,6 +1050,10 @@ addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE, ...){
     nms1 <- c("aux","auxData","idx1","idx2","idxCor","weight")
     dat[nms1] <- obj$env$data[nms1]
     dat$years <- min(as.numeric(dat$aux[,"year"])):max(as.numeric(dat$aux[,"year"]))
+    ## Fix dimensionnames
+    dmnm <- list(dat$years, fit$conf$minAge:fit$conf$maxAge, NULL)
+    dimnames(dat$propMat) <- dimnames(dat$stockMeanWeight) <- dimnames(dat$natMor) <- dimnames(dat$propM) <- dmnm[1:2]
+    dimnames(dat$catchMeanWeight) <- dimnames(dat$landFrac) <- dimnames(dat$disMeanWeight) <- dimnames(dat$landMeanWeight) <- dimnames(dat$propF) <- dmnm
     dat$noYears <- length(dat$years)
     cnf <- fit$conf
     pl <- fit$pl
