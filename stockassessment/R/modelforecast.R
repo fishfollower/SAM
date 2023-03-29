@@ -428,7 +428,7 @@ modelforecast.sam <- function(fit,
                               fixedFdeviation = FALSE,                              
                               useFHessian = FALSE,
                               resampleFirst = !is.null(nosim) && nosim > 0,
-                              fixFirstN = FALSE,
+                              useModelLastN = TRUE,
                               customSel = NULL,
                               lagR = FALSE,
                               splitLD = FALSE,
@@ -484,12 +484,22 @@ modelforecast.sam <- function(fit,
         incpb <- function(){ return(invisible(NULL)) }
     }
 
+    if(is.character(year.base)){
+        if(year.base == "lastCatchYear"){
+            year.base <- max(fit$data$aux[fit$data$aux[,"fleet"] %in% which(fit$data$fleetTypes==0),"year"])
+        }else if(year.base == "secondLastYear"){
+            year.base <- max(fit$data$years)-1
+        }else if(year.base == "lastYear"){
+            year.base <- max(fit$data$years)
+        }
+    }
     ## Handle year.base < max(fit$data$years)
     if(year.base > max(fit$data$years)){
-        stop("")
+        stop("year.base is too high")
     }else if(year.base < max(fit$data$years)){
         ## warning("year.base is ignored for now")
     }
+    
 
     ## if(length(ave.years) == 0){
     useModelBio <- !overwriteBioModel
@@ -705,12 +715,12 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         mmfun<-function(f,y, ff){idx<-which(args$data$aux[,"year"]==y & args$data$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
         args$data$idx1 <- outer(suf, yy, Vectorize(mmfun,c("f","y")), ff=min)
         args$data$idx2 <- outer(suf, yy, Vectorize(mmfun,c("f","y")), ff=max)
-        args$data$idxCor <- cbind(args$data$idxCor,matrix(NA_real_,nrow(args$data$idxCor),ncol(newAux)))
+        args$data$idxCor <- cbind(args$data$idxCor,matrix(NA_real_,nrow(args$data$idxCor),nrow(newAux)))
         args$data$weight <- c(args$data$weight, rep(NA_real_,nrow(newAux)))
     }
     
     if(useFHessian){
-        if(year.base==max(fit$data$years)){
+        if(year.base==max(fit$data$years) || (year.base==(max(fit$data$years)-1) && useModelLastN)){
             est <- fit$sdrep$estY
             FEstCov <- fit$sdrep$covY[grepl("LogF$",names(est)),grepl("LogF$",names(est))]
         }else if(year.base==(max(fit$data$years)-1)){
@@ -743,7 +753,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                Fdeviation = rnorm(nrow(pl$logF)),
                                FdeviationCov = diag(1,nrow(pl$logF),nrow(pl$logF)),
                                FEstCov = FEstCov,
-                               fixFirstN = fixFirstN)
+                               useModelLastN = useModelLastN)
 
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
@@ -771,17 +781,19 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
 
     fleetHasF <- apply(fit$conf$keyLogFsta>-1,1,any)
     if(!is.null(nosim) && nosim > 0){
-        if(year.base==max(fit$data$years)){
+        if(year.base==max(fit$data$years) || (year.base==(max(fit$data$years)-1) && useModelLastN)){
             est <- fit$sdrep$estY
             cov <- fit$sdrep$covY
+            yearInsert <- max(fit$data$years)
         }else if(year.base==(max(fit$data$years)-1)){
             est <- fit$sdrep$estYm1
             cov <- fit$sdrep$covYm1
+            yearInsert <- max(fit$data$years)-1
         }else{
             stop("year.base not implemented yet more than one year before end of assessment.")           
         }
         names(est) <- gsub("(^.*[lL]ast)(Log[NF]$)","\\2",names(est))
-        i0 <- which(fit$data$year == year.base)
+        i0 <- which(fit$data$year == yearInsert)
         plMap <- pl
         map <- fit$obj$env$map
         with.map <- intersect(names(plMap), names(map))
@@ -836,7 +848,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         simlist <- vector("list",length(FModel) + 1)
         for(i in 0:(length(FModel))){
             y<-year.base+i
-            ii <- i0 + i
+            ii <- which(fit$data$year == year.base) + i
             simlist[[i+1]] <- list(sim = do.call("rbind",lapply(simvals,function(x) c(x$logN[,ii], x$logF[,ii]))),
                                    fbar = sapply(simvals,function(x) exp(x$logfbar[ii])),
                                    catch = sapply(simvals,function(x) exp(x$logCatch[ii])),
@@ -1035,65 +1047,4 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
         return(simlist)    
     }
-}
-
-## Function to add simulated years to fit
-addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE, ...){
-    doSim <- modelforecast(fit, constraints, nosim=1, returnObj=2,addDataYears=TRUE,resampleFirst=resampleFirst)    
-    v <- doSim()
-    obj <- environment(doSim)$obj
-    names(v) <- gsub("dat\\.","",names(v))
-    dat <- fit$data
-    dat <- dat[!duplicated(names(dat))]
-    nms <- intersect(names(dat), names(v))
-    dat[nms] <- v[nms]
-    nms1 <- c("aux","auxData","idx1","idx2","idxCor","weight")
-    dat[nms1] <- obj$env$data[nms1]
-    dat$years <- min(as.numeric(dat$aux[,"year"])):max(as.numeric(dat$aux[,"year"]))
-    ## Fix dimensionnames
-    dmnm <- list(dat$years, fit$conf$minAge:fit$conf$maxAge, NULL)
-    dimnames(dat$propMat) <- dimnames(dat$stockMeanWeight) <- dimnames(dat$natMor) <- dimnames(dat$propM) <- dmnm[1:2]
-    dimnames(dat$catchMeanWeight) <- dimnames(dat$landFrac) <- dimnames(dat$disMeanWeight) <- dimnames(dat$landMeanWeight) <- dimnames(dat$propF) <- dmnm
-    dat$noYears <- length(dat$years)
-    cnf <- fit$conf
-    pl <- fit$pl
-    pl$missing <- NULL
-    attr(pl,"what") <- NULL
-    nms2 <- intersect(names(pl), names(v))
-    pl[nms2] <- v[nms2]    
-    map <- obj$env$map
-    newFit <- suppressWarnings(sam.fit(dat,cnf,pl,#map=map,
-                                       run=FALSE, check.parameters=FALSE))
-    newFit$opt <- list(par = newFit$obj$par,
-                       objective = NA,
-                       convergence = 0)
-    plMap <- newFit$pl
-    map <- newFit$obj$env$map
-    with.map <- intersect(names(plMap), names(map))
-    applyMap <- function(par.name) {
-        tapply(plMap[[par.name]], map[[par.name]], mean)
-    }
-    plMap[with.map] <- sapply(with.map, applyMap, simplify = FALSE)         
-    p <- unlist(plMap)
-    names(p) <- names(newFit$obj$env$last.par)          
-    newFit$obj$env$last.par <- newFit$obj$env$last.par.best <- p
-    ## SDREPORT
-    obj2 <- TMB::MakeADFun(newFit$obj$env$data, newFit$obj$env$parameters, type = "ADFun", 
-                      ADreport = TRUE, DLL = newFit$obj$env$DLL, silent = newFit$obj$env$silent)
-    
-    newFit$rep <- newFit$obj$report(p)
-    sdv <- obj2$fn(p)
-    sdrep <- list(value = sdv,
-                         sd = rep(0,length(sdv)))
-    idx <- c(which(names(sdrep$value) == "lastLogN"), which(names(sdrep$value) == 
-                                                            "lastLogF"))
-    sdrep$estY <- sdrep$value[idx]
-    sdrep$covY <- matrix(0,length(idx),length(idx))
-    idx <- c(which(names(sdrep$value) == "beforeLastLogN"), which(names(sdrep$value) == 
-                                                                  "beforeLastLogF"))
-    sdrep$estYm1 <- sdrep$value[idx]
-    sdrep$covYm1 <- matrix(0,length(idx),length(idx))
-    newFit$sdrep <- sdrep
-    class(newFit) <- "sam"
-    newFit
 }

@@ -58,7 +58,7 @@ struct forecastSet {
 	 vector<Type> Fdeviation;
 	 matrix<Type> FdeviationCov;
 	 matrix<Type> FEstCov;
-	 int fixFirstN;
+	 int useModelLastN;
 
   matrix<Type> forecastCalculatedMedian;
   vector<Type> forecastCalculatedLogSdCorrection;
@@ -97,7 +97,7 @@ struct forecastSet {
 						Fdeviation(x.Fdeviation),
 						FdeviationCov(x.FdeviationCov),
 						FEstCov(x.FEstCov),
-						fixFirstN(x.fixFirstN),
+						useModelLastN(x.useModelLastN),
 						forecastCalculatedMedian(x.forecastCalculatedMedian),
 						forecastCalculatedLogSdCorrection(x.forecastCalculatedLogSdCorrection),
 						sel(x.sel),
@@ -276,7 +276,7 @@ SOURCE(
 	 Fdeviation(),
 	 FdeviationCov(),
 	 FEstCov(),
-	 fixFirstN(),
+	 useModelLastN(),
 	 forecastCalculatedMedian(),
 		  forecastCalculatedLogSdCorrection(),
 		  sel(),
@@ -311,7 +311,7 @@ SOURCE(
 	     Fdeviation = vector<Type>(0);
 	     FdeviationCov = matrix<Type>();
 	     FEstCov = matrix<Type>();
-	     fixFirstN = 1;
+	     useModelLastN = 1;
 	     forecastCalculatedMedian = matrix<Type>(0,0);
 	     forecastCalculatedLogSdCorrection = vector<Type>(0);	     
 	     sel = vector<Type>(0);
@@ -357,7 +357,7 @@ SOURCE(
 	     Fdeviation = asVector<Type>(getListElement(x,"Fdeviation"));
 	     FdeviationCov = asMatrix<Type>(getListElement(x,"FdeviationCov"));
 	     FEstCov = asMatrix<Type>(getListElement(x,"FEstCov"));
-	     fixFirstN = Rf_asInteger(getListElement(x,"fixFirstN"));
+	     useModelLastN = Rf_asInteger(getListElement(x,"useModelLastN"));
 	   }
 	 }
 	 );
