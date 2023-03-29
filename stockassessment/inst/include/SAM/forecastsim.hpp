@@ -52,7 +52,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
       mort.updateYear(dat, conf, par, logF, logitFseason,indx);
     }
     // Simulate N
-    if(forecast.simFlag(1) == 0 && (forecast.fixFirstN || i > 0)){
+    if(forecast.simFlag(1) == 0 && (!forecast.useModelLastN || i > 0)){
       vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort,indx);
       vector<Type> Nscale(logN.rows());
       Nscale.setConstant((Type)1.0);
