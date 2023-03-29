@@ -1,7 +1,7 @@
 
 ## Function to add simulated years to fit
-addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE, ...){
-    doSim <- modelforecast(fit, constraints, nosim=1, returnObj=2,addDataYears=TRUE,resampleFirst=resampleFirst, useModelLastN = FALSE, ...)    
+addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE,trueSel=NULL, ...){
+    doSim <- modelforecast(fit, constraints, nosim=1, returnObj=2,addDataYears=TRUE,resampleFirst=resampleFirst, useModelLastN = FALSE,customSel = trueSel, ...)    
     v <- doSim()
     obj <- environment(doSim)$obj
     names(v) <- gsub("dat\\.","",names(v))
@@ -135,27 +135,39 @@ updateAssessment <- function(OM, EM, knotRange, AdviceLag, intermediateFleets){
 MSE <- function(OM,
                 EM,
                 nYears,
-                forecastSettings,
+                AdviceForecastSettings,
                 AdviceYears = 1,
                 AdviceLag = 0,
                 initialAdvice = NA,
                 implementationError = function(x) x,
                 knotRange = 3,
                 intermediateFleets = numeric(0),
+                OMselectivityFixed = FALSE,
                 ...){
 
+##### Check input #####
+    ## Operating model should have catch in the final year (i.e., no intermediate year)
     if(max(OM$data$aux[OM$data$aux[,"fleet"] %in% which(OM$data$fleetTypes==0),"year"]) != max(OM$data$years))
         stop("Operating model must have catches in the final year")
 
+    ## AdviceLag should be non-negative
     AdviceLag <- pmax(0, AdviceLag)
-    OM_pl <- OM$pl
-    trueSel <- as.numeric(exp(t(OM_pl$logF[OM$conf$keyLogFsta[1,]+1,ncol(OM_pl$logF)])) / tail(fbartable(OM)[,1],1))
-    EM_pl <- EM$pl
-    
+
+    ## Selectivity in operating model
+    if(OMselectivityFixed){
+        OM_pl <- OM$pl
+        trueSel <- as.numeric(exp(t(OM_pl$logF[OM$conf$keyLogFsta[1,]+1,ncol(OM_pl$logF)])) / tail(fbartable(OM)[,1],1))
+    }else{
+        trueSel <- NULL
+    }
+
+##### Make sure number of years match AdviceYears #####
     nYOld <- nYears
     nYears <- max(seq(1,nYears + AdviceYears-1, by = AdviceYears)) + (AdviceYears - 1)
     if(nYOld < nYears)
         message(sprintf("nYears changed to %d to fit the AdviceYears increments.",nYears))
+
+##### Prepare for output #####
     ssb <- matrix(NA,nYears+AdviceLag,5)
     fbar <- matrix(NA,nYears+AdviceLag,5)
     rec <- matrix(NA,nYears+AdviceLag,5)
@@ -164,24 +176,49 @@ MSE <- function(OM,
     rownames(ssb) <- rownames(fbar) <- rownames(rec) <- rownames(catch) <- seq(max(OM$data$years) + 1,len = nYears + AdviceLag)
     colnames(ssb) <- colnames(fbar) <- colnames(rec) <- colnames(catch) <- c("Advice","True","Estimate","Low","High")
 
+##### Copy OM and EM for safe overwriting #####
     OM_update <- OM
-    OM_data <- OM$data
     EM_update <- EM
     msg <- "OK"
 
+##### Insert initialAdvice in results table #####
     catch[seq_len(AdviceLag),"Advice"] <- rep(initialAdvice,length.out = AdviceLag)
 
+##### Helper function to convert advice (number) to forecast constraint for addSimulatedYears #####
     AdviceToCatchConstraint <- Vectorize(function(x){
         if(is.na(x)) return(NA)
         sprintf("C=%f",implementationError(x))
     })
 
-    if(length(forecastSettings$constraints) != AdviceLag + AdviceYears + 1){
+###### Make sure AdviceForecast is long enough #####
+    ## Default: Need to forecast AdviceLag years + AdviceYears years
+    yx <- 0
+    ## If year.base is set, we need to check if we need another year
+    if(!is.null(AdviceForecastSettings$year.base)){
+        ## We can't use a specific year as year.base
+        if(is.numeric(AdviceForecastSettings$year.base))
+            stop("Advice forecast year.base cannot be set to a specific year in the MSE. Use 'lastCatchYear', 'secondLastYear', or 'lastYear'.")
+        ## If year.base is last catch year, and we have intermediate year fleets, we need to forecast one more year
+        if(AdviceForecastSettings$year.base == "lastCatchYear" &&
+           length(AdviceForecastSettings$intermediateFleets) > 0){            
+            yx <- 1
+            ## Else, if year.base is secondLastYear, we need to forecast one more year
+        }else if(AdviceForecastSettings$year.base == "secondLastYear"){
+            yx <- 1
+        }
+        ## Otherwise, we are good.
+    }
+    ## Check AdviceForecast is long ennough
+    if(length(AdviceForecastSettings$constraints) < AdviceLag + AdviceYears + yx){
         warning("Length of forecastSettings$constraints should equal AdviceLag + AdviceYears + 1. Modifying to match.")
-        if(is.null(forecastSettings$constraints)){
-            forecastSettings$constraints <- rep(NA, length.out = AdviceLag + AdviceYears + 1)
+        ## If it's not set, insert NA to forecast using model
+        if(is.null(AdviceForecastSettings$constraints)){
+            AdviceForecastSettings$constraints <- rep(NA, length.out = AdviceLag + AdviceYears + yx)
         }else{
-            forecastSettings$constraints <- rep(forecastSettings$constraints, length.out = AdviceLag + AdviceYears + 1)            
+            ## Otherwise, repeat the last constraint to make long enough
+            AdviceForecastSettings$constraints <- c(AdviceForecastSettings$constraints,
+                                              rep(tail(AdviceForecastSettings$constraints,1),
+                                                  length.out = AdviceLag + AdviceYears + yx - length(forecastSettings$constraints)))
         }        
     }
 
@@ -206,7 +243,8 @@ MSE <- function(OM,
         cat("\tAssessment year",yr[1],"\n")
         cat("\tCurrent SSB",ssb[yr[1],"True"],"\n")
 
-        fcThisYear <- forecastSettings
+        fcThisYear <- AdviceForecastSettings
+        ## Insert advice in forecast constraints if requested
         fcThisYear$constraints <- gsub("%ADVICE%",catch[yr,"Advice"],fcThisYear$constraints)
         fcThisYear$constraints[grepl("C=NA",fcThisYear$constraints)] <- NA
         adviceForecast <- try({do.call(modelforecast, c(list(fit = EM_update, progress=FALSE), fcThisYear))})
