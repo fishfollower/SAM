@@ -117,6 +117,16 @@ updateAssessment <- function(OM, EM, knotRange, AdviceLag, intermediateFleets){
     return(EM_New)
 }
 
+## TODO (from VT):
+## - Add benchmark process: Refit a number of scenarios and choose automatically, refit reference points, etc.
+## - Ways to simulate changes in selectivity
+## - Implement restriction on the change in TAC (e.g., -20% to +25%)
+## - Implement escapement clause on TAC change restriction (e.g., only if SSB > Btrigger)
+
+## Management plans for inspiration:
+## Blue Whiting: https://d3b1dqw2kzexi.cloudfront.net/media/8742/agreed-record-blue-whiting-2017.pdf
+## Celtic herring: https://www.ices.dk/sites/pub/Publication%20Reports/Advice/2018/Special_requests/eu.2018.03.pdf
+
 
 ##' Management strategy evaluation using SAM models
 ##'
