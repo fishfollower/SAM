@@ -436,6 +436,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
         maxWeek <- -1
       }
     }
+  }else{
+      minWeek <- maxWeek <- numeric(0)
   }
 
   if(!is.null(sum.residual.fleets)){
