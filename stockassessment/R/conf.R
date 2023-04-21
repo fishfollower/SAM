@@ -123,7 +123,7 @@ defcon<-function(dat, level=1){
     ret$fbarRange <- ifelse(is.finite(ret$fbarRange), ret$fbarRange, c(ret$minAge,ret$maxAge))
     ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
     ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN"))
-    ret$fixVarToWeight <- 0
+    ret$fixVarToWeight <- rep(0,nFleets)
     ret$fracMixF <- 0
     ret$fracMixN <- rep(0,nAges)
     ret$fracMixObs <- rep(0,nFleets)
@@ -221,7 +221,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
         txt$fbarRange <- "lowest and higest age included in Fbar"
         txt$keyBiomassTreat <- "To be defined only if a biomass survey is used (0 SSB index, 1 catch index, 2 FSB index, 3 total catch, 4 total landings, 5 TSB index,  6 TSN index, and 10 Fbar idx)."
         txt$obsLikelihoodFlag <- "Option for observational likelihood"
-        txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight)."
+        txt$fixVarToWeight <- "If weight attribute is supplied for observations this option sets the treatment (0 relative weight, 1 fix variance to weight). Can be specified fleetwise."
         txt$fracMixF <- "The fraction of t(3) distribution used in logF increment distribution" 
         txt$fracMixN <- "The fraction of t(3) distribution used in logN increment distribution (for each age group)"
         txt$fracMixObs <- "A vector with same length as number of fleets, where each element is the fraction of t(3) distribution used in the distribution of that fleet"

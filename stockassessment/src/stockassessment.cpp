@@ -100,7 +100,17 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(simFlag); confset.simFlag=simFlag;  //1 means simulations should not redo F and N
   DATA_INTEGER(resFlag); confset.resFlag=resFlag;  
   DATA_FACTOR(obsLikelihoodFlag); confset.obsLikelihoodFlag=obsLikelihoodFlag; 
-  DATA_INTEGER(fixVarToWeight); confset.fixVarToWeight=fixVarToWeight; 
+  DATA_IVECTOR(fixVarToWeight);
+  vector<int> fixVarToWeightInt(noFleets);
+  if(fixVarToWeight.size()==1){
+    for(int i=0; i<fixVarToWeightInt.size(); ++i){
+      fixVarToWeightInt(i)=fixVarToWeight(0);  
+    }
+  }else{
+    fixVarToWeightInt=fixVarToWeight;  
+  }
+  confset.fixVarToWeight=fixVarToWeightInt;
+  
   DATA_SCALAR(fracMixF); confset.fracMixF=asDouble(fracMixF); 
   DATA_VECTOR(fracMixN);
   vector<double> fracMixNDouble(maxAge-minAge+1);

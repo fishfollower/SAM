@@ -4,7 +4,7 @@ PACKAGE=stockassessment
 VERSION := $(shell sed -n '/^Version: /s///p' stockassessment/DESCRIPTION)
 THISSHA := $(shell git log -1 --format="%H")
 TARBALL := $(PACKAGE)_$(VERSION).tar.gz
-ZIPFILE := =$(PACKAGE)_$(VERSION).zip
+ZIPFILE := $(PACKAGE)_$(VERSION).zip
 
 CPP_SRC := $(PACKAGE)/src/*.cpp $(PACKAGE)/src/*.h $(PACKAGE)/inst/include/*.hpp $(PACKAGE)/inst/include/SAM/*.hpp
 R_FILES := $(PACKAGE)/R/*.R

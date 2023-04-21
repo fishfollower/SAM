@@ -434,7 +434,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		      }
 		    }
 		  }else{
-		    if(conf.fixVarToWeight==1){
+		    if(conf.fixVarToWeight(f)==1){
 		      sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
 		    }else{
 		      sqrtW(idxV)=sqrt(Type(1)/dat.weight(idxfrom+idxV));

@@ -172,7 +172,7 @@ struct confSet{
   vector<int> simFlag; 
   int resFlag; 
   vector<int> obsLikelihoodFlag;
-  int fixVarToWeight;
+  vector<int> fixVarToWeight;
   double fracMixF;
   vector<double> fracMixN;
   vector<double> fracMixObs;
@@ -225,7 +225,7 @@ SOURCE(
 	 simFlag = asVector<int>(getListElement(x,"simFlag", &Rf_isNumeric));
 	 resFlag = Rf_asInteger(getListElement(x,"resFlag", &isNumericScalar));
 	 obsLikelihoodFlag = asVector<int>(getListElement(x,"obsLikelihoodFlag", &Rf_isNumeric));
-	 fixVarToWeight = Rf_asInteger(getListElement(x,"fixVarToWeight", &isNumericScalar));
+	 fixVarToWeight = asVector<int>(getListElement(x,"fixVarToWeight", &Rf_isNumeric)); 
 	 fracMixF = Rf_asReal(getListElement(x,"fracMixF", &isNumericScalar));
 	 fracMixN = asVector<double>(getListElement(x,"fracMixN", &Rf_isNumeric));
 	 fracMixObs = asVector<double>(getListElement(x,"fracMixObs", &Rf_isNumeric));
