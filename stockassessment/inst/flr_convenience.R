@@ -147,7 +147,7 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
 
 as.sam.fit <- function(x,...){ UseMethod("as.sam.fit")    }
 
-getSamFitData <- function(x, makePlusGroup = TRUE){
+getSamFitData <- function(x, makePlusGroup = TRUE, simSurveyOptions = NULL){
     CN <- as.matrix(catch.n(x))
     CN[CN==0] <- NA
     MA <- as.matrix(mat(x))
@@ -194,8 +194,24 @@ getSamFitData <- function(x, makePlusGroup = TRUE){
     }else if(makePlusGroup && length(ii) == 0){
         message("Constructed plus group not needed.")
     }
+    if(!is.null(simSurveyOptions)){
+        makeOne <- function(info){
+            mu <- info$logQ + log(as.matrix(stock.n(x))) -(as.matrix(harvest(x)) + as.matrix(m(x)))*info$time
+            sv <- mu + rnorm(length(mu),0,info$sd)
+            if(is.null(info$years))
+                info$years <- rownames(sv)
+            if(is.null(info$ages))
+                info$ages <- colnames(sv)
+            vv <- exp(sv[as.character(info$years),as.character(info$ages)])
+            attr(vv,"time") <- c(info$time,info$time)
+            vv
+        }
+        surveys <- lapply(simSurveyOptions, makeOne)
+    }else{
+        surveys <- NULL
+    }
     dat <- setup.sam.data(fleets = NULL,
-                          surveys = NULL,
+                          surveys = surveys,
                           residual.fleet = CN, 
                           prop.mature = MA,
                           stock.mean.weight = SW,
@@ -207,6 +223,8 @@ getSamFitData <- function(x, makePlusGroup = TRUE){
                           prop.m = PM,
                           land.frac = LF,
                           recapture = NULL)
+    attr(dat,"FLStock_N") <- as.matrix(stock.n(x))
+    attr(dat,"FLStock_F") <- as.matrix(harvest(x))
     dat
 }
 as.sam.fit.FLStock <- function(x, sr, rec_pars, makePlusGroup = TRUE){
