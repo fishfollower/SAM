@@ -6,15 +6,43 @@
 ##' @param ncores number of cores
 ##' @return output
 ##' @importFrom parallel makeCluster clusterSetRNGStream parSapply stopCluster
-.SAM_replicate <- function(n, expr, simplify = "array", ncores = 1, env = parent.frame(n+1)){
+.SAM_replicate <- function(n, expr, simplify = "array", ncores = 1, env = parent.frame(n+1), par_precall = NULL, type = ifelse(.Platform$OS.type == "unix","mclapply","PSOCK")){
     if(ncores > 1){
-        cl <- parallel::makeCluster(ncores)
-        on.exit(parallel::stopCluster(cl))
-        parallel::clusterSetRNGStream(cl)
-        eval(expression(2+2),env)
-        parallel::clusterExport(cl, "env", environment())
-        v <- parallel::parSapply(cl, integer(n), eval(substitute(function(...) expr),env), 
-                                 simplify = simplify)        
+        if(type == "mclapply"){
+            v <- parallel::mclapply(integer(n),  eval(substitute(function(...) expr),env))
+            if (!isFALSE(simplify)) 
+                v <- simplify2array(v, higher = (simplify == "array"))
+        }else{
+            cl <- parallel::makeCluster(ncores,outfile='', type = type)
+            on.exit(parallel::stopCluster(cl))
+            parallel::clusterSetRNGStream(cl)
+            eval(expression(2+2),env)       
+            ##parallel::clusterExport(cl, "env", environment())
+            ## Make everything available on all nodes
+            si <- sessionInfo()
+            e0 <- environment()
+            repeat{
+                parallel::clusterExport(cl,
+                                        ls(all.names=TRUE,
+                                           env=e0),
+                                        envir=e0)
+                if(identical(e0, globalenv()))
+                    break;
+                e0 <- parent.env(environment())
+            }
+            ## Load base packages
+            if(!is.null(si$basePkgs))
+                parallel::clusterEvalQ(cl, sapply(names(si$basePkgs),require, character.only=TRUE))
+            if(!is.null(si$otherPkgs))
+                parallel::clusterEvalQ(cl, sapply(names(si$otherPkgs),require, character.only=TRUE))
+            if(!is.null(par_precall)){
+                cat("Retaping...\n")
+                parallel::clusterEvalQ(cl, eval(par_precall,env))
+            }
+            cat("Ready for results...\n")
+            v <- parallel::parSapply(cl, integer(n), eval(substitute(function(...) expr),env), 
+                                     simplify = simplify)
+        }
     }else{
         v <- sapply(integer(n), eval(substitute(function(...) expr),env), 
                     simplify = simplify)
@@ -478,7 +506,7 @@ modelforecast.sam <- function(fit,
  
     
     if(progress && !returnObj && !is.null(nosim) && nosim > 0){
-        pb <- utils::txtProgressBar(min = 0, max = nosim+3, style = 3)
+        pb <- utils::txtProgressBar(min = 0, max = nosim, style = 3)
         incpb <- function() utils::setTxtProgressBar(pb, pb$getVal()+1)
     }else{
         incpb <- function(){ return(invisible(NULL)) }
@@ -770,11 +798,11 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         return(args)
     
     ## Done with initial work chunk
-    incpb()
+    #incpb()
 
     obj <- do.call(TMB::MakeADFun, args)
     ## Done with initial MakeADFun
-    incpb()
+    #incpb()
 
     if(as.integer(returnObj)==1)
         return(obj)
@@ -844,7 +872,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         }
         if(as.integer(returnObj)==2)
             return(doSim)
-        simvals <- .SAM_replicate(nosim, doSim(), simplify = FALSE, ncores = ncores, env = environment(doSim))
+        simvals <- .SAM_replicate(nosim, doSim(), simplify = FALSE, ncores = ncores, env = environment(doSim), par_precall = expression(obj$retape()))
         simlist <- vector("list",length(FModel) + 1)
         for(i in 0:(length(FModel))){
             y<-year.base+i
@@ -925,7 +953,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist,"estimateLabel") <- estimateLabel
         attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
         ## Done with reporting
-        incpb()
+        ##incpb()
         if(progress)
             close(pb)
         return(simlist)
