@@ -51,7 +51,9 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       resN.col(0) = LinvN*(vector<Type>(logN.col(0)-par.initN));    
       nll+= neg_log_densityN(logN.col(0)-par.initN) ;//density::MVNORM(diagonalMatrix(Type(0.1),stateDimN))(logN.col(0)-par.initN); //neg_log_densityN(logN.col(0)-par.initN); // N-Process likelihood 
       SIMULATE_F(of){
-	logN.col(0) = par.initN + neg_log_densityN.simulate(); //SCALE(N01(par.initN),1.0); // + neg_log_densityN.simulate();
+	if(conf.simFlag(1)==0){
+	  logN.col(0) = par.initN + neg_log_densityN.simulate(); //SCALE(N01(par.initN),1.0); // + neg_log_densityN.simulate();
+	}
       }
     }
   
