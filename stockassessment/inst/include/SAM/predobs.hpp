@@ -128,7 +128,13 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
   
 		    case 3:// biomass or catch survey
 		      if(conf.keyBiomassTreat(f-1)==0){
-			pred = logssb+par.logFpar(conf.keyLogFpar(f-1,a));
+			pred = logssb;
+  		        if(conf.keyQpow(f-1,a)>(-1)){
+			  pred*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
+  		        }
+		        if(conf.keyLogFpar(f-1,a)>(-1)){
+			  pred+=par.logFpar(conf.keyLogFpar(f-1,a));
+		        }
 		      }
 		      if(conf.keyBiomassTreat(f-1)==1){
 			pred = logCatch+par.logFpar(conf.keyLogFpar(f-1,a));
