@@ -898,7 +898,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   // s0.setConstant(0);
   // vector<Type> start(tryStart(fc,s0,200));
   vector<Type> start(cFleets.size());
-  start.setConstant(0.0);
+  start.setConstant(log(0.1 / cFleets.size()));
   
   vector<Type> res = SAM_Newton(p_fc, start, cfg);
   vector<Type> newLogF = logSel; //logF.col(y-1);// - lastLogFbar;
