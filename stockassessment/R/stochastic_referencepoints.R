@@ -68,9 +68,10 @@
     bitwXor(a,b)
 }
 
-.refpointSMethodParser <- function(x, ...){
+.refpointSMethodParser <- function(x, monotone = c("n","d","i"), positive = NA, ...){
     if(length(x) > 1)
         stop("Only one at a time!")
+    monotone <- match.arg(monotone)
     ## Allow shorthand...
     typePatterns <- list(Mean = "^mean$",
                          Median = "^median$",
@@ -90,7 +91,9 @@
         xVal <- xvalPatterns[[mIndx]][1]
     }
     c(list(methodType = .refpointSMethodEnum[mIndx],
-           xVal = xVal),
+           xVal = xVal,
+           monotone = monotone,
+           positive = positive),
       list(...))        
 }
 
@@ -109,21 +112,47 @@
     }
     fn <- function(par){
         beta <- par[1:(ncol(X))]
+        if(MT$monotone == "d" || MT$monotone == "pd"){
+            beta[-1] <- -exp(beta[-1])
+        }else if(MT$monotone == "i"){
+            beta[-1] <- exp(beta[-1])
+        }
         X2 <- X
         pM <- X2 %*% beta
+        if(!is.na(MT$positive)){
+            if(MT$positive){
+                pM <- exp(pM)
+            }else{
+                pM <- -exp(pM)
+            }
+        }
         sum(Loss(C,pM[]))
     }
     opt <- stats::nlminb(numeric(ncol(X)), fn, control = list(iter.max=10000,eval.max=10000))
     attr(opt,"terms") <- stats::terms(mf)
+    attr(opt,"MT") <- MT
      class(opt) <- "rpscurvefit"
     opt
 }
 
 predict.rpscurvefit <- function(x,newF,...){
     X <- model.matrix(attr(x,"terms"),data.frame(F=newF))
+    MT <- attr(x,"MT")
     par <- x$par
     beta <- par[1:ncol(X)]
+    if(MT$monotone == "d"){
+        beta[-1] <- -exp(beta[-1])
+    }else if(MT$monotone == "i"){
+        beta[-1] <- exp(beta[-1])
+    }
     pM <- X %*% beta
+    if(!is.na(MT$positive)){
+        if(MT$positive){
+            pM <- exp(pM)
+        }else{
+            pM <- -exp(pM)
+        }
+    }
     as.numeric(pM)  
 }
 
