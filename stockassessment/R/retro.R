@@ -82,6 +82,8 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
         }
         conf$keyLogFsta <- .reidx(conf$keyLogFsta[suf,,drop=FALSE])
         conf$keyLogFpar <- .reidx(conf$keyLogFpar[suf,,drop=FALSE])
+        conf$keyLogFmu <- .reidx(conf$keyLogFmu[suf,,drop=FALSE])
+        conf$keyLogFrho <- .reidx(conf$keyLogFrho[suf,,drop=FALSE])
         conf$keyQpow <- .reidx(conf$keyQpow[suf,,drop=FALSE])
         conf$keyVarF <- .reidx(conf$keyVarF[suf,,drop=FALSE])
         conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
