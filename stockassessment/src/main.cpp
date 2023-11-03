@@ -23,6 +23,7 @@ extern "C" {
   SEXP MakeADHessObject2(SEXP data, SEXP parameters, SEXP report, SEXP control);
   SEXP usingAtomics();
   SEXP getFramework();
+  SEXP getSetGlobalPtr(SEXP ptr);
   SEXP TMBconfig(SEXP envir, SEXP cmd);  
   
   SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT);
@@ -62,7 +63,8 @@ extern "C" {
 				   {"MakeADGradObject",    (DL_FUNC) &MakeADGradObject,    4},   
 				   {"MakeADHessObject2",   (DL_FUNC) &MakeADHessObject2,   4},   
 				   {"usingAtomics",        (DL_FUNC) &usingAtomics,        0},   
-				   {"getFramework",        (DL_FUNC) &getFramework,        0},   
+				   {"getFramework",        (DL_FUNC) &getFramework,        0},
+				   {"getSetGlobalPtr",     (DL_FUNC) &getFramework,        1},
 				   {"TMBconfig",           (DL_FUNC) &TMBconfig,           2},
       
     CALLDEF(perRecruitR,7),
