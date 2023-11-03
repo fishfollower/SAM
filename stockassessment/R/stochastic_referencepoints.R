@@ -260,14 +260,18 @@ predict.rpscurvefit <- function(x,newF,...){
 }
 
 #' @importFrom stats runif predict
-.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f", deterministicF = TRUE, ...){
+.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f", deterministicF = TRUE, randomF = TRUE, ...){
     rfv <- function(n,a,b){
         u <- stats::runif(n)
         v1 <- exp(stats::runif(n,log(ifelse(a==0,0.002,a)), log(b)))
         v2 <- stats::runif(n,a,b)
         ifelse(u < 0.25, v1, v2)
     }
-    Fvals <- sort(rfv(nosim,Frange[1],Frange[2]))
+    if(randomF){
+        Fvals <- sort(c(rep(1e-6,100), rfv(nosim,Frange[1],Frange[2])))
+    }else{
+        Fvals <- c(rep(1e-6,100), seq(Frange[1],Frange[2], len = nosim))
+    }
     PRvals <- .perRecruitSR(log(Fvals),
                             fit=fit,
                             nYears=nYears,
@@ -414,6 +418,13 @@ predict.rpscurvefit <- function(x,newF,...){
         Frng <- range(Fvals[cutfun(Crit)])
         inRng <- function(x,rng) x > rng[1] & x < rng[2]
         indx <- inRng(Fvals,Frng)
+        MT$positive <- TRUE
+        MT$monotone <- "n"
+        MT$formula <- ~ibc(F,5)
+        if(rp$rpType %in% c(5,6)){
+            MT$formula <- ~iibc(F,5)
+            MT$monotone <- "d"
+        }
         CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
         Fseq <- seq(Frng[1],Frng[2],len=200)
         pv <- predict(CurveFit,Fseq)
@@ -428,10 +439,20 @@ predict.rpscurvefit <- function(x,newF,...){
                 Crit <- exp(PRvals[[what]])
                 if(all(is.na(Crit)))
                    return(NA)
-                cutfun <- function(x) x > max(x) * 0.1
+                cutfun <- function(x) x > max(x) * 0#rp$cutoff
                 Frng <- range(Fvals[cutfun(Crit)])
                 inRng <- function(x,rng) x > rng[1] & x < rng[2]
                 indx <- inRng(Fvals,Frng)
+                MT$positive <- TRUE
+                MT$monotone <- "n"
+                MT$formula <- ~ibc(F,5)
+                if(what %in% c("logSPR","logSe","logLifeExpectancy")){
+                    MT$formula <- ~iibc(F,5)
+                    MT$monotone <- "d"
+                }else if(what %in% c("logYearsLost")){
+                    MT$formula <- ~iibc(F,5)
+                    MT$monotone <- "i"
+                }
                 CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
                 predict(CurveFit, f)
             }
@@ -589,7 +610,7 @@ stochasticReferencepoints.sam <- function(fit,
                                           selYears = max(fit$data$years),
                                           newton.control = list(),
                                           seed = .timeToSeed(),
-                                          formula = ~ibc(F,5),
+                                          #formula = ~ibc(F,5),
                                           nosim_ci = 30,
                                           derivedSummarizer = NA,
                                           nTail = 1,
@@ -607,7 +628,7 @@ stochasticReferencepoints.sam <- function(fit,
     on.exit(set.seed(oldSeed))
     set.seed(seed)
 
-    MT <- .refpointSMethodParser(method, formula = formula, derivedSummarizer=derivedSummarizer)
+    MT <- .refpointSMethodParser(method, formula = NA, derivedSummarizer=derivedSummarizer, positive = TRUE)
 
     catchType <- pmatch(catchType,c("catch","landing","discard"))-1
     if(is.na(catchType))
@@ -630,9 +651,12 @@ stochasticReferencepoints.sam <- function(fit,
 
     ## Get RPs for best fit
     rpArgs <- Reduce(.refpointMerger,
-                     lapply(referencepoints, .refpointParser, cutoff = 0.1),
+                     lapply(referencepoints, .refpointParser, cutoff = 0),
                      list())
     invisible(lapply(rpArgs,.refpointCheckRecruitment,fit=fit))
+
+    if (!.checkFullDerived(fit) && any(sapply(rpArgs, function(x) x$rpType %in% c(3,4,5))))
+        stop("The reference points specified needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
 
     doSim <- .getDoSim(logf1=tail(log(fbartable(fit)[,1]),1),
                        fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl, constraint=constraint,deterministicF=deterministicF,...)

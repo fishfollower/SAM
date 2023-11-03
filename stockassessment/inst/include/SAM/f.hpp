@@ -144,9 +144,6 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     vector<Type> muF = get_fmu(dat,conf,par, logF);
     vector<Type> rhoF = get_frho(dat,conf,par, logF);
 
-    REPORT_F(muF,of);
-    REPORT_F(rhoF,of);
-    
     //density::MVNORM_t<Type> neg_log_densityF(fvar);
     matrix<Type> fvar = get_fvar(dat, conf, par, logF);
     MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));

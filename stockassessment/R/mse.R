@@ -1,6 +1,6 @@
 
 ## Function to add simulated years to fit
-addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE,trueSel=NULL, ...){
+addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE,trueSel=NULL,refit=FALSE,silent=TRUE, ...){
     doSim <- modelforecast(fit, constraints, nosim=1, returnObj=2,addDataYears=TRUE,resampleFirst=resampleFirst, useModelLastN = FALSE,customSel = trueSel, ...)    
     v <- doSim()
     obj <- environment(doSim)$obj
@@ -22,41 +22,49 @@ addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE,trueSel=NULL,
     pl$missing <- NULL
     attr(pl,"what") <- NULL
     nms2 <- intersect(names(pl), names(v))
+    ## WARNING: This might break if parameters are reported!
     pl[nms2] <- v[nms2]    
     map <- obj$env$map
-    newFit <- suppressWarnings(sam.fit(dat,cnf,pl,#map=map,
-                                       run=FALSE, check.parameters=FALSE))
-    newFit$opt <- list(par = newFit$obj$par,
-                       objective = NA,
-                       convergence = 0)
-    plMap <- newFit$pl
-    map <- newFit$obj$env$map
-    with.map <- intersect(names(plMap), names(map))
-    applyMap <- function(par.name) {
-        tapply(plMap[[par.name]], map[[par.name]], mean)
+    if(refit){        
+        ## mpx <- fit$obj$env$map[sapply(fit$obj$env$map,length) > 0]
+        ns <- as.list(attr(fit,"call"))$newtonsteps        
+        newFit <- suppressWarnings(sam.fit(dat,cnf,pl,map=map,newtonsteps=ifelse(is.null(ns),3,ns),
+                                           run=TRUE, check.parameters=FALSE, silent=silent))
+    }else{
+        newFit <- suppressWarnings(sam.fit(dat,cnf,pl,map=map,
+                                           run=FALSE, check.parameters=FALSE))
+        newFit$opt <- list(par = newFit$obj$par,
+                           objective = NA,
+                           convergence = 0)
+        plMap <- newFit$pl
+        map <- newFit$obj$env$map
+        with.map <- intersect(names(plMap), names(map))
+        applyMap <- function(par.name) {
+            tapply(plMap[[par.name]], map[[par.name]], mean)
+        }
+        plMap[with.map] <- sapply(with.map, applyMap, simplify = FALSE)         
+        p <- unlist(plMap)
+        names(p) <- names(newFit$obj$env$last.par)          
+        newFit$obj$env$last.par <- newFit$obj$env$last.par.best <- p
+        ## SDREPORT
+        obj2 <- TMB::MakeADFun(newFit$obj$env$data, newFit$obj$env$parameters, type = "ADFun", 
+                               ADreport = TRUE, DLL = newFit$obj$env$DLL, silent = newFit$obj$env$silent)
+        
+        newFit$rep <- newFit$obj$report(p)
+        sdv <- obj2$fn(p)
+        sdrep <- list(value = sdv,
+                      sd = rep(0,length(sdv)))
+        idx <- c(which(names(sdrep$value) == "lastLogN"), which(names(sdrep$value) == 
+                                                                "lastLogF"))
+        sdrep$estY <- sdrep$value[idx]
+        sdrep$covY <- matrix(0,length(idx),length(idx))
+        idx <- c(which(names(sdrep$value) == "beforeLastLogN"), which(names(sdrep$value) == 
+                                                                      "beforeLastLogF"))
+        sdrep$estYm1 <- sdrep$value[idx]
+        sdrep$covYm1 <- matrix(0,length(idx),length(idx))
+        newFit$sdrep <- sdrep
+        class(newFit) <- "sam"
     }
-    plMap[with.map] <- sapply(with.map, applyMap, simplify = FALSE)         
-    p <- unlist(plMap)
-    names(p) <- names(newFit$obj$env$last.par)          
-    newFit$obj$env$last.par <- newFit$obj$env$last.par.best <- p
-    ## SDREPORT
-    obj2 <- TMB::MakeADFun(newFit$obj$env$data, newFit$obj$env$parameters, type = "ADFun", 
-                      ADreport = TRUE, DLL = newFit$obj$env$DLL, silent = newFit$obj$env$silent)
-    
-    newFit$rep <- newFit$obj$report(p)
-    sdv <- obj2$fn(p)
-    sdrep <- list(value = sdv,
-                         sd = rep(0,length(sdv)))
-    idx <- c(which(names(sdrep$value) == "lastLogN"), which(names(sdrep$value) == 
-                                                            "lastLogF"))
-    sdrep$estY <- sdrep$value[idx]
-    sdrep$covY <- matrix(0,length(idx),length(idx))
-    idx <- c(which(names(sdrep$value) == "beforeLastLogN"), which(names(sdrep$value) == 
-                                                                  "beforeLastLogF"))
-    sdrep$estYm1 <- sdrep$value[idx]
-    sdrep$covYm1 <- matrix(0,length(idx),length(idx))
-    newFit$sdrep <- sdrep
-    class(newFit) <- "sam"
     newFit
 }
 
