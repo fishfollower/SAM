@@ -175,9 +175,18 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         atBound <- atLBound | atUBound
         g <- as.numeric( obj$gr(opt$par) )
         h <- stats::optimHess(opt$par, obj$fn, obj$gr)
-        opt$par[!atBound] <- opt$par[!atBound]- solve(h[!atBound,!atBound], g[!atBound])
-        opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
-        opt$objective <- obj$fn(opt$par)
+        ## opt$par[!atBound] <- opt$par[!atBound]- solve(h[!atBound,!atBound], g[!atBound])
+        ## opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
+        ## opt$objective <- obj$fn(opt$par)
+        ss <- try({svd_solve(h[!atBound,!atBound], g[!atBound])})
+        if(!is(ss,"try-error")){
+            opt$par[!atBound] <- opt$par[!atBound]- ss
+            opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
+            opt$objective <- obj$fn(opt$par)
+        }else{
+            message("Hessian could not be inverted for newton steps.");
+            break;
+        }
     }
     opt$he <- optimHess(opt$par, obj$fn, obj$gr)
 
