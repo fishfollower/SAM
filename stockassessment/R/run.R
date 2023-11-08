@@ -178,7 +178,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         ## opt$par[!atBound] <- opt$par[!atBound]- solve(h[!atBound,!atBound], g[!atBound])
         ## opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
         ## opt$objective <- obj$fn(opt$par)
-        ss <- try({svd_solve(h[!atBound,!atBound], g[!atBound])})
+        ss <- try({svd_solve(h[!atBound,!atBound]) %*% g[!atBound]})
         if(!is(ss,"try-error")){
             opt$par[!atBound] <- opt$par[!atBound]- ss
             opt$par[atBound] <- (atLBound * lower2 + atUBound * upper2)[atBound]
