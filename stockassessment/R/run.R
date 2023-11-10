@@ -126,7 +126,8 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     
     ddd <- args
     if(rm.unidentified){
-        gr <- obj$gr()
+        ##gr <- obj$gr()
+        gr <- abs(obj$gr()) + abs(obj$gr(obj$par+0.001*abs(obj$par))) + abs(obj$gr(obj$par-0.001*abs(obj$par)))
                                         #grNA[abs(grNA)<1.0e-15] <- NA
         safemap <- obj$env$parList(gr)
         safemap <- safemap[!names(safemap)%in%ran]
