@@ -502,7 +502,7 @@ summary.sam<-function(object, ...){
 ##' @details simulates data sets from the model fitted and conditioned on the random effects estimated 
 ##' @return returns a list of lists. The outer list has length \code{nsim}. Each inner list contains simulated values of \code{logF}, \code{logN}, and \code{obs} with dimensions equal to those parameters.
 ##' @export
-simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, keep.process = FALSE, ...){
+simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, keep.process = FALSE, retain.missing = FALSE, ...){
     if(!is.null(seed)) set.seed(seed)
     pl <- object$pl
     map <- object$obj$env$map
@@ -525,12 +525,23 @@ simulate.sam<-function(object, nsim=1, seed=NULL, full.data=TRUE, keep.process =
                 ret$logN <- sval$logN
                 ret$logF <- sval$logF
             }
+            if(retain.missing){
+                ret$logobs_true <- ret$logobs
+                ret$logobs[is.na(object$data$logobs)] <- NA
+            }
             ret
         },
         simplify=FALSE)
         ret<-lapply(ret, function(x){attr(x,"fleetNames") <- attr(object$data,"fleetNames");x})
     }else{
-  	ret <- replicate(nsim, object$obj$simulate(est), simplify=FALSE)
+  	ret <- replicate(nsim,{
+            ret <- object$obj$simulate(est)
+            if(retain.missing){
+                ret$logobs_true <- ret$logobs
+                ret$logobs[is.na(object$data$logobs)] <- NA
+            }
+            ret
+        }, simplify=FALSE)
     }
     ret
 }

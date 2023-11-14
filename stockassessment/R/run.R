@@ -417,7 +417,7 @@ refit <- function(fit, newConf, startingValues, ...){
         fit2$data$maxWeek <- -1
     }
     if(is.null(fit2$data$idxCor))
-        fit2$data$idxCor <- matrix(NA, nrow=fit2$data$noFleets,
+        fit2$data$idxCor <- matrix(NA_real_, nrow=fit2$data$noFleets,
                                    ncol=fit2$data$noYears)
     if(is.null(fit2$data$sumKey))
         fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
