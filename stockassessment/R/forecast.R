@@ -5,7 +5,7 @@
 ##' @details Generates samples via the Cholesky decomposition, which is less platform dependent than eigenvalue decomposition.
 ##' @return If n = 1 a vector of the same length as mu, otherwise an n by length(mu) matrix with one sample in each row.
 ##' @export
-rmvnorm <- function(n = 1, mu, Sigma){
+rmvnorm <- function(n = 1, mu, Sigma, pivot = FALSE){
     p <- length(mu)
     if(!all(dim(Sigma) == c(p, p))){
         stop("incompatible arguments")
@@ -13,7 +13,10 @@ rmvnorm <- function(n = 1, mu, Sigma){
     idx <- diag(Sigma) > .Machine$double.xmin 
     L <- matrix(0,p,p)
     if(any(idx)){
-        L[idx,idx] <- chol(Sigma[idx,idx])
+        L0 <- chol(Sigma[idx,idx], pivot = pivot)
+        if(pivot)
+            L0[, order(attr(L0, "pivot"))]
+        L[idx,idx] <- L0
     }
     X <- matrix(rnorm(p * n), n)
     X <- drop(mu) + t(X%*%L)
