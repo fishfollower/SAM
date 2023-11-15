@@ -31,7 +31,8 @@ extern "C" {
   SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
   SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
   SEXP hcrR(SEXP ssb, SEXP hcrConf);
-  SEXP jacobian(SEXP fn, SEXP par, SEXP rho, SEXP maxit, SEXP h, SEXP tolerance);
+  SEXP jacobian(SEXP fn, SEXP par, SEXP rho, SEXP maxit, SEXP h, SEXP tolerance, SEXP subset);
+  SEXP hessian(SEXP fn, SEXP par, SEXP rho, SEXP h, SEXP columns);
   SEXP bcsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcsplineR(SEXP x, SEXP knots, SEXP pars);
   SEXP ibcdsplineR(SEXP x, SEXP knots, SEXP pars);
@@ -72,7 +73,8 @@ extern "C" {
     CALLDEF(stockRecruitmentModelR,6),
     CALLDEF(logSRR,6),
     CALLDEF(hcrR,2),
-    CALLDEF(jacobian,6),
+    CALLDEF(jacobian,7),
+    CALLDEF(hessian,5),
     CALLDEF(bcsplineR,3),
     CALLDEF(ibcsplineR,3),
     CALLDEF(ibcdsplineR,3),
@@ -102,6 +104,7 @@ extern "C" {
 
     CALLABLE(hcrR);
     CALLABLE(jacobian);
+    CALLABLE(hessian);
     CALLABLE(perRecruitR);
     CALLABLE(perRecruitSR);
     CALLABLE(stockRecruitmentModelR);
