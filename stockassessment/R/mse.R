@@ -1,8 +1,17 @@
 
 ## Function to add simulated years to fit
-addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE,trueSel=NULL,refit=FALSE,silent=TRUE, ...){
-    doSim <- modelforecast(fit, constraints, nosim=1, returnObj=2,addDataYears=TRUE,resampleFirst=resampleFirst, useModelLastN = FALSE,customSel = trueSel, ...)    
-    v <- doSim()
+addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE,trueSel=NULL,refit=FALSE,silent=TRUE, resampleParameters = FALSE, ...){
+
+    if(resampleParameters){
+        p0 <- rmvnorm(1, fit$opt$par, solve(fit$opt$he), TRUE)
+        fit$obj$fn(p0)
+        pl0 <- fit$obj$env$parList(par = fit$obj$env$last.par)        
+    }else{
+        pl0 <- NULL
+    }
+    
+    doSim <- modelforecast(fit, constraints, nosim=1, returnObj=2,addDataYears=TRUE,resampleFirst=resampleFirst, useModelLastN = FALSE,customSel = trueSel, custom_pl = pl0, ...)
+    
     obj <- environment(doSim)$obj
     names(v) <- gsub("dat\\.","",names(v))
     dat <- fit$data
