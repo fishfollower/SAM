@@ -226,4 +226,130 @@ extern "C" {
     UNPROTECT(2);
     return ans;  
   }
+
+
+
+
+  SEXP hessian_gr_central(SEXP gr, SEXP par, SEXP rho, SEXP h, SEXP subset){
+    SEXP ans;
+
+    // Check input
+    //// fn must be a function
+    if(!Rf_isFunction(gr))
+      Rf_error("fn must be a function");
+    ///// par is a numeric vector
+    if(!(Rf_isReal(par) && Rf_length(par) > 0))
+      Rf_error("par must be a non-zero length numeric vector");
+    ///// rho is an environment
+    if(!Rf_isEnvironment(rho))
+      Rf_error("rho must be an environment");
+    ///// h is a vector of the same length as par
+    if(!(Rf_isReal(h) && Rf_length(h) == Rf_length(par)))
+      Rf_error("h must be a numeric vector with the same length as par");
+   
+    
+    Rfunction RF = (Rfunction) R_alloc(1, sizeof(r_function));
+    RF->fcall = PROTECT(Rf_lang2(gr, R_NilValue));
+    RF->env = rho;
+    RF->nIn = Rf_length(par);
+
+    vector<double> grres = RF->operator()(par);
+    // Check if values are finite
+    // for(int i = 0; i < funres.size(); ++i)
+    //   if(!R_finite(funres(i)))
+    if(!grres.unaryExpr(&R_finite).all())
+      Rf_error("Gradient evaluation returned non-finite values");
+    
+    RF->nOut = grres.size();
+
+    int npar = RF->nIn;
+    ans = PROTECT(Rf_allocMatrix(REALSXP, npar, npar));
+    double* pa = REAL(ans);
+
+    if(Rf_length(subset) < npar){
+      for(int i = 0; i < npar; ++i)
+	for(int j = 0; j < npar; ++j)
+	  pa[i * npar + j] = R_NaReal;
+    }
+    
+    vector<double> dpar = asVector<double>(par);
+    vector<double> h0 = asVector<double>(h);
+    
+    for(int k = 0; k < Rf_length(subset); ++k){ // Parameters
+      int p = INTEGER(subset)[k];
+      vector<double> dir(npar);
+      dir.setZero();
+      dir(p) = h0(p);
+      vector<double> g1 = RF->operator()(dpar + dir);
+      vector<double> g2 = RF->operator()(dpar - dir);
+      for(int j = 0; j < npar; j++){
+	pa[j * npar + p] = (g1[j] - g2[j]) / (2 * h0(p));
+      }
+    }
+    UNPROTECT(2);
+    return ans;  
+  }
+
+ SEXP hessian_gr_forward(SEXP gr, SEXP par, SEXP rho, SEXP h, SEXP subset){
+    SEXP ans;
+
+    // Check input
+    //// fn must be a function
+    if(!Rf_isFunction(gr))
+      Rf_error("fn must be a function");
+    ///// par is a numeric vector
+    if(!(Rf_isReal(par) && Rf_length(par) > 0))
+      Rf_error("par must be a non-zero length numeric vector");
+    ///// rho is an environment
+    if(!Rf_isEnvironment(rho))
+      Rf_error("rho must be an environment");
+    ///// h is a vector of the same length as par
+    if(!(Rf_isReal(h) && Rf_length(h) == Rf_length(par)))
+      Rf_error("h must be a numeric vector with the same length as par");
+   
+    
+    Rfunction RF = (Rfunction) R_alloc(1, sizeof(r_function));
+    RF->fcall = PROTECT(Rf_lang2(gr, R_NilValue));
+    RF->env = rho;
+    RF->nIn = Rf_length(par);
+
+    vector<double> grres = RF->operator()(par);
+    // Check if values are finite
+    // for(int i = 0; i < funres.size(); ++i)
+    //   if(!R_finite(funres(i)))
+    if(!grres.unaryExpr(&R_finite).all())
+      Rf_error("Gradient evaluation returned non-finite values");
+    
+    RF->nOut = grres.size();
+
+    int npar = RF->nIn;
+    ans = PROTECT(Rf_allocMatrix(REALSXP, npar, npar));
+    double* pa = REAL(ans);
+
+    if(Rf_length(subset) < npar){
+      for(int i = 0; i < npar; ++i)
+	for(int j = 0; j < npar; ++j)
+	  pa[i * npar + j] = R_NaReal;
+    }
+  
+    
+    vector<double> dpar = asVector<double>(par);
+    vector<double> h0 = asVector<double>(h);
+    
+    for(int k = 0; k < Rf_length(subset); ++k){ // Parameters
+      int p = INTEGER(subset)[k];
+      vector<double> dir(npar);
+      dir.setZero();
+      dir(p) = h0(p);
+      vector<double> g1 = RF->operator()(dpar + dir);
+      for(int j = 0; j < npar; j++){
+	pa[j * npar + p] = (g1[j] - grres[j]) / (h0(p));
+      }
+    }
+    UNPROTECT(2);
+    return ans;  
+  }
+  
+  
+ 
 }
