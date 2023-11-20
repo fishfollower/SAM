@@ -168,6 +168,7 @@ defcon<-function(dat, level=1){
     ret$isFishingSeason <- 1
     ret$seasonFirstYear <- -Inf
     ret$seasonFixedEffect <- 0
+    ret$boundFbar <- NA_real_
     return(ret) 
 }
 
@@ -259,6 +260,12 @@ saveConf <- function(x, file="", overwrite=FALSE){
         txt$logNMeanAssumption <- "Flags indicating what the population model should correspond to. 0: Median, 1: Mean, 2: Mode. Two values are are given to differentiate recruitment and other ages."
         txt$initState <- "Flag indicating whether initial parameters should be added for the latent processes."
         txt$recruitmentAutocorrelation <- "Number of auto-correlation parameters for recruitment. The auto-regressive process is forced to be stationary with real characteristic roots."
+        txt$keyLogFseason <- "Coupling of the seasonality parameters."
+        txt$seasonTimes <- "Vector of time endpoints for seasons. Should start with 0 and end with 1. Default is c(0,1)."
+        txt$isFishingSeason <- "Vector of 0/1 indicating if there is fishing in the season. Length should be one less than seasonTimes"
+        txt$seasonFirstYear <- "First year where seasons are used. Default is -Inf."
+        txt$seasonFixedEffect <- "0: Seasonality is modelled by random effects. 1: Seasonality is modelled by fixed effects."
+        txt$boundFbar <- "(Soft) upper bound for the average fishing mortality. Default is NA for no bound."
         nam<-names(x)
         dummy<-lapply(1:length(nam), function(i){
             cat('\n$', file=file, append=TRUE)

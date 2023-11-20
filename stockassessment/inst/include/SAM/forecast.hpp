@@ -169,7 +169,6 @@ SOURCE(
 	   
 	 vector<Type> muF = get_fmu(dat,conf,par,logF);
 	 vector<Type> rhoF = get_frho(dat,conf,par,logF);
-	 vector<Type> predF = muF + rhoF * (logF.col(indx-1) - muF);
 	 matrix<Type> fvar;
 	 if(fsdTimeScaleModel(i) == fixedDeviation && FdeviationCov.cols() > 0){
 	   fvar = FdeviationCov;
@@ -184,6 +183,18 @@ SOURCE(
 	   //   logSelUse(j) += cumEpsilon(j,i);
 	 }
 
+	 vector<Type> bnd(logF.dim[0]); bnd.setZero();
+	 if(!isNA(conf.boundFbar)){
+	   Type lastFbar = fbari(dat, conf, logF, indx-1);
+	   for(int q = 0; q < bnd.size(); ++q){
+	     // Type v = (logF(q,indx-1)-logF(q,0)) / (34.19951893 * conf.rwBoundLogF);
+	     Type v = lastFbar / ( 1.668100537 * conf.boundFbar);
+	     bnd(q) = 10.0 * v * v * v * v * v * v * v * v * v;
+	   }
+	 }
+	 vector<Type> predF = muF + rhoF * (logF.col(indx-1) - muF) - bnd;
+
+	 
 	   vector<Type> ICESrec;
 	   if(recModel(i) == useIID){
 	     ICESrec = vector<Type>(2);
