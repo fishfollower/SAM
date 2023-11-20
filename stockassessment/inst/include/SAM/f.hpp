@@ -162,7 +162,16 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     }
   
     for(int i=1;i<timeSteps;i++){
-      vector<Type> predF = muF + rhoF * (logF.col(i-1) - muF);
+      vector<Type> bnd(stateDimF); bnd.setZero();
+      if(!isNA(conf.boundFbar)){
+	Type lastFbar = fbari(dat, conf, logF, i-1);
+	for(int q = 0; q < bnd.size(); ++q){
+	  // Type v = (logF(q,i-1)-logF(q,0)) / (34.19951893 * conf.rwBoundLogF);
+	  Type v = lastFbar / (1.668100537 * conf.boundFbar);
+	  bnd(q) = 10.0 * v * v * v * v * v * v * v * v * v;
+	}
+      }
+      vector<Type> predF = muF + rhoF * (logF.col(i-1) - muF) - bnd;
       resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-predF));
 
       if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
