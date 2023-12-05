@@ -147,7 +147,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(isFishingSeason); confset.isFishingSeason = isFishingSeason;
   DATA_SCALAR(seasonFirstYear); confset.seasonFirstYear = asDouble(seasonFirstYear);
   DATA_INTEGER(seasonFixedEffect); confset.seasonFixedEffect = seasonFixedEffect;
-  DATA_SCALAR(boundFbar); confset.boundFbar = asDouble(boundFbar);
+  DATA_VECTOR(boundFbar);  vector<double> boundFbarDouble(boundFbar.size()); for(int i=0; i<boundFbar.size(); ++i){boundFbarDouble(i)=asDouble(boundFbar(i));} confset.boundFbar=boundFbarDouble; 
   
   DATA_INTEGER(reportingLevel);
 

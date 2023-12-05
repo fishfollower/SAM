@@ -168,7 +168,7 @@ defcon<-function(dat, level=1){
     ret$isFishingSeason <- 1
     ret$seasonFirstYear <- -Inf
     ret$seasonFixedEffect <- 0
-    ret$boundFbar <- NA_real_
+    ret$boundFbar <- c(NA_real_,NA_real_)
     return(ret) 
 }
 
@@ -265,7 +265,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
         txt$isFishingSeason <- "Vector of 0/1 indicating if there is fishing in the season. Length should be one less than seasonTimes"
         txt$seasonFirstYear <- "First year where seasons are used. Default is -Inf."
         txt$seasonFixedEffect <- "0: Seasonality is modelled by random effects. 1: Seasonality is modelled by fixed effects."
-        txt$boundFbar <- "(Soft) upper bound for the average fishing mortality. Default is NA for no bound."
+        txt$boundFbar <- "(Soft) lower and upper bound for the average fishing mortality. Default is NA for no bound."
         nam<-names(x)
         dummy<-lapply(1:length(nam), function(i){
             cat('\n$', file=file, append=TRUE)
