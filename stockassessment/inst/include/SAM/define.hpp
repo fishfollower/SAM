@@ -227,6 +227,9 @@ struct confSet{
   array<int> keyLogFsta;
   array<int> keyLogFmu;
   array<int> keyLogFrho;
+  array<int> keyLogFbound_kappa;
+  array<int> keyLogFbound_alpha;
+  array<int> keyLogFbound_tau;
   vector<int> corFlag;
   array<int> keyLogFpar;
   array<int> keyQpow;
@@ -270,7 +273,6 @@ struct confSet{
   vector<int> isFishingSeason;
   double seasonFirstYear;
   int seasonFixedEffect;
-  vector<double> boundFbar;
   
   confSet();
 
@@ -288,6 +290,9 @@ SOURCE(
 	 keyLogFsta = asArray<int>(getListElement(x,"keyLogFsta", &Rf_isArray));
 	 keyLogFmu = asArray<int>(getListElement(x,"keyLogFmu", &Rf_isArray));
 	 keyLogFrho = asArray<int>(getListElement(x,"keyLogFrho", &Rf_isArray));
+	 keyLogFbound_kappa = asArray<int>(getListElement(x,"keyLogFbound_kappa", &Rf_isArray));
+	 keyLogFbound_alpha = asArray<int>(getListElement(x,"keyLogFbound_alpha", &Rf_isArray));
+	 keyLogFbound_tau = asArray<int>(getListElement(x,"keyLogFbound_tau", &Rf_isArray));
 	 corFlag = asVector<int>(getListElement(x,"corFlag", &Rf_isNumeric));
 	 keyLogFpar = asArray<int>(getListElement(x,"keyLogFpar", &Rf_isArray));
 	 keyQpow = asArray<int>(getListElement(x,"keyQpow", &Rf_isArray));
@@ -331,7 +336,6 @@ SOURCE(
 	 isFishingSeason = asVector<int>(getListElement(x,"isFishingSeason", &Rf_isNumeric));
 	 seasonFirstYear = Rf_asReal(getListElement(x,"seasonFirstYear", &isNumericScalar));
 	 seasonFixedEffect = Rf_asInteger(getListElement(x,"seasonFixedEffect", &isNumericScalar));
-	 boundFbar = asVector<double>(getListElement(x,"boundFbar", &isNumericScalar));
        }
        )
 
@@ -343,6 +347,9 @@ SOURCE(
 	 keyLogFsta(),
 	 keyLogFmu(),
 	 keyLogFrho(),
+	 keyLogFbound_kappa(),
+	 keyLogFbound_alpha(),
+	 keyLogFbound_tau(),
 	 corFlag(),
 	 keyLogFpar(),
 	 keyQpow(),
@@ -385,8 +392,7 @@ SOURCE(
 	 seasonTimes(),
 	 isFishingSeason(),
 	 seasonFirstYear(),
-	 seasonFixedEffect(),
-	 boundFbar()
+	 seasonFixedEffect()
 	 {}
 	 );
 
@@ -398,6 +404,9 @@ SOURCE(
 	 keyLogFsta(other.keyLogFsta),
 	 keyLogFmu(other.keyLogFmu),
 	 keyLogFrho(other.keyLogFrho),
+	 keyLogFbound_kappa(other.keyLogFbound_kappa),
+	 keyLogFbound_alpha(other.keyLogFbound_alpha),
+	 keyLogFbound_tau(other.keyLogFbound_tau),
 	 corFlag(other.corFlag),
 	 keyLogFpar(other.keyLogFpar),
 	 keyQpow(other.keyQpow),
@@ -440,8 +449,7 @@ SOURCE(
 	 seasonTimes(other.seasonTimes),
 	 isFishingSeason(other.isFishingSeason),
 	 seasonFirstYear(other.seasonFirstYear),
-	 seasonFixedEffect(other.seasonFixedEffect),
-	 boundFbar(other.boundFbar)
+	 seasonFixedEffect(other.seasonFixedEffect)
 	 {}
 	 );
 
@@ -500,6 +508,9 @@ struct paraSet{
   vector<Type> logSdLogFsta; 
   vector<Type> muF; 
   vector<Type> trans_rho_F; 
+  vector<Type> boundF_kappa; 
+  vector<Type> boundF_alpha; 
+  vector<Type> boundF_tau; 
   vector<Type> logSdLogN; 
   vector<Type> logSdLogP;
   vector<Type> logSdLogObs;
@@ -553,7 +564,10 @@ struct paraSet{
     logQpow(), 
     logSdLogFsta(), 
     muF(), 
-    trans_rho_F(), 
+    trans_rho_F(),
+    boundF_kappa(),
+    boundF_alpha(),
+    boundF_tau(),
     logSdLogN(), 
     logSdLogP(), 
     logSdLogObs(),
@@ -605,7 +619,10 @@ struct paraSet{
     logQpow(other.logQpow), 
     logSdLogFsta(other.logSdLogFsta), 
     muF(other.muF), 
-    trans_rho_F(other.trans_rho_F), 
+    trans_rho_F(other.trans_rho_F),
+     boundF_kappa(other.boundF_kappa),
+     boundF_alpha(other.boundF_alpha),
+     boundF_tau(other.boundF_tau),
     logSdLogN(other.logSdLogN), 
     logSdLogP(other.logSdLogP), 
     logSdLogObs(other.logSdLogObs),
@@ -705,6 +722,9 @@ SOURCE(
 	   logSdLogFsta = asVector<Type>(getListElement(x,"logSdLogFsta", &Rf_isNumeric));
 	   muF = asVector<Type>(getListElement(x,"muF", &Rf_isNumeric));
 	   trans_rho_F = asVector<Type>(getListElement(x,"trans_rho_F", &Rf_isNumeric));
+	   boundF_kappa = asMatrix<Type>(getListElement(x,"boundF_kappa", &Rf_isNumeric));
+	   boundF_alpha = asMatrix<Type>(getListElement(x,"boundF_alpha", &Rf_isNumeric));
+	   boundF_tau = asMatrix<Type>(getListElement(x,"boundF_tau", &Rf_isNumeric));
 	   logSdLogN = asVector<Type>(getListElement(x,"logSdLogN", &Rf_isNumeric));
 	   logSdLogP = asVector<Type>(getListElement(x,"logSdLogP", &Rf_isNumeric));
 	   logSdLogObs = asVector<Type>(getListElement(x,"logSdLogObs", &Rf_isNumeric));

@@ -45,7 +45,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
     if(forecast.simFlag(0) == 0){
       Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
       if(forecast.fsdTimeScaleModel(i) == forecast.fixedDeviation){
-	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i);
+	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i);	
       }else{
 	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
       }

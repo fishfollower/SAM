@@ -16,7 +16,9 @@ Parallel replicate for modelforecast
   expr,
   simplify = "array",
   ncores = 1,
-  env = parent.frame(n + 1)
+  env = parent.frame(n + 1),
+  par_precall = NULL,
+  type = ifelse(.Platform$OS.type == "unix", "mclapply", "PSOCK")
 )
 ```
 

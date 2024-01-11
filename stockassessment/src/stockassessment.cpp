@@ -85,6 +85,9 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyLogFsta); confset.keyLogFsta=keyLogFsta; 
   DATA_IARRAY(keyLogFmu); confset.keyLogFmu=keyLogFmu; 
   DATA_IARRAY(keyLogFrho); confset.keyLogFrho=keyLogFrho; 
+  DATA_IARRAY(keyLogFbound_kappa); confset.keyLogFbound_kappa=keyLogFbound_kappa; 
+  DATA_IARRAY(keyLogFbound_alpha); confset.keyLogFbound_alpha=keyLogFbound_alpha; 
+  DATA_IARRAY(keyLogFbound_tau); confset.keyLogFbound_tau=keyLogFbound_tau; 
   DATA_IVECTOR(corFlag); confset.corFlag=corFlag; 
   DATA_IARRAY(keyLogFpar); confset.keyLogFpar=keyLogFpar; 
   DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
@@ -147,7 +150,6 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(isFishingSeason); confset.isFishingSeason = isFishingSeason;
   DATA_SCALAR(seasonFirstYear); confset.seasonFirstYear = asDouble(seasonFirstYear);
   DATA_INTEGER(seasonFixedEffect); confset.seasonFixedEffect = seasonFixedEffect;
-  DATA_VECTOR(boundFbar);  vector<double> boundFbarDouble(boundFbar.size()); for(int i=0; i<boundFbar.size(); ++i){boundFbarDouble(i)=asDouble(boundFbar(i));} confset.boundFbar=boundFbarDouble; 
   
   DATA_INTEGER(reportingLevel);
 
@@ -156,7 +158,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logQpow); paraset.logQpow=logQpow;  
   PARAMETER_VECTOR(logSdLogFsta); paraset.logSdLogFsta=logSdLogFsta;  
   PARAMETER_VECTOR(muF); paraset.muF=muF;  
-  PARAMETER_VECTOR(trans_rho_F); paraset.trans_rho_F=trans_rho_F;  
+  PARAMETER_VECTOR(trans_rho_F); paraset.trans_rho_F=trans_rho_F;
+  PARAMETER_VECTOR(boundF_kappa); paraset.boundF_kappa = boundF_kappa;
+  PARAMETER_VECTOR(boundF_alpha); paraset.boundF_alpha = boundF_alpha;
+  PARAMETER_VECTOR(boundF_tau); paraset.boundF_tau = boundF_tau;
   PARAMETER_VECTOR(logSdLogN); paraset.logSdLogN=logSdLogN;  
   PARAMETER_VECTOR(logSdLogP); paraset.logSdLogP=logSdLogP;       //Beta random walk components var
   PARAMETER_VECTOR(logSdLogObs); paraset.logSdLogObs=logSdLogObs; 

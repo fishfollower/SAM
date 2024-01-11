@@ -183,24 +183,8 @@ SOURCE(
 	   //   logSelUse(j) += cumEpsilon(j,i);
 	 }
 
-	 vector<Type> bnd(logF.dim[0]); bnd.setZero();
-	 if(!isNA(conf.boundFbar(0)) || !isNA(conf.boundFbar(1))){
-	   Type lastFbar = fbari(dat, conf, logF, indx-1);
-	   for(int q = 0; q < bnd.size(); ++q){
-	     Type b1 = 0.0;
-	     Type b2 = 0.0;
-	     if(!isNA(conf.boundFbar(0))){
-	       Type v = (1.668100537 * conf.boundFbar(0)) / lastFbar;
-	       b1 = 0.001 * v * v * v * v * v * v * v * v * v;
-	     }
-	     if(!isNA(conf.boundFbar(1))){
-	       Type v = lastFbar / (1.668100537 * conf.boundFbar(1));
-	       b2 = 10.0 * v * v * v * v * v * v * v * v * v;
-	     }
-	     bnd(q) = b1 + b2;
-	   }
-	 }       
-	 vector<Type> predF = muF + rhoF * (logF.col(indx-1) - muF) - bnd;
+	 FBound<Type> FB = get_fbound(dat,conf,par, logF);
+	 vector<Type> predF = muF + rhoF * (logF.col(indx-1) - muF) + FB((vector<Type>)logF.col(indx-1));
 
 	 
 	   vector<Type> ICESrec;

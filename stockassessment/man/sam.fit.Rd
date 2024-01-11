@@ -21,6 +21,7 @@ sam.fit(
   penalizeSpline = FALSE,
   fullDerived = FALSE,
   pre.clean = TRUE,
+  check.parameters = TRUE,
   ...
 )
 }

@@ -17,6 +17,7 @@ list(list("simulate"), list("sam"))(
   seed = NULL,
   full.data = TRUE,
   keep.process = FALSE,
+  retain.missing = FALSE,
   ...
 )
 ```
