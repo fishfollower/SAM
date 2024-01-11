@@ -24,7 +24,6 @@ list(list("stochasticReferencepoints"), list("sam"))(
   selYears = max(fit$data$years),
   newton.control = list(),
   seed = .timeToSeed(),
-  formula = ~ibc(F, 5),
   nosim_ci = 30,
   derivedSummarizer = NA,
   nTail = 1,
@@ -52,12 +51,12 @@ Argument      |Description
 `selYears`     |     Years to average over for selectivity
 `newton.control`     |     List of control parameters for optimization
 `seed`     |     Seed for simulations
-`formula`     |     Formula to estimate optimization criteria as a function of F
 `nosim_ci`     |     Number of simulations for bootstrap confidence intervals
 `derivedSummarizer`     |     Function to summarize derived per-recruit values
 `nTail`     |     Number of years from the simulation to include in calculations
 `constraint`     |     Format of forecast constraint. "%f" is replaced by F values.
 `deterministicF`     |     If FALSE, modelled logF process noise will be added to target logF in forecasts.
+`formula`     |     Formula to estimate optimization criteria as a function of F
 
 
 ## Details

@@ -13,7 +13,7 @@ Help Pages
 
 [A](#A) [B](#B) [C](#C) [D](#D) [E](#E) [F](#F) [G](#G) [H](#H) [I](#I)
 [J](#J) [L](#L) [M](#M) [N](#N) [O](#O) [P](#P) [Q](#Q) [R](#R) [S](#S)
-[T](#T) [W](#W) [Y](#Y)
+[T](#T) [W](#W) [Y](#Y) [misc](#misc)
 
 <span id="A">-- A --</span>
 ---------------------------
@@ -154,7 +154,7 @@ Help Pages
 |                         |                                  |
 |-------------------------|----------------------------------|
 | [jacobian](jacobian.md) | Calculate jacobian of a function |
-| [jit](jit.md)           | Jitter runs                      |
+| [jit.sam](jit.md)       | Jitter runs                      |
 
 <span id="L">-- L --</span>
 ---------------------------
@@ -358,3 +358,10 @@ Help Pages
 | [yprplot.samforecast](yprplot.md)             | SAM YPR plot                   |
 | [yprtable](yprtable.md)                       | YPR table                      |
 | [yprtable.default](yprtable.md)               | YPR table                      |
+
+<span id="misc">-- misc --</span>
+---------------------------------
+
+|                                         |                                      |
+|-----------------------------------------|--------------------------------------|
+| [.SAM\_replicate](dot-SAM_replicate.md) | Parallel replicate for modelforecast |

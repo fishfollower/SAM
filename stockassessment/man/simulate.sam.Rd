@@ -10,6 +10,7 @@
   seed = NULL,
   full.data = TRUE,
   keep.process = FALSE,
+  retain.missing = FALSE,
   ...
 )
 }
