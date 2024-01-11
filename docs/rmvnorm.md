@@ -11,7 +11,7 @@ rmvnorm helper function to draw multivariate normal samples
 ## Usage
 
 ```r
-rmvnorm(n = 1, mu, Sigma)
+rmvnorm(n = 1, mu, Sigma, pivot = FALSE)
 ```
 
 

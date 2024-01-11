@@ -675,7 +675,7 @@ namespace RecruitmentConvenience {
     }
   
     Type logSe(Type logLambda){
-      return exp(logLambda + loglevel);
+      return TMBad::CondExpLt(logblim - logLambda, loglevel, logLambda + loglevel, R_NegInf);
     }
     Type dSR(Type logssb){
       return TMBad::CondExpLt(logssb, logblim, exp(loglevel-logblim), Type(0.0));
@@ -708,7 +708,7 @@ namespace RecruitmentConvenience {
     }
   
     Type logSe(Type logLambda){
-      return exp(logLambda + loglevel);
+      return (logLambda + loglevel);
     }
     Type dSR(Type logssb){
       return 0.0;

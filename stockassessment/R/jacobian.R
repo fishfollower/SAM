@@ -43,7 +43,8 @@ grad <- function(func, x,
                    globalenv(),
                    30L,
                    h,##abs(1e-4 * x) + 1e-4 * (abs(x) < 1e-8),
-                   1e-12)
+                   1e-12,
+                   as.integer(seq_along(x)-1))
          v <- do.call("cbind",r[-1])
          if(nrow(v) == 1)
              return(as.vector(v))
@@ -56,7 +57,7 @@ svd_solve <- function(x){
 }
 
 
-##' Calculate jacobian of a function
+##' Calculate hessian of a function
 ##'
 ##' @param func function
 ##' @param x parameter values

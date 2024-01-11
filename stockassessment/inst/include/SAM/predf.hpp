@@ -15,8 +15,8 @@ vector<Type> get_fmu(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arra
   
   int stateDimN=conf.keyLogFsta.dim[1];
   int noFleets=conf.keyLogFsta.dim[0];
- vector<Type> statesFleets(stateDimF);
-   //Fill statesFleets:
+  vector<Type> statesFleets(stateDimF);
+  //Fill statesFleets:
   for(int f=0; f<noFleets;f++){
     for(int i=0;i<stateDimF;i++){
       for(int j=0;j<stateDimN;j++){
@@ -201,4 +201,85 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 SAM_SPECIALIZATION(matrix<double> get_fvar(dataSet<double>&, confSet&, paraSet<double>&, array<double>&));
 SAM_SPECIALIZATION(matrix<TMBad::ad_aug> get_fvar(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
 
+HEADER(
+       template<class Type>
+       struct FBound {
+	 vector<Type> k;
+	 vector<Type> a;
+	 vector<Type> tau;
+	 vector<Type> operator()(vector<Type> lastLogF);
+       };
+       )
+
+SOURCE(
+       template<class Type>
+       vector<Type> FBound<Type>::operator()(vector<Type> lastLogF){
+	 // Nicolau, J. (2002). STATIONARY PROCESSES THAT LOOK LIKE RANDOM WALKS— THE BOUNDED RANDOM WALK PROCESS IN DISCRETE AND CONTINUOUS TIME. Econometric Theory, 18(1), 99–118. doi:10.1017/S0266466602181060
+	 vector<Type> x = lastLogF - tau;
+	 return exp(k) * (exp(-a * x) - exp(a * x));
+       }
+       )
+
+SAM_SPECIALIZATION(struct FBound<double>);
+SAM_SPECIALIZATION(struct FBound<TMBad::ad_aug>);
   
+template<class Type>
+FBound<Type> get_fbound(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF)SOURCE({    
+  int stateDimF=logF.dim[0];
+
+  vector<Type> kappa(logF.dim(0));
+  kappa.setZero();
+  vector<Type> alpha(logF.dim(0));
+  alpha.setZero();
+  vector<Type> tau(logF.dim(0));
+  tau.setZero();
+
+  if(par.boundF_tau.size() == 0 && par.boundF_kappa.size() && par.boundF_alpha.size()){
+    FBound<Type> FB = {kappa,alpha,tau};
+    return FB;
+  }
+  
+  int stateDimN=conf.keyLogFsta.dim[1];
+  int noFleets=conf.keyLogFsta.dim[0];
+ vector<Type> statesFleets(stateDimF);
+   //Fill statesFleets:
+  for(int f=0; f<noFleets;f++){
+    for(int i=0;i<stateDimF;i++){
+      for(int j=0;j<stateDimN;j++){
+	if(conf.keyLogFsta(f,j)==i){
+	  statesFleets(i)=f;
+	  break;
+	}  
+      }
+    }
+  }
+  
+
+  vector<bool> done(kappa.size());
+  done.setConstant(false);
+
+  for(int f=0;f<noFleets;f++){
+    for(int a = 0; a < conf.keyLogFsta.dim(1); ++a){
+      int Findx = conf.keyLogFsta(f,a);
+      int muIndxK = conf.keyLogFbound_kappa(f,a);
+      int muIndxA = conf.keyLogFbound_alpha(f,a);
+      int muIndxT = conf.keyLogFbound_tau(f,a);
+      
+      if(Findx > (-1) && !done(Findx)){
+	if(muIndxK > (-1))
+	  kappa(Findx) = -exp(par.boundF_kappa(muIndxK));
+	if(muIndxA > (-1))
+	  alpha(Findx) = exp(par.boundF_alpha(muIndxA));
+	if(muIndxT > (-1))
+	  tau(Findx) = par.boundF_tau(muIndxT);
+	done(Findx) = true;
+      }
+    }
+  }
+  FBound<Type> FB = {kappa,alpha,tau};
+  return FB;
+  })
+
+
+SAM_SPECIALIZATION(FBound<double> get_fbound(dataSet<double>&, confSet&, paraSet<double>&, array<double>&));
+SAM_SPECIALIZATION(FBound<TMBad::ad_aug> get_fbound(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));

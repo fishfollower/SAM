@@ -1,23 +1,21 @@
-# `jacobian`
+# `hessian`
 
-Calculate jacobian of a function
+Calculate hessian of a function
 
 
 ## Description
 
-Calculate jacobian of a function
+Calculate hessian of a function
 
 
 ## Usage
 
 ```r
-jacobian(
+hessian(
   func,
   x,
   h = abs(1e-04 * x) + 1e-04 * (abs(x) < sqrt(.Machine$double.eps/7e-07)),
-  maxit = 30L,
-  tol = 1e-12,
-  subset = seq_along(x),
+  columns = seq_along(x),
   ...
 )
 ```
@@ -36,5 +34,10 @@ Argument      |Description
 ## Value
 
 jacobian matrix
+
+
+## Note
+
+Could be made more accurate in some cases
 
 

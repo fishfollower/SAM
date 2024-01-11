@@ -19,7 +19,6 @@ stochasticReferencepoints(fit, referencepoints, ...)
   selYears = max(fit$data$years),
   newton.control = list(),
   seed = .timeToSeed(),
-  formula = ~ibc(F, 5),
   nosim_ci = 30,
   derivedSummarizer = NA,
   nTail = 1,
@@ -54,8 +53,6 @@ stochasticReferencepoints(fit, referencepoints, ...)
 
 \item{seed}{Seed for simulations}
 
-\item{formula}{Formula to estimate optimization criteria as a function of F}
-
 \item{nosim_ci}{Number of simulations for bootstrap confidence intervals}
 
 \item{derivedSummarizer}{Function to summarize derived per-recruit values}
@@ -65,6 +62,8 @@ stochasticReferencepoints(fit, referencepoints, ...)
 \item{constraint}{Format of forecast constraint. "\%f" is replaced by F values.}
 
 \item{deterministicF}{If FALSE, modelled logF process noise will be added to target logF in forecasts.}
+
+\item{formula}{Formula to estimate optimization criteria as a function of F}
 }
 \value{
 reference point object

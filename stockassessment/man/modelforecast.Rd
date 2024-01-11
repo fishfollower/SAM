@@ -27,6 +27,7 @@ modelforecast(fit, ...)
   fixedFdeviation = FALSE,
   useFHessian = FALSE,
   resampleFirst = !is.null(nosim) && nosim > 0,
+  useModelLastN = TRUE,
   customSel = NULL,
   lagR = FALSE,
   splitLD = FALSE,
