@@ -4,13 +4,13 @@ Git page for `stockassessment` R-package containing the state-space assessment m
 Can be installed by typing: 
 
 ```R
-devtools::install_github("fishfollower/SAM/stockassessment")
+remotes::install_github("fishfollower/SAM/stockassessment")
 ```
 
 (To ensure only installing in 64-bit some windows users may need to install with:
 
 ```R
-devtools::install_github("fishfollower/SAM/stockassessment",
+remotes::install_github("fishfollower/SAM/stockassessment",
                           INSTALL_opts=c("--no-multiarch"))
 ```
 )
