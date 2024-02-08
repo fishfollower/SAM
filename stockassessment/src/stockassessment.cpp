@@ -276,27 +276,35 @@ Type objective_function<Type>::operator() ()
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, logitFseason, recruit,mort, this);
 
+  // Update mortalities if simulating
+  SIMULATE_F(this){
+    if(confset.simFlag(0)==0){
+      mort = MortalitySet<Type>(dataset, confset, paraset, logF, logitFseason);
+    }
+  }
+
   
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, logitFseason, recruit, mort, keep,reportingLevel, this);
 
   
-  reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
-
-  REPORT(mort.cumulativeHazard);
-  REPORT(mort.cumulativeHazard_F);
-  REPORT(mort.logFleetSurvival_before);
-  REPORT(mort.fleetCumulativeIncidence);
-  REPORT(mort.otherCumulativeIncidence);
-  REPORT(mort.ssbSurvival_before);
-  REPORT(mort.Fseason);
-  vector<Type> brk(mort.activeHazard_breakpoints);
-  REPORT(brk);
-  REPORT(mort.activeHazard_season);
-  REPORT(mort.activeHazard_F);
-  REPORT(mort.activeHazard_M);
-  REPORT(mort.Hazard_breakpoints);
-  REPORT(mort.CIF_F_breakpoints);
-  REPORT(mort.CIF_M_breakpoints);
+  //reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
+  reportReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
+  
+  // REPORT(mort.cumulativeHazard);
+  // REPORT(mort.cumulativeHazard_F);
+  // REPORT(mort.logFleetSurvival_before);
+  // REPORT(mort.fleetCumulativeIncidence);
+  // REPORT(mort.otherCumulativeIncidence);
+  // REPORT(mort.ssbSurvival_before);
+  // REPORT(mort.Fseason);
+  // vector<Type> brk(mort.activeHazard_breakpoints);
+  // REPORT(brk);
+  // REPORT(mort.activeHazard_season);
+  // REPORT(mort.activeHazard_F);
+  // REPORT(mort.activeHazard_M);
+  // REPORT(mort.Hazard_breakpoints);
+  // REPORT(mort.CIF_F_breakpoints);
+  // REPORT(mort.CIF_M_breakpoints);
   
   
 

@@ -6,9 +6,17 @@ template<class Type>
 struct referencepointSet {
 
   enum CatchType {
-		  totalCatch,
-		  landings,
-		  discard
+    totalCatch,
+    landings,
+    discard
+  };
+
+  enum StochasticType {
+    Deterministic,
+    Stochastic_Median,
+    Stochastic_Mean,
+    Stochastic_Mode,
+    Stochastic_Quantile
   };
 
   int nYears;
@@ -20,6 +28,9 @@ struct referencepointSet {
   CatchType catchType;
   vector<Type> logF0;		// Starting value for optimization
   vector<Type> logSel;
+  vector<Type> logN0;
+  StochasticType stochasticType;
+  Type q;
 
   inline referencepointSet() :
     nYears(),
@@ -30,7 +41,10 @@ struct referencepointSet {
     xVal(),
     catchType(),
     logF0(),
-    logSel()
+    logSel(),
+    logN0(),
+    stochasticType(),
+    q()
   {}    
   referencepointSet(int nYears_, int CT, int i, array<Type> logF, confSet conf);
   
@@ -46,7 +60,9 @@ struct referencepointSet {
     xVal(other.xVal),
     catchType(static_cast<typename referencepointSet<Type>::CatchType>((int)other.catchType)),
     logF0(other.logF0),
-    logSel(other.logSel)
+    logSel(other.logSel),
+    logN0(other.logN0),
+    stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>((int)other.stochasticType))
   {}    
  
   vector<Type> getLogSelectivity();
@@ -64,7 +80,7 @@ SOURCE(
 						    int i,
 						    array<Type> logF,
 						    confSet conf) :
-	 nYears(nYears_), rpType(-99), aveYears(1), selYears(1), logCustomSel(0), xVal(0), catchType(static_cast<typename referencepointSet<Type>::CatchType>(CT)), logF0(0), logSel(0) {
+	 nYears(nYears_), rpType(-99), aveYears(1), selYears(1), logCustomSel(0), xVal(0), catchType(static_cast<typename referencepointSet<Type>::CatchType>(CT)), logF0(0), logSel(0), logN0(0), stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>(0)), q(R_NaReal) {
 	   aveYears(0) = i;
 	   selYears(0) = i;
 	   setLogSelectivity(logF,conf);
@@ -114,8 +130,27 @@ SOURCE(
 	   }else{
 	     logF0 = vector<Type>(0);
 	   }
-	   logSel = vector<Type>(0);
-
+	   if(!Rf_isNull(getListElement(x,"logSel"))){
+	     logSel = asVector<Type>(getListElement(x,"logSel"));
+	   }else{
+	     logSel = vector<Type>(0);
+	   }
+	   if(!Rf_isNull(getListElement(x,"logN0"))){
+	     logN0 = asVector<Type>(getListElement(x,"logN0"));
+	   }else{
+	     logN0 = vector<Type>(0);
+	   }
+	   
+	   if(!Rf_isNull(getListElement(x,"stochasticType"))){
+	     stochasticType = static_cast<typename referencepointSet<Type>::StochasticType>(Rf_asInteger(getListElement(x,"stochasticType")));
+	   }else{
+	     stochasticType = static_cast<typename referencepointSet<Type>::StochasticType>(0);
+	   }
+	   if(!Rf_isNull(getListElement(x,"q"))){
+	     q = (Type)Rf_asReal(getListElement(x,"q"));
+	   }else{
+	     q = R_NaReal;
+	   }
 	 }
 	 )
 

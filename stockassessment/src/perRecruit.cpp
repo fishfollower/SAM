@@ -11,7 +11,7 @@
 
 
 // NOTE: This function does not simulate biopars or logitFseason
-PERREC_t<double> perRecruit_S(double logFbar, dataSet<double>& dat, confSet& conf, paraSet<double>& par, vector<double>& logSel, vector<int> aveYears, int nYears, int CT, vector<double> logNinit){
+PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& conf, paraSet<double>& par, vector<double>& logSel, vector<int> aveYears, int nYears, int CT, vector<double> logNinit){
   if(nYears < 0)
     Rf_error("nYears must be non-negative.");
   if(aveYears.size() == 0)
@@ -404,7 +404,7 @@ extern "C" {
     int CT0 = Rf_asInteger(CT);
     vector<double> logNinit0 = asVector<double>(logNinit);
     GetRNGstate();
-    PERREC_t<double> y = perRecruit_S(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0, logNinit0);
+    PERREC_t<double> y = perRecruit_Sim(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0, logNinit0);
     PutRNGstate();
     const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "dSR0", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     SEXP res;
@@ -423,6 +423,27 @@ extern "C" {
     
     UNPROTECT(1);    
     return res;
+
+  }
+
+
+  
+  SEXP perRecruitSR_Calc(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
+    dataSet<double> d0(tmbdat);
+    confSet c0(tmbdat);
+    paraSet<double> p0(pl);
+    vector<double> s0 = asVector<double>(sel);
+    vector<double> ls0(s0.size());
+    for(int i = 0; i < ls0.size(); ++i)
+      ls0 = log(s0);
+    vector<int> a0 = asVector<int>(aveYears);
+    double logFbar0 = Rf_asReal(logFbar);
+    int nY0 = Rf_asInteger(nYears);
+    // int RC0 = Rf_asInteger(RC);
+    int CT0 = Rf_asInteger(CT);
+    vector<double> logNinit0 = asVector<double>(logNinit);
+    STOCHASTIC_PERREC_t<double> y = perRecruit_S(logFbar0, d0, c0, p0, ls0, a0, logNinit0, nY0, CT0);   
+    return asSEXP(y);
 
   }
 
