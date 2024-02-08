@@ -182,7 +182,7 @@ recruitmentProperties <- function(fit){
     
 }
 
-.refpointStartingValue <- function(rparg, fit, Fsequence, fay = faytable(fit), fbar = fbartable(fit)[,1], checkValidity = TRUE){
+.refpointStartingValue <- function(rparg, fit, Fsequence, fay = faytable(fit), fbar = fbartable(fit)[,1], checkValidity = TRUE, stochasticType = 0, q = 0){
     .refpointCheckRecruitment(rparg,fit)
     
     if(rparg$rpType == -99){            # None
@@ -198,7 +198,66 @@ recruitmentProperties <- function(fit){
     ## Wrapper for perRecruit calculations    
     dd <- fit$obj$env$data #lapply(tmbargs$data,dataSanitize)
     pl <- fit$pl #lapply(tmbargs$parameters,parameterSanitize)
-    getPR <- function(logf){ .perRecruitR(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel) }
+    if(stochasticType == 0){ # Deterministic
+        getPR <- function(logf){ .perRecruitR(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel) }
+    }else if(stochasticType == 1){ # Stochastic Median
+        getPR <- function(logf){
+            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+            list(logFbar = v$E_logFbar,
+                 logYPR = v$E_logYPR,
+                 logSPR = v$E_logSPR,
+                 logSe = v$E_logSe,
+                 logRe = v$E_logRe,
+                 dSR0 = NA_real_,
+                 logLifeExpectancy = v$E_logLifeExpectancy,
+                 logYearsLost = v$E_logYearsLost,
+                 logDiscYPR = NA_real_,
+                 logDiscYe = NA_real_)
+        }
+    }else if(stochasticType == 2){ # Stochastic Mean
+        getPR <- function(logf){
+            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+            list(logFbar = v$E_logFbar + 0.5 * v$V_logFbar,
+                 logYPR = v$E_logYPR + 0.5 * v$V_logYPR,
+                 logSPR = v$E_logSPR + 0.5 * v$V_logSPR,
+                 logSe = v$E_logSe + 0.5 * v$V_logSe,
+                 logRe = v$E_logRe + 0.5 * v$V_logRe,
+                 dSR0 = NA_real_,
+                 logLifeExpectancy = v$E_logLifeExpectancy + 0.5 * v$V_logLifeExpectancy,
+                 logYearsLost = v$E_logYearsLost + 0.5 * v$V_logYearsLost,
+                 logDiscYPR = NA_real_,
+                 logDiscYe = NA_real_)
+        }
+    }else if(stochasticType == 3){ # Stochastic Mode
+        getPR <- function(logf){
+            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+            list(logFbar = v$E_logFbar - v$V_logFbar,
+                 logYPR = v$E_logYPR - v$V_logYPR,
+                 logSPR = v$E_logSPR - v$V_logSPR,
+                 logSe = v$E_logSe - v$V_logSe,
+                 logRe = v$E_logRe - v$V_logRe,
+                 dSR0 = NA_real_,
+                 logLifeExpectancy = v$E_logLifeExpectancy - v$V_logLifeExpectancy,
+                 logYearsLost = v$E_logYearsLost - v$V_logYearsLost,
+                 logDiscYPR = NA_real_,
+                 logDiscYe = NA_real_)
+        }
+    }else if(stochasticType == 4){ # Stochastic Quantile
+        getPR <- function(logf){
+            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+            list(logFbar = qnorm(q, v$E_logFbar, v$V_logFbar),
+                 logYPR = qnorm(q, v$E_logYPR, v$V_logYPR),
+                 logSPR = qnorm(q, v$E_logSPR, v$V_logSPR),
+                 logSe = qnorm(q, v$E_logSe, v$V_logSe),
+                 logRe = qnorm(q, v$E_logRe, v$V_logRe),
+                 dSR0 = NA_real_,
+                 logLifeExpectancy = qnorm(q, v$E_logLifeExpectancy, v$V_logLifeExpectancy),
+                 logYearsLost = qnorm(q, v$E_logYearsLost, v$V_logYearsLost),
+                 logDiscYPR = NA_real_,
+                 logDiscYe = NA_real_)
+        }
+    }
+    
     ## Apply to Fsequence for grid search
     .na2 <- function(x) ifelse(is.na(x) | is.nan(x), -Inf, x)
     logF <- log(Fsequence)
