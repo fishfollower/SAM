@@ -137,6 +137,7 @@ SAM_SPECIALIZATION(vector<double> ssbFun(dataSet<double>&, confSet&, array<doubl
 SAM_SPECIALIZATION(vector<TMBad::ad_aug> ssbFun(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, bool));
 
 
+
 template <class Type>
 matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, bool give_log DEFARG(= false))SOURCE({
   int len=dat.landFrac.dim(0);

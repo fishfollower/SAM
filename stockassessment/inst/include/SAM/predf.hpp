@@ -216,7 +216,7 @@ SOURCE(
        vector<Type> FBound<Type>::operator()(vector<Type> lastLogF){
 	 // Nicolau, J. (2002). STATIONARY PROCESSES THAT LOOK LIKE RANDOM WALKS— THE BOUNDED RANDOM WALK PROCESS IN DISCRETE AND CONTINUOUS TIME. Econometric Theory, 18(1), 99–118. doi:10.1017/S0266466602181060
 	 vector<Type> x = lastLogF - tau;
-	 return exp(k) * (exp(-a * x) - exp(a * x));
+	 return exp(-k) * (exp(-a * x) - exp(a * x));
        }
        )
 
@@ -267,7 +267,7 @@ FBound<Type> get_fbound(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
       
       if(Findx > (-1) && !done(Findx)){
 	if(muIndxK > (-1))
-	  kappa(Findx) = -exp(par.boundF_kappa(muIndxK));
+	  kappa(Findx) = exp(par.boundF_kappa(muIndxK));
 	if(muIndxA > (-1))
 	  alpha(Findx) = exp(par.boundF_alpha(muIndxA));
 	if(muIndxT > (-1))

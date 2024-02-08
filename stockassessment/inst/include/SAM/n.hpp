@@ -5,6 +5,26 @@ SAM_DEPENDS(predn)
 SAM_DEPENDS(forecast)
 
 
+
+
+template <class Type>
+matrix<Type> get_nvar(confSet &conf, paraSet<Type> &par)SOURCE({
+    int stateDimN=conf.maxAge - conf.minAge + 1;
+    // int timeSteps=logN.dim[1];
+    matrix<Type> nvar(stateDimN,stateDimN);
+    vector<Type> varLogN=exp(par.logSdLogN*Type(2.0));
+    for(int i=0; i<stateDimN; ++i){
+      for(int j=0; j<stateDimN; ++j){
+	if(i!=j){nvar(i,j)=0.0;}else{nvar(i,j)=varLogN(conf.keyVarLogN(i));}
+      }
+    }
+    return nvar;
+  });
+
+SAM_SPECIALIZATION(matrix<double> get_nvar(confSet&, paraSet<double>&));
+SAM_SPECIALIZATION(matrix<TMBad::ad_aug> get_nvar(confSet&, paraSet<TMBad::ad_aug>&));
+  
+
 template <class Type>
 matrix<Type> get_nvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF)SOURCE({
     int stateDimN=logN.dim[0];

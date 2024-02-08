@@ -6,26 +6,271 @@ SAM_DEPENDS(derived)
 SAM_DEPENDS(predn)
 SAM_DEPENDS(survival)
 SAM_DEPENDS(extend_array)
+SAM_DEPENDS(equilibrium_recycling)
+
 
 
 HEADER(
-template<class Type>
-struct PERREC_t {
-  Type logFbar;
-  Type logYPR;
-  Type logSPR;
-  Type logSe;
-  Type logRe;
-  Type logYe;
-  Type dSR0;
-  Type logLifeExpectancy;
-  Type logYearsLost;
-  Type logDiscYPR;
-  Type logDiscYe;  
-});
 
-SAM_SPECIALIZATION(struct PERREC_t<double>);
-SAM_SPECIALIZATION(struct PERREC_t<TMBad::ad_aug>);
+       template<class Type>
+       struct EquilibriumRecycler_Deterministic_Worker {
+
+	 Type logFbar0;
+	 confSet conf;
+	 paraSet<Type> par;
+	 vector<Type> logSel;	
+	 int nYears;
+	 int CT;
+
+  
+	 dataSet<Type> newDat;
+	 array<Type> logFSel;
+	 array<Type> logitFseason;
+
+	 EquilibriumRecycler_Deterministic_Worker() : logFbar0(),
+						      conf(),
+						      par(),
+						      logSel(),
+						      nYears(),
+						      CT(),
+						      newDat(),
+						      logitFseason() {}
+    
+	 template<class T>
+	 EquilibriumRecycler_Deterministic_Worker(T logFbar0_,
+						  dataSet<T> dat,
+						  confSet conf_,
+						  paraSet<T> par_,
+						  vector<T> logSel_,
+						  vector<int> aveYears,
+						  int nYears_,
+						  int CT_) :
+	   logFbar0(logFbar0_),
+	   conf(conf_),
+	   par(par_),
+	   logSel(logSel_),
+	   nYears(nYears_),
+	   CT(CT_),
+	   newDat(dat),
+	   logitFseason() {
+	   // Setup
+	   if(nYears <= 0)
+	     Rf_error("nYears must be greater than 0.");
+	   if(aveYears.size() == 0)
+	     Rf_error("aveYears must be given.");
+	   if(logSel.size() != conf.keyLogFsta.maxCoeff()+1)
+	     Rf_error("Wrong size of selectivity vector");
+
+	   // Prepare data
+	   int nMYears = dat.noYears;
+	   // propMat
+	   extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, false);
+	   // stockMeanWeight
+	   extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, false);
+	   // catchMeanWeight
+	   extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, false);
+	   // natMor
+	   extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, false);
+	   // landFrac (No biopar process)
+	   extendArray(newDat.landFrac, nMYears, nYears, aveYears, false);
+	   // disMeanWeight (No biopar process)
+	   extendArray(newDat.disMeanWeight, nMYears, nYears, aveYears, false);
+	   // landMeanWeight (No biopar process)
+	   extendArray(newDat.landMeanWeight, nMYears, nYears, aveYears, false);
+	   // propF (No biopar process)
+	   extendArray(newDat.propF, nMYears, nYears, aveYears, false);
+	   // propM (No biopar process)
+	   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
+	   newDat.noYears = nYears;
+
+	   logFSel = array<Type>(logSel.size(), nYears);
+	   logFSel.setZero();
+	   for(int i = 0; i < nYears; ++i)
+	     logFSel.col(i) = logSel;
+
+	   // Make logitF season array
+	   logitFseason = array<Type>(par.seasonMu.rows(), nYears, par.seasonMu.cols());
+	   logitFseason.setZero();
+	   for(int i = 0; i < nYears; ++i)
+	     for(int j = 0; j < par.seasonMu.cols(); ++j)
+	       for(int k = 0; k < par.seasonMu.rows(); ++k)
+		 logitFseason(k,i,j) = par.seasonMu(k,j);
+      
+
+	   
+	 }
+
+	 PERREC_t<Type> operator()(Type logFbar){
+	
+	 
+	   Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
+	   confSet conf2(conf); conf2.stockRecruitmentModelCode = -1;
+	   Recruitment<Type> rec0 = makeRecruitmentFunction(conf2, par);
+
+	   // Make logF array
+	   array<Type> logF = logFSel;
+	   logF += logFbar;
+
+	   // Make logN array - start with one recruit
+	   int nAge = conf.maxAge - conf.minAge + 1;
+	   array<Type> logN(nAge, nYears);
+	   logN.setConstant(R_NegInf);
+	   logN(0,0) = 0.0;
+
+	   MortalitySet<Type> mort(newDat, conf, par, logF, logitFseason);
+  
+	   // Run loop over years
+	   for(int i = 1; i < nYears; ++i){
+	     logN.col(i) = predNFun(newDat, conf, par, logN, logF, rec0, mort, i);
+	     //logN(0,i) = R_NegInf;
+	   }
+ 
+	   // Calculate yield
+	   vector<Type> cat(nYears);
+	   cat.setZero();
+	   typename referencepointSet<Type>::CatchType catchType = static_cast<typename referencepointSet<Type>::CatchType>(CT);
+	   switch(catchType){
+	   case referencepointSet<Type>::totalCatch:
+	     cat = catchFun(newDat, conf, logN, logF, mort);
+	     break;
+	   case referencepointSet<Type>::landings:
+	     cat = landFun(newDat, conf, logN, logF, mort);
+	     break;
+	   case referencepointSet<Type>::discard:
+	     cat = disFun(newDat, conf, logN, logF, mort);
+	     break;
+	   default:
+	     Rf_error("Unknown reference point catch type.");
+	     break;
+	   }
+	   Type logYPR = log(sum(cat) + SAM_Zero);//
+
+	   Type logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
+	   Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
+
+	   // Calculate spawners
+	   vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);
+	   Type logSPR = log(sum(ssb) + SAM_Zero);
+
+	   ////////////////////////////////////////////////////////////////////////////////
+	   // Survival calculations                                                      //
+	   ////////////////////////////////////////////////////////////////////////////////
+	   Type discYPR = 0.0;
+	   // T discYe = 0.0;
+	   // Custom recursive calculation inspired by survival.hpp
+	   Type yl_logp = 0.0;
+	   Type yl_q = 0.0;
+	   Type yl = 0.0;
+	   for(int aa = 0; aa < cat.size(); ++aa){
+	     int j = std::min(std::max(aa-conf.minAge,0), newDat.natMor.cols()-1);		// Cohort age index
+	     int i = std::min(aa, newDat.natMor.rows()-1);
+	     Type M = newDat.natMor(i,j);
+	     Type F = 0.0;
+	     for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
+	       if(conf.keyLogFsta(f,j)>(-1) && aa >= conf.minAge)
+		 F += exp(logF(conf.keyLogFsta(f,j),i));
+	     Type Z = M + F;
+	     yl += yl_q + exp(yl_logp) * F / Z * (1.0 - 1.0 / Z * (1.0 - exp(-Z)));
+	     discYPR += cat(aa) * exp(-yl);
+	     // discYe += catYe(aa) * exp(-yl);
+	     yl_q += exp(yl_logp) * F / Z * (1.0 - exp(-Z));
+	     yl_logp += -Z;
+	   }
+	   Type logDiscYPR = log(discYPR + SAM_Zero);
+	   // T logDiscYe = log(discYe + (T)exp(SAM_NegInf));
+	   ////////////////////////////////////////////////////////////////////////////////
+	   // End survival calculations                                                  //
+	   ////////////////////////////////////////////////////////////////////////////////
+
+	   Type logSe = recruit.logSe(logSPR);
+	   Type dSR0 = recruit.dSR((Type)SAM_NegInf);
+	   Type logRe = logSe - logSPR;
+	   Type logYe = logSe - logSPR + logYPR;
+	   Type logDiscYe = logDiscYPR + logRe;
+ 
+	   // Return
+	   PERREC_t<Type> res = {logFbar, // logFbar
+	     logYPR,	// logYPR
+	     logSPR,	// logSPR
+	     logSe,	// logSe
+	     logRe,	// logRe
+	     logYe,	// logYe
+	     dSR0,      // DSR0
+	     logLifeExpectancy, // logLifeExpectancy
+	     logYLTF, // logYearsLost
+	     logDiscYPR,
+	     logDiscYe,
+	   };
+
+	   return res;
+   
+	 }
+	 
+       };
+       )
+
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// For optimizing/reporting natural scale MEDIAN quantities
+
+HEADER(
+template<class Type>
+struct EquilibriumRecycler_Deterministic : EquilibriumRecycler<Type> {
+
+  EquilibriumRecycler_Deterministic_Worker<Type> wrk;
+  
+  EquilibriumRecycler_Deterministic();
+  EquilibriumRecycler_Deterministic(Type logFbar0,
+					dataSet<Type> dat,
+					confSet conf,
+					paraSet<Type> par,
+					vector<Type> logSel,
+					vector<int> aveYears,
+					int nYears,
+					int CT);
+  PERREC_t<Type> operator()(Type logFbar);
+};
+       )
+
+SOURCE(
+template<class Type>
+EquilibriumRecycler_Deterministic<Type>::EquilibriumRecycler_Deterministic() : EquilibriumRecycler<Type>(), wrk() {};
+       )
+
+SOURCE(
+       template<class Type>
+       EquilibriumRecycler_Deterministic<Type>::EquilibriumRecycler_Deterministic(Type logFbar0,
+											  dataSet<Type> dat,
+											  confSet conf,
+											  paraSet<Type> par,
+											  vector<Type> logSel,
+											  vector<int> aveYears,
+											  int nYears,
+											  int CT) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,nYears,CT) {};
+       )
+
+
+SOURCE(
+template<class Type>
+PERREC_t<Type> EquilibriumRecycler_Deterministic<Type>::operator()(Type logFbar){
+  return wrk(logFbar);
+}
+       )
+
+
+SAM_SPECIALIZATION(struct EquilibriumRecycler_Deterministic<double>);
+SAM_SPECIALIZATION(struct EquilibriumRecycler_Deterministic<TMBad::ad_aug>);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// Deterministic /////////////////////////////////////////////////
@@ -33,147 +278,8 @@ SAM_SPECIALIZATION(struct PERREC_t<TMBad::ad_aug>);
 
 template<class Type>
 PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int>& aveYears, int nYears DEFARG(= 300), int CT DEFARG(= 0))SOURCE({
-  if(nYears <= 0)
-    Rf_error("nYears must be greater than 0.");
-  if(aveYears.size() == 0)
-    Rf_error("aveYears must be given.");
-  if(logSel.size() != conf.keyLogFsta.maxCoeff()+1)
-    Rf_error("Wrong size of selectivity vector");
-
-  // Prepare data
-  dataSet<Type> newDat = dat;
-  int nMYears = dat.noYears;
-  // propMat
-  extendArray(newDat.propMat, nMYears, nYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, false);
-   // stockMeanWeight
-  extendArray(newDat.stockMeanWeight, nMYears, nYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, false);
-  // catchMeanWeight
-  extendArray(newDat.catchMeanWeight, nMYears, nYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, false);
-  // natMor
-  extendArray(newDat.natMor, nMYears, nYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, false);
-  // landFrac (No biopar process)
-  extendArray(newDat.landFrac, nMYears, nYears, aveYears, false);
-  // disMeanWeight (No biopar process)
-  extendArray(newDat.disMeanWeight, nMYears, nYears, aveYears, false);
-  // landMeanWeight (No biopar process)
-  extendArray(newDat.landMeanWeight, nMYears, nYears, aveYears, false);
-  // propF (No biopar process)
-  extendArray(newDat.propF, nMYears, nYears, aveYears, false);
-  // propM (No biopar process)
-  extendArray(newDat.propM, nMYears, nYears, aveYears, false);
-  newDat.noYears = nYears;
-
-  Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
-  confSet conf2(conf); conf2.stockRecruitmentModelCode = -1;
-  Recruitment<Type> rec0 = makeRecruitmentFunction(conf2, par);
-
-  // Make logF array
-  array<Type> logF(logSel.size(), nYears);
-  logF.setZero();
-  for(int i = 0; i < nYears; ++i)
-    logF.col(i) = logSel + logFbar;
-
-  // Make logitF season array
-  array<Type> logitFseason(par.seasonMu.rows(), nYears, par.seasonMu.cols());
-  logitFseason.setZero();
-  for(int i = 0; i < nYears; ++i)
-    for(int j = 0; j < par.seasonMu.cols(); ++j)
-      for(int k = 0; k < par.seasonMu.rows(); ++k)
-	logitFseason(k,i,j) = par.seasonMu(k,j);
-      
-
-  // Make logN array - start with one recruit
-  int nAge = conf.maxAge - conf.minAge + 1;
-  array<Type> logN(nAge, nYears);
-  logN.setConstant(R_NegInf);
-  logN(0,0) = 0.0;
-
-  MortalitySet<Type> mort(newDat, conf, par, logF, logitFseason);
-  
-  // Run loop over years
-  for(int i = 1; i < nYears; ++i){
-    logN.col(i) = predNFun(newDat, conf, par, logN, logF, rec0, mort, i);
-    //logN(0,i) = R_NegInf;
-  }
- 
-  // Calculate yield
-  vector<Type> cat(nYears);
-  cat.setZero();
-  typename referencepointSet<Type>::CatchType catchType = static_cast<typename referencepointSet<Type>::CatchType>(CT);
-  switch(catchType){
-  case referencepointSet<Type>::totalCatch:
-    cat = catchFun(newDat, conf, logN, logF, mort);
-    break;
-  case referencepointSet<Type>::landings:
-    cat = landFun(newDat, conf, logN, logF, mort);
-    break;
-  case referencepointSet<Type>::discard:
-    cat = disFun(newDat, conf, logN, logF, mort);
-    break;
-  default:
-    Rf_error("Unknown reference point catch type.");
-    break;
-  }
-  Type logYPR = log(sum(cat) + SAM_Zero);//
-
-  Type logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
-  Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
-
-  // Calculate spawners
-  vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);
-  Type logSPR = log(sum(ssb) + SAM_Zero);
-
-  ////////////////////////////////////////////////////////////////////////////////
-  // Survival calculations                                                      //
-  ////////////////////////////////////////////////////////////////////////////////
-  Type discYPR = 0.0;
-  // T discYe = 0.0;
-  // Custom recursive calculation inspired by survival.hpp
-  Type yl_logp = 0.0;
-  Type yl_q = 0.0;
-  Type yl = 0.0;
-  for(int aa = 0; aa < cat.size(); ++aa){
-    int j = std::min(std::max(aa-conf.minAge,0), newDat.natMor.cols()-1);		// Cohort age index
-    int i = std::min(aa, newDat.natMor.rows()-1);
-    Type M = newDat.natMor(i,j);
-    Type F = 0.0;
-    for(int f = 0; f < conf.keyLogFsta.dim(0); ++f)
-      if(conf.keyLogFsta(f,j)>(-1) && aa >= conf.minAge)
-	F += exp(logF(conf.keyLogFsta(f,j),i));
-   Type Z = M + F;
-    yl += yl_q + exp(yl_logp) * F / Z * (1.0 - 1.0 / Z * (1.0 - exp(-Z)));
-    discYPR += cat(aa) * exp(-yl);
-    // discYe += catYe(aa) * exp(-yl);
-    yl_q += exp(yl_logp) * F / Z * (1.0 - exp(-Z));
-    yl_logp += -Z;
-  }
-  Type logDiscYPR = log(discYPR + SAM_Zero);
-  // T logDiscYe = log(discYe + (T)exp(SAM_NegInf));
-  ////////////////////////////////////////////////////////////////////////////////
-  // End survival calculations                                                  //
-  ////////////////////////////////////////////////////////////////////////////////
-
-  Type logSe = recruit.logSe(logSPR);
-  Type dSR0 = recruit.dSR((Type)SAM_NegInf);
-  Type logRe = logSe - logSPR;
-  Type logYe = logSe - logSPR + logYPR;
-  Type logDiscYe = logDiscYPR + logRe;
- 
-   // Return
-  PERREC_t<Type> res = {logFbar, // logFbar
-		     logYPR,	// logYPR
-		     logSPR,	// logSPR
-		     logSe,	// logSe
-		     logRe,	// logRe
-		     logYe,	// logYe
-		     dSR0,      // DSR0
-		     logLifeExpectancy, // logLifeExpectancy
-		     logYLTF, // logYearsLost
-		     logDiscYPR,
-		     logDiscYe,
-  };
-
-  return res;
+ EquilibriumRecycler_Deterministic_Worker<Type> wrk(logFbar,dat,conf,par,logSel,aveYears,nYears,CT);
+ return wrk(logFbar);
    
   });
 

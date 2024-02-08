@@ -306,7 +306,7 @@ recruitmentProperties <- function(fit){
     return("Unknown")
 }
 
-.refpointOutput <- function(ssdr, rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn, Fsequence, referencepoints){
+.refpointOutput <- function(ssdr, rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn, Fsequence, referencepoints, stochastic = FALSE){
     rwnms <- unlist(lapply(rpArgs,function(x) .refpointNames(x$rpType, x$xVal)))
     rpRename <- unlist(sapply(lapply(referencepoints,.refpointParser),function(args)do.call(.refpointNames,args)))
     rpLabels <- unlist(lapply(referencepoints,function(x){
@@ -327,31 +327,30 @@ recruitmentProperties <- function(fit){
         cbind(Estimate = Est, CI)
     }
 
-    ## Tables assume that the first reference point is used for Fsequence
-    Ftab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logF$")[outputOrder,,drop=FALSE]
-    Btab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSe$")[outputOrder,,drop=FALSE]
-    Rtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logRe$")[outputOrder,,drop=FALSE]
-    Ytab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYe$")[outputOrder,,drop=FALSE]
-    SPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSPR$")[outputOrder,,drop=FALSE]
-    YPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYPR$")[outputOrder,,drop=FALSE]
-    YLtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYearsLost$")[outputOrder,,drop=FALSE]
-    LEtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logLifeExpectancy$")[outputOrder,,drop=FALSE]
-    colnames(Ftab) <- colnames(Btab) <- colnames(Rtab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- colnames(YLtab) <- colnames(LEtab) <- c("Estimate","Low","High")
-    rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rownames(YLtab) <- rownames(LEtab) <- rpLabels #[outputOrder]
+    if(length(Fsequence) > 0){
+        ## Tables assume that the first reference point is used for Fsequence
+        Ftab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logF$")[outputOrder,,drop=FALSE]
+        Btab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSe$")[outputOrder,,drop=FALSE]
+        Rtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logRe$")[outputOrder,,drop=FALSE]
+        Ytab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYe$")[outputOrder,,drop=FALSE]
+        SPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logSPR$")[outputOrder,,drop=FALSE]
+        YPRtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYPR$")[outputOrder,,drop=FALSE]
+        YLtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logYearsLost$")[outputOrder,,drop=FALSE]
+        LEtab <- toCI("referencepoint_[1-9][[:digit:]]*_.+_logLifeExpectancy$")[outputOrder,,drop=FALSE]
+        colnames(Ftab) <- colnames(Btab) <- colnames(Rtab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- colnames(YLtab) <- colnames(LEtab) <- c("Estimate","Low","High")
+        rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rownames(YLtab) <- rownames(LEtab) <- rpLabels #[outputOrder]
 
-    ## First reference point is used for Fsequence
-    YPRseq <- toCI("referencepoint_0_FixedF_logYPR$")
-    SPRseq <- toCI("referencepoint_0_FixedF_logSPR$")
-    Yieldseq <- toCI("referencepoint_0_FixedF_logYe$")
-    Bseq <- toCI("referencepoint_0_FixedF_logSe$")
-    Rseq <- toCI("referencepoint_0_FixedF_logRe$")
-    LLseq <- toCI("referencepoint_0_FixedF_logYearsLost$")
-    LEseq <- toCI("referencepoint_0_FixedF_logLifeExpectancy$")
+        ## First reference point is used for Fsequence
+        YPRseq <- toCI("referencepoint_0_FixedF_logYPR$")
+        SPRseq <- toCI("referencepoint_0_FixedF_logSPR$")
+        Yieldseq <- toCI("referencepoint_0_FixedF_logYe$")
+        Bseq <- toCI("referencepoint_0_FixedF_logSe$")
+        Rseq <- toCI("referencepoint_0_FixedF_logRe$")
+        LLseq <- toCI("referencepoint_0_FixedF_logYearsLost$")
+        LEseq <- toCI("referencepoint_0_FixedF_logLifeExpectancy$")
+        rownames(YPRseq) <- rownames(SPRseq) <- rownames(Yieldseq) <- rownames(Bseq) <- rownames(Rseq) <- rownames(LLseq) <- rownames(LEseq) <- Fsequence
 
-    
-    rownames(YPRseq) <- rownames(SPRseq) <- rownames(Yieldseq) <- rownames(Bseq) <- rownames(Rseq) <- rownames(LLseq) <- rownames(LEseq) <- Fsequence
-    
-    res <- list(tables = list(F = Ftab,
+          res <- list(tables = list(F = Ftab,
                               Yield = Ytab,
                               YieldPerRecruit = YPRtab,
                               SpawnersPerRecruit = SPRtab,
@@ -371,8 +370,43 @@ recruitmentProperties <- function(fit){
                 ## opt = NA,
                 ## ssdr = sdr,
                 fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
-                stochastic = FALSE
+                stochastic = stochastic
                 )
+    }else{
+        ## No Fsequence
+        Ftab <- toCI("referencepoint_[[:digit:]]*_.+_logF$")[outputOrder,,drop=FALSE]
+        Btab <- toCI("referencepoint_[[:digit:]]*_.+_logSe$")[outputOrder,,drop=FALSE]
+        Rtab <- toCI("referencepoint_[[:digit:]]*_.+_logRe$")[outputOrder,,drop=FALSE]
+        Ytab <- toCI("referencepoint_[[:digit:]]*_.+_logYe$")[outputOrder,,drop=FALSE]
+        SPRtab <- toCI("referencepoint_[[:digit:]]*_.+_logSPR$")[outputOrder,,drop=FALSE]
+        YPRtab <- toCI("referencepoint_[[:digit:]]*_.+_logYPR$")[outputOrder,,drop=FALSE]
+        YLtab <- toCI("referencepoint_[[:digit:]]*_.+_logYearsLost$")[outputOrder,,drop=FALSE]
+        LEtab <- toCI("referencepoint_[[:digit:]]*_.+_logLifeExpectancy$")[outputOrder,,drop=FALSE]
+        
+        colnames(Ftab) <- colnames(Btab) <- colnames(Rtab) <- colnames(Ytab) <- colnames(SPRtab) <- colnames(YPRtab) <- colnames(YLtab) <- colnames(LEtab) <- c("Estimate","Low","High")
+        rownames(Ftab) <- rownames(Btab) <- rownames(Rtab) <- rownames(Ytab) <- rownames(SPRtab) <- rownames(YPRtab) <- rownames(YLtab) <- rownames(LEtab) <- rpLabels #[outputOrder]
+
+  res <- list(tables = list(F = Ftab,
+                              Yield = Ytab,
+                              YieldPerRecruit = YPRtab,
+                              SpawnersPerRecruit = SPRtab,
+                              Biomass = Btab,
+                              Recruitment = Rtab,
+                              LifeExpectancy = LEtab,
+                              LifeYearsLost = YLtab
+                              ),
+                graphs = NULL,
+                ## opt = NA,
+                ## ssdr = sdr,
+                fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
+                stochastic = stochastic
+                )
+        
+    }
+    
+    
+    
+  
     
     attr(res,"aveYears") <-  aveYearsIn
     attr(res,"selYears") <- selYearsIn
@@ -451,7 +485,7 @@ deterministicReferencepoints.sam <- function(fit,
     if(is.na(catchType))
         stop("Invalid catch type")
 
-     aveYearsIn <- aveYears
+    aveYearsIn <- aveYears
     aveYears <- match(aveYears, fit$data$years) - 1
     if(any(is.na(aveYears)))
         stop("aveYears has years without data.")
@@ -463,7 +497,7 @@ deterministicReferencepoints.sam <- function(fit,
 
     ## Parse input reference points
     rpArgs <- Reduce(.refpointMerger,
-                     lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1),
+                     lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=numeric(0),stochasticType=0,q=NA_real_),
                      list())
 
     ## Add starting values    
@@ -476,7 +510,10 @@ deterministicReferencepoints.sam <- function(fit,
                 selYears = selYears,
                 logCustomSel = numeric(0),
                 catchType = catchType - 1,
-                logF0 = log(Fsequence))
+                logF0 = log(Fsequence),
+                logN0=numeric(0),
+                stochasticType=0,
+                q=NA_real_)
 
     ## Make list for TMB
     obj0 <- fit$obj

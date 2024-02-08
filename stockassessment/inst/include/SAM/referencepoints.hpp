@@ -2,7 +2,9 @@ SAM_DEPENDS(define)
 SAM_DEPENDS(recruitment)
 SAM_DEPENDS(refpointset)
 SAM_DEPENDS(derived)
+SAM_DEPENDS(equilibrium_recycling)
 SAM_DEPENDS(equilibrium)
+SAM_DEPENDS(stochastic_equilibrium)
 SAM_DEPENDS(newton)
 
 #include <memory>
@@ -25,32 +27,36 @@ struct RPD_Base : NewtonFunctor {
   confSet conf;
   paraSet<ad> par;
   referencepointSet<ad> rp;
+  std::shared_ptr<EquilibriumRecycler<ad> > p_er;
 
   RPD_Base() : dat(), conf(), par(), rp() {};
   
   RPD_Base(const dataSet<ad>& dat_,
 	   const confSet& conf_,
 	   const paraSet<ad>& par_,
-	   const referencepointSet<ad>& rp_) :
+	   const referencepointSet<ad>& rp_,
+	   std::shared_ptr<EquilibriumRecycler<ad> > p_er_
+	   ) :
     dat(dat_),
     conf(conf_),
     par(par_),
-    rp(rp_){}
+    rp(rp_),
+    p_er(p_er_){}
 
   template<class T>
   RPD_Base(const dataSet<T>& dat_,
 	   const confSet& conf_,
 	   const paraSet<T>& par_,
-	   const referencepointSet<T>& rp_) :
+	   const referencepointSet<T>& rp_,
+	   std::shared_ptr<EquilibriumRecycler<ad> > p_er_) :
     dat(dat_),
     conf(conf_),
     par(par_),
-    rp(rp_){}
+    rp(rp_),
+    p_er(p_er_){}
 
   virtual PERREC_t<ad> getPerRec(const ad& logFbar){
-    vector<ad> ls = rp.getLogSelectivity();
-    PERREC_t<ad> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
-    return r;
+      return p_er->operator()(logFbar);
   }
 
   virtual vector<ad> par2logF(const vector<ad>& x){
@@ -234,23 +240,24 @@ public:
     confSet conf;
     paraSet<Type> par;
     referencepointSet<Type> rp;
+    std::shared_ptr<EquilibriumRecycler<Type> > p_er;
 
     RefPointD_Known() : RefPointD_Base<Type>(), dat(), conf(), par(), rp() {};
   
     RefPointD_Known(const dataSet<Type>& dat_,
 		    const confSet& conf_,
 		    const paraSet<Type>& par_,
-		    const referencepointSet<Type>& rp_) :
+		    const referencepointSet<Type>& rp_,
+		    std::shared_ptr<EquilibriumRecycler<Type> > p_er_) :
       RefPointD_Base<Type>(),
       dat(dat_),
       conf(conf_),
       par(par_),
-      rp(rp_){}
+      rp(rp_),
+      p_er(p_er_) {}
 
-    PERREC_t<Type> getPerRecruit(Type logFbar){
-      vector<Type> ls = rp.getLogSelectivity();
-      PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
-      return r;
+    PERREC_t<Type> getPerRecruit(Type logFbar){    
+      return p_er->operator()(logFbar);
     }
 
     vector<Type> par2logF(const vector<Type>& x){
@@ -268,13 +275,16 @@ public:
     referencepointSet<Type> rp;
 
     // Functor f;			// i.e., RPD_MSY. Should be derived from RPD_Base
+    std::shared_ptr<EquilibriumRecycler<Type> > p_er;
     std::shared_ptr<RPD_Base> ptr;
+    
     newton::newton_config cfg;
   
     RefPointD_Numeric(const dataSet<Type>& dat_,
 		      const confSet& conf_,
 		      const paraSet<Type>& par_,
 		      const referencepointSet<Type>& rp_,
+		      std::shared_ptr<EquilibriumRecycler<Type> > p_er_,
 		      std::shared_ptr<RPD_Base> p_,
 		      newton::newton_config cfg_ = newton::newton_config()) :
       RefPointD_Base<Type>(),
@@ -282,13 +292,12 @@ public:
       conf(conf_),
       par(par_),
       rp(rp_),
+      p_er(p_er_),
       ptr(p_), cfg(cfg_) {};
 
   
     PERREC_t<Type> getPerRecruit(Type logFbar){
-       vector<Type> ls = rp.getLogSelectivity();
-       PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
-      return r;
+         return p_er->operator()(logFbar);
     }
 
     vector<Type> par2logF(const vector<Type>& x){
@@ -307,14 +316,16 @@ public:
   RPD_##NAME(const dataSet<ad>& dat,		\
 	     const confSet& conf,		\
 	     const paraSet<ad>& par,		\
-	     const referencepointSet<ad>& rp) :	\
-  RPD_Base(dat,conf,par,rp) {}			\
+	     const referencepointSet<ad>& rp,		\
+	     std::shared_ptr<EquilibriumRecycler<ad> > p_er) :	\
+  RPD_Base(dat,conf,par,rp,p_er) {}					\
   template<class T>				\
   RPD_##NAME(const dataSet<T>& dat,		\
 	     const confSet& conf,		\
 	     const paraSet<T>& par,		\
-	     const referencepointSet<T>& rp) :	\
-       RPD_Base(dat,conf,par,rp) {}		\
+	     const referencepointSet<T>& rp,				\
+	     std::shared_ptr<EquilibriumRecycler<ad> > p_er) :	\
+		 RPD_Base(dat,conf,par,rp,p_er) {}			\
   using RPD_Base::getPerRec
 
 #define USING_RPD_BASE(NAME)			\
@@ -326,8 +337,9 @@ public:
   RefPointD_##NAME(dataSet<Type>& dat,					\
 		   confSet& conf,					\
 		   paraSet<Type>& par,					\
-		   referencepointSet<Type>& rp) :			\
-  RefPointD_Known<Type>(dat,conf,par,rp) {};				\
+		   referencepointSet<Type>& rp,				\
+		   std::shared_ptr<EquilibriumRecycler<Type> > p_er) :	\
+  RefPointD_Known<Type>(dat,conf,par,rp,p_er) {};			\
   using RefPointD_Known<Type>::getPerRecruit;				\
   using RefPointD_Known<Type>::par2logF
 
@@ -341,8 +353,10 @@ public:
 		     confSet& conf,					\
 		     paraSet<Type>& par,				\
 		     referencepointSet<Type>& rp,			\
+		     std::shared_ptr<EquilibriumRecycler<Type> > p_er,	\
+		     std::shared_ptr<EquilibriumRecycler<ad> > pa_er,	\
 		     newton::newton_config cfg = newton::newton_config()) : \
-    RefPointD_Numeric<Type>(dat,conf,par,rp,std::make_shared<RPD_##NAME>(dat,conf,par,rp),cfg) {}; \
+    RefPointD_Numeric<Type>(dat,conf,par,rp,p_er,std::make_shared<RPD_##NAME>(dat,conf,par,rp,pa_er),cfg) {}; \
     using RefPointD_Numeric<Type>::getPerRecruit;				\
     using RefPointD_Numeric<Type>::par2logF;				\
 }
@@ -656,7 +670,7 @@ public:
 
 
 template<class Type>
-void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, referencepointList<Type> &referencepoints, objective_function<Type> *of)SOURCE({
+void reportReferencePoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, Recruitment<Type> &recruit, referencepointList<Type> &referencepoints, objective_function<Type> *of)SOURCE({
   
   if(referencepoints.size() == 0)
     return;
@@ -664,47 +678,82 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
   using namespace referencepoints_helper;
   newton::newton_config cfg = referencepoints.cfg;
   // cfg.simplify = false; 	// Needed for logspace_add
-  
+
+  std::shared_ptr<EquilibriumRecycler<Type> > p_er_t;
+  std::shared_ptr<EquilibriumRecycler<ad> > p_er_a;
+  // Assume all are the same
+  referencepointSet<Type> rps0 = referencepoints(0);
+  rps0.setLogSelectivity(logF,conf);
+  vector<Type> ls = rps0.getLogSelectivity();
+  Type logfbar0 = rps0.logFbar(logF,conf) - log(0.5);
+  typename referencepointSet<Type>::StochasticType stochasticType = rps0.stochasticType;
+  if(stochasticType == referencepointSet<Type>::Deterministic){ // Median on natural scale
+    std::shared_ptr<EquilibriumRecycler_Deterministic<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Deterministic<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.nYears, (int)rps0.catchType);    
+    p_er_t = tmp2;
+    std::shared_ptr<EquilibriumRecycler_Deterministic<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Deterministic<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.nYears, (int)rps0.catchType);
+    p_er_a = tmp3;
+  }else if(stochasticType == referencepointSet<Type>::Stochastic_Median){ // Median on natural scale 
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Median<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Median<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType);    
+    p_er_t = tmp2;
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Median<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Median<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType);
+    p_er_a = tmp3;
+  }else if(stochasticType == referencepointSet<Type>::Stochastic_Mean){ // Mean on natural scale
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mean<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Mean<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType);    
+    p_er_t = tmp2;
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mean<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Mean<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType);
+    p_er_a = tmp3;
+  }else if(stochasticType == referencepointSet<Type>::Stochastic_Mode){ // Mode on natural scale
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mode<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Mode<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType);    
+    p_er_t = tmp2;
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mode<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Mode<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType);
+    p_er_a = tmp3;
+  }else if(stochasticType == referencepointSet<Type>::Stochastic_Quantile){ // Quantile on natural scale
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Quantile<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Quantile<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.q);    
+    p_er_t = tmp2;
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Quantile<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Quantile<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.q);
+    p_er_a = tmp3;
+  }
   // Report reference points
   for(int i = 0; i < referencepoints.size(); ++i){
     referencepointSet<Type> rps = referencepoints(i);
     rps.setLogSelectivity(logF,conf);
     ReferencePointDeterministic rpt = static_cast<ReferencePointDeterministic>(rps.rpType);
     Referencepoint_D<Type> rp;
+
   
     if(rpt == ReferencePointDeterministic::None){
       continue;
     }else if(rpt  == ReferencePointDeterministic::FixedF){
-      rp = Referencepoint_D<Type>("FixedF",i,rps.logF0, new RefPointD_FixedF<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("FixedF",i,rps.logF0, new RefPointD_FixedF<Type>(dat,conf,par,rps,p_er_t));
     }else if(rpt  == ReferencePointDeterministic::StatusQuo){
       if(rps.xVal.size() == 0)
 	Rf_error("Referencepoint StatusQuo must have at least one xVal");
       vector<Type> logFsq(rps.xVal.size());
       for(int xi = 0; xi < rps.xVal.size(); ++xi)
 	logFsq(xi) = fbari(dat,conf, logF, logF.cols()-1 - CppAD::Integer(rps.xVal(xi)), true);
-      rp = Referencepoint_D<Type>("StatusQuo",i,logFsq, new RefPointD_FixedF<Type>(dat,conf,par,rps));
+      rp = Referencepoint_D<Type>("StatusQuo",i,logFsq, new RefPointD_FixedF<Type>(dat,conf,par,rps,p_er_t));
     }else if(rpt  == ReferencePointDeterministic::MSY){
-      rp = Referencepoint_D<Type>("MSY",i,rps.logF0, new RefPointD_MSY<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("MSY",i,rps.logF0, new RefPointD_MSY<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::MSYRange){
-      rp = Referencepoint_D<Type>("MSYRange",i,rps.logF0, new RefPointD_MSYrange<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("MSYRange",i,rps.logF0, new RefPointD_MSYrange<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::Max){
-      rp = Referencepoint_D<Type>("Max",i,rps.logF0, new RefPointD_Max<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("Max",i,rps.logF0, new RefPointD_Max<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::xdYPR){
-      rp = Referencepoint_D<Type>("xdYPR",i,rps.logF0, new RefPointD_xdYPR<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("xdYPR",i,rps.logF0, new RefPointD_xdYPR<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::xSPR){
-      rp = Referencepoint_D<Type>("xSPR",i,rps.logF0, new RefPointD_xSPR<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("xSPR",i,rps.logF0, new RefPointD_xSPR<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::xB0){
-      rp = Referencepoint_D<Type>("xB0",i,rps.logF0, new RefPointD_xB0<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("xB0",i,rps.logF0, new RefPointD_xB0<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::MYPYLdiv){
-      rp = Referencepoint_D<Type>("MYPYLdiv",i,rps.logF0, new RefPointD_MYPYLdiv<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("MYPYLdiv",i,rps.logF0, new RefPointD_MYPYLdiv<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::MYPYLprod){
-      rp = Referencepoint_D<Type>("MYPYLprod",i,rps.logF0, new RefPointD_MYPYLprod<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("MYPYLprod",i,rps.logF0, new RefPointD_MYPYLprod<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::MDY){
-      rp = Referencepoint_D<Type>("MDY",i,rps.logF0, new RefPointD_MDY<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("MDY",i,rps.logF0, new RefPointD_MDY<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::Crash){
-      rp = Referencepoint_D<Type>("Crash",i,rps.logF0, new RefPointD_Crash<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("Crash",i,rps.logF0, new RefPointD_Crash<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::Ext){
-      rp = Referencepoint_D<Type>("Ext",i,rps.logF0, new RefPointD_Ext<Type>(dat,conf,par,rps, cfg));
+      rp = Referencepoint_D<Type>("Ext",i,rps.logF0, new RefPointD_Ext<Type>(dat,conf,par,rps,p_er_t,p_er_a, cfg));
     }else if(rpt  == ReferencePointDeterministic::Lim){
       Rf_error("Lim not implemented yet");
     }else{
@@ -719,5 +768,5 @@ void reportDeterministicReferencePoints(dataSet<Type> &dat, confSet &conf, paraS
     return;
 })
 
-SAM_SPECIALIZATION(void reportDeterministicReferencePoints(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, Recruitment<double>&, referencepointList<double>&, objective_function<double>*));
-SAM_SPECIALIZATION(void reportDeterministicReferencePoints(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, referencepointList<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
+SAM_SPECIALIZATION(void reportReferencePoints(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, Recruitment<double>&, referencepointList<double>&, objective_function<double>*));
+SAM_SPECIALIZATION(void reportReferencePoints(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, Recruitment<TMBad::ad_aug>&, referencepointList<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
