@@ -49,6 +49,8 @@ HEADER(
 	 const char* name;
 	 std::shared_ptr<RecruitmentWorker<Type> > ptr;
 	 explicit Recruitment() : name("Uninitialized"), ptr(nullptr) {};
+	 // template<class T>
+	 // explicit Recruitment(const Recruitment<T> x): name(x.name), ptr(x.ptr) {}
 	 explicit Recruitment(const char* nm, std::shared_ptr<RecruitmentWorker<Type> > p=nullptr) : name(nm), ptr(p) {};
 	 virtual ~Recruitment() { ptr.reset(); };
 
@@ -111,6 +113,7 @@ namespace RecruitmentConvenience {
 			 Hassel_Deriso = 67,
 			 SailaLorda = 68,
 			 SigmoidalBevertonHolt = 69,
+			 SmoothHockeyStick = 70,
 			 Spline_CMP = 90,
 			 Spline_Smooth = 91,
 			 Spline_General = 92,
@@ -937,6 +940,27 @@ namespace RecruitmentConvenience {
   };
 
   TO_REC_3PAR(SigmoidalBevHolt);
+
+  // Recruitment function 70
+  // Smooth hockey stick
+  struct RF_SmoothHockeyStick_t : RecruitmentFunctor{
+    ad loga;			// Level
+    ad logb;			// 'Breakpoint'
+
+    RF_SmoothHockeyStick_t(ad loga_, ad logb_) :
+      loga(loga_), logb(logb_) {}
+
+    ad operator()(const ad& logssb){
+      ad minval = 0.5 * (logssb + logb - sqrt( (logssb - logb) * (logssb - logb) + 0.1));
+      return loga - logb + minval;
+    }
+
+    USING_RECFUN;
+  
+  };
+
+  TO_REC_2PAR(SmoothHockeyStick);
+  
   
 
   // Recruitment function 90
@@ -1117,6 +1141,10 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
       if(par.rec_pars.size() != 2)
 	Rf_error("The power law recruitment should have two parameters.");
       r = Recruitment<Type>("non-CMP power law",std::make_shared<RecruitmentConvenience::Rec_PowerNCMP<Type> >(par.rec_pars(0), par.rec_pars(1)));
+    }else if(rm == RecruitmentConvenience::RecruitmentModel::SmoothHockeyStick){
+      if(par.rec_pars.size() != 2)
+	Rf_error("The smooth Hockey Stick recruitment should have two parameters.");
+      r = Recruitment<Type>("smooth Hockey Stick",std::make_shared<RecruitmentConvenience::Rec_SmoothHockeyStick<Type> >(par.rec_pars(0), par.rec_pars(1)));
 
       //////////////////////////////////////// 3 parameter models ///////////////////////////////////////
     

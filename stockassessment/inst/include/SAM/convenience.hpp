@@ -138,3 +138,17 @@ vector<Type> logitroots2ARpar(vector<Type> x)SOURCE({
   SAM_SPECIALIZATION(vector<double> logitroots2ARpar(vector<double>));
 SAM_SPECIALIZATION(vector<TMBad::ad_aug> logitroots2ARpar(vector<TMBad::ad_aug>));
 
+
+template<class Type>
+Type matrix_trace(matrix<Type>& x)SOURCE({
+    if(x.cols() != x.rows())
+      Rf_error("In matrix_trace: x should be square.");
+    Type r = 0.0;
+    for(int i = 0; i < x.cols(); ++i)
+      r += x(i,i);
+    return r;
+  }
+  )
+
+  SAM_SPECIALIZATION(double matrix_trace(matrix<double>&));
+SAM_SPECIALIZATION(TMBad::ad_aug matrix_trace(matrix<TMBad::ad_aug>&));

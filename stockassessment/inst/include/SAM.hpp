@@ -19,6 +19,7 @@
 #include "SAM/predn.hpp"
 #include "SAM/predf.hpp"
 #include "SAM/equilibrium.hpp"
+#include "SAM/stochastic_equilibrium.hpp"
 #include "SAM/toF.hpp"
 #include "SAM/forecast.hpp"
 #include "SAM/season.hpp"

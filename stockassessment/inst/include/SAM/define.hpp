@@ -598,9 +598,9 @@ SOURCE(
 	   logSdLogFsta = asVector<Type>(getListElement(x,"logSdLogFsta", &Rf_isNumeric));
 	   muF = asVector<Type>(getListElement(x,"muF", &Rf_isNumeric));
 	   trans_rho_F = asVector<Type>(getListElement(x,"trans_rho_F", &Rf_isNumeric));
-	   boundF_kappa = asMatrix<Type>(getListElement(x,"boundF_kappa", &Rf_isNumeric));
-	   boundF_alpha = asMatrix<Type>(getListElement(x,"boundF_alpha", &Rf_isNumeric));
-	   boundF_tau = asMatrix<Type>(getListElement(x,"boundF_tau", &Rf_isNumeric));
+	   boundF_kappa = asVector<Type>(getListElement(x,"boundF_kappa", &Rf_isNumeric));
+	   boundF_alpha = asVector<Type>(getListElement(x,"boundF_alpha", &Rf_isNumeric));
+	   boundF_tau = asVector<Type>(getListElement(x,"boundF_tau", &Rf_isNumeric));
 	   logSdLogN = asVector<Type>(getListElement(x,"logSdLogN", &Rf_isNumeric));
 	   logSdLogP = asVector<Type>(getListElement(x,"logSdLogP", &Rf_isNumeric));
 	   logSdLogObs = asVector<Type>(getListElement(x,"logSdLogObs", &Rf_isNumeric));
