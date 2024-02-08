@@ -682,7 +682,7 @@ stochasticReferencepoints.sam <- function(fit,
                          list())
         cat("Adding starting values...\n")
         ## Add starting values    
-        rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence)
+        rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence,stochasticType=mIndx, q=Q)
         ## Add Fsequence for plotting
         ## cat("Adding F sequence...\n")
         ## rp0 <- list(rpType = -1,
