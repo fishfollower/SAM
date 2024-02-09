@@ -30,6 +30,7 @@ struct referencepointSet {
   vector<Type> logSel;
   vector<Type> logN0;
   StochasticType stochasticType;
+  int DT;
   Type q;
 
   inline referencepointSet() :
@@ -44,6 +45,7 @@ struct referencepointSet {
     logSel(),
     logN0(),
     stochasticType(),
+    DT(),
     q()
   {}    
   referencepointSet(int nYears_, int CT, int i, array<Type> logF, confSet conf);
@@ -62,7 +64,9 @@ struct referencepointSet {
     logF0(other.logF0),
     logSel(other.logSel),
     logN0(other.logN0),
-    stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>((int)other.stochasticType))
+    stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>((int)other.stochasticType)),
+    DT(other.DT),
+    q(other.q)
   {}    
  
   vector<Type> getLogSelectivity();
@@ -80,7 +84,7 @@ SOURCE(
 						    int i,
 						    array<Type> logF,
 						    confSet conf) :
-	 nYears(nYears_), rpType(-99), aveYears(1), selYears(1), logCustomSel(0), xVal(0), catchType(static_cast<typename referencepointSet<Type>::CatchType>(CT)), logF0(0), logSel(0), logN0(0), stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>(0)), q(R_NaReal) {
+	 nYears(nYears_), rpType(-99), aveYears(1), selYears(1), logCustomSel(0), xVal(0), catchType(static_cast<typename referencepointSet<Type>::CatchType>(CT)), logF0(0), logSel(0), logN0(0), stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>(0)), DT(0), q(R_NaReal) {
 	   aveYears(0) = i;
 	   selYears(0) = i;
 	   setLogSelectivity(logF,conf);
@@ -146,6 +150,12 @@ SOURCE(
 	   }else{
 	     stochasticType = static_cast<typename referencepointSet<Type>::StochasticType>(0);
 	   }
+ if(!Rf_isNull(getListElement(x,"DT"))){
+	     DT = Rf_asInteger(getListElement(x,"DT"));
+	   }else{
+	     DT = 0;
+	   }
+	   
 	   if(!Rf_isNull(getListElement(x,"q"))){
 	     q = (Type)Rf_asReal(getListElement(x,"q"));
 	   }else{

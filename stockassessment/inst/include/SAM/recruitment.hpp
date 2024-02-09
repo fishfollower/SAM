@@ -17,16 +17,17 @@ HEADER(
 	 RecruitmentWorker(): isAutoregressive(0), isTimevarying(0) {};
 	 RecruitmentWorker(int isA, int isT): isAutoregressive(isA), isTimevarying(isT) {};
   
-	 // Stock recruitment function logR = f(logssb)
+	 // log of Stock recruitment function logR = f(logssb)
 	 virtual Type operator()(Type logssb, Type lastLogR, Type year) = 0;
 
+	 // Stock recruitment function R = F(exp(logssb))
 	 Type R(Type logssb, Type lastLogR, Type year){
 	   return exp(operator()(logssb, lastLogR, year));
 	 };
 
 	 // Deterministic equilibrium biomass for lambda = 1/SPR
 	 virtual Type logSe(Type logLambda) = 0;
-	 // Derivative
+	 // Derivative of R(S) evaluated at S=exp(logssb)
 	 virtual Type dSR(Type logssb) = 0;
 
 	 virtual Type logSAtMaxR() = 0;
