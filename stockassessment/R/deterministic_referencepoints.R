@@ -955,7 +955,9 @@ deterministicReferencepoints.sam <- function(fit,
         ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci, incpb)
     }
     ## Make tables        
-    res <- .refpointOutput(ssdr,rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn, Fsequence, referencepoints)
+    res <- .refpointOutput(ssdr,rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn,
+                           c(), #Fsequence,
+                           referencepoints)
     attr(res,"equilibriumMethod") <- equilibriumMethod
        attr(res,"aveYears") <-  aveYearsIn
         attr(res,"selYears") <- selYearsIn
