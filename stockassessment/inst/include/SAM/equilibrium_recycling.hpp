@@ -19,6 +19,31 @@ struct PERREC_t {
 SAM_SPECIALIZATION(struct PERREC_t<double>);
 SAM_SPECIALIZATION(struct PERREC_t<TMBad::ad_aug>);
 
+template<class Type>
+SEXP asSEXP(const PERREC_t<Type> &x) SOURCE({
+    const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "dSR0", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
+    SEXP res;
+    PROTECT(res = Rf_mkNamed(VECSXP, resNms));
+    SET_VECTOR_ELT(res, 0, asSEXP(x.logFbar));
+    SET_VECTOR_ELT(res, 1, asSEXP(x.logYPR));
+    SET_VECTOR_ELT(res, 2, asSEXP(x.logSPR));
+    SET_VECTOR_ELT(res, 3, asSEXP(x.logSe));
+    SET_VECTOR_ELT(res, 4, asSEXP(x.logRe));
+    SET_VECTOR_ELT(res, 5, asSEXP(x.logYe));
+    SET_VECTOR_ELT(res, 6, asSEXP(x.dSR0));
+    SET_VECTOR_ELT(res, 7, asSEXP(x.logLifeExpectancy));
+    SET_VECTOR_ELT(res, 8, asSEXP(x.logYearsLost));
+    SET_VECTOR_ELT(res, 9, asSEXP(x.logDiscYe));
+    SET_VECTOR_ELT(res, 10, asSEXP(x.logDiscYPR));
+    
+    UNPROTECT(1);    
+    return res;
+  })
+
+
+SAM_SPECIALIZATION(SEXP asSEXP(const PERREC_t<double>&));
+SAM_SPECIALIZATION(SEXP asSEXP(const PERREC_t<TMBad::ad_aug>&));
+
 
 
 HEADER(
@@ -47,11 +72,14 @@ struct STOCHASTIC_PERREC_t {
   matrix<Type> V_logN;
 
   vector<Type> lastLogNDiff;
+
+  Type dSR0;
   
 });
 
 SAM_SPECIALIZATION(struct STOCHASTIC_PERREC_t<double>);
 SAM_SPECIALIZATION(struct STOCHASTIC_PERREC_t<TMBad::ad_aug>);
+
 
 
 template<class Type>
@@ -77,6 +105,7 @@ SEXP asSEXP(const STOCHASTIC_PERREC_t<Type> &x)
 	"E_logN",
 	"V_logN",
 	"lastLogNDiff",
+	"dSR0",
 	""
       };  
       SEXP res = PROTECT(Rf_mkNamed(VECSXP, names));
@@ -99,13 +128,14 @@ SEXP asSEXP(const STOCHASTIC_PERREC_t<Type> &x)
       SET_VECTOR_ELT(res, 16, asSEXP(x.E_logN));
       SET_VECTOR_ELT(res, 17, asSEXP(x.V_logN));
       SET_VECTOR_ELT(res, 18, asSEXP(x.lastLogNDiff));
+      SET_VECTOR_ELT(res, 19, asSEXP(x.dSR0));
 
    UNPROTECT(1);
    return res;
     })
 
-SAM_SPECIALIZATION(SEXP asSEXP(const STOCHASTIC_PERREC_t<double> &x));
-SAM_SPECIALIZATION(SEXP asSEXP(const STOCHASTIC_PERREC_t<TMBad::ad_aug> &x));
+SAM_SPECIALIZATION(SEXP asSEXP(const STOCHASTIC_PERREC_t<double>&));
+SAM_SPECIALIZATION(SEXP asSEXP(const STOCHASTIC_PERREC_t<TMBad::ad_aug>&));
 
 
 
