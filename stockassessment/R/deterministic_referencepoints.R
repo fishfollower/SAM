@@ -564,11 +564,11 @@ recruitmentProperties <- function(fit){
                     stop("In reference point xB0, length of F does not match length of fractions.")
                 ## Gradient at 0
                 EquiB <- function(logf) getPR(logf, pl)$logSe
-                B0 <- EquiB(-20)
+                logB0 <- EquiB(-20)
                 logF <- x                
                 k <- sapply(seq_along(logF), function(i){
                     v <- EquiB(logF[i])
-                    tmp <- v - rp$xVal[i] * B0
+                    tmp <- v - (log(rp$xVal[i]) + logB0)
                     tmp ^ 2
                 })
                 return(sum(k))
