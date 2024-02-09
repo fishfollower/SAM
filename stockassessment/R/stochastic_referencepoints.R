@@ -179,22 +179,23 @@ predict.rpscurvefit <- function(x,newF,...){
    doSim
 }
 
-.perRecruitSR_Calc <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct = 0, logCustomSel = numeric(0), logNinit = fit$pl$logN[,ncol(fit$pl$logN)]){
+.perRecruitSR_Calc <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct = 0, logCustomSel = numeric(0), logNinit = fit$pl$logN[,ncol(fit$pl$logN)], DT=0){
     if(length(logCustomSel) > 0){
         sel <- exp(logCustomSel)
     }else{
         sel <- exp(.logFtoSel(pl$logF, selYears, fit$conf))
     }
     .Call(C_perRecruitSR_Calc,
-                        logFbar = logf,
-                        tmbdat = fit$obj$env$data,
-                        pl = pl,
-                        sel = sel,
-                        aveYears = aveYears,
-                        nYears = ifelse(nYears==0,150,nYears),
-                        CT = ct,
-                        logNinit = logNinit
-                        )
+          logFbar = logf,
+          tmbdat = fit$obj$env$data,
+          pl = pl,
+          sel = sel,
+          aveYears = aveYears,
+          nYears = ifelse(nYears==0,150,nYears),
+          CT = ct,
+          logNinit = logNinit,
+          DT = DT
+          )
 }
 
 
@@ -625,24 +626,90 @@ stochasticReferencepoints.sam <- function(fit,
                                           catchType = "catch",
                                           nYears = 100,
                                           Frange = c(0,2),
-                                          nosim = 0,
-                                          aveYears = c(), #max(fit$data$years)+(-9:0),
+                                          nosim = 200,
+                                          aveYears = max(fit$data$years)+(-9:0),
                                           selYears = max(fit$data$years),
                                           newton.control = list(),
                                           seed = .timeToSeed(),
                                           knots = round(nosim / 20),
-                                          nosim_ci = 30,
+                                          nosim_ci = 200,
                                           derivedSummarizer = NA,
                                           nTail = 1,
                                           constraint = "F=%f",
                                           deterministicF = TRUE,
-                                          ci_deltaMethod = FALSE,
                                           Fsequence = seq(Frange[1],Frange[2], len = 50),
                                           run = TRUE,
+                                          DT = 0,
+                                          equilibriumMethod = c("EC","ES","AD"),
                                           ...){
 
+    equilibriumMethod <- match.arg(equilibriumMethod)
+    if(equilibriumMethod == "EC"){
 
-    if(nosim <= 0){
+          if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
+        stop("Values of Fsequence must be positive and increasing.")
+    if(!isTRUE(all.equal(Fsequence[1],0, check.attributes = FALSE, use.names = FALSE)))
+        warning("The first value of Fsequence should be 0.")
+
+    catchType <- pmatch(catchType,c("catch","landing","discard"))
+    if(is.na(catchType))
+        stop("Invalid catch type")
+
+    aveYearsIn <- aveYears
+    aveYears <- match(aveYears, fit$data$years) - 1
+    if(any(is.na(aveYears)))
+        stop("aveYears has years without data.")
+
+        selYearsIn <- selYears
+        selYears <- match(selYears, fit$data$years) - 1
+        if(any(is.na(selYears)))
+            stop("selYears has years without data.")
+
+        typePatterns <- list(Median = "^median$",
+                             Mean = "^mean$",
+                             Mode = "^mode$",
+                             Quantile = "^q0\\.[[:digit:]]+$")
+        mIndx <- which(sapply(typePatterns, function(p) grepl(p, tolower(method))))
+        if(length(mIndx) == 0)
+            stop(sprintf("Error in method specification. %s not recognized.",x))
+        mIndx <- mIndx[1]
+        if(mIndx == 4){            
+            q <- as.numeric(gsub("(q)(0\\.[[:digit:]]+)","\\2",tolower(method)))
+        }else{
+            q <- NA_real_
+        }
+        
+    ## Parse input reference points
+     rpArgs <- Reduce(.refpointMerger,
+                         lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=fit$pl$logN[,ncol(fit$pl$logN)],stochasticType=mIndx,q=q, DT=DT),
+                         list())
+    ## Add starting values    
+    rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence)
+    ## Add Fsequence for plotting
+    rp0 <- list(rpType = -1,
+                xVal = log(Fsequence),
+                nYears = nYears,
+                aveYears = aveYears,
+                selYears = selYears,
+                logCustomSel = numeric(0),
+                catchType = catchType - 1,
+                logF0 = log(Fsequence),
+                logN0=numeric(0),
+                stochasticType=mIndx,
+                q=q)
+        #rpArgs <- c(list(rp0),rpArgs)
+       pb <- .SAMpb(min = 0, max = nosim_ci + 1, label="Point estimate")
+        incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
+        ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci, incpb)
+
+        res <- .refpointOutput(ssdr,rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn,
+
+                               c(), #Fsequence,
+                               referencepoints)
+         attr(res,"equilibriumMethod") <- equilibriumMethod
+        return(res)
+        
+    }else if(method == "AD"){
 ##########################################################################################
 ################################## Approximation #########################################
 ##########################################################################################
@@ -678,11 +745,11 @@ stochasticReferencepoints.sam <- function(fit,
 
         cat("Parsing ref points...\n")
         rpArgs <- Reduce(.refpointMerger,
-                         lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=fit$pl$logN[,ncol(fit$pl$logN)],stochasticType=mIndx,q=q),
+                         lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=fit$pl$logN[,ncol(fit$pl$logN)],stochasticType=mIndx,q=q, DT=DT),
                          list())
         cat("Adding starting values...\n")
         ## Add starting values    
-        rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence,stochasticType=mIndx, q=Q)
+        rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence,stochasticType=0, q=Q)
         ## Add Fsequence for plotting
         ## cat("Adding F sequence...\n")
         ## rp0 <- list(rpType = -1,
@@ -703,7 +770,7 @@ stochasticReferencepoints.sam <- function(fit,
         argsIn$silent <- obj0$env$silent
         argsIn$parameters <- fit$pl
         argsIn$random <- unique(names(obj0$env$par[obj0$env$random]))
-        argsIn$data$reportingLevel <- 0
+        argsIn$data$reportingLevel <- -1
 
         argsIn$data$referencepoints <- rpArgs ##c(list(rp0), rpArgs)
         attr(argsIn$data$referencepoints,"newton_config") <- newton.control
@@ -727,10 +794,12 @@ stochasticReferencepoints.sam <- function(fit,
 
         ## Make tables
         res <- .refpointOutput(ssdr,rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn, numeric(0), referencepoints,TRUE)
+        attr(res,"equilibriumMethod") <- equilibriumMethod
+   
         cat("Return...\n")                
         return(res)
         
-    }else{
+    }else if(method == "ES"){
 ##########################################################################################
 ################################## Simulation ############################################
 ##########################################################################################
@@ -862,11 +931,15 @@ stochasticReferencepoints.sam <- function(fit,
                     regression = v0$Curves,
                     ## opt = NA,
                     ## ssdr = sdr,
-                    fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
-                    stochastic = TRUE
+                    fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2]))
                     ## diagonalCorrection = tv
                     )
-        
+
+             attr(res,"stochasticType") <- sapply(rpArgs,function(x) x$stochasticType)
+        attr(res,"stochasticQ") <- sapply(rpArgs,function(x) x$q)
+        attr(res,"nYears") <- sapply(rpArgs,function(x) x$nYears)
+        attr(res,"equilibriumMethod") <- equilibriumMethod
+   
         attr(res,"aveYears") <-  aveYearsIn
         attr(res,"selYears") <- selYearsIn
         

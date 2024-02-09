@@ -686,19 +686,21 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       }
       // REPORT_F(obsCov,of);
       REPORT_F(predObs,of);
-      ADREPORT_F(logssb,of);
-      ADREPORT_F(logfbar,of);
-      ADREPORT_F(logfbar_Effective,of);
-      ADREPORT_F(logCatch,of);
-      ADREPORT_F(logCatchByFleet,of);
-      ADREPORT_F(logLand,of);
-      ADREPORT_F(logtsb,of);
+      if(reportingLevel >= 0){
+	ADREPORT_F(logssb,of);
+	ADREPORT_F(logfbar,of);
+	ADREPORT_F(logfbar_Effective,of);
+	ADREPORT_F(logCatch,of);
+	ADREPORT_F(logCatchByFleet,of);
+	ADREPORT_F(logLand,of);
+	ADREPORT_F(logtsb,of);
+      
+	REPORT_F(logCatchByFleetAge,of);
 
-      REPORT_F(logCatchByFleetAge,of);
-
-      REPORT_F(comps, of);
-      ADREPORT_F(comps, of);
-      REPORT_F(weekContrib, of);
+	REPORT_F(comps, of);
+	ADREPORT_F(comps, of);
+	REPORT_F(weekContrib, of);
+      }
       // Additional forecast quantities
       if(forecast.nYears > 0){
 	vector<Type> dis = disFun(dat, conf, logN, logF, mort);
@@ -733,24 +735,26 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	//}
 	// }
       }
-      vector<Type> logLagR(logR.size());
-      for(int i=0; i<logR.size(); ++i){
-	logLagR(i) = logN(1,i);
-      }
-      ADREPORT_F(logR,of);
-      ADREPORT_F(logLagR,of);
 
       int timeSteps=logF.dim[1];
+      if(reportingLevel >= 0){
+	vector<Type> logLagR(logR.size());
+	for(int i=0; i<logR.size(); ++i){
+	  logLagR(i) = logN(1,i);
+	}
+	ADREPORT_F(logR,of);
+	ADREPORT_F(logLagR,of);
   
-      vector<Type> lastLogN = logN.col(timeSteps-1);
-      ADREPORT_F(lastLogN,of);
-      vector<Type> lastLogF = logF.col(timeSteps-1);
-      ADREPORT_F(lastLogF,of);  
+	vector<Type> lastLogN = logN.col(timeSteps-1);
+	ADREPORT_F(lastLogN,of);
+	vector<Type> lastLogF = logF.col(timeSteps-1);
+	ADREPORT_F(lastLogF,of);  
 
-      vector<Type> beforeLastLogN = logN.col(timeSteps-2);
-      ADREPORT_F(beforeLastLogN,of);
-      vector<Type> beforeLastLogF = logF.col(timeSteps-2);
-      ADREPORT_F(beforeLastLogF,of);  
+	vector<Type> beforeLastLogN = logN.col(timeSteps-2);
+	ADREPORT_F(beforeLastLogN,of);
+	vector<Type> beforeLastLogF = logF.col(timeSteps-2);
+	ADREPORT_F(beforeLastLogF,of);
+      }
       if(forecast.nYears > 0 && forecast.FModel(forecast.FModel.size()-1) == forecast.findMSY){
     
 	int catchYears = std::min((int)asDouble(forecast.nYears),forecast.nCatchAverageYears);
