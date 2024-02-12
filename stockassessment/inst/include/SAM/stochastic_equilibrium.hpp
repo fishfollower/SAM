@@ -497,6 +497,13 @@ DerivOutput<Type> getDerivOutput(Fun F, vector<Type> x0){
 }
        )
 
+HEADER(
+template<class Type>
+struct StochasticWorkerYearOutput {
+  vector<Type> Ex;
+  matrix<Type> Sx;
+}
+       )
 
 HEADER(
 template<class Type>
@@ -748,6 +755,224 @@ struct EquilibriumRecycler_Stochastic_Worker {
     return;
   }
 
+  StochasticWorkerYearOutput<Type> updateNext(Type logFbar, vector<Type> Ex, matrix<Type> Sx, int y){
+    vector<Type> pEx;
+    vector<vector<Type> > gx;
+    vector<matrix<Type> > hx;
+    if(DT == 0){
+      int n = Ex.size();
+      pEx = F(Ex);
+      // vector<Type> pEx = calc.predN(Ex);
+	
+      matrix<Type> gx0 = asMatrix((vector<Type>)G(Ex),n,n); // Transposed Jacobian -> each column is a gradient	
+      matrix<Type> hx0 = asMatrix((vector<Type>)H(Ex),n,n*n); // Each column is a gradient of an entry in the Jacobian -> first n columns is the first hessian (transposed), next n are the second hessian ...
+      vector<vector<Type> > gtmp(n);
+      vector<matrix<Type> > htmp(n);
+      for(int i = 0; i < n; ++i){
+	gtmp(i) = gx0.col(i);
+	htmp(i) = hx0.block(0,n*i,n,n);
+      }
+      gx = gtmp;
+      hx = htmp;      
+    }else if(DT == 1){
+      pEx = F(Ex);
+      gx = GradientList(F, Ex);
+      hx = HessianList(F, Ex);
+    }else if(DT == 2){
+      DerivOutput<Type> dx = getDerivOutput(F, Ex);
+      pEx = dx.value;
+      gx = dx.gradientList;
+      hx = dx.hessianList;
+    }
+    matrix<Type> Vx(Ex.size(), Ex.size());
+    Vx.setZero();
+    for(int i = 0; i < Ex.size(); ++i){
+      vector<Type> gi = gx(i);	
+      matrix<Type> Hi = hx(i);
+      matrix<Type> m1 = Hi * Sx;
+      pEx(i) += 0.5 * matrix_trace(m1);
+      for(int j = 0; j <= i; ++j){
+	vector<Type> gj = gx(j);
+	matrix<Type> Hj = hx(j);
+	matrix<Type> m2 = Hj * Sx;
+	matrix<Type> m3 = m1 * m2;
+	Type tt = matrix_trace(m3);
+	Vx(i,j) = (Type)(gi * (Sx * gj)).sum() + 0.5 * tt;
+	Vx(j,i) = Vx(i,j);
+      }
+    }
+    vector<Type> ExOut = pEx;
+    matrix<Type> SxOut = Vx + nvar;
+    StochasticWorkerYearOutput<Type> res = {ExOut, SxOut};
+    return res;
+  }
+ 
+  
+  PERREC_t<Type> summary_along_years(Type logFbar, int outType, int Ntail, Type q){
+    vector<Type> Ex = Ex0;
+    Ex(0) = logFbar;
+    matrix<Type> Sx = Sx0;
+    Type logSe = R_NegInf;
+    Type logYe = R_NegInf;
+    Type logRe = R_NegInf;
+    Type logSPR = R_NegInf;
+    Type logYPR = R_NegInf;
+    
+    for(int y = 0; y < nYears; ++y){
+      StochasticWorkerYearOutput<Type> r0 = updateNext(logFbar, Ex, Sx, y);
+      Ex = r0.Ex;
+      Sx = r0.Sx;
+      // Add to reporting
+      if(y + 1 > nYears - Ntail){
+	// Derived values
+	//// SSB
+	Type val_s = 0;
+	vector<Type> g_s;
+	matrix<Type> h_s;
+	if(DT==0){
+	  g_s = (vector<Type>)G_S(Ex);
+	  h_s = asMatrix((vector<Type>)H_S(Ex),Ex.size(),Ex.size());
+	  val_s = F_S(Ex)(0);
+	}else if(DT==1){
+	  g_s = Gradient(F_S, Ex, 0);
+	  h_s = Hessian(F_S, Ex, 0);
+	  val_s = F_S(Ex)(0);
+	}else if(DT==2){
+	  DerivOutput<Type> dx_S = getDerivOutput(F_S, Ex);
+	  g_s = dx_S.gradientList(0);
+	  h_s = dx_S.hessianList(0);
+	  val_s = dx_S.value(0);
+	}
+	matrix<Type> m_s = h_s * Sx;
+	matrix<Type> m_s2 = m_s * m_s;
+	Type E_logSe = val_s + 0.5 * matrix_trace(m_s);
+	Type V_logSe = (g_s * (Sx * g_s)).sum() + 0.5 * matrix_trace(m_s2);
+	//// Catch
+	Type val_c = 0;
+	vector<Type> g_c;
+	matrix<Type> h_c;
+	if(DT==0){
+	  g_c = (vector<Type>)G_C(Ex);
+	  h_c = asMatrix((vector<Type>)H_C(Ex),Ex.size(),Ex.size());
+	  val_c = F_C(Ex)(0);
+	}else if(DT==1){
+	  g_c = Gradient(F_C, Ex, 0);
+	  h_c = Hessian(F_C, Ex, 0);
+	  val_c = F_C(Ex)(0);
+	}else if(DT==2){
+	  DerivOutput<Type> dx_C = getDerivOutput(F_C, Ex);
+	  g_c = dx_C.gradientList(0);
+	  h_c = dx_C.hessianList(0);
+	  val_c = dx_C.value(0);
+	}
+	matrix<Type> m_c = h_c * Sx;
+	matrix<Type> m_c2 = m_c * m_c;
+	Type E_logYe = val_c + 0.5 * matrix_trace(m_c);
+	Type V_logYe = (g_c * (Sx * g_c)).sum() + 0.5 * matrix_trace(m_c2);
+
+	//// Recruitment
+	Type E_logRe = Ex(conf.minAge+1);
+	Type V_logRe = Sx(conf.minAge+1,conf.minAge+1);
+
+	//// Catch / Recruitment
+	Type val_cpr = 0;
+	vector<Type> g_cpr;
+	matrix<Type> h_cpr;
+	if(DT==0){
+	  g_cpr = (vector<Type>)G_CPR(Ex);
+	  h_cpr = asMatrix((vector<Type>)H_CPR(Ex),Ex.size(),Ex.size());
+	  val_cpr = F_CPR(Ex)(0);
+	}else if(DT==1){
+	  g_cpr = Gradient(F_CPR, Ex, 0);
+	  h_cpr = Hessian(F_CPR, Ex, 0);
+	  val_cpr = F_CPR(Ex)(0);
+	}else if(DT==2){
+	  DerivOutput<Type> dx_CPR = getDerivOutput(F_CPR, Ex);
+	  g_cpr = dx_CPR.gradientList(0);
+	  h_cpr = dx_CPR.hessianList(0);
+	  val_cpr = dx_CPR.value(0);
+	}
+	matrix<Type> m_cpr = h_cpr * Sx;
+	matrix<Type> m_cpr2 = m_cpr * m_cpr;
+	Type E_logYPR = val_cpr + 0.5 * matrix_trace(m_cpr);
+	Type V_logYPR = (g_cpr * (Sx * g_cpr)).sum() + 0.5 * matrix_trace(m_cpr2);
+
+	//// SSB / Recruitment
+	Type val_spr = 0;
+	vector<Type> g_spr;
+	matrix<Type> h_spr;
+	if(DT==0){
+	  g_spr = (vector<Type>)G_SPR(Ex);
+	  h_spr = asMatrix((vector<Type>)H_SPR(Ex),Ex.size(),Ex.size());
+	  val_spr = F_SPR(Ex)(0);
+	}else if(DT==1){
+	  g_spr = Gradient(F_SPR, Ex, 0);
+	  h_spr = Hessian(F_SPR, Ex, 0);
+	  val_spr = F_SPR(Ex)(0);
+	}else if(DT==2){
+	  DerivOutput<Type> dx_SPR = getDerivOutput(F_SPR, Ex);
+	  g_spr = dx_SPR.gradientList(0);
+	  h_spr = dx_SPR.hessianList(0);
+	  val_spr = dx_SPR.value(0);
+	}
+	matrix<Type> m_spr = h_spr * Sx;
+	matrix<Type> m_spr2 = m_spr * m_spr;
+	Type E_logSPR = val_spr + 0.5 * matrix_trace(m_spr);
+	Type V_logSPR = (g_spr * (Sx * g_spr)).sum() + 0.5 * matrix_trace(m_spr2);
+	if(outType == 0){ // Median
+	  logSe = logspace_add(logSe, E_logSe);
+	  logYe = logspace_add(logYe, E_logYe);
+	  logRe = logspace_add(logRe, E_logRe);
+	  logSPR = logspace_add(logSPR, E_logSPR);
+	  logYPR = logspace_add(logYPR, E_logYPR);
+	}else if(outType == 1){ // Mean
+	  logSe = logspace_add(logSe, E_logSe + 0.5 * V_logSe);
+	  logYe = logspace_add(logYe, E_logYe + 0.5 * V_logYe);
+	  logRe = logspace_add(logRe, E_logRe + 0.5 * V_logRe);
+	  logSPR = logspace_add(logSPR, E_logSPR + 0.5 * V_logSPR);
+	  logYPR = logspace_add(logYPR, E_logYPR + 0.5 * V_logYPR);
+	}else if(outType == 2){ // Mode
+	  logSe = logspace_add(logSe, E_logSe - V_logSe);
+	  logYe = logspace_add(logYe, E_logYe - V_logYe);
+	  logRe = logspace_add(logRe, E_logRe - V_logRe);
+	  logSPR = logspace_add(logSPR, E_logSPR - V_logSPR);
+	  logYPR = logspace_add(logYPR, E_logYPR - V_logYPR);
+	}else if(outType == 3){ // Quantile
+	  logSe = logspace_add(logSe, qnorm(q, E_logSe, sqrt(V_logSe)));
+	  logYe = logspace_add(logYe, qnorm(q, E_logYe, sqrt(V_logYe)));
+	  logRe = logspace_add(logRe, qnorm(q, E_logRe, sqrt(V_logRe)));
+	  logSPR = logspace_add(logSPR, qnorm(q, E_logSPR, sqrt(V_logSPR)));
+	  logYPR = logspace_add(logYPR, qnorm(q, E_logYPR, sqrt(V_logYPR)));
+	}
+      }
+    }
+
+    //// Life years lost
+    array<Type> logF = logFSel;
+    logF.col(newDat.natMor.dim(0)-1) += logFbar;
+    Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
+
+    //// Life expectancy
+    Type logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
+      
+    //// dSR0
+    Type dSR0 = calc.dSR((Type)SAM_NegInf);
+   
+    PERREC_t<Type> r2  = {logFbar,// - log(Ntail),
+     logYPR - log(Ntail),
+     logSPR - log(Ntail),
+     logSe - log(Ntail),
+     logRe - log(Ntail),
+     logYe - log(Ntail),
+     dSR0,  // Only calculated once for now
+     logLifeExpectancy, // Only calculated once for now
+     logYLTF, // Only calculated once for now
+     R_NaReal,
+     R_NaReal
+   };
+   return r2;
+  }
+
   STOCHASTIC_PERREC_t<Type> operator()(Type logFbar){
     // Prepare
     vector<Type> Ex = Ex0;
@@ -759,54 +984,10 @@ struct EquilibriumRecycler_Stochastic_Worker {
     vector<Type> lastEx = Ex;
     // int n = Ex.size();
     for(int y = 0; y < nYears; ++y){
-      vector<Type> pEx;
-      vector<vector<Type> > gx;
-      vector<matrix<Type> > hx;
-      if(DT == 0){
-	int n = Ex.size();
-	pEx = F(Ex);
-	// vector<Type> pEx = calc.predN(Ex);
-	
-	matrix<Type> gx0 = asMatrix((vector<Type>)G(Ex),n,n); // Transposed Jacobian -> each column is a gradient	
-	matrix<Type> hx0 = asMatrix((vector<Type>)H(Ex),n,n*n); // Each column is a gradient of an entry in the Jacobian -> first n columns is the first hessian (transposed), next n are the second hessian ...
-	vector<vector<Type> > gtmp(n);
-	vector<matrix<Type> > htmp(n);
-	for(int i = 0; i < n; ++i){
-	  gtmp(i) = gx0.col(i);
-	  htmp(i) = hx0.block(0,n*i,n,n);
-	}
-	gx = gtmp;
-	hx = htmp;      
-      }else if(DT == 1){
-	pEx = F(Ex);
-	gx = GradientList(F, Ex);
-	hx = HessianList(F, Ex);
-      }else if(DT == 2){
-	DerivOutput<Type> dx = getDerivOutput(F, Ex);
-	pEx = dx.value;
-	gx = dx.gradientList;
-	hx = dx.hessianList;
-      }
-      matrix<Type> Vx(Ex.size(), Ex.size());
-      Vx.setZero();
-      for(int i = 0; i < Ex.size(); ++i){
-	vector<Type> gi = gx(i);	
-	matrix<Type> Hi = hx(i);
-	matrix<Type> m1 = Hi * Sx;
-	pEx(i) += 0.5 * matrix_trace(m1);
-	for(int j = 0; j <= i; ++j){
-	  vector<Type> gj = gx(j);
-	  matrix<Type> Hj = hx(j);
-	  matrix<Type> m2 = Hj * Sx;
-	  matrix<Type> m3 = m1 * m2;
-	  Type tt = matrix_trace(m3);
-	  Vx(i,j) = (Type)(gi * (Sx * gj)).sum() + 0.5 * tt;
-	  Vx(j,i) = Vx(i,j);
-	}
-      }
+      StochasticWorkerYearOutput<Type> r0 = updateNext(logFbar, Ex, Sx, y);
       lastEx = Ex;
-      Ex = pEx;
-      Sx = Vx + nvar;
+      Ex = r0.Ex;
+      Sx = r0.Sx;
     }
     // Derived values
     //// SSB

@@ -192,6 +192,20 @@ recruitmentProperties <- function(fit){
     
 }
 
+
+.refpointMakePRFunction <- function(rparg, fit, pl = fit$pl, stochasticType, q){
+    if(stochasticType == 0){ # Deterministic
+        getPR <- function(logf){ .perRecruitR(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, pl, rparg$catchType, rparg$logCustomSel) }
+    }else{
+        fb0 <- log(tail(fbartable(fit)[,1],1))
+        ptr <- .perRecruitSR_Calc_MakePtr(fb0, fit, rparg$nYears, rparg$aveYears, rparg$selYears, pl, rparg$catchType, rparg$logCustomSel)
+        getPR <- function(logf){
+            .perRecruitSR_Calc_EvalPtr(ptr, logf, stochasticType, rparg$Ntail, q)[[1]]
+        }
+    }
+    return(getPR)
+}
+
 .refpointStartingValue <- function(rparg, fit, Fsequence, fay = faytable(fit), fbar = fbartable(fit)[,1], checkValidity = TRUE, stochasticType = 0, q = 0){
     .refpointCheckRecruitment(rparg,fit)
     
@@ -208,65 +222,67 @@ recruitmentProperties <- function(fit){
     ## Wrapper for perRecruit calculations    
     dd <- fit$obj$env$data #lapply(tmbargs$data,dataSanitize)
     pl <- fit$pl #lapply(tmbargs$parameters,parameterSanitize)
-    if(stochasticType == 0){ # Deterministic
-        getPR <- function(logf){ .perRecruitR(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel) }
-    }else if(stochasticType == 1){ # Stochastic Median
-        getPR <- function(logf){
-            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
-            list(logFbar = v$E_logFbar,
-                 logYPR = v$E_logYPR,
-                 logSPR = v$E_logSPR,
-                 logSe = v$E_logSe,
-                 logRe = v$E_logRe,
-                 dSR0 = NA_real_,
-                 logLifeExpectancy = v$E_logLifeExpectancy,
-                 logYearsLost = v$E_logYearsLost,
-                 logDiscYPR = NA_real_,
-                 logDiscYe = NA_real_)
-        }
-    }else if(stochasticType == 2){ # Stochastic Mean
-        getPR <- function(logf){
-            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
-            list(logFbar = v$E_logFbar + 0.5 * v$V_logFbar,
-                 logYPR = v$E_logYPR + 0.5 * v$V_logYPR,
-                 logSPR = v$E_logSPR + 0.5 * v$V_logSPR,
-                 logSe = v$E_logSe + 0.5 * v$V_logSe,
-                 logRe = v$E_logRe + 0.5 * v$V_logRe,
-                 dSR0 = NA_real_,
-                 logLifeExpectancy = v$E_logLifeExpectancy + 0.5 * v$V_logLifeExpectancy,
-                 logYearsLost = v$E_logYearsLost + 0.5 * v$V_logYearsLost,
-                 logDiscYPR = NA_real_,
-                 logDiscYe = NA_real_)
-        }
-    }else if(stochasticType == 3){ # Stochastic Mode
-        getPR <- function(logf){
-            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
-            list(logFbar = v$E_logFbar - v$V_logFbar,
-                 logYPR = v$E_logYPR - v$V_logYPR,
-                 logSPR = v$E_logSPR - v$V_logSPR,
-                 logSe = v$E_logSe - v$V_logSe,
-                 logRe = v$E_logRe - v$V_logRe,
-                 dSR0 = NA_real_,
-                 logLifeExpectancy = v$E_logLifeExpectancy - v$V_logLifeExpectancy,
-                 logYearsLost = v$E_logYearsLost - v$V_logYearsLost,
-                 logDiscYPR = NA_real_,
-                 logDiscYe = NA_real_)
-        }
-    }else if(stochasticType == 4){ # Stochastic Quantile
-        getPR <- function(logf){
-            v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
-            list(logFbar = qnorm(q, v$E_logFbar, v$V_logFbar),
-                 logYPR = qnorm(q, v$E_logYPR, v$V_logYPR),
-                 logSPR = qnorm(q, v$E_logSPR, v$V_logSPR),
-                 logSe = qnorm(q, v$E_logSe, v$V_logSe),
-                 logRe = qnorm(q, v$E_logRe, v$V_logRe),
-                 dSR0 = NA_real_,
-                 logLifeExpectancy = qnorm(q, v$E_logLifeExpectancy, v$V_logLifeExpectancy),
-                 logYearsLost = qnorm(q, v$E_logYearsLost, v$V_logYearsLost),
-                 logDiscYPR = NA_real_,
-                 logDiscYe = NA_real_)
-        }
-    }
+    getPR <- .refpointMakePRFunction(rparg, fit, fit$pl, stochasticType, q)
+    ## if(stochasticType == 0){ # Deterministic
+    ##     getPR <- function(logf){ .perRecruitR(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel) }
+    ## }else if(stochasticType == 1){ # Stochastic Median
+        ##     getPR <- function(logf){
+        ##         v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+        ##         list(logFbar = v$E_logFbar,
+        ##              logYPR = v$E_logYPR,
+        ##              logSPR = v$E_logSPR,
+        ##              logSe = v$E_logSe,
+        ##              logRe = v$E_logRe,
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = v$E_logLifeExpectancy,
+        ##              logYearsLost = v$E_logYearsLost,
+        ##              logDiscYPR = NA_real_,
+        ##              logDiscYe = NA_real_)
+        ##     }
+        ## }else if(stochasticType == 2){ # Stochastic Mean
+        ##     getPR <- function(logf){
+        ##         v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+        ##         list(logFbar = v$E_logFbar + 0.5 * v$V_logFbar,
+        ##              logYPR = v$E_logYPR + 0.5 * v$V_logYPR,
+        ##              logSPR = v$E_logSPR + 0.5 * v$V_logSPR,
+        ##              logSe = v$E_logSe + 0.5 * v$V_logSe,
+        ##              logRe = v$E_logRe + 0.5 * v$V_logRe,
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = v$E_logLifeExpectancy + 0.5 * v$V_logLifeExpectancy,
+        ##              logYearsLost = v$E_logYearsLost + 0.5 * v$V_logYearsLost,
+        ##              logDiscYPR = NA_real_,
+        ##              logDiscYe = NA_real_)
+        ##     }
+        ## }else if(stochasticType == 3){ # Stochastic Mode
+        ##     getPR <- function(logf){
+        ##         v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+        ##         list(logFbar = v$E_logFbar - v$V_logFbar,
+        ##              logYPR = v$E_logYPR - v$V_logYPR,
+        ##              logSPR = v$E_logSPR - v$V_logSPR,
+        ##              logSe = v$E_logSe - v$V_logSe,
+        ##              logRe = v$E_logRe - v$V_logRe,
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = v$E_logLifeExpectancy - v$V_logLifeExpectancy,
+        ##              logYearsLost = v$E_logYearsLost - v$V_logYearsLost,
+        ##              logDiscYPR = NA_real_,
+        ##              logDiscYe = NA_real_)
+        ##     }
+        ## }else if(stochasticType == 4){ # Stochastic Quantile
+        ##     getPR <- function(logf){
+        ##         v <- .perRecruitSR_Calc(logf,fit,rparg$nYears, rparg$aveYears, rparg$selYears, fit$pl, rparg$catchType, rparg$logCustomSel)
+        ##         list(logFbar = qnorm(q, v$E_logFbar, v$V_logFbar),
+        ##              logYPR = qnorm(q, v$E_logYPR, v$V_logYPR),
+        ##              logSPR = qnorm(q, v$E_logSPR, v$V_logSPR),
+        ##              logSe = qnorm(q, v$E_logSe, v$V_logSe),
+        ##              logRe = qnorm(q, v$E_logRe, v$V_logRe),
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = qnorm(q, v$E_logLifeExpectancy, v$V_logLifeExpectancy),
+        ##              logYearsLost = qnorm(q, v$E_logYearsLost, v$V_logYearsLost),
+        ##              logDiscYPR = NA_real_,
+        ##              logDiscYe = NA_real_)
+        ##     }
+        ## }
+    ## }
     
     ## Apply to Fsequence for grid search
     .na2 <- function(x) ifelse(is.na(x) | is.nan(x), -Inf, x)
@@ -384,107 +400,108 @@ recruitmentProperties <- function(fit){
 
 
 
-.refpointObjective <- function(rpArgs,fit){
+.refpointObjective <- function(rpArgs,fit, pl = fit$pl){
     makeOne <- function(rp){
-        if(rp$stochasticType == 0){     #Deterministic
-            getPR <- function(logF, pl = fit$pl){
-                as.list(.perRecruitR(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType))
-            }
-        }else if(rp$stochasticType ==  1){ #Stochastic MEDIAN
-            getPR <- function(logF, pl = fit$pl){
-                if(is.null(rp$logN0) || length(rp$logN0) == 0)
-                    rp$logN0 <- pl$logN[,ncol(pl$logN)]
-                r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
-                list(logF = r$E_logFbar,
-                     logYPR = r$E_logYPR,
-                     logSPR = r$E_logSPR,
-                     logSe = r$E_logSe,
-                     logRe = r$E_logRe,
-                     logYe = r$E_logYe,
-                     dSR0 = NA_real_,
-                     logLifeExpectancy = r$E_logLifeExpectancy,
-                     logYearsLost = r$E_logYearsLost,
-                     logDiscYe = NA_real_,
-                     logDiscYPR = NA_real_
-                     )
-            }
-        }else if(rp$stochasticType ==  2){ #Stochastic MEAN
-            getPR <- function(logF, pl = fit$pl){
-                if(is.null(rp$logN0) || length(rp$logN0) == 0)
-                    rp$logN0 <- pl$logN[,ncol(pl$logN)]
-                r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
-                list(logF = r$E_logFbar + 0.5 * r$V_logFbar,
-                     logYPR = r$E_logYPR + 0.5 * r$V_logYPR,
-                     logSPR = r$E_logSPR + 0.5 * r$V_logSPR,
-                     logSe = r$E_logSe + 0.5 * r$V_logSe,
-                     logRe = r$E_logRe + 0.5 * r$V_logRe,
-                     logYe = r$E_logYe + 0.5 * r$V_logYe,
-                     dSR0 = NA_real_,
-                     logLifeExpectancy = r$E_logLifeExpectancy + 0.5 * r$V_logLifeExpectancy,
-                     logYearsLost = r$E_logYearsLost + 0.5 * r$V_logYearsLost,
-                     logDiscYe = NA_real_,
-                     logDiscYPR = NA_real_
-                     )
-            }
-        }else if(rp$stochasticType ==  3){ #Stochastic MODE
-            getPR <- function(logF, pl = fit$pl){
-                if(is.null(rp$logN0) || length(rp$logN0) == 0)
-                    rp$logN0 <- pl$logN[,ncol(pl$logN)]
-                r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
-                list(logF = r$E_logFbar - r$V_logFbar,
-                     logYPR = r$E_logYPR - r$V_logYPR,
-                     logSPR = r$E_logSPR - r$V_logSPR,
-                     logSe = r$E_logSe - r$V_logSe,
-                     logRe = r$E_logRe - r$V_logRe,
-                     logYe = r$E_logYe - r$V_logYe,
-                     dSR0 = NA_real_,
-                     logLifeExpectancy = r$E_logLifeExpectancy - r$V_logLifeExpectancy,
-                     logYearsLost = r$E_logYearsLost - r$V_logYearsLost,
-                     logDiscYe = NA_real_,
-                     logDiscYPR = NA_real_
-                     )
-            }
-        }else if(rp$stochasticType ==  4){ #Stochastic QUANTILE
-            getPR <- function(logF, pl = fit$pl){
-                if(is.null(rp$logN0) || length(rp$logN0) == 0)
-                    rp$logN0 <- pl$logN[,ncol(pl$logN)]
-                r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
-                q <- ifelse(is.null(rp$q), 0.5, ifelse(is.na(rp$q), 0.5, rp$q))
-                list(logF = qnorm(q, r$E_logFbar, r$V_logFbar),
-                     logYPR = qnorm(q, r$E_logYPR, r$V_logYPR),
-                     logSPR = qnorm(q, r$E_logSPR, r$V_logSPR),
-                     logSe = qnorm(q, r$E_logSe, r$V_logSe),
-                     logRe = qnorm(q, r$E_logRe, r$V_logRe),
-                     logYe = qnorm(q, r$E_logYe, r$V_logYe),
-                     dSR0 = NA_real_,
-                     logLifeExpectancy = qnorm(q, r$E_logLifeExpectancy, r$V_logLifeExpectancy),
-                     logYearsLost = qnorm(q, r$E_logYearsLost, r$V_logYearsLost),
-                     logDiscYe = NA_real_,
-                     logDiscYPR = NA_real_
-                     )
-            }
-        }else{
-            stop("Unknown equilibrium type")
-        }
+        getPR <- .refpointMakePRFunction(rp, fit, pl, rp$stochasticType, rp$q)
+        ## if(rp$stochasticType == 0){     #Deterministic
+        ##     getPR <- function(logF, pl = fit$pl){
+        ##         as.list(.perRecruitR(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType))
+        ##     }
+        ## }else if(rp$stochasticType ==  1){ #Stochastic MEDIAN
+        ##     getPR <- function(logF, pl = fit$pl){
+        ##         if(is.null(rp$logN0) || length(rp$logN0) == 0)
+        ##             rp$logN0 <- pl$logN[,ncol(pl$logN)]
+        ##         r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
+        ##         list(logF = r$E_logFbar,
+        ##              logYPR = r$E_logYPR,
+        ##              logSPR = r$E_logSPR,
+        ##              logSe = r$E_logSe,
+        ##              logRe = r$E_logRe,
+        ##              logYe = r$E_logYe,
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = r$E_logLifeExpectancy,
+        ##              logYearsLost = r$E_logYearsLost,
+        ##              logDiscYe = NA_real_,
+        ##              logDiscYPR = NA_real_
+        ##              )
+        ##     }
+        ## }else if(rp$stochasticType ==  2){ #Stochastic MEAN
+        ##     getPR <- function(logF, pl = fit$pl){
+        ##         if(is.null(rp$logN0) || length(rp$logN0) == 0)
+        ##             rp$logN0 <- pl$logN[,ncol(pl$logN)]
+        ##         r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
+        ##         list(logF = r$E_logFbar + 0.5 * r$V_logFbar,
+        ##              logYPR = r$E_logYPR + 0.5 * r$V_logYPR,
+        ##              logSPR = r$E_logSPR + 0.5 * r$V_logSPR,
+        ##              logSe = r$E_logSe + 0.5 * r$V_logSe,
+        ##              logRe = r$E_logRe + 0.5 * r$V_logRe,
+        ##              logYe = r$E_logYe + 0.5 * r$V_logYe,
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = r$E_logLifeExpectancy + 0.5 * r$V_logLifeExpectancy,
+        ##              logYearsLost = r$E_logYearsLost + 0.5 * r$V_logYearsLost,
+        ##              logDiscYe = NA_real_,
+        ##              logDiscYPR = NA_real_
+        ##              )
+        ##     }
+        ## }else if(rp$stochasticType ==  3){ #Stochastic MODE
+        ##     getPR <- function(logF, pl = fit$pl){
+        ##         if(is.null(rp$logN0) || length(rp$logN0) == 0)
+        ##             rp$logN0 <- pl$logN[,ncol(pl$logN)]
+        ##         r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
+        ##         list(logF = r$E_logFbar - r$V_logFbar,
+        ##              logYPR = r$E_logYPR - r$V_logYPR,
+        ##              logSPR = r$E_logSPR - r$V_logSPR,
+        ##              logSe = r$E_logSe - r$V_logSe,
+        ##              logRe = r$E_logRe - r$V_logRe,
+        ##              logYe = r$E_logYe - r$V_logYe,
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = r$E_logLifeExpectancy - r$V_logLifeExpectancy,
+        ##              logYearsLost = r$E_logYearsLost - r$V_logYearsLost,
+        ##              logDiscYe = NA_real_,
+        ##              logDiscYPR = NA_real_
+        ##              )
+        ##     }
+        ## }else if(rp$stochasticType ==  4){ #Stochastic QUANTILE
+        ##     getPR <- function(logF, pl = fit$pl){
+        ##         if(is.null(rp$logN0) || length(rp$logN0) == 0)
+        ##             rp$logN0 <- pl$logN[,ncol(pl$logN)]
+        ##         r <- .perRecruitSR_Calc(logF, fit, rp$nYears, rp$aveYears, rp$selYears, pl, ct = rp$catchType, logNinit = rp$logN0, DT = ifelse(is.null(rp$DT) || is.na(rp$DT),0,rp$DT))
+        ##         q <- ifelse(is.null(rp$q), 0.5, ifelse(is.na(rp$q), 0.5, rp$q))
+        ##         list(logF = qnorm(q, r$E_logFbar, r$V_logFbar),
+        ##              logYPR = qnorm(q, r$E_logYPR, r$V_logYPR),
+        ##              logSPR = qnorm(q, r$E_logSPR, r$V_logSPR),
+        ##              logSe = qnorm(q, r$E_logSe, r$V_logSe),
+        ##              logRe = qnorm(q, r$E_logRe, r$V_logRe),
+        ##              logYe = qnorm(q, r$E_logYe, r$V_logYe),
+        ##              dSR0 = NA_real_,
+        ##              logLifeExpectancy = qnorm(q, r$E_logLifeExpectancy, r$V_logLifeExpectancy),
+        ##              logYearsLost = qnorm(q, r$E_logYearsLost, r$V_logYearsLost),
+        ##              logDiscYe = NA_real_,
+        ##              logDiscYPR = NA_real_
+        ##              )
+        ##     }
+        ## }else{
+        ##     stop("Unknown equilibrium type")
+        ## }
         par2logF <- identity
         if(rp$rpType == -99){ ## None
             fn <- NA
         }else if(rp$rpType == -2){ ## FixedSSB
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- x[1]
-                r <- getPR(logF,pl)
+                r <- getPR(logF)
                 return((r$logSe - log(rp$xVal))^2)
             }
         }else if(rp$rpType == -1){ ## FixedF (Known F)
             fn <- NA
-            attr(fn,"logF") <- function(pl = fit$pl) pmax(rp$logF0,-20)
+            attr(fn,"logF") <- function() pmax(rp$logF0,-20)
         }else if(rp$rpType == 0){ ## StatusQuo (Known F)
             fn <- NA
-            attr(fn,"logF") <- function(pl = fit$pl) sapply(rp$xVal, function(y).logFbar(pl$logF,ncol(pl$logF)-y-1,fit$conf))
+            attr(fn,"logF") <- function() sapply(rp$xVal, function(y).logFbar(pl$logF,ncol(pl$logF)-y-1,fit$conf))
         }else if(rp$rpType == 1){ ## MSY
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- x[1]
-                r <- getPR(logF, pl)
+                r <- getPR(logF)
                 return(-r$logYe)
             }
         }else if(rp$rpType == 2){ ## MSYRange
@@ -501,32 +518,32 @@ recruitmentProperties <- function(fit){
                 }
                 r
             }
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- par2logF(x)
                 ## MSY
-                r <- getPR(x[1], pl)
+                r <- getPR(x[1])
                 k1 <- -r$logYe
                 ## Ranges
                 k2 <- sapply(1:length(logF), function(i){
                     xvi <- (i-1)%/%2+1
-                    r2 <- getPR(logF[i], pl)
+                    r2 <- getPR(logF[i])
                     tmp <- r2$logYe - (log(rp$xVal[xvi]) + r$logYe)
                     tmp^2
                 })
                 return(k1 + sum(k2))
             }
         }else if(rp$rpType == 3){ ## Max
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- x[1]
-                r <- getPR(logF, pl)
+                r <- getPR(logF)
                 return(-r$logYPR)
             }
         }else if(rp$rpType == 4){ ## xdYPR
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 if(!(length(x) == length(rp$xVal)))
                     stop("In reference point xdYPR, length of F does not match length of fractions.")
                 ## Gradient at 0
-                ypr <- function(logf) getPR(logf, pl)$logYPR
+                ypr <- function(logf) getPR(logf)$logYPR
                 dYPR <- function(logf){
                     h <- 0.001
                     u <- logf
@@ -544,11 +561,11 @@ recruitmentProperties <- function(fit){
                 return(sum(k))
             }            
         }else if(rp$rpType == 5){ ## xSPR
-             fn <- function(x, pl = fit$pl){
+             fn <- function(x){
                 if(!(length(x) == length(rp$xVal)))
                     stop("In reference point xSPR, length of F does not match length of fractions.")
                 ## Gradient at 0
-                spr <- function(logf) getPR(logf, pl)$logSPR
+                spr <- function(logf) getPR(logf)$logSPR
                 SPR0 <- spr(-20)
                 logF <- x                
                 k <- sapply(seq_along(logF), function(i){
@@ -559,11 +576,11 @@ recruitmentProperties <- function(fit){
                 return(sum(k))
             }            
         }else if(rp$rpType == 6){ ## xB0
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 if(!(length(x) == length(rp$xVal)))
                     stop("In reference point xB0, length of F does not match length of fractions.")
                 ## Gradient at 0
-                EquiB <- function(logf) getPR(logf, pl)$logSe
+                EquiB <- function(logf) getPR(logf)$logSe
                 logB0 <- EquiB(-20)
                 logF <- x                
                 k <- sapply(seq_along(logF), function(i){
@@ -574,44 +591,44 @@ recruitmentProperties <- function(fit){
                 return(sum(k))
             }     
         }else if(rp$rpType == 7){ ## MYPYLdiv
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- x[1]
                 logAgeRange <- log(fit$conf$maxAge - fit$conf$minAge + 1)
-                r <- getPR(logF, pl)
+                r <- getPR(logF)
                 tmp <- r$logYe - log(1 + exp(r$logYearsLost - logAgeRange))
                 return(-tmp)
             }
         }else if(rp$rpType == 8){ ## MYPYLprod
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 if(!(length(x) == length(rp$xVal)))
                     stop("In reference point xB0, length of F does not match length of fractions.")
                 logF <- x
                 logAgeRange <- log(fit$conf$maxAge - fit$conf$minAge + 1)
                 k <- sapply(seq_along(logF), function(i){
-                    r <- getPR(logF[i], pl)
+                    r <- getPR(logF[i])
                     tmp <- r$logYe + log(1 - exp(rp$xVal[i] * (r$logYearsLost - logAgeRange)))
                     -tmp
                 })
                 return(sum(k))
             }
         }else if(rp$rpType == 9){ ## MDY
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- x[1]
-                r <- getPR(logF, pl)
+                r <- getPR(logF)
                 return(-r$logDiscYe)
             }
         }else if(rp$rpType == 10){ ## Crash
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- x[1]
-                r <- getPR(logF, pl)
+                r <- getPR(logF)
                 logdSR0 <- log(r$dSR0)
                 tmp <- logdSR0 - (-r$logSPR)
                 return(tmp * tmp)
             }
         }else if(rp$rpType == 11){ ## Ext
-            fn <- function(x, pl = fit$pl){
+            fn <- function(x){
                 logF <- x[1]
-                r <- getPR(logF, pl)
+                r <- getPR(logF)
                 logdSR0 <- log(r$dSR0)
                 tmp <- logdSR0 - (-r$logSPR)
                 return(tmp * tmp)
@@ -655,23 +672,23 @@ recruitmentProperties <- function(fit){
         Matrix::solve(InvSigma)
     }
     
-.refpointOptimizer <- function(fit, rpArgs, nsim, incpb = function(x){}){
+.refpointOptimizer <- function(fit, rpArgs, nsim, ncores = 1, incpb = function(x){}){
     objs <- .refpointObjective(rpArgs, fit)
-    fitOne <- function(i, pl = fit$pl){
+    fitOne <- function(i, objs){
         obj <- objs[[i]]
         if(!is.function(obj$fn)){
-            logF <- attr(obj$fn,"logF")(pl)
+            logF <- attr(obj$fn,"logF")()
         }else{
-            opt <- nlminb(obj$p0, obj$fn, pl = pl)
+            opt <- nlminb(obj$p0, obj$fn)
             logF <- obj$par2logF(opt$par)
         }
-        prv <- as.list(do.call("rbind",lapply(lapply(logF, obj$getPR, pl=pl), as.data.frame)))
+        prv <- as.list(do.call("rbind",lapply(lapply(logF, obj$getPR), as.data.frame)))
         rtab <- unlist(prv)
         names(rtab) <- paste0("referencepoint_",i-1,"_XX_",rep(names(prv),each = length(logF)))
         return(rtab)
     }
     ## Point estimates
-    pointEst <- unlist(lapply(seq_along(objs), fitOne))
+    pointEst <- unlist(lapply(seq_along(objs), fitOne, objs = objs))
     incpb("Point estimate")
     ## Uncertainty
     if(nsim > 0){
@@ -681,11 +698,22 @@ recruitmentProperties <- function(fit){
         simPar <- fit$obj$env$last.par.best + C %*% matrix(rnorm(ncol(C) * nsim),ncol=nsim)
         simParList <- apply(simPar,2, function(p)fit$obj$env$parList(par=p), simplify=FALSE)
 #### Optimize
-        uncEst <- lapply(simParList, function(pl){
-            v <- unlist(lapply(seq_along(objs), fitOne, pl = pl))
-            incpb("Uncertainty")
-            v
-        })
+        if(ncores==1){
+            uncEst <- lapply(simParList, function(pl){
+                objsP <- .refpointObjective(rpArgs, fit)
+                v <- unlist(lapply(seq_along(objs), fitOne, objs = objsP))
+                incpb("Uncertainty")
+                v
+            })
+        }else{
+            uncEst <- parallel::mclapply(simParList, function(pl){
+                ##v <- unlist(lapply(seq_along(objs), fitOne, pl = pl))
+                objsP <- .refpointObjective(rpArgs, fit)
+                v <- unlist(lapply(seq_along(objs), fitOne, objs = objsP))              
+                incpb("Uncertainty")
+                v
+            }, mc.cores = ncores)
+        }
         uncEst <- do.call("cbind",uncEst)
     }else{
         uncEst <- NULL
@@ -882,6 +910,7 @@ deterministicReferencepoints.sam <- function(fit,
                                              run = TRUE,
                                              equilibriumMethod = c("AD","EC"),
                                              nosim_ci = 200,
+                                             ncores = 1,
                                              ...){
 
     equilibriumMethod <- match.arg(equilibriumMethod)
@@ -952,7 +981,7 @@ deterministicReferencepoints.sam <- function(fit,
     }else if(equilibriumMethod == "EC"){
         pb <- .SAMpb(min = 0, max = nosim_ci + 1, label="Point estimate")
         incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
-        ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci, incpb)
+        ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci,ncores, incpb)
     }
     ## Make tables        
     res <- .refpointOutput(ssdr,rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn,
