@@ -198,6 +198,37 @@ predict.rpscurvefit <- function(x,newF,...){
           )
 }
 
+.perRecruitSR_Calc_MakePtr <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct = 0, logCustomSel = numeric(0), logNinit = fit$pl$logN[,ncol(fit$pl$logN)], DT=0){
+    if(length(logCustomSel) > 0){
+        sel <- exp(logCustomSel)
+    }else{
+        sel <- exp(.logFtoSel(pl$logF, selYears, fit$conf))
+    }
+    .Call(C_MakePtr_perRecruitSR_Calc,
+          logFbar = logf,
+          tmbdat = fit$obj$env$data,
+          pl = pl,
+          sel = sel,
+          aveYears = aveYears,
+          nYears = ifelse(nYears==0,150,nYears),
+          CT = ct,
+          logNinit = logNinit,
+          DT = DT
+          )
+}
+
+.perRecruitSR_Calc_EvalPtr <- function(ptr, logf, outType = 0, Ntail = 0, q = NA_real_){
+     .Call(C_EvalPtr_perRecruitSR_Calc,
+          r_ptr = ptr,
+          logFbar = logf,
+          outType = outType,
+          Ntail = Ntail,
+          q = q          
+          )
+}
+
+
+
 
 .perRecruitSR <- function(logf, fit, nYears, aveYears, selYears, pl = fit$pl, ct=0, logCustomSel = NULL, nTail = 1,incpb=NULL, doSim = NULL, label="", constraint = "F=%f", deterministicF=TRUE, ...){    
     ## pl$missing <- NULL
@@ -641,15 +672,16 @@ stochasticReferencepoints.sam <- function(fit,
                                           run = TRUE,
                                           DT = 0,
                                           equilibriumMethod = c("EC","ES","AD"),
+                                          ncores = 1,
                                           ...){
 
     equilibriumMethod <- match.arg(equilibriumMethod)
     if(equilibriumMethod == "EC"){
 
-          if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
-        stop("Values of Fsequence must be positive and increasing.")
-    if(!isTRUE(all.equal(Fsequence[1],0, check.attributes = FALSE, use.names = FALSE)))
-        warning("The first value of Fsequence should be 0.")
+        if(!all(diff(Fsequence) > 0) || !all(Fsequence >= 0))
+            stop("Values of Fsequence must be positive and increasing.")
+        if(!isTRUE(all.equal(Fsequence[1],0, check.attributes = FALSE, use.names = FALSE)))
+            warning("The first value of Fsequence should be 0.")
 
     catchType <- pmatch(catchType,c("catch","landing","discard"))
     if(is.na(catchType))
@@ -681,7 +713,7 @@ stochasticReferencepoints.sam <- function(fit,
         
     ## Parse input reference points
      rpArgs <- Reduce(.refpointMerger,
-                         lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=fit$pl$logN[,ncol(fit$pl$logN)],stochasticType=mIndx,q=q, DT=DT),
+                         lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=fit$pl$logN[,ncol(fit$pl$logN)],stochasticType=mIndx,q=q, DT=DT, Ntail = nTail),
                          list())
     ## Add starting values    
     rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence)
@@ -696,16 +728,20 @@ stochasticReferencepoints.sam <- function(fit,
                 logF0 = log(Fsequence),
                 logN0=numeric(0),
                 stochasticType=mIndx,
-                q=q)
+                q=q,
+                DT = DT,
+                Ntail = nTail
+                )
         #rpArgs <- c(list(rp0),rpArgs)
        pb <- .SAMpb(min = 0, max = nosim_ci + 1, label="Point estimate")
         incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
-        ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci, incpb)
+        ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci,ncores, incpb)
 
         res <- .refpointOutput(ssdr,rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn,
 
                                c(), #Fsequence,
-                               referencepoints)
+                               referencepoints,
+                               TRUE)
          attr(res,"equilibriumMethod") <- equilibriumMethod
         return(res)
         
@@ -931,7 +967,8 @@ stochasticReferencepoints.sam <- function(fit,
                     regression = v0$Curves,
                     ## opt = NA,
                     ## ssdr = sdr,
-                    fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2]))
+                    fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),
+                    stochastic=TRUE
                     ## diagonalCorrection = tv
                     )
 

@@ -450,6 +450,71 @@ extern "C" {
   }
 
 
+#define CHECK_SAM_POINTER(name,ref)			      \
+  if(R_ExternalPtrTag(name) != Rf_install(ref)) \
+    Rf_error("Pointer to a wrong object object"); \
+  if(!R_ExternalPtrAddr(name)) \
+    Rf_error("The pointer address is not valid");
+
+
+  static void finalize_ESW_Ptr(SEXP ptr){
+    if(!R_ExternalPtrAddr(ptr))
+      return;
+    delete (EquilibriumRecycler_Stochastic_Worker<double>*)R_ExternalPtrAddr(ptr);
+    R_ClearExternalPtr(ptr);    
+  }
+  
+
+  
+  SEXP MakePtr_perRecruitSR_Calc(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP DT){
+    dataSet<double> d0(tmbdat);
+    confSet c0(tmbdat);
+    paraSet<double> p0(pl);
+    vector<double> s0 = asVector<double>(sel);
+    vector<double> ls0(s0.size());
+    for(int i = 0; i < ls0.size(); ++i)
+      ls0 = log(s0);
+    vector<int> a0 = asVector<int>(aveYears);
+    double logFbar0 = Rf_asReal(logFbar);
+    int nY0 = Rf_asInteger(nYears);
+    // int RC0 = Rf_asInteger(RC);
+    int CT0 = Rf_asInteger(CT);
+    int DT0 = Rf_asInteger(DT);
+    vector<double> logNinit0 = asVector<double>(logNinit);
+    //STOCHASTIC_PERREC_t<double> y = perRecruit_S(logFbar0, d0, c0, p0, ls0, a0, logNinit0, nY0, CT0, DT0);
+    EquilibriumRecycler_Stochastic_Worker<double>* c_ptr = new EquilibriumRecycler_Stochastic_Worker<double>(logFbar0,d0,c0,p0,ls0,a0,logNinit0, nY0, CT0, DT0);
+    SEXP r_ptr = R_MakeExternalPtr(c_ptr, Rf_install("SAM_Stochastic_Equilibrium_Worker"), R_NilValue);
+    PROTECT(r_ptr);
+    R_RegisterCFinalizerEx(r_ptr, finalize_ESW_Ptr, TRUE);
+    UNPROTECT(1);
+    return r_ptr;
+  }
+
+  SEXP EvalPtr_perRecruitSR_Calc(SEXP r_ptr, SEXP logFbar, SEXP outType, SEXP Ntail, SEXP q){
+    CHECK_SAM_POINTER(r_ptr,"SAM_Stochastic_Equilibrium_Worker");
+    EquilibriumRecycler_Stochastic_Worker<double>* c_ptr=(EquilibriumRecycler_Stochastic_Worker<double>*)R_ExternalPtrAddr(r_ptr);
+    vector<double> logFbar0 = asVector<double>(logFbar);
+    SEXP r;
+    int OT = Rf_asInteger(outType);
+    if(OT == 0){
+      vector<STOCHASTIC_PERREC_t<double> > res(logFbar0.size());
+      for(int i = 0; i < res.size(); ++i)
+	res(i) = c_ptr->operator()(logFbar0(i));
+      PROTECT(r = asSEXP(res));
+    }else{
+      vector<PERREC_t<double> > res(logFbar0.size());
+      int NT = Rf_asInteger(Ntail);
+      double qv = Rf_asReal(q);
+      for(int i = 0; i < res.size(); ++i)
+	res(i) = c_ptr->summary_along_years(logFbar0(i), OT-1, NT, qv);
+      PROTECT(r = asSEXP(res));
+    }
+    UNPROTECT(1);
+    return r;
+  }
+
+  
+
 
   
   SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR){
