@@ -277,11 +277,11 @@ Type objective_function<Type>::operator() ()
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, logitFseason, recruit,mort, this);
 
   // Update mortalities if simulating
-  SIMULATE_F(this){
-    if(confset.simFlag(0)==0){
-      mort = MortalitySet<Type>(dataset, confset, paraset, logF, logitFseason);
-    }
-  }
+  // SIMULATE_F(this){
+  //   if(confset.simFlag(0)==0){
+  //     mort = MortalitySet<Type>(dataset, confset, paraset, logF, logitFseason);
+  //   }
+  // }
 
   
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, logitFseason, recruit, mort, keep,reportingLevel, this);
