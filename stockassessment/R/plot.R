@@ -1531,3 +1531,103 @@ componentplot.sam <- function(fit, onlyComponentYears = FALSE, ylab = "Compositi
     }
     legend(legend.pos,fill = colSet[rev(1:length(nms))], legend = rev(nms), bg=bg, ncol=ncol, ...)
 }
+
+
+##' Plot prediction-standard deviation relation
+##' @param fit An object returned from sam.fit
+##' @param fleet Fleet to plot relation for
+##' @param age Age to plot relation for. Variable not used if there is only one relation in the feet.
+##' @param type Either "log" or "natural". Relation shown on log or natural scale.
+##' @param ylim range of y-axis, default is set to match confidence intervals.
+##' @param ... extra arguments transferred to plot and lines
+##' @details Plots relation between prediction and standard deviation.
+##' @export
+predstdplot <- function(fit, fleet,age = NULL,type = "log",ylim = NULL,...){
+  UseMethod("predstdplot")
+}
+##' @rdname predstdplot
+##' @method predstdplot sam
+##' @export
+predstdplot.sam <- function(fit, fleet,age = NULL,type = "log",ylim = NULL,...){
+  b = unique(fit$conf$predVarObsLink[fleet,fit$conf$predVarObsLink[fleet,]>=0])
+  a = unique(fit$conf$keyVarObs[fleet,fit$conf$predVarObsLink[fleet,]>=0])
+  if(length(b)>1 | length(a)>1){#Age-dependent relations in fleet
+    if(is.null(age)){
+      stop("Multiple relations in fleet, need to provide age")
+    }else{
+      ageIndex = age - fit$data$minAgePerFleet[fleet]+1
+      bUser = unique(fit$conf$predVarObsLink[fleet,ageIndex])
+      aUser = unique(fit$conf$keyVarObs[fleet,ageIndex])
+      if(length(bUser)!=1 | length(aUser)!=1){
+        stop("Several or none relations in the provided age span, needs only one relation.")
+      }else if(min(age)<fit$data$minAgePerFleet[fleet] |max(age)>fit$data$maxAgePerFleet[fleet] ){
+        stop("Provided age span outside of fleet age span.")
+      }else{
+        #All good...
+      }
+    }
+  }else if(length(b)==1){
+    age = which(fit$conf$predVarObsLink[fleet,] ==b) + fit$data$minAgePerFleet[fleet]-1
+  }else{
+    stop("Prediction-variance link not used for fleet")
+  }
+  ageIndex = age[1] - fit$data$minAgePerFleet[fleet]+1
+
+  range = range(fit$rep$predObs[fit$data$aux[,2]== fleet & fit$data$aux[,3] %in% age ])
+  beta = exp(fit$pl$predVarObs[fit$conf$predVarObsLink[fleet,ageIndex]+1])+1
+  alpha = exp(fit$pl$logSdLogObs[fit$conf$keyVarObs[fleet,ageIndex] + 1]  )
+  pred = exp(seq(range[1],range[2],length.out = 30))
+
+  #Plot confidence bounds
+  set.seed(123) #Reproducible plot
+  N = 10000
+  ss = rmvnorm(N,mu = fit$opt$par,Sigma = fit$sdrep$cov.fixed)
+  alphaSim = exp(ss[,which(names(fit$opt$par)=="logSdLogObs")])[,fit$conf$keyVarObs[fleet,ageIndex] + 1]
+  betaSim = exp(ss[,which(names(fit$opt$par)=="predVarObs")])[,fit$conf$predVarObsLink[fleet,ageIndex]+1] + 1
+  sigmaSim = matrix(NA,N,length(pred))
+  if(type == "log"){
+    for(i in 1:N){
+    sigmaSim[i,] = sqrt(log(alphaSim[i]*pred^(betaSim[i]-2) + 1))
+    }
+    qi = apply(sigmaSim,2,function(f) quantile(f,c(0.025,0.975)))
+    sigma = sqrt(log(alpha*pred^(beta-2) + 1))
+    if(is.null(ylim)){
+      ylim = c(min(qi),max(qi))
+    }
+    plot(log(pred),sigma, type = 'l', ylab = "Standard deviation",xlab = "Prediction",main = "Pred-std relation on log scale",ylim = ylim,...)
+    lines(log(pred),qi[1,],lty = 2,...)
+    lines(log(pred),qi[2,],lty = 2,...)
+  }else if(type == "natural"){
+    for(i in 1:N){
+      sigmaSim[i,] = sqrt(alphaSim[i]*pred^betaSim[i])
+    }
+    qi = apply(sigmaSim,2,function(f) quantile(f,c(0.025,0.975)))
+    sigma = sqrt(alpha*pred^beta)
+    if(is.null(ylim)){
+      ylim = c(min(qi),max(qi))
+    }
+    plot(pred,sigma, type = 'l', ylab = "Standard deviation",xlab = "Prediction",main = "Pred-std relation on natual scale",ylim = ylim,...)
+    lines(pred,qi[1,],lty = 2,...)
+    lines(pred,qi[2,],lty = 2,...)
+  }else{
+    stop("type needs to be log or natural")
+  }
+
+  predObs  = fit$rep$predObs[fit$data$aux[,2]==fleet &fit$data$aux[,3] %in% age]
+  if(type == "log"){
+    sigmaPred = sqrt(log(alpha*exp(predObs)^(beta-2) + 1))
+    points(predObs, sigmaPred,pch = 3)
+  }else{
+    sigmaPred = sqrt(alpha*exp(predObs)^beta)
+    points(exp(predObs), sigmaPred,pch = 3)
+  }
+
+  fleetNames = attr(fit$data, "fleetNames")
+  mtext(paste0("Fleet: ", fleet, " (",fleetNames[fleet],")"),line = -2,cex = 1)
+  if(length(age)>1){
+    mtext(paste0("Age: ", min(age),"-",max(age)),line = -3,cex = 1)
+  }else{
+    mtext(paste0("Age: ", age),line = -3,cex = 1)
+  }
+  set.seed(Sys.time())
+}
