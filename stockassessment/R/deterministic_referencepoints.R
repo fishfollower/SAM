@@ -1,7 +1,7 @@
 
 
 recruitmentProperties <- function(fit){
-    r <- .Call(C_recruitmentProperties,fit$obj$env$data,fit$pl)
+    suppressWarnings(r <- .Call(C_recruitmentProperties,fit$obj$env$data,fit$pl))
     r$ARpars <- numeric(0)
     if(length(fit$pl$rec_transphi) > 0)
         r$ARpars <- .Call(C_logitroots2ARpar, fit$pl$rec_transphi)
@@ -708,7 +708,7 @@ recruitmentProperties <- function(fit){
         }else{
             uncEst <- parallel::mclapply(simParList, function(pl){
                 ##v <- unlist(lapply(seq_along(objs), fitOne, pl = pl))
-                objsP <- .refpointObjective(rpArgs, fit)
+                objsP <- .refpointObjective(rpArgs, fit, pl)
                 v <- unlist(lapply(seq_along(objs), fitOne, objs = objsP))              
                 incpb("Uncertainty")
                 v

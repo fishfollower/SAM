@@ -15,22 +15,24 @@ struct stochasticCalculator {
   paraSet<Type> par;
   array<Type> logFSel;
   array<Type> logFseason;
+  int CT;
   MortalitySet<Type> mort;
   // Type logFbar;
   Recruitment<Type> recruit;  
   // vector<Type> logSel;
 
-  stochasticCalculator() : dat(), conf(), par(),logFSel(), logFseason(), mort(), recruit() {};
+  stochasticCalculator() : dat(), conf(), par(),logFSel(), logFseason(), CT(), mort(), recruit() {};
   
   stochasticCalculator( dataSet<Type> dat,
 			confSet conf,
 			paraSet<Type> par,
 			array<Type> logFSel_,
-			array<Type> logFseason_
+			array<Type> logFseason_,
+			int CT_
 			// Type logFbar,
 			// vector<Type>& logSel
 			) :
-    dat(dat), conf(conf), par(par), logFSel(logFSel_, logFSel_.dim), logFseason(logFseason_,logFseason_.dim), mort(dat,conf,par,logFSel,logFseason) {
+    dat(dat), conf(conf), par(par), logFSel(logFSel_, logFSel_.dim), logFseason(logFseason_,logFseason_.dim), CT(CT_), mort(dat,conf,par,logFSel,logFseason) {
     recruit = makeRecruitmentFunction(conf,par);
   }
   
@@ -41,6 +43,7 @@ struct stochasticCalculator {
     par(x.par),
     logFSel(x.logFSel,x.logFSel.dim),
     logFseason(x.logFseason,x.logFseason.dim),
+    CT(x.CT),
     mort(dat,conf,par,logFSel,logFseason)
   {
     recruit = makeRecruitmentFunction(conf,par);
@@ -156,6 +159,7 @@ struct stochasticCalculator {
   }
 
   Type getLogCatch(vector<Type>& logX){
+    typename referencepointSet<Type>::CatchType catchType = static_cast<typename referencepointSet<Type>::CatchType>(CT);
     int y = dat.propM.rows()-1;
     Type logFbar = logX(0);
     vector<Type> logN = logX.segment(1,logX.size()-1);
@@ -168,8 +172,23 @@ struct stochasticCalculator {
       int ax = a - conf.minAge;
       for(int f = 0; f < conf.keyLogFsta.dim(0); ++f){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
-	  Type tmp = logN(a) + mort.logFleetSurvival_before(ax,y,f) + log(mort.fleetCumulativeIncidence(ax,y,f)) + log(dat.catchMeanWeight(y, ax, f));
-	  logC = logspace_add_SAM(logC, tmp);
+	  Type tmp;
+	  Type tmp0 = logN(a) + mort.logFleetSurvival_before(ax,y,f) + log(mort.fleetCumulativeIncidence(ax,y,f));
+	  switch(catchType){
+	   case referencepointSet<Type>::totalCatch:
+	     tmp = tmp0 + log(dat.catchMeanWeight(y, ax, f));
+	     break;
+	  case referencepointSet<Type>::landings:
+	    tmp = tmp0 + log(dat.landMeanWeight(y,ax,f)) + log(dat.landFrac(y,ax,f));
+	    break;
+	  case referencepointSet<Type>::discard:
+	    tmp = tmp0 + log(dat.disMeanWeight(y,ax,f)) + log(1.0 - (dat.landFrac(y,ax,f)-1e-8));
+	    break;
+	  default:
+	     Rf_error("Unknown reference point catch type.");
+	     break;
+	  }
+	  logC = logspace_add_SAM(logC, tmp);	 
 	}
       }
     }
@@ -664,7 +683,7 @@ struct EquilibriumRecycler_Stochastic_Worker {
 
     //MortalitySet<Type> mort(newDat, conf, par, logF, logitFseason);
 
-   calc = stochasticCalculator<Type>(newDat, conf, par, logFSel, logitFseason);
+    calc = stochasticCalculator<Type>(newDat, conf, par, logFSel, logitFseason, CT);
 
     // Initialize
     // Going from age 0 to age conf.maxAge with Fbar as the first element
