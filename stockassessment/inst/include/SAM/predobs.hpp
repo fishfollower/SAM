@@ -168,7 +168,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      if(conf.keyBiomassTreat(f-1)==5){
 		        Type tsbPred = 0;
 		        for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
-		          tsbPred += exp(logN(aa,y))*dat.stockMeanWeight(y,aa) * mort.fleetSurvival_before(aa,y,f-1);
+		          tsbPred += exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,f-1))*dat.stockMeanWeight(y,aa);
 		        }
 			pred = log(tsbPred)+par.logFpar(conf.keyLogFpar(f-1,a));
 		      }

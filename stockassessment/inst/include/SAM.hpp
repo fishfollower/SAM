@@ -18,6 +18,7 @@
 #include "SAM/extend_array.hpp"
 #include "SAM/predn.hpp"
 #include "SAM/predf.hpp"
+#include "SAM/equilibrium_recycling.hpp"
 #include "SAM/equilibrium.hpp"
 #include "SAM/stochastic_equilibrium.hpp"
 #include "SAM/toF.hpp"

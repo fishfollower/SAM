@@ -69,5 +69,5 @@ cat(is.loaded("sam_ibcispline","testAPI"), "\n", file = "res.out", append = TRUE
 
 cat(isTRUE(all.equal(.Call("addOne",1), 2)), "\n", file = "res.out", append = TRUE)
 cat(isTRUE(all.equal(.Call("addOne",10), 11)), "\n", file = "res.out", append = TRUE)
-cat(isTRUE(all.equal(do.call("rbind",.Call("sam_jacobian",function(x) x^2, 4, globalenv(), 20, 0.1, 1e-6)[-1])[1,1],8)), "\n", file = "res.out", append = TRUE)
+cat(isTRUE(all.equal(do.call("rbind",.Call("sam_jacobian",function(x) x^2, 4, globalenv(), 20, 0.1, 1e-6,0L)[-1])[1,1],8)), "\n", file = "res.out", append = TRUE)
 
