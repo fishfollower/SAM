@@ -510,9 +510,17 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  if(conf.keyBiomassTreat(f)==4){
 		    sd = sqrt(varLogLand(y));
 		  }else{
-		    sd = exp(par.logSdLogObs(conf.keyVarObs(f,0)));
+		    if(isNA(dat.weight(i))){
+		      sd = exp(par.logSdLogObs(conf.keyVarObs(f,0)));
+		    }else{
+		      if(conf.fixVarToWeight(f)==1){
+                        sd = sqrt(dat.weight(i));
+		      }else{
+                        sd = exp(par.logSdLogObs(conf.keyVarObs(f,0)))/sqrt(dat.weight(i));
+		      }
+		    }
 		  }
-		}  
+		}
 		nll += -keep(i)*dnorm(dat.logobs(i),predObs(i),sd,true);
 		SIMULATE_F(of){
 		  dat.logobs(i) = rnorm(predObs(i),sd);
