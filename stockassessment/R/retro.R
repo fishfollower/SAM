@@ -27,7 +27,7 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
   mmfun<-function(f,y, ff){idx<-which(data$aux[,"year"]==y & data$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
   data$idx1 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=min)
   data$idx2 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=max)
-  data$idxCor <- data$idxCor[suf,match(data$years,oldYears)]
+  data$idxCor <- data$idxCor[suf,match(data$years,oldYears),drop = FALSE]
   data$nobs <- length(data$logobs[idx])  
   data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages,drop=FALSE]
   data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, colnames(data$stockMeanWeight)%in%ages,drop=FALSE]
@@ -88,6 +88,7 @@ data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data
     conf$keyBiomassTreat <- conf$keyBiomassTreat[suf]
     conf$obsLikelihoodFlag <- conf$obsLikelihoodFlag[suf]
     conf$fracMixObs <- conf$fracMixObs[suf]
+    conf$fixVarToWeight <- conf$fixVarToWeight[suf]
     attr(data, "conf") <- conf
   }
   data
