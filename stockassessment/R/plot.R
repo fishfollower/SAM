@@ -963,7 +963,7 @@ empirobscorrplot<-function(res,...){
 ##' @export
 empirobscorrplot.samres <- function(res,...){
     dat <- data.frame(resid=res$residual,age=res$age,year=res$year,fleet=res$fleet)
-    fleets <- unique( dat$fleet)
+    fleets <- sort(unique( dat$fleet))
     fn <- attr(res,"fleetNames")
     x <- list()
     for(i in 1:length(fleets)){
