@@ -26,7 +26,12 @@ struct RPD_Base : NewtonFunctor {
   paraSet<ad> par;
   referencepointSet<ad> rp;
 
-  RPD_Base() = default;
+  // RPD_Base() = default;
+  RPD_Base() :
+    dat(),
+    conf(),
+    par(),
+    rp() {}
   
   RPD_Base(const dataSet<ad>& dat_,
 	   const confSet& conf_,
@@ -81,7 +86,9 @@ class Referencepoint_D {
   int id;
   vector<Type> logF;
 public:
-  Referencepoint_D() = default;
+  // Referencepoint_D() = default;
+  Referencepoint_D() :
+    ptr(), name(), id(), logF() {}
 
   Referencepoint_D(const char* name_,
 		   int id_,
@@ -232,7 +239,8 @@ public:
     paraSet<Type> par;
     referencepointSet<Type> rp;
 
-    RefPointD_Known() = default;
+    // RefPointD_Known() = default;
+    RefPointD_Known() : dat(), conf(), par(), rp() {};
     ~RefPointD_Known() = default;
   
     RefPointD_Known(const dataSet<Type>& dat_,

@@ -75,8 +75,9 @@ struct dataSet{
   listMatrixFromR<Type> corList;
   array<int> sumKey;
 
-  inline dataSet() = default;
-
+  // inline dataSet() = default;
+  dataSet();
+  
   dataSet(SEXP x);
 
   template<class T>
@@ -109,6 +110,38 @@ struct dataSet{
     corList(x.corList),
     sumKey(x.sumKey, x.sumKey.dim) {}
 });
+
+SOURCE(
+       template<class Type>
+       dataSet<Type>::dataSet() :
+       noFleets(),
+       fleetTypes(),
+       sampleTimes(),
+       noYears(), 	
+       years(),
+       minAgePerFleet(),
+       maxAgePerFleet(),
+       nobs(),
+       idx1(),
+       idx2(),
+       idxCor(),
+       minWeek(),
+       maxWeek(),
+       aux(),
+       logobs(),		
+       weight(),  // Good
+       propMat(), //(x.propMat),
+       stockMeanWeight(),
+       catchMeanWeight(),
+       natMor(),
+       landFrac(),
+       disMeanWeight(), //x.disMeanWeight),
+       landMeanWeight(), //x.landMeanWeight),
+       propF(), //x.propF),
+       propM(),
+       corList(),
+       sumKey() {};
+       )
 
 SOURCE(
     template<class Type>
@@ -192,8 +225,9 @@ struct confSet{
   vector<int> logNMeanAssumption;
   int initState;
 
-  inline confSet() = default;
-
+  // inline confSet() = default;
+  confSet();
+  
   confSet(SEXP x);
 
   confSet(const confSet &other);
@@ -291,6 +325,53 @@ SOURCE(
 	 keyXtraSd(other.keyXtraSd),
 	 logNMeanAssumption(other.logNMeanAssumption),
 	 initState(other.initState)
+	 {}
+	 );
+
+SOURCE(
+	 confSet::confSet() :
+	 minAge(),
+	 maxAge(),
+	 maxAgePlusGroup(),
+	 keyLogFsta(),
+	 corFlag(),
+	 keyLogFpar(),
+	 keyQpow(),
+	 keyVarF(),
+	 keyVarLogN(),
+	 keyVarLogP(),
+	 keyVarObs(),
+	 obsCorStruct(),
+	 keyCorObs(),
+	 stockRecruitmentModelCode(),
+	 constRecBreaks(),
+	 noScaledYears(),
+	 keyScaledYears(),
+	 keyParScaledYA(),
+	 fbarRange(),
+	 keyBiomassTreat(),
+	 simFlag(),
+	 resFlag(),
+	 obsLikelihoodFlag(),
+	 fixVarToWeight(),
+	 fracMixF(),
+	 fracMixN(),
+	 fracMixObs(),
+	 predVarObsLink(),
+	 stockWeightModel(),
+	 keyStockWeightMean(),
+	 keyStockWeightObsVar(),
+	 catchWeightModel(),
+	 keyCatchWeightMean(),
+	 keyCatchWeightObsVar(),
+	 matureModel(),
+	 keyMatureMean(),
+	 mortalityModel(),
+	 keyMortalityMean(),
+	 keyMortalityObsVar(),
+	 keyXtraSd(),
+	 logNMeanAssumption(),
+	 initState()
 	 {}
 	 );
 
@@ -395,10 +476,51 @@ struct paraSet{
 });
 
 SOURCE(
-	 template<class Type>
-	 paraSet<Type>::paraSet(){
-	 }
+       template<class Type>
+       paraSet<Type>::paraSet() :
+       logFpar(), 
+       logQpow(), 
+       logSdLogFsta(), 
+       logSdLogN(), 
+       logSdLogP(), 
+       logSdLogObs(),
+       logSdLogTotalObs(),
+       transfIRARdist(),
+       sigmaObsParUS(),
+       rec_pars(), 
+       itrans_rho(), 
+       rhop(),
+       logScale(),
+       logitReleaseSurvival(),   
+       logitRecapturePhi(),
+       logAlphaSCB(),
+       sepFalpha(),
+       sepFlogitRho(),
+       sepFlogSd(),
+       logFScaleMSY(),
+       implicitFunctionDelta(),
+       logPhiSW(), 
+       logSdProcLogSW(),
+       meanLogSW(), 
+       logSdLogSW(), 
+       logPhiCW(), 
+       logSdProcLogCW(),
+       meanLogCW(), 
+       logSdLogCW(),  
+       logPhiMO(), 
+       logSdProcLogitMO(),
+       meanLogitMO(), 
+       logSdMO(), 
+       logPhiNM(),
+       logSdProcLogNM(),
+       meanLogNM(),
+       logSdLogNM(),
+       logXtraSd(),
+       initF(),
+       initN(),
+       splinePenalty()  {};
        )
+
 SOURCE(
 	 template<class Type>
 	 paraSet<Type>::paraSet(SEXP x){

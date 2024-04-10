@@ -181,8 +181,14 @@ struct Funct_YPR {
   confSet conf;
   paraSet<Type> par;
   referencepointSet<Type> rp;
+
+  //   Funct_YPR() = default;
+  Funct_YPR() :
+    dat(),
+    conf(),
+    par(),
+    rp() {};
   
-  Funct_YPR() = default;
   
   Funct_YPR(const dataSet<Type>& dat_,
   	    const confSet& conf_,

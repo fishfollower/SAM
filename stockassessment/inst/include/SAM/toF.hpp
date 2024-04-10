@@ -25,8 +25,14 @@ struct FConstraint {
   ConstraintType cstr;
   Type target;
 
-  inline FConstraint() = default;
-
+  // inline FConstraint() = default;
+  inline FConstraint() : Amin(),
+			 Amax(),
+			 fleet(),
+			 relative(),
+			 cstr(),
+			 target() {}
+  
   FConstraint(SEXP x);
 
   template<class T>
