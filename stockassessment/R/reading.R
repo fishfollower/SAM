@@ -440,7 +440,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   fdim <- sum(type==0)
   fnam <- name[type==0] #paste0("Fleet w.o. effort ", 1:fdim)
     
-  d3verify<-function(X, yd=ydim, ad=adim, fd=fdim, yn=ynam, an=anam, fn=fnam, fill=NULL){
+  d3verify<-function(X, yd=ydim, ad=adim2, fd=fdim, yn=ynam, an=anam2, fn=fnam, fill=NULL){
     if(is.null(X)){
       if(is.null(fill)){
         stop(paste("Please specify", substitute(X)))

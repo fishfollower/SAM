@@ -165,8 +165,8 @@ webtestone:
 	@rm -f $(ARG)/run/curver
 	@touch $(ARG)/data/*
 	@$(MAKE) -s -C $(ARG) model
-	@echo "load('$(ARG)/model.RData'); old<-fit[['pl']]; \
-	       load('$(ARG)/run/model.RData'); new<-fit[['pl']];\
+	@echo "load('$(ARG)/model.RData'); old<-tail(summary(fit),1); \
+	       load('$(ARG)/run/model.RData'); new<-tail(summary(fit),1);\
 	       cat('$(ARG)...',ifelse(all.equal(old,new,check.attributes=FALSE),'OK','FAIL'),'\n')"   | R --slave
 	@touch $(ARG)/OK
 

@@ -167,6 +167,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     }
     opt$he <- optimHess(opt$par, obj$fn, obj$gr)
 
+    opt$nlminb_convergence <- opt$convergence
+    opt$convergence <- ifelse(max(abs(obj$gr(opt$par)))<1e-4,0,1)
+    
     repList <- doReporting(obj, opt, ignore.parm.uncertainty)
 
     ret <- c(repList, list(data=data, conf=conf, opt=opt, obj=obj, rep=rep, low=lower, hig=upper))
