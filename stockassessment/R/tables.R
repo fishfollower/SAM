@@ -174,7 +174,7 @@ catchtable.sam <- function(fit, obs.show=FALSE,...){
    ## CW <- CW[apply(!is.na(CW),1,all),] 
    ## xx <- as.integer(rownames(CW))
    ## ret <- tableit(fit, x=xx, "logCatch", trans=exp)
-   if(length(dim(CW))==2)CW<-array(CW,dim=c(dim(CW),1))
+   if(length(dim(CW))==2)CW<-array(CW,dim=c(dim(CW),1), dimnames = c(dimnames(CW),list("Residual catch")))
    nf <- dim(CW)[3]
    yy <- as.integer(rownames(CW[,,1]))
    aa <- as.integer(colnames(CW[,,1]))
