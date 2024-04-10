@@ -355,10 +355,10 @@ forecast <- function(fit,
             stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
     doAve <- function(x){
         if(length(dim(x))==2){
-            ret <- colMeans(x[rownames(x)%in%ave.years,,drop=FALSE])
+            ret <- colMeans(x[rownames(x)%in%ave.years,,drop=FALSE], na.rm=TRUE)
         }
         if(length(dim(x))==3){
-            ret <- apply(x[rownames(x)%in%ave.years,,,drop=FALSE],c(2,3),mean)
+            ret <- apply(x[rownames(x)%in%ave.years,,,drop=FALSE],c(2,3),mean, na.rm=TRUE)
         }
         ret
     }
@@ -378,6 +378,7 @@ forecast <- function(fit,
             }else{
                 ret <- x[which(rownames(x)==y),,]
             }
+            ret[is.na(ret)]<-ave[is.na(ret)]
         }else{
             ret <- ave
         }
