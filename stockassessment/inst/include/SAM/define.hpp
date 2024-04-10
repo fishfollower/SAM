@@ -343,7 +343,8 @@ struct paraSet{
 
   Type splinePenalty;
 
-  inline paraSet() = default;
+  //inline paraSet() = default;
+  paraSet();
   
   paraSet(SEXP x);
 
@@ -393,7 +394,11 @@ struct paraSet{
 
 });
 
-
+SOURCE(
+	 template<class Type>
+	 paraSet<Type>::paraSet(){
+	 }
+       )
 SOURCE(
 	 template<class Type>
 	 paraSet<Type>::paraSet(SEXP x){
