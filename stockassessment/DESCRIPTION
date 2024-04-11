@@ -33,8 +33,3 @@ RemoteUsername: fishfollower
 RemoteRef: master
 RemoteSha: 9efca734e6bd8bb37bfe23177bf0cd4c1fe6571d
 RemoteSubdir: stockassessment
-GithubRepo: SAM
-GithubUsername: fishfollower
-GithubRef: master
-GithubSHA1: 9efca734e6bd8bb37bfe23177bf0cd4c1fe6571d
-GithubSubdir: stockassessment
