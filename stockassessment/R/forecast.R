@@ -107,6 +107,8 @@ forecast <- function(fit,
         stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
     }
 
+    if(!is.null(overwriteSelYears)&(noCatchFleets!=1))stop("overwriteSelYears option can only be used for single fleet models")
+    
     if(!is.null(overwriteSelYears)){
         fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
         Ftab <- faytable(fit)
@@ -114,11 +116,13 @@ forecast <- function(fit,
         fixedsel <- fixedsel/mean(fixedsel[fromto[1]:fromto[2]])
     }
 
+    if(!is.null(customSel)&(noCatchFleets!=1))stop("customSel can only be used for single fleet models")
+    
     if(!is.null(customSel)){
         fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)  
         customSel <- customSel/mean(customSel[fromto[1]:fromto[2]])
     }
-
+    
     odat<-fit$obj$env$data
     opar<-fit$obj$env$parList(par = fit$obj$env$last.par.best)
     omap<-fit$obj$env$map
@@ -188,13 +192,13 @@ forecast <- function(fit,
                 fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
                 thisfbar<-mean(ret[fromto[1]:fromto[2]])
                 ret<-fixedsel*thisfbar
-                if(!is.null(customSel)){
-                    fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
-                    thisfbar<-mean(ret[fromto[1]:fromto[2]])
-                    ret<-customSel*thisfbar
-                }
-                FF[]<-NA
             }
+            if(!is.null(customSel)){
+                fromto <- fit$conf$fbarRange-(fit$conf$minAge-1)    
+                thisfbar<-mean(ret[fromto[1]:fromto[2]])
+                ret<-customSel*thisfbar
+            }
+            FF[]<-lapply(fleet, function(x)ret)
         }
         attr(ret,"byFleet") <- do.call(cbind,FF)
         ret
@@ -270,7 +274,12 @@ forecast <- function(fit,
         }
         xx <- rep(NA,length=length(x))
         xx[idxN] <- log(N)
-        xx[idxF] <- x[idxF]+log(scale)
+                                        #if(inyear==FALSE)browser()
+        if((noCatchFleets==1)){
+          xx[idxF] <- log(tapply(F,fit$conf$keyLogFsta[1,]+1,mean))[idxF-min(idxF)+1]+log(scale)
+        }else{
+          xx[idxF] <- x[idxF]+log(scale)
+        }
         return(xx)
     }
 
@@ -417,7 +426,6 @@ forecast <- function(fit,
             if(deterministic){procVar<-procVar*0}
             if(!is.null(overwriteSelYears)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
             if(!is.null(customSel)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
-            
             if(all(fit$conf$corFlag <3)){
                 sim <- sim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
             }else if(length(fit$conf$corFlag)==1 && fit$conf$corFlag[1] ==3){
