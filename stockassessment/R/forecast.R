@@ -276,7 +276,8 @@ forecast <- function(fit,
         xx[idxN] <- log(N)
                                         #if(inyear==FALSE)browser()
         if((noCatchFleets==1)){
-          xx[idxF] <- log(tapply(F,fit$conf$keyLogFsta[1,]+1,mean))[idxF-min(idxF)+1]+log(scale)
+          kk<-fit$conf$keyLogFsta[1,]+1
+          xx[idxF] <- log(tapply(F[kk>0],kk[kk>0],mean))[idxF-min(idxF)+1]+log(scale)
         }else{
           xx[idxF] <- x[idxF]+log(scale)
         }
