@@ -87,7 +87,11 @@ SOURCE(
 	   // if(useAtomic){
 	   //inv_L_Sigma = atomic::matinv(L_Sigma);
 	   // }else{
-	   inv_L_Sigma = L_Sigma.inverse();
+	   matrix<Type> I(Sigma);
+           I.setIdentity();
+           inv_L_Sigma = L_Sigma.template triangularView<Eigen::Lower>().solve(I);
+
+	   //inv_L_Sigma = L_Sigma.inverse();
 	   // }
 	 }
 	 );
