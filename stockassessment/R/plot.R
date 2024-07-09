@@ -1546,8 +1546,8 @@ componentplot.sam <- function(fit, onlyComponentYears = FALSE, ylab = "Compositi
 ##' @export
 predstdplot = function(fit, fleet ,age = NULL,type = "log",ylim = NULL,
                        ylab = "Standard deviation",xlab = "Prediction",main="Pred-std relation",...){
-  b = unique(fit$conf$predVarObsLink[fleet,fit$conf$predVarObsLink[fleet,]>=0])
-  a = unique(fit$conf$keyVarObs[fleet,fit$conf$predVarObsLink[fleet,]>=0])
+  b = unique(fit$conf$predVarObsLink[fleet,(fit$conf$predVarObsLink[fleet,]>=0 & !is.na(fit$conf$predVarObsLink[fleet,]))])
+  a = unique(fit$conf$keyVarObs[fleet,(fit$conf$predVarObsLink[fleet,]>=0 & !is.na(fit$conf$predVarObsLink[fleet,]))])
   if(length(b)>1 | length(a)>1){#Age-dependent relations in fleet
     if(is.null(age)){
       stop("Multiple relations in the fleet; need age to plot the relation for.")
