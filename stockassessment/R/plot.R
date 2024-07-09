@@ -1552,7 +1552,7 @@ predstdplot = function(fit, fleet ,age = NULL,type = "log",ylim = NULL,
     if(is.null(age)){
       stop("Multiple relations in the fleet; need age to plot the relation for.")
     }else{
-      ageIndex = age - fit$data$minAgePerFleet[fleet]+1
+      ageIndex = age - fit$conf$minAge+1
       if(min(age)<fit$data$minAgePerFleet[fleet] |max(age)>fit$data$maxAgePerFleet[fleet] ){
         stop("The provided age span is outside the fleet's age span.")
       }
@@ -1563,11 +1563,11 @@ predstdplot = function(fit, fleet ,age = NULL,type = "log",ylim = NULL,
       }
     }
   }else if(length(b)==1){
-    age = which(fit$conf$predVarObsLink[fleet,] ==b) + fit$data$minAgePerFleet[fleet]-1
+    age = which(fit$conf$predVarObsLink[fleet,] ==b) + fit$conf$minAge-1
   }else{
     stop("The prediction-variance relation is not used for this fleet.")
   }
-  ageIndex = age[1] - fit$data$minAgePerFleet[fleet]+1
+  ageIndex = age[1] - fit$conf$minAge+1
 
   range = range(fit$rep$predObs[fit$data$aux[,2]== fleet & fit$data$aux[,3] %in% age ])
   beta = exp(fit$pl$predVarObs[fit$conf$predVarObsLink[fleet,ageIndex]+1])+1
