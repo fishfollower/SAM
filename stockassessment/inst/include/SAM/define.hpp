@@ -78,37 +78,7 @@ struct dataSet{
   listMatrixFromR<Type> corList;
   array<int> sumKey;
 
-  inline dataSet() :
-    noFleets(),
-    fleetTypes(),
-    sampleTimesStart(),
-    sampleTimesEnd(),
-    noYears(), 	
-    years(),
-    minAgePerFleet(),
-    maxAgePerFleet(),
-    fleetCovarianceSize(),
-    nobs(),
-    idx1(),
-    idx2(),
-    idxCor(),
-    minWeek(),
-    maxWeek(),
-    aux(),
-    auxData(),
-    logobs(),		
-    weight(),  // Good
-    propMat(), //(x.propMat),
-    stockMeanWeight(),
-    catchMeanWeight(),
-    natMor(),
-    landFrac(),
-    disMeanWeight(), //x.disMeanWeight),
-    landMeanWeight(), //x.landMeanWeight),
-    propF(), //x.propF),
-    propM(),
-    corList(),
-    sumKey() {}
+  dataSet();
 
   dataSet(SEXP x);
 
@@ -152,7 +122,8 @@ SOURCE(
        dataSet<Type>::dataSet() :
        noFleets(),
        fleetTypes(),
-       sampleTimes(),
+       sampleTimesStart(),
+       sampleTimesEnd(),
        noYears(), 	
        years(),
        minAgePerFleet(),
@@ -453,53 +424,6 @@ SOURCE(
 	 {}
 	 );
 
-SOURCE(
-	 confSet::confSet() :
-	 minAge(),
-	 maxAge(),
-	 maxAgePlusGroup(),
-	 keyLogFsta(),
-	 corFlag(),
-	 keyLogFpar(),
-	 keyQpow(),
-	 keyVarF(),
-	 keyVarLogN(),
-	 keyVarLogP(),
-	 keyVarObs(),
-	 obsCorStruct(),
-	 keyCorObs(),
-	 stockRecruitmentModelCode(),
-	 constRecBreaks(),
-	 noScaledYears(),
-	 keyScaledYears(),
-	 keyParScaledYA(),
-	 fbarRange(),
-	 keyBiomassTreat(),
-	 simFlag(),
-	 resFlag(),
-	 obsLikelihoodFlag(),
-	 fixVarToWeight(),
-	 fracMixF(),
-	 fracMixN(),
-	 fracMixObs(),
-	 predVarObsLink(),
-	 stockWeightModel(),
-	 keyStockWeightMean(),
-	 keyStockWeightObsVar(),
-	 catchWeightModel(),
-	 keyCatchWeightMean(),
-	 keyCatchWeightObsVar(),
-	 matureModel(),
-	 keyMatureMean(),
-	 mortalityModel(),
-	 keyMortalityMean(),
-	 keyMortalityObsVar(),
-	 keyXtraSd(),
-	 logNMeanAssumption(),
-	 initState()
-	 {}
-	 );
-
 HEADER(
 template <class Type>
 struct paraSet{
@@ -559,57 +483,7 @@ struct paraSet{
 
   Type splinePenalty;
 
-  inline paraSet() :
-    logFpar(), 
-    logQpow(), 
-    logSdLogFsta(), 
-    muF(), 
-    trans_rho_F(),
-    boundF_kappa(),
-    boundF_alpha(),
-    boundF_tau(),
-    logSdLogN(), 
-    logSdLogP(), 
-    logSdLogObs(),
-    logSdLogTotalObs(),
-    transfIRARdist(),
-    sigmaObsParUS(),
-    rec_pars(),
-     rec_transphi(),
-    itrans_rho(), 
-    rhop(),
-    logScale(),
-    logitReleaseSurvival(),   
-    logitRecapturePhi(),
-    logAlphaSCB(),
-    sepFalpha(),
-    sepFlogitRho(),
-    sepFlogSd(),
-    logFScaleMSY(),
-    implicitFunctionDelta(),
-    logPhiSW(), 
-    logSdProcLogSW(),
-    meanLogSW(), 
-    logSdLogSW(), 
-    logPhiCW(), 
-    logSdProcLogCW(),
-    meanLogCW(), 
-    logSdLogCW(),  
-    logPhiMO(), 
-    logSdProcLogitMO(),
-    meanLogitMO(), 
-    logSdMO(), 
-    logPhiNM(),
-    logSdProcLogNM(),
-    meanLogNM(),
-    logSdLogNM(),
-    logXtraSd(),
-     initF(),
-     initN(),
-    seasonMu(),
-    seasonLogitRho(),
-    seasonLogSd(),
-    splinePenalty()  {}
+  paraSet();
   
   paraSet(SEXP x);
 
