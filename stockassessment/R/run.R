@@ -491,21 +491,38 @@ refit <- function(fit, newConf, startingValues, ...){
   
     ## Update parameters
     dp <- defpar(fit2$data,fit2$conf)
+    usingOldPar <- rep(FALSE,length(dp))
+    names(usingOldPar) <- names(dp)
     for(i in intersect(names(dp),names(fit2$pl))){
-        if(length(dp[[i]]) == length(fit2$pl[[i]]))
+        if(length(dp[[i]]) == length(fit2$pl[[i]])){
             dp[[i]][] <- fit2$pl[[i]][]
+            usingOldPar[i] <- TRUE
+        }
     }
     if(!missing(startingValues)){
         for(i in intersect(names(dp),names(startingValues)))
             if(length(dp[[i]]) == length(startingValues[[i]])){
                 dp[[i]] <- startingValues[[i]]
+                usingOldPar[i] <- TRUE
             }else{
                 warning(sprintf("Starting value for %s does not match defpar.",i))
             }
     }
+
+    ## Update map
+    map <- list()
+    map0 <- fit2$obj$env$map
+    mapSetBySAM <- c("logFScaleMSY","implicitFunctionDelta","logScaleFmsy","logScaleFmax","logScaleF01","logScaleFcrash","logScaleFext","logScaleFxPercent","logScaleFlim","splinePenalty")
+    for(i in intersect(names(map0), setdiff(names(dp),mapSetBySAM))){
+        if(usingOldPar[i] && length(map0[[i]])==length(dp[[i]])){
+            map[[i]] <- map0[[i]]
+        }else{
+            warning(sprintf("Map for %s was not used. Check that dimensions for the parameter and map matches each other and the new version of SAM.",i))
+        }
+    }
     
     ##runwithout(fit2, ...)
-    fitNew <- sam.fit(fit2$data, fit2$conf, dp, ...)
+    fitNew <- sam.fit(fit2$data, fit2$conf, dp, map = map, ...)
     if(methods::is(fitNew,"sam")){
         ld <- abs(as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
         if(ld > 1e-4)

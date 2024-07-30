@@ -147,9 +147,11 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
 
 as.sam.fit <- function(x,...){ UseMethod("as.sam.fit")    }
 
-getSamFitData <- function(x, makePlusGroup = TRUE, simSurveyOptions = NULL){
+getSamFitData <- function(x, makePlusGroup = TRUE, simSurveyOptions = NULL, simCatchSd = 0){
     CN <- as.matrix(catch.n(x))
     CN[CN==0] <- NA
+    if(simCatchSd > 0)
+        CN[] <- exp(rnorm(length(CN[]), log(CN[]), simCatchSd))
     MA <- as.matrix(mat(x))
     SW <- as.matrix(stock.wt(x))
     CW <- as.matrix(catch.wt(x))

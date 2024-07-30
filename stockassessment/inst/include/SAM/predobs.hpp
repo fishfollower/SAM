@@ -47,7 +47,6 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		    f=fleet;
 		    ft=fleetType;
 		    a=age-conf.minAge;
-
 		    Type pred = 0.0;
 		    // Type logzz = R_NegInf;
 		    // Type zz = 0.0;
@@ -114,7 +113,6 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      if((pg!=conf.maxAgePlusGroup(0))&&(a==(conf.maxAge-conf.minAge))){
 			Rf_error("When maximum age for the fleet is the same as maximum age in the assessment it must be treated the same way as catches w.r.t. plusgroup configuration");
 		      }
-
 		      if((ma==1) && (pg==1)){
 			pred=0;
 			for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
@@ -137,7 +135,6 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      if(conf.keyLogFpar(f-1,a)>(-1)){
 			pred+=par.logFpar(conf.keyLogFpar(f-1,a));
 		      }
-
 		      break;
   
 		    case 3:// biomass or catch survey
