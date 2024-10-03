@@ -14,11 +14,12 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   Type logThisSSB=Type(R_NegInf);
 
   if((i-conf.minAge)>=0){
-    //logThisSSB=ssbi(dat,conf,logN,logF,mort,i-conf.minAge, true);
-    logThisSSB=spawningPotentiali(dat,conf,par,logN,logF,mort,i-conf.minAge, true);
+    Type logThisSSBOld=ssbi(dat,conf,logN,logF,mort,i-conf.minAge, true);
+    logThisSSB=totalReproductiveOutputi(dat,conf,par,logN,logF,mort,i-conf.minAge, true);
+    Rcout << i << ": " << logThisSSBOld << ", " << logThisSSB << ", " << logThisSSB / logThisSSBOld << "\n";
   }else{
     //logThisSSB=ssbi(dat,conf,logN,logF,mort,0, true); // use first in beginning
-    logThisSSB=spawningPotentiali(dat,conf,par,logN,logF,mort,0, true); // use first in beginning       
+    logThisSSB=totalReproductiveOutputi(dat,conf,par,logN,logF,mort,0, true); // use first in beginning       
   }
 
   Type lastLogR = R_NaReal;
@@ -30,7 +31,7 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
     vector<Type> phi = logitroots2ARpar(par.rec_transphi);
     for(int j = 1; j <= par.rec_transphi.size(); ++j){
       //Type logThatSSB = ssbi(dat,conf,logN,logF,mort,std::max(i-conf.minAge-j,0), true);
-      Type logThatSSB = spawningPotentiali(dat,conf,par,logN,logF,mort,std::max(i-conf.minAge-j,0), true);
+      Type logThatSSB = totalReproductiveOutputi(dat,conf,par,logN,logF,mort,std::max(i-conf.minAge-j,0), true);
       Type thatMu = recruit(logThatSSB, logN(0,std::max(i-1-j,0)), dat.years(0) + i - j);
       predN(0) += phi(j-1) * (logN(0,std::max(i-j,0)) - thatMu);
     }

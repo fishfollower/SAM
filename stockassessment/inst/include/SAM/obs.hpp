@@ -294,11 +294,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	    int reportingLevel,
 	    objective_function<Type> *of)
   SOURCE({
+      Rcout << "A\n";
       Type nll=0.0;
       // Calculate values to report
       vector<Type> logssb = ssbFun(dat, conf, logN, logF,mort, true);
       vector<Type> ssb = exp(logssb);
 
+      vector<Type> logrb = totalReproductiveOutputFun(dat, conf, par, logN, logF,mort, true);
+      vector<Type> rb = exp(logrb);
+      
       vector<Type> fsb = fsbFun(dat, conf, logN, logF,mort);
       vector<Type> logfsb = log(fsb);
 
@@ -350,7 +354,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       array<Type> comps = scalePFun(conf, dat, logP);
       vector<Type> weekContrib = scaleWeekFun(par, dat, logP);
       int noYearsLAI = yearsPFun(conf,dat);
-      
+      Rcout << "B\n";
+
       if(reportingLevel > 0){
 	NOT_SIMULATE_F(of){  
 	  vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
@@ -398,9 +403,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  
 	}
       }
+      Rcout << "C\n";
 
       vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, logitFseason, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, logfbar, noYearsLAI);
       vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
+      Rcout << "D\n";
 
       vector<Type> recapturePhi(par.logitRecapturePhi.size());
       vector<Type> recapturePhiVec(dat.nobs);
@@ -415,18 +422,23 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }
 	}
       }
+      Rcout << "E\n";
 
       //eval likelihood
       int noYears = dat.idx1.dim(1); //dat.noYears; Also works when forecast has new data
       for(int y=0;y<noYears;y++){
+	Rcout << "DATA year" << y << "\n";
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
-
+	Rcout << "\tDATA fleet" << f << "\n";
 	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){
+	    Rcout << "\t\t1\n";
 	    if(!isNAINT(dat.idx1(f,y))){
+	      Rcout << "\t\t2\n";
 	      int idxfrom=dat.idx1(f,y);
 	      int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
-
+	      Rcout << "\t\t3\n";
+	    
 	      // ----------------if sum fleet need to update covariance matrix
 	      if(dat.fleetTypes(f)==7){
 		//array<Type> totF=totFFun(dat,conf, logF);             
@@ -477,14 +489,18 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		REPORT_F(combiCov,of);
 		nllVec(f).setSigma(combiCov);
 	      }
+	      Rcout << "\t\t4\n";
 	      // ----------------updating of covariance matrix done
 	      vector<Type> currentVar=nllVec(f).cov().diagonal();
 	      vector<Type> sqrtW(currentVar.size());
-
+	      Rcout << "\t\t5\n";
+	    
 	      switch(conf.obsLikelihoodFlag(f)){
 	      case 0: // (LN) log-Normal distribution
+		Rcout << "\t\t6\n";
 		for(int idxV=0; idxV<currentVar.size(); ++idxV){
 		  if(isNA(dat.weight(idxfrom+idxV))){
+		    Rcout << "\t\t7-A\n";
 		    sqrtW(idxV)=Type(1.0);
 		    int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
 		    if(conf.predVarObsLink(f,a)>(-1)){
@@ -501,6 +517,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		      }
 		    }
 		  }else{
+		    Rcout << "\t\t7-B\n";
 		    if(conf.fixVarToWeight(f)==1){
 		      sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
 		    }else{
@@ -508,7 +525,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		    }
 		  }
 		}
+		Rcout << "\t\t8\n";
+
 		if(isNAINT(dat.idxCor(f,y))){
+		  Rcout << "\t\t9-A\n";
 		  nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
 		  nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 		  SIMULATE_F(of){
@@ -521,6 +541,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		    }
 		  }
 		}else{
+		  Rcout << "\t\t9-B\n";
 		  int thisdim=currentVar.size();
 		  matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
 		  matrix<Type> thiscov(thisdim,thisdim);
@@ -542,6 +563,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		    }
 		  }
 		}
+		Rcout << "\t\t10\n";
 		break;
 	      case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
 		nll +=  nllVec(f)(obs_fun::addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-obs_fun::addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
@@ -676,7 +698,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	    Rf_error("Fleet type not implemented");
 	  }   
 	}   
-      }  
+      }
+      Rcout << "F\n";
       SIMULATE_F(of) {
 	REPORT_F(logF,of);
 	REPORT_F(logN,of);
@@ -692,10 +715,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	vector<Type> logEmpiricalYPR_D = empiricalYPR(dat, conf, logN, mort, 2, true);
 	REPORT_F(logEmpiricalYPR_D,of);
       }
+      Rcout << "G\n";
       // REPORT_F(obsCov,of);
       REPORT_F(predObs,of);
       if(reportingLevel >= 0){
 	ADREPORT_F(logssb,of);
+	ADREPORT_F(logrb,of);
 	ADREPORT_F(logfbar,of);
 	ADREPORT_F(logfbar_Effective,of);
 	ADREPORT_F(logCatch,of);
@@ -709,8 +734,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	ADREPORT_F(comps, of);
 	REPORT_F(weekContrib, of);
       }
+      Rcout << "H\n";
+
       // Additional forecast quantities
       if(forecast.nYears > 0){
+	Rcout << "I\n";
 	vector<Type> dis = disFun(dat, conf, logN, logF, mort);
 	vector<Type> logDis = log(dis);
     
@@ -731,6 +759,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	// SIMULATE_F(of) {
 	//if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
 	REPORT_F(logssb,of);
+	REPORT_F(logrb,of);
 	REPORT_F(logfbar,of);
 	REPORT_F(logfbarL,of);
 	REPORT_F(logCatch,of);
@@ -743,6 +772,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	//}
 	// }
       }
+      Rcout << "J\n";
 
       int timeSteps=logF.dim[1];
       if(reportingLevel >= 0){
@@ -763,8 +793,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	vector<Type> beforeLastLogF = logF.col(timeSteps-2);
 	ADREPORT_F(beforeLastLogF,of);
       }
+      Rcout << "K\n";
       if(forecast.nYears > 0 && forecast.FModel(forecast.FModel.size()-1) == forecast.findMSY){
-    
+	Rcout << "L\n";
+
 	int catchYears = std::min((int)asDouble(forecast.nYears),forecast.nCatchAverageYears);
 	Type catchSum = sum((vector<Type>)cat.tail(catchYears)) / (Type)catchYears;
 	nll -= par.implicitFunctionDelta * log(catchSum);    
@@ -778,6 +810,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	ADREPORT_F(logFstatus, of);
 	ADREPORT_F(logSSBstatus, of);    
       }
+      Rcout << "Done with nllObs\n";
       return nll;
     }
     )

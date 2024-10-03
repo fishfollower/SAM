@@ -1,9 +1,8 @@
 |         |                 |
 |---------|----------------:|
-| sam.fit |  R Documentation|
+| sam.fit | R Documentation |
 
-Fit SAM model
--------------
+## Fit SAM model
 
 ### Description
 
@@ -11,47 +10,49 @@ Fit SAM model
 
 ### Usage
 
-    sam.fit(
-      data,
-      conf,
-      parameters,
-      newtonsteps = 3,
-      rm.unidentified = FALSE,
-      run = TRUE,
-      lower = getLowerBounds(parameters, conf),
-      upper = getUpperBounds(parameters, conf),
-      sim.condRE = TRUE,
-      ignore.parm.uncertainty = FALSE,
-      rel.tol = 1e-10,
-      eval.max = 2000,
-      iter.max = 1000,
-      penalizeSpline = FALSE,
-      fullDerived = FALSE,
-      pre.clean = TRUE,
-      check.parameters = TRUE,
-      ...
-    )
+``` R
+sam.fit(
+  data,
+  conf,
+  parameters,
+  newtonsteps = 3,
+  rm.unidentified = FALSE,
+  run = TRUE,
+  lower = getLowerBounds(parameters, conf),
+  upper = getUpperBounds(parameters, conf),
+  sim.condRE = TRUE,
+  ignore.parm.uncertainty = FALSE,
+  rel.tol = 1e-10,
+  eval.max = 2000,
+  iter.max = 1000,
+  penalizeSpline = FALSE,
+  fullDerived = FALSE,
+  pre.clean = TRUE,
+  check.parameters = TRUE,
+  ...
+)
+```
 
 ### Arguments
 
-|                           |                                                                                                                                                                                                                                                                                                                                             |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `data`                    | data for the sam model as returned from the setup.sam.data function                                                                                                                                                                                                                                                                         |
-| `conf`                    | model configuration which can be set up using the `defcon` function and then modified either directly in R or by saving it to a text file using the function `saveConf`, modifying the text file, and then reading the configuration from the textfile using the function `loadConf`. For more details about the configuration see details. |
-| `parameters`              | initial values which can be set up using the `defpar` function and then modified.                                                                                                                                                                                                                                                           |
-| `newtonsteps`             | optional extra true newton steps                                                                                                                                                                                                                                                                                                            |
-| `rm.unidentified`         | option to eliminate unidentified model parameters based on gradient in initial value (somewhat experimental)                                                                                                                                                                                                                                |
-| `run`                     | if FALSE return AD object without running the optimization                                                                                                                                                                                                                                                                                  |
-| `lower`                   | named list with lower bounds for optimization (only met before extra newton steps)                                                                                                                                                                                                                                                          |
-| `upper`                   | named list with upper bounds for optimization (only met before extra newton steps)                                                                                                                                                                                                                                                          |
-| `sim.condRE`              | logical with default `TRUE`. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.                                                                                                                                                              |
-| `ignore.parm.uncertainty` | option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties                                                                                                                                                                                                                                |
-| `rel.tol`                 | option passed to stats:::nlminb sets the convergence criteria                                                                                                                                                                                                                                                                               |
-| `eval.max`                | option passed to stats:::nlminb sets the maximum number of function evaluations                                                                                                                                                                                                                                                             |
-| `iter.max`                | option passed to stats:::nlminb sets the maximum number of iterations                                                                                                                                                                                                                                                                       |
-| `penalizeSpline`          | Add penalization to spline recruitment?                                                                                                                                                                                                                                                                                                     |
-| `fullDerived`             | Report all derived values?                                                                                                                                                                                                                                                                                                                  |
-| `...`                     | extra arguments to MakeADFun                                                                                                                                                                                                                                                                                                                |
+|  |  |
+|----|----|
+| `data` | data for the sam model as returned from the setup.sam.data function |
+| `conf` | model configuration which can be set up using the `defcon` function and then modified either directly in R or by saving it to a text file using the function `saveConf`, modifying the text file, and then reading the configuration from the textfile using the function `loadConf`. For more details about the configuration see details. |
+| `parameters` | initial values which can be set up using the `defpar` function and then modified. |
+| `newtonsteps` | optional extra true newton steps |
+| `rm.unidentified` | option to eliminate unidentified model parameters based on gradient in initial value (somewhat experimental) |
+| `run` | if FALSE return AD object without running the optimization |
+| `lower` | named list with lower bounds for optimization (only met before extra newton steps) |
+| `upper` | named list with upper bounds for optimization (only met before extra newton steps) |
+| `sim.condRE` | logical with default `TRUE`. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values. |
+| `ignore.parm.uncertainty` | option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties |
+| `rel.tol` | option passed to stats:::nlminb sets the convergence criteria |
+| `eval.max` | option passed to stats:::nlminb sets the maximum number of function evaluations |
+| `iter.max` | option passed to stats:::nlminb sets the maximum number of iterations |
+| `penalizeSpline` | Add penalization to spline recruitment? |
+| `fullDerived` | Report all derived values? |
+| `...` | extra arguments to MakeADFun |
 
 ### Details
 
@@ -255,7 +256,9 @@ Fisheries Research, 230, 105618.
 
 ### Examples
 
-    data(nscodData)
-    data(nscodConf)
-    data(nscodParameters)
-    fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
+``` R
+data(nscodData)
+data(nscodConf)
+data(nscodParameters)
+fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
+```

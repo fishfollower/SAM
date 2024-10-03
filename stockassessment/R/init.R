@@ -123,7 +123,7 @@ defpar <- function(dat,conf,spinoutyear=10){
     }else{numeric(0)}
                   }else{numeric(0)}
 
-  ret$logFecundityScaling <- ifelse(is.na(conf$fecundityScaling),0,conf$fecundityScaling)
+  ret$logFecundityScaling <- ifelse(is.na(conf$fecundityScaling),0,log(conf$fecundityScaling))
 
   ret$logPhiSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(conf$stockWeightModel+1)}
   ret$logSdProcLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(1)}

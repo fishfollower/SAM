@@ -491,6 +491,39 @@ ssbplot.hcr <- function(fit,...){
     addforecast(fit,"ssb")
 }
 
+##' SAM Reproductive output biomass plot 
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments transferred to plot including the following: \cr
+##' \code{add} logical, plotting is to be added on existing plot \cr
+##' \code{ci} logical, confidence intervals should be plotted \cr
+##' \code{cicol} color to plot the confidence polygon
+##' @details Plot of spawning stock biomass 
+##' @export
+rbplot<-function(fit, ...){
+    UseMethod("rbplot")
+}
+##' @rdname rbplot
+##' @method rbplot default
+##' @export
+rbplot.default <- function(fit,...){
+    plotit(fit, "logrb", ylab="Reproductive biomass", trans=exp,...)
+}
+##' @rdname ssbplot
+##' @method ssbplot samforecast
+##' @export
+rbplot.samforecast <- function(fit,...){
+    plotit(fit, "logssb", ylab="Reproductive biomass", trans=exp,...)
+    addforecast(fit,"ssb")
+}
+
+##' @rdname ssbplot
+##' @method ssbplot hcr
+##' @export
+rbplot.hcr <- function(fit,...){
+    plotit(fit, "logrb", ylab="Reproductive biomass", trans=exp,...)
+    addforecast(fit,"rb")
+}
+
 
 ##' SAM life expectancy plot 
 ##' @param fit the object returned from sam.fit
@@ -1065,14 +1098,18 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
                        polylwd = 1,
                        xlim, ylim, add=FALSE, CIlevel = 0.95, addCurve = TRUE, ...){
     X <- summary(fit)
+    RB <- rbtable(fit)
     n<-nrow(X)
     lag <- fit$conf$minAge
     idxR <- (lag+1):n
     idxS <- 1:(n-lag)
     R<-X[idxR,1]
-    S<-X[idxS,4]
+    ##S<-X[idxS,4]
+    S<-RB[idxS,1]
     Rnam<-colnames(X)[1]
     Snam<-colnames(X)[4]
+    if(!is.na(fit$conf$fecundityScaling) & fit$conf$fecundityScaling != 1)
+        Snam <- "Reproductive biomass"
     y<-rownames(X)
     makeCIpolygon <- function(i){
         mu <- c(log(S)[i],log(R)[i])

@@ -17,6 +17,7 @@ ypr(
   Fdelta = 0.01,
   aveYears = min(15, length(fit$data$years)),
   ageLimit = 100,
+  sprProp = 0.35,
   ...
 )
 list(list("ypr"), list("sam"))(
@@ -25,6 +26,7 @@ list(list("ypr"), list("sam"))(
   Fdelta = 0.01,
   aveYears = min(15, length(fit$data$years)),
   ageLimit = 100,
+  sprProp = 0.35,
   ...
 )
 ```
@@ -39,6 +41,7 @@ Argument      |Description
 `Fdelta`     |     increments on the Fbar axis
 `aveYears`     |     Number of years back to use when calculating averages (selection, weights, ...)
 `ageLimit`     |     Oldest age used (should be high)
+`sprProp`     |     Proportion of SPR at F=0, for example 0.35 if F0.35SPR
 `...`     |     extra arguments not currently used
 
 

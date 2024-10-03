@@ -11,13 +11,16 @@ deterministicReferencepoints(fit, referencepoints, ...)
   fit,
   referencepoints,
   catchType = "catch",
-  nYears = 300,
+  nYears = 100,
   Fsequence = seq(0, 2, len = 50),
   aveYears = max(fit$data$years) + (-9:0),
   selYears = max(fit$data$years),
   biasCorrect = FALSE,
   newton.control = list(),
   run = TRUE,
+  equilibriumMethod = c("AD", "EC"),
+  nosim_ci = 200,
+  ncores = 1,
   ...
 )
 }

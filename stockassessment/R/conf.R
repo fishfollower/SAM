@@ -236,7 +236,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
         txt$keyCorObs <- paste0("Coupling of correlation parameters can only be specified if the AR(1) structure is chosen above.",
                                 "\n# NA's indicate where correlation parameters can be specified (-1 where they cannot).",
                                 paste0("\n#",paste0(colnames(x$keyCorObs), collapse=" ")))
-        txt$stockRecruitmentModelCode <- "Stock recruitment code (0 for plain random walk, 1 for Ricker, 2 for Beverton-Holt, 3 piece-wise constant, 61 for segmented regression/hockey stick, 62 for AR(1), 63 for bent hyperbola / smooth hockey stick, 64 for power function with degree < 1, 65 for power function with degree > 1, 66 for Shepher, 67 for Deriso, 68 for Saila-Lorda, 69 for sigmoidal Beverton-Holt, 90 for CMP spline, 91 for more flexible spline, and 92 for most flexible spline)."
+        txt$stockRecruitmentModelCode <- "Stock recruitment code (0 for plain random walk, 1 for Ricker, 2 for Beverton-Holt, 3 piece-wise constant, 61 for segmented regression/hockey stick, 62 for AR(1), 63 for bent hyperbola / smooth hockey stick, 64 for power function with degree < 1, 65 for power function with degree > 1, 66 for Shepherd, 67 for Deriso, 68 for Saila-Lorda, 69 for sigmoidal Beverton-Holt, 90 for CMP spline, 91 for more flexible spline, and 92 for most flexible spline)."
         txt$noScaledYears <- "Number of years where catch scaling is applied."
         txt$keyScaledYears <- "A vector of the years where catch scaling is applied."
         txt$keyParScaledYA <- "A matrix specifying the couplings of scale parameters (nrow = no scaled years, ncols = no ages)."

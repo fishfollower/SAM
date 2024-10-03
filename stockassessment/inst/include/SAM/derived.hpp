@@ -139,37 +139,46 @@ SAM_SPECIALIZATION(vector<TMBad::ad_aug> ssbFun(dataSet<TMBad::ad_aug>&, confSet
 
 
 template <class Type>
-Type spawningPotentiali(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, int i, bool give_log DEFARG(= false))SOURCE({
+Type totalReproductiveOutputi(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, int i, bool give_log DEFARG(= false))SOURCE({
+    Type logssb0 = ssbi(dat,conf,logN,logF,mort,0,true);
   int stateDimN=logN.dim[0];
   Type logssb = R_NegInf;
-  for(int j=0; j<stateDimN; ++j){
-    if(dat.propMat(i,j) > 0){
-      Type lssbNew = logN(j,i) + log(mort.ssbSurvival_before(j,i)) + log(dat.propMat(i,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(i,j));
-      logssb = logspace_add_SAM(logssb, lssbNew);
+  if(i == 0){
+      logssb = logssb0;
+  }else{
+    Type logrb0 = R_NegInf;
+    for(int j=0; j<stateDimN; ++j){
+      if(dat.propMat(i,j) > 0){
+	Type lrb0New = logN(j,0) + log(mort.ssbSurvival_before(j,0)) + log(dat.propMat(0,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,j));
+	logrb0 = logspace_add_SAM(logrb0, lrb0New);
+	Type lssbNew = logN(j,i) + log(mort.ssbSurvival_before(j,i)) + log(dat.propMat(i,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(i,j));
+	logssb = logspace_add_SAM(logssb, lssbNew);
+      }
     }
+    logssb = logssb - logrb0 + logssb0;
   }
   if(give_log)
     return logssb;
   return exp(logssb);
   })
 
-SAM_SPECIALIZATION(double spawningPotentiali(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, int, bool));
-SAM_SPECIALIZATION(TMBad::ad_aug spawningPotentiali(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, int, bool));
+SAM_SPECIALIZATION(double totalReproductiveOutputi(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, int, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug totalReproductiveOutputi(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, int, bool));
 
 template <class Type>
-vector<Type> spawningPotentianFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF,MortalitySet<Type>& mort, bool give_log DEFARG(= false))SOURCE({
+vector<Type> totalReproductiveOutputFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF,MortalitySet<Type>& mort, bool give_log DEFARG(= false))SOURCE({
   int timeSteps=logF.dim[1];
   array<Type> totF=totFFun(dat, conf, logF);
   vector<Type> ssb(timeSteps);
   ssb.setConstant(R_NegInf);
   for(int i=0;i<timeSteps;i++){
-    ssb(i)=spawningPotentiali(dat,conf,par,logN,logF,mort,i, give_log);
+    ssb(i)=totalReproductiveOutputi(dat,conf,par,logN,logF,mort,i, give_log);
   }
   return ssb;
   });
 
-SAM_SPECIALIZATION(vector<double> spawningPotentianFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, bool));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> spawningPotentianFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, bool));
+SAM_SPECIALIZATION(vector<double> totalReproductiveOutputFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, bool));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> totalReproductiveOutputFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, bool));
 
 
 

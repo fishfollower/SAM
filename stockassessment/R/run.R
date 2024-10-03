@@ -122,8 +122,12 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         args$map$logitFseason <- factor(NA * args$parameters$logitFseason)
     }
 
-    if(!is.na(conf$fecundityScaling))
+    if(!is.na(conf$fecundityScaling) | conf$stockRecruitmentModelCode %in% c(0,3,62))
         args$map$logFecundityScaling <- factor(NA)
+    if(is.na(conf$fecundityScaling) & conf$stockRecruitmentModelCode %in% c(0,3,62)){
+        warning("fecundityScaling set to 1. It cannot be estimated for a recruitment model that does not depend on stock size.")
+        par$logFecundityScaling <- 0
+    }
 
     obj <- do.call(MakeADFun,args)
     
@@ -244,6 +248,7 @@ doReporting <- function(obj, opt, ignore.parm.uncertainty){
 
     ## S-R pairs
     idx <- names(sdrep$value)%in%c("logssb","logR")
+    idx <- names(sdrep$value)%in%c("logrb","logR")
     sdrep$covSRpairs <- sdrep$cov[idx,idx, drop = FALSE]
     colnames(sdrep$covSRpairs) <- rownames(sdrep$covSRpairs) <- names(sdrep$value)[idx]
     
