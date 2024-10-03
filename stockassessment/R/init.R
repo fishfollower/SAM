@@ -121,7 +121,9 @@ defpar <- function(dat,conf,spinoutyear=10){
     if(max(conf$predVarObsLink,na.rm=TRUE)>(-1)){
       rep(log(1),(max(conf$predVarObsLink,na.rm=TRUE) + 1))
     }else{numeric(0)}
-  }else{numeric(0)}
+                  }else{numeric(0)}
+
+  ret$logFecundityScaling <- ifelse(is.na(conf$fecundityScaling),0,conf$fecundityScaling)
 
   ret$logPhiSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(conf$stockWeightModel+1)}
   ret$logSdProcLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(1)}

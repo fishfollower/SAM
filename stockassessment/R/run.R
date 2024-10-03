@@ -122,6 +122,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         args$map$logitFseason <- factor(NA * args$parameters$logitFseason)
     }
 
+    if(!is.na(conf$fecundityScaling))
+        args$map$logFecundityScaling <- factor(NA)
+
     obj <- do.call(MakeADFun,args)
     
     ddd <- args

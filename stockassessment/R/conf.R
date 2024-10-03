@@ -172,6 +172,7 @@ defcon<-function(dat, level=1){
     ret$seasonFirstYear <- -Inf
     ret$seasonFixedEffect <- 0
     ret$boundF <- c(NA_real_,NA_real_)
+    ret$fecundityScaling <- 1
     return(ret) 
 }
 
@@ -269,6 +270,7 @@ saveConf <- function(x, file="", overwrite=FALSE){
         txt$seasonFirstYear <- "First year where seasons are used. Default is -Inf."
         txt$seasonFixedEffect <- "0: Seasonality is modelled by random effects. 1: Seasonality is modelled by fixed effects."
         txt$boundF <- "(Soft) lower and upper bound for the average fishing mortality. Default is NA for no bound."
+        txt$fecundityScaling <- "Allometric scaling of fecundity. Use NA to estimate."
         nam<-names(x)
         dummy<-lapply(1:length(nam), function(i){
             cat('\n$', file=file, append=TRUE)

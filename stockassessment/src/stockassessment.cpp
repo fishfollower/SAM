@@ -181,6 +181,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
   PARAMETER_VECTOR(predVarObs); paraset.predVarObs=predVarObs;
+  PARAMETER(logFecundityScaling); paraset.logFecundityScaling=logFecundityScaling;
+  
   PARAMETER_VECTOR(logPhiSW); paraset.logPhiSW=logPhiSW;
   PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
   PARAMETER_VECTOR(meanLogSW); paraset.meanLogSW=meanLogSW;
