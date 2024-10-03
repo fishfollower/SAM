@@ -453,6 +453,7 @@ struct paraSet{
   vector<Type> sepFlogitRho;   
   vector<Type> sepFlogSd;
   vector<Type> predVarObs;
+  Type logFecundityScaling;
   Type logFScaleMSY;
   Type implicitFunctionDelta;
 
@@ -514,6 +515,8 @@ struct paraSet{
     sepFalpha(other.sepFalpha),
     sepFlogitRho(other.sepFlogitRho),
     sepFlogSd(other.sepFlogSd),
+     predVarObs(other.predVarObs),
+     logFecundityScaling(other.logFecundityScaling),
     logFScaleMSY(other.logFScaleMSY),
     implicitFunctionDelta(other.implicitFunctionDelta),
     logPhiSW(other.logPhiSW), 
@@ -564,6 +567,8 @@ SOURCE(
        sepFalpha(),
        sepFlogitRho(),
        sepFlogSd(),
+       predVarObs(),
+       logFecundityScaling(),
        logFScaleMSY(),
        implicitFunctionDelta(),
        logPhiSW(), 
@@ -616,6 +621,8 @@ SOURCE(
 	   sepFalpha = asVector<Type>(getListElement(x,"sepFalpha", &Rf_isNumeric));
 	   sepFlogitRho = asVector<Type>(getListElement(x,"sepFlogitRho", &Rf_isNumeric));
 	   sepFlogSd = asVector<Type>(getListElement(x,"sepFlogSd", &Rf_isNumeric));
+	   predVarObs = asVector<Type>(getListElement(x,"predVarObs", &Rf_isNumeric));
+	     logFecundityScaling = (Type)Rf_asReal(getListElement(x,"logFecundityScaling", &isNumericScalar));
 	   logFScaleMSY = (Type)Rf_asReal(getListElement(x,"logFScaleMSY", &isNumericScalar));
 	   implicitFunctionDelta = (Type)Rf_asReal(getListElement(x,"implicitFunctionDelta", &isNumericScalar));
 

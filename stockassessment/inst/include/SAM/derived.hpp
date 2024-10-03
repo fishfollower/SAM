@@ -139,6 +139,42 @@ SAM_SPECIALIZATION(vector<TMBad::ad_aug> ssbFun(dataSet<TMBad::ad_aug>&, confSet
 
 
 template <class Type>
+Type spawningPotentiali(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, int i, bool give_log DEFARG(= false))SOURCE({
+  int stateDimN=logN.dim[0];
+  Type logssb = R_NegInf;
+  for(int j=0; j<stateDimN; ++j){
+    if(dat.propMat(i,j) > 0){
+      Type lssbNew = logN(j,i) + log(mort.ssbSurvival_before(j,i)) + log(dat.propMat(i,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(i,j));
+      logssb = logspace_add_SAM(logssb, lssbNew);
+    }
+  }
+  if(give_log)
+    return logssb;
+  return exp(logssb);
+  })
+
+SAM_SPECIALIZATION(double spawningPotentiali(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, int, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug spawningPotentiali(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, int, bool));
+
+template <class Type>
+vector<Type> spawningPotentianFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF,MortalitySet<Type>& mort, bool give_log DEFARG(= false))SOURCE({
+  int timeSteps=logF.dim[1];
+  array<Type> totF=totFFun(dat, conf, logF);
+  vector<Type> ssb(timeSteps);
+  ssb.setConstant(R_NegInf);
+  for(int i=0;i<timeSteps;i++){
+    ssb(i)=spawningPotentiali(dat,conf,par,logN,logF,mort,i, give_log);
+  }
+  return ssb;
+  });
+
+SAM_SPECIALIZATION(vector<double> spawningPotentianFun(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, bool));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> spawningPotentianFun(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, bool));
+
+
+
+
+template <class Type>
 matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, bool give_log DEFARG(= false))SOURCE({
   int len=dat.landFrac.dim(0);
   int noFleets=conf.keyLogFsta.dim(0);

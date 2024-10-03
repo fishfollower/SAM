@@ -40,6 +40,12 @@ AC_ARG_ENABLE(debug,
 	[AS_IF([test $enableval = "no"],[DBG=""],[DBG="-g -O0 -Wall -Wpedantic"]); AC_MSG_NOTICE([Debug flags: ${DBG}])],
 	[DBG=""])
 
+AC_ARG_ENABLE(analyze,
+	AS_HELP_STRING([--enable-analyze],[Add static analyzer flags. Note: flags set in a personal Makevars file have precedence]),
+	[AS_IF([test $enableval = "no"],[ANALYZE=""],[ANALYZE="-fsanitize=address,undefined,leak,shadow-call-stack,pointer-subtract,pointer-compare -fno-sanitize-recover=all -fanalyzer -Wanalyzer-double-fclose -Wanalyzer-double-free -Wanalyzer-exposure-through-output-file -Wanalyzer-file-leak -Wanalyzer-free-of-non-heap -Wanalyzer-malloc-leak -Wanalyzer-mismatching-deallocation -Wanalyzer-null-argument -Wanalyzer-null-dereference -Wanalyzer-possible-null-argument -Wanalyzer-possible-null-dereference -Wanalyzer-shift-count-negative -Wanalyzer-shift-count-overflow -Wanalyzer-stale-setjmp-buffer -Wanalyzer-tainted-array-index -Wanalyzer-too-complex -Wanalyzer-unsafe-call-within-signal-handler -Wanalyzer-use-after-free -Wanalyzer-use-of-pointer-in-stale-stack-frame -Wanalyzer-write-to-const -Wanalyzer-write-to-string-literal"]); AC_MSG_NOTICE([Analyzer flags: ${ANALYZE}])],
+	[DBG=""])
+
+
 AC_ARG_ENABLE(compileunits,
 	AS_HELP_STRING([--disable-compileunits],[Compile with header only library instead of using compilation units.]),
 	[AS_IF([test $enableval = "yes"],[HEADERONLY="yes"],[HEADERONLY="no"])],

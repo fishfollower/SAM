@@ -16,6 +16,11 @@ ifeq (testonemore,$(firstword $(MAKECMDGOALS)))
   $(eval $(ARG):;@:)
 endif
 
+ifeq (testoneleak,$(firstword $(MAKECMDGOALS)))
+  ARG := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(ARG):;@:)
+endif
+
 ifeq (webtestone,$(firstword $(MAKECMDGOALS)))
   ARG := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   $(eval $(ARG):;@:)
@@ -90,6 +95,9 @@ quick-install: $(CPP_SRC) $(PACKAGE)/configure $(R_FILES)
 quick-install-debug: $(CPP_SRC) $(PACKAGE)/configure $(R_FILES)
 	$(R) CMD INSTALL --configure-args='--enable-debug' $(PACKAGE)
 
+quick-install-analyzer: $(CPP_SRC) $(PACKAGE)/configure $(R_FILES)
+	$(R) CMD INSTALL --configure-args='--enable-debug --enable-analyze' $(PACKAGE)
+
 
 $(PACKAGE)/src/stockassessment.so: $(PACKAGE)/src/stockassessment.cpp $(CPP_SRC) $(PACKAGE)/configure
 	$(error This will not work as intended. Use 'make quick-install' instead)
@@ -158,6 +166,9 @@ testmoreseq: $(SUBDIRS)
 
 testonemore:
 	@$(MAKE) testmore/$(ARG)/.
+
+testoneleak:
+	$(R) -d 'valgrind --leak-check=full --show-leak-kinds=all' -f testmore/$(ARG)/script.R > valgrind_${ARG}.txt
 
 $(SUBDIRS):
 	@cp testmore/Makefile $@

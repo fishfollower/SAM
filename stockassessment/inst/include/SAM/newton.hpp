@@ -3,6 +3,7 @@
 HEADER(
 struct NewtonFunctor {
   virtual TMBad::ad_aug operator()(const vector<TMBad::ad_aug>& x);
+  virtual ~NewtonFunctor();
 };
        )
 
@@ -10,6 +11,7 @@ SOURCE(
        TMBad::ad_aug NewtonFunctor::operator()(const vector<TMBad::ad_aug>& x){
 	 return R_NaReal;
        };
+       NewtonFunctor::~NewtonFunctor(){};
        )
 
 HEADER(

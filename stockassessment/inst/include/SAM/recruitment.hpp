@@ -145,6 +145,8 @@ namespace RecruitmentConvenience {
       return R_NaReal;
     }
 
+    virtual ~RecruitmentFunctor(){};
+
     ad safe_eval(const ad& x){
       return operator()(x);
     }

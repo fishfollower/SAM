@@ -69,7 +69,8 @@ struct RPD_Base : NewtonFunctor {
 
   
   virtual ad operator()(const vector<ad>& logFbar) = 0;
-  
+
+  virtual ~RPD_Base(){};
 };
 
 
@@ -79,7 +80,7 @@ struct RefPointD_Base {
   virtual PERREC_t<Type> getPerRecruit(Type logFbar) = 0;
   virtual vector<Type> optimize(vector<Type> logF0) = 0;
   virtual vector<Type> par2logF(const vector<Type>& x) = 0;
-  
+  virtual ~RefPointD_Base(){};
 };
 
 
@@ -265,6 +266,7 @@ public:
       return x;
     }
     virtual vector<Type> optimize(vector<Type> logF0) = 0;
+    virtual ~RefPointD_Known(){};
   };
 
   template<class Type>

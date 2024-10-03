@@ -143,5 +143,6 @@ HEADER(
 template<class Type>
 struct EquilibriumRecycler {
   virtual PERREC_t<Type> operator()(Type logFbar) = 0;
+  virtual ~EquilibriumRecycler() {};
 }
        )
