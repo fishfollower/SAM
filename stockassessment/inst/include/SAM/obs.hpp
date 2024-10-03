@@ -526,7 +526,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		  }
 		}
 		Rcout << "\t\t8\n";
-
+		Rcout << dat.idxCor(f,y) << ", " << isNAINT(dat.idxCor(f,y)) << ", " << isNA((double)dat.idxCor(f,y)) << "\n";
 		if(isNAINT(dat.idxCor(f,y))){
 		  Rcout << "\t\t9-A\n";
 		  nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
