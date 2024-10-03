@@ -192,6 +192,9 @@ saveConf <- function(x, file="", overwrite=FALSE){
     writeConf.integer <- function(x,...){
         cat("\n",x,"\n",...)
     }
+    writeConf.logical <- function(x,...){
+        cat("\n",x,"\n",...)
+    }
 
     writeConf.numeric <- function(x,...){
         cat("\n",x,"\n",...)
