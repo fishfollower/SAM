@@ -1,6 +1,6 @@
 Package: stockassessment
 Title: State-Space Assessment Model
-Version: 0.12.2
+Version: 0.12.3
 Date: 2023-01-27
 Authors@R: c(person("Anders","Nielsen",role=c("aut","cre"), email="an@aqua.dtu.dk"),
 	    person("Casper","Berg",role="aut"),
