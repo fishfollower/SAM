@@ -302,10 +302,14 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       vector<Type> ssb = exp(logssb);
       Rcout << "From nllObs 2: " << dat.idxCor(0,0) << "\n";
 
-      vector<Type> logrb = totalReproductiveOutputFun(dat, conf, par, logN, logF,mort, true);
-      vector<Type> rb = exp(logrb);
+      vector<Type> logerb = erbFun(dat, conf, par, logN, logF,mort, true);
+      vector<Type> erb = exp(logerb);
       Rcout << "From nllObs 3: " << dat.idxCor(0,0) << "\n";
+      vector<Type> logrelativeerb = logerb - logssb;
+      vector<Type> relativeerb = exp(logrelativeerb);
+      
 
+      
       vector<Type> fsb = fsbFun(dat, conf, logN, logF,mort);
       vector<Type> logfsb = log(fsb);
       Rcout << "From nllObs 4: " << dat.idxCor(0,0) << "\n";
@@ -742,7 +746,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       REPORT_F(predObs,of);
       if(reportingLevel >= 0){
 	ADREPORT_F(logssb,of);
-	ADREPORT_F(logrb,of);
+	ADREPORT_F(logerb,of);
+	ADREPORT_F(logrelativeerb,of);
 	ADREPORT_F(logfbar,of);
 	ADREPORT_F(logfbar_Effective,of);
 	ADREPORT_F(logCatch,of);
@@ -781,7 +786,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	// SIMULATE_F(of) {
 	//if(dat.forecast.simFlag[0] == 0 || dat.forecast.simFlag[1] == 0){
 	REPORT_F(logssb,of);
-	REPORT_F(logrb,of);
+	REPORT_F(logerb,of);
+	REPORT_F(logrelativeerb,of);
 	REPORT_F(logfbar,of);
 	REPORT_F(logfbarL,of);
 	REPORT_F(logCatch,of);

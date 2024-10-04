@@ -20,6 +20,7 @@ enum ConstraintType {
 		     Constrain_Landing = 4,
 		     Constrain_KeepRelF = 5,
 		     Constrain_HCR = 6,
+		     Constrain_ERB = 7,
 		     Constrain_NONE = 99
 };
 
@@ -201,6 +202,31 @@ namespace ConstrainCalculations {
 
   SAM_SPECIALIZATION(double getLogSSB(dataSet<double>&, confSet&, array<double>&, array<double>&, MortalitySet<double>, int, int, int));
   SAM_SPECIALIZATION(TMBad::ad_aug getLogSSB(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>, int, int, int));
+
+ template<class Type>
+ Type getLogERB(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, MortalitySet<Type> mort, int y, int a0, int a1){
+   Type logssb = R_NegInf;
+   Type lssb0 = Type(R_NegInf);
+   Type lerb0 = Type(R_NegInf); 
+    int yu = std::min(y,dat.propMat.dim(0));
+    for(int a=a0; a<=a1; ++a){
+      if(dat.propMat(yu,a-conf.minAge) > 0){
+	Type lssbNew = logN(a-conf.minAge,y) + log(mort.ssbSurvival_before(a-conf.minAge,yu)) + log(dat.propMat(yu,a-conf.minAge)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(yu,a-conf.minAge));
+	logssb = logspace_add_SAM(logssb, lssbNew);
+		// Y=0 ERB
+	Type lerb0New = logN(a-conf.minAge,0) + log(mort.ssbSurvival_before(a-conf.minAge,0)) + log(dat.propMat(0,a-conf.minAge)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,a-conf.minAge));
+	lerb0 = logspace_add_SAM(lerb0, lerb0New);
+	// Y=0 SSB
+	Type lssb0New = logN(a-conf.minAge,0) + log(mort.ssbSurvival_before(a-conf.minAge,0)) + log(dat.propMat(0,a-conf.minAge)) + log(dat.stockMeanWeight(0,a-conf.minAge));
+	lssb0 = logspace_add_SAM(lssb0, lssb0New);
+      }
+    }
+    return logssb - lerb0 + lssb0;
+  };
+
+  SAM_SPECIALIZATION(double getLogERB(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>, int, int, int));
+  SAM_SPECIALIZATION(TMBad::ad_aug getLogERB(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>, int, int, int));
+  
   
 
   template<class Type>
@@ -324,7 +350,16 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	if(cstr.relative == (-2))
 	  trgt -= getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, cstr.Amin, cstr.Amax);
 	return trgt;
+
+      }else if(cstr.cstr == ConstraintType::Constrain_ERB){
+	SAM_ASSERT(cstr.relative <= -2, "ERB constraints can only be relative to last year");
+	//ad logB = getSSB(dat,conf, cFleets, recruit, logN, newLogF, historicalLogF, y, cstr.Amin, cstr.Amax, cstr.relative == (-2));
+	ad trgt = cstr.target;
+	if(cstr.relative == (-2))
+	  trgt -= getLogERB(dat, conf,par, logN2, hLogF2, mort, y-compareLag, cstr.Amin, cstr.Amax);
+	return trgt;
 	  
+	
       }else if(cstr.cstr == ConstraintType::Constrain_TSB){
 	SAM_ASSERT(cstr.relative <= -2, "TSB constraints can only be relative to last year");
 	ad trgt = cstr.target;

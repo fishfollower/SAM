@@ -55,6 +55,7 @@ struct forecastSet {
   vector<int> simFlag;
   vector<Type> hcrConf;
   int hcrCurrentSSB;
+  int hcrUseERB;
 	 vector<Type> Fdeviation;
 	 matrix<Type> FdeviationCov;
 	 matrix<Type> FEstCov;
@@ -130,9 +131,18 @@ SOURCE(
 	 }
 	 int indx = preYears + i;//i starts at 0,forecastYear.size() - nYears + i;    
 	 Type y = forecastYear(indx);    
-	 Type lastSSB = ssbi(dat, conf, logN, logF, mort, indx-1);
-	 // Assuming F before spawning is zero
-	 Type thisSSB = ssbi(dat, conf, logN, logF, mort, indx);
+	 Type lastSSB;
+	 Type thisSSB;
+	 if(hcrUseERB){
+	   lastSSB = erbi(dat, conf, par, logN, logF, mort, indx-1);
+	   // Assuming F before spawning is zero
+	  thisSSB = erbi(dat, conf, par, logN, logF, mort, indx);
+
+	 }else{
+	  lastSSB = ssbi(dat, conf, logN, logF, mort, indx-1);
+	   // Assuming F before spawning is zero
+	  thisSSB = ssbi(dat, conf, logN, logF, mort, indx);
+	 }
 	 // Type calcF = 0.0;
 	 vector<Type> logSelUse = log(sel);
 	 // Type logFbarEpsilon = 0.0;
@@ -276,6 +286,7 @@ SOURCE(
 		  simFlag(),
 		  hcrConf(),
 		  hcrCurrentSSB(),
+	 hcrUseERB(),
 	 Fdeviation(),
 	 FdeviationCov(),
 	 FEstCov(),
@@ -311,6 +322,7 @@ SOURCE(
 	     simFlag = vector<int>(0);
 	     hcrConf = vector<Type>(0);
 	     hcrCurrentSSB = 0;
+	     hcrUseERB = 0;
 	     Fdeviation = vector<Type>(0);
 	     FdeviationCov = matrix<Type>();
 	     FEstCov = matrix<Type>();
@@ -357,6 +369,7 @@ SOURCE(
 	     simFlag = asVector<int>(getListElement(x,"simFlag"));
 	     hcrConf = asVector<Type>(getListElement(x,"hcrConf"));
 	     hcrCurrentSSB = Rf_asInteger(getListElement(x,"hcrCurrentSSB"));
+	     hcrUseERB = Rf_asInteger(getListElement(x,"hcrUseERB"));
 	     Fdeviation = asVector<Type>(getListElement(x,"Fdeviation"));
 	     FdeviationCov = asMatrix<Type>(getListElement(x,"FdeviationCov"));
 	     FEstCov = asMatrix<Type>(getListElement(x,"FEstCov"));

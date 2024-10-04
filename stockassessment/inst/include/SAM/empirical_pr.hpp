@@ -200,3 +200,5 @@ vector<Type> empiricalYPR(dataSet<Type> &dat, confSet &conf, array<Type>& logN, 
 
   SAM_SPECIALIZATION(vector<double> empiricalYPR(dataSet<double>&, confSet&, array<double>&, MortalitySet<double>&, int, bool));
 SAM_SPECIALIZATION(vector<TMBad::ad_aug> empiricalYPR(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&, MortalitySet<TMBad::ad_aug>&, int, bool));
+
+

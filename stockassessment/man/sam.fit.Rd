@@ -95,6 +95,8 @@ The model configuration object \code{conf} is a list of different objects defini
 data(nscodData)
 data(nscodConf)
 data(nscodParameters)
+nscodData$idxCor
+storage.mode(nscodData$idxCor)
 fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 }
 \references{

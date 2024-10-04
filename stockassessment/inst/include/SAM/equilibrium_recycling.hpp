@@ -6,7 +6,9 @@ struct PERREC_t {
   Type logFbar;
   Type logYPR;
   Type logSPR;
+  Type logERPR;
   Type logSe;
+  Type logERBe;
   Type logRe;
   Type logYe;
   Type dSR0;
@@ -53,7 +55,9 @@ struct STOCHASTIC_PERREC_t {
   
   Type E_logYPR;
   Type E_logSPR;
+  Type E_logERPR;
   Type E_logSe;
+  Type E_logERBe;
   Type E_logRe;
   Type E_logYe;
   Type E_logLifeExpectancy;
@@ -62,7 +66,9 @@ struct STOCHASTIC_PERREC_t {
   Type V_logFbar;
   Type V_logYPR;
   Type V_logSPR;
+  Type V_logERPR;
   Type V_logSe;
+  Type V_logERBe;
   Type V_logRe;
   Type V_logYe;
   Type V_logLifeExpectancy;
@@ -89,7 +95,9 @@ SEXP asSEXP(const STOCHASTIC_PERREC_t<Type> &x)
 	"E_logFbar",
 	"E_logYPR",
 	"E_logSPR",
+	"E_logERPR",
 	"E_logSe",
+	"E_logERBe",
 	"E_logRe",
 	"E_logYe",
 	"E_logLifeExpectancy",
@@ -97,7 +105,9 @@ SEXP asSEXP(const STOCHASTIC_PERREC_t<Type> &x)
 	"V_logFbar",
 	"V_logYPR",
 	"V_logSPR",
+	"V_logERPR",
 	"V_logSe",
+	"V_logERBe",
 	"V_logRe",
 	"V_logYe",
 	"V_logLifeExpectancy",
@@ -112,23 +122,27 @@ SEXP asSEXP(const STOCHASTIC_PERREC_t<Type> &x)
       SET_VECTOR_ELT(res, 0, asSEXP(x.E_logFbar));
       SET_VECTOR_ELT(res, 1, asSEXP(x.E_logYPR));
       SET_VECTOR_ELT(res, 2, asSEXP(x.E_logSPR));
-      SET_VECTOR_ELT(res, 3, asSEXP(x.E_logSe));
-      SET_VECTOR_ELT(res, 4, asSEXP(x.E_logRe));
-      SET_VECTOR_ELT(res, 5, asSEXP(x.E_logYe));
-      SET_VECTOR_ELT(res, 6, asSEXP(x.E_logLifeExpectancy));
-      SET_VECTOR_ELT(res, 7, asSEXP(x.E_logYearsLost));
-      SET_VECTOR_ELT(res, 8, asSEXP(x.V_logFbar));
-      SET_VECTOR_ELT(res, 9, asSEXP(x.V_logYPR));
-      SET_VECTOR_ELT(res, 10, asSEXP(x.V_logSPR));
-      SET_VECTOR_ELT(res, 11, asSEXP(x.V_logSe));
-      SET_VECTOR_ELT(res, 12, asSEXP(x.V_logRe));
-      SET_VECTOR_ELT(res, 13, asSEXP(x.V_logYe));
-      SET_VECTOR_ELT(res, 14, asSEXP(x.V_logLifeExpectancy));
-      SET_VECTOR_ELT(res, 15, asSEXP(x.V_logYearsLost));
-      SET_VECTOR_ELT(res, 16, asSEXP(x.E_logN));
-      SET_VECTOR_ELT(res, 17, asSEXP(x.V_logN));
-      SET_VECTOR_ELT(res, 18, asSEXP(x.lastLogNDiff));
-      SET_VECTOR_ELT(res, 19, asSEXP(x.dSR0));
+      SET_VECTOR_ELT(res, 3, asSEXP(x.E_logERPR));
+      SET_VECTOR_ELT(res, 4, asSEXP(x.E_logSe));
+      SET_VECTOR_ELT(res, 5, asSEXP(x.E_logERBe));
+      SET_VECTOR_ELT(res, 6, asSEXP(x.E_logRe));
+      SET_VECTOR_ELT(res, 7, asSEXP(x.E_logYe));
+      SET_VECTOR_ELT(res, 8, asSEXP(x.E_logLifeExpectancy));
+      SET_VECTOR_ELT(res, 9, asSEXP(x.E_logYearsLost));
+      SET_VECTOR_ELT(res, 10, asSEXP(x.V_logFbar));
+      SET_VECTOR_ELT(res, 11, asSEXP(x.V_logYPR));
+      SET_VECTOR_ELT(res, 12, asSEXP(x.V_logSPR));
+      SET_VECTOR_ELT(res, 13, asSEXP(x.V_logERPR));
+      SET_VECTOR_ELT(res, 14, asSEXP(x.V_logSe));
+      SET_VECTOR_ELT(res, 15, asSEXP(x.V_logERBe));
+      SET_VECTOR_ELT(res, 16, asSEXP(x.V_logRe));
+      SET_VECTOR_ELT(res, 17, asSEXP(x.V_logYe));
+      SET_VECTOR_ELT(res, 18, asSEXP(x.V_logLifeExpectancy));
+      SET_VECTOR_ELT(res, 19, asSEXP(x.V_logYearsLost));
+      SET_VECTOR_ELT(res, 20, asSEXP(x.E_logN));
+      SET_VECTOR_ELT(res, 21, asSEXP(x.V_logN));
+      SET_VECTOR_ELT(res, 22, asSEXP(x.lastLogNDiff));
+      SET_VECTOR_ELT(res, 23, asSEXP(x.dSR0));
 
    UNPROTECT(1);
    return res;

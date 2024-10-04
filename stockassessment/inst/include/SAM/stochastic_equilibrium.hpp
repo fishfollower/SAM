@@ -53,7 +53,7 @@ struct stochasticCalculator {
     return recruit.dSR(logssb);
   }
 
-  Type getLogSSB(vector<Type>& logX){
+  Type getLogSSB(vector<Type>& logX){ // Actually ERB
     int y = dat.propM.rows()-1;
     Type logFbar = logX(0);
     vector<Type> logN = logX.segment(1,logX.size()-1);
@@ -65,6 +65,7 @@ struct stochasticCalculator {
     for(int a = conf.minAge; a <= conf.maxAge; ++a){      
       int ax = a - conf.minAge;
       if(dat.propMat(y,ax) > 0){
+	// Current ERB
 	Type lssbNew = logN(a) + log(mort.ssbSurvival_before(ax,y)) + log(dat.propMat(y,ax)) + log(dat.stockMeanWeight(y,ax));
 	logThisSSB = logspace_add_SAM(logThisSSB, lssbNew);
       }
@@ -73,6 +74,36 @@ struct stochasticCalculator {
     return logThisSSB;
   }
 
+ Type getLogERB(vector<Type>& logX){
+    int y = dat.propM.rows()-1;
+    Type logFbar = logX(0);
+    vector<Type> logN = logX.segment(1,logX.size()-1);
+    array<Type> logF = logFSel;
+    logF.col(y) += logFbar;
+    mort.updateYear(dat,conf,par,logF,logFseason,y);
+    Type logThisSSB=Type(R_NegInf);
+    Type lssb0 = Type(R_NegInf);
+    Type lerb0 = Type(R_NegInf);
+    // Calculate log-SSB
+    for(int a = conf.minAge; a <= conf.maxAge; ++a){      
+      int ax = a - conf.minAge;
+      if(dat.propMat(y,ax) > 0){
+	// Current ERB
+	Type lssbNew = logN(a) + log(mort.ssbSurvival_before(ax,y)) + log(dat.propMat(y,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(y,ax));
+	logThisSSB = logspace_add_SAM(logThisSSB, lssbNew);
+	// Y=0 ERB
+	Type lerb0New = logN(a) + log(mort.ssbSurvival_before(ax,0)) + log(dat.propMat(0,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,ax));
+	lerb0 = logspace_add_SAM(lerb0, lerb0New);
+	// Y=0 SSB
+	Type lssb0New = logN(a) + log(mort.ssbSurvival_before(ax,0)) + log(dat.propMat(0,ax)) + log(dat.stockMeanWeight(0,ax));
+	lssb0 = logspace_add_SAM(lssb0, lssb0New);
+      }
+    }
+
+    return logThisSSB - lerb0 + lssb0;
+  }
+
+  
   vector<Type> getCumulativeHazard(vector<Type>& logX){
     int y = dat.propM.rows()-1;
    Type logFbar = logX(0);
@@ -102,7 +133,8 @@ struct stochasticCalculator {
     vector<Type> predN(logN.size());
     predN.setConstant(R_NegInf);
     
-    Type logThisSSB = getLogSSB(logX);
+    //Type logThisSSB = getLogSSB(logX);
+    Type logThisSSB = getLogERB(logX);
     Type lastLogR = R_NaReal;
     lastLogR = logN(conf.minAge);    
     predN(0) = recruit(logThisSSB, lastLogR, y); // dat.years(0) + i is needed for forecast
@@ -256,6 +288,28 @@ HEADER(
 
 HEADER(
        template<class Type>
+       struct S_Functor_ERB {
+	 stochasticCalculator<Type> calc;
+
+	 vector<Type> operator()(vector<Type>& logX){
+	   vector<Type> res(1);
+	   res(0) = calc.getLogERB(logX);
+	   return res;
+	 }
+	 
+	 template<class T>
+	 vector<T> operator()(vector<T>& logX){
+	   stochasticCalculator<T> c2(calc);
+	   vector<T> res(1);
+	   res(0) = c2.getLogERB(logX);
+	   return res;
+	 }
+       };
+       )
+
+
+HEADER(
+       template<class Type>
        struct S_Functor_C {
 	 stochasticCalculator<Type> calc;
 
@@ -295,6 +349,28 @@ HEADER(
 	 }
        };
        )
+
+HEADER(
+       template<class Type>
+       struct S_Functor_ERPR {
+	 stochasticCalculator<Type> calc;
+
+	 vector<Type> operator()(vector<Type>& logX){
+	   vector<Type> res(1);
+	   res(0) =  calc.getLogERB(logX) - calc.getLogRecruitment(logX);
+	   return res;
+	 }
+	 
+	 template<class T>
+	 vector<T> operator()(vector<T>& logX){
+	   stochasticCalculator<T> c2(calc); 
+	   vector<T> res(1);
+	   res(0) =  c2.getLogERB(logX) - c2.getLogRecruitment(logX);
+	   return res;
+	 }
+       };
+       )
+
 
 HEADER(
        template<class Type>
@@ -554,6 +630,11 @@ struct EquilibriumRecycler_Stochastic_Worker {
   TMBad::ADFun<> G_S;
   TMBad::ADFun<> H_S;
 
+  S_Functor_ERB<Type> F_ERB;
+  TMBad::ADFun<> G_ERB;
+  TMBad::ADFun<> H_ERB;
+
+  
   S_Functor_C<Type> F_C;
   TMBad::ADFun<> G_C;
   TMBad::ADFun<> H_C;
@@ -561,6 +642,10 @@ struct EquilibriumRecycler_Stochastic_Worker {
   S_Functor_SPR<Type> F_SPR;
   TMBad::ADFun<> G_SPR;
   TMBad::ADFun<> H_SPR;
+
+  S_Functor_ERPR<Type> F_ERPR;
+  TMBad::ADFun<> G_ERPR;
+  TMBad::ADFun<> H_ERPR;
 
   S_Functor_CPR<Type> F_CPR;
   TMBad::ADFun<> G_CPR;
@@ -735,6 +820,19 @@ struct EquilibriumRecycler_Stochastic_Worker {
     // G_S = G_S.atomic();
     // H_S = H_S.atomic();
     }
+
+   F_ERB = {calc};
+    if(DT == 0){
+    G_ERB = TMBad::ADFun<> (TMBad::StdWrap<S_Functor_ERB<Type>,vector<TMBad::ad_aug> >(F_ERB), Ex0);
+    // G_S.optimize();
+    G_ERB = G_ERB.JacFun();
+    // G_S.optimize();
+    H_ERB = G_ERB.JacFun();
+    // H_S.optimize();
+    // G_S = G_S.atomic();
+    // H_S = H_S.atomic();
+    }
+    
     
     F_C = {calc};
     if(DT == 0){
@@ -771,6 +869,19 @@ struct EquilibriumRecycler_Stochastic_Worker {
       // G_SPR = G_SPR.atomic();
       // H_SPR = H_SPR.atomic();
     }
+
+    F_ERPR = {calc};
+    if(DT == 0){
+      G_ERPR = TMBad::ADFun<>(TMBad::StdWrap<S_Functor_ERPR<Type>,vector<TMBad::ad_aug> >(F_ERPR), Ex0);
+      // G_SPR.optimize();
+      G_ERPR = G_ERPR.JacFun();
+      // G_SPR.optimize();
+      H_ERPR = G_ERPR.JacFun();
+      // H_SPR.optimize();
+      // G_SPR = G_SPR.atomic();
+      // H_SPR = H_SPR.atomic();
+    }
+    
     return;
   }
 
@@ -832,9 +943,11 @@ struct EquilibriumRecycler_Stochastic_Worker {
     Ex(0) = logFbar;
     matrix<Type> Sx = Sx0;
     Type logSe = R_NegInf;
+    Type logERBe = R_NegInf;
     Type logYe = R_NegInf;
     Type logRe = R_NegInf;
     Type logSPR = R_NegInf;
+    Type logERPR = R_NegInf;
     Type logYPR = R_NegInf;
     
     for(int y = 0; y < nYears; ++y){
@@ -866,6 +979,28 @@ struct EquilibriumRecycler_Stochastic_Worker {
 	matrix<Type> m_s2 = m_s * m_s;
 	Type E_logSe = val_s + 0.5 * matrix_trace(m_s);
 	Type V_logSe = (g_s * (Sx * g_s)).sum() + 0.5 * matrix_trace(m_s2);
+	//// ERB
+	Type val_erb = 0;
+	vector<Type> g_erb;
+	matrix<Type> h_erb;
+	if(DT==0){
+	  g_erb = (vector<Type>)G_ERB(Ex);
+	  h_erb = asMatrix((vector<Type>)H_ERB(Ex),Ex.size(),Ex.size());
+	  val_erb = F_ERB(Ex)(0);
+	}else if(DT==1){
+	  g_erb = Gradient(F_ERB, Ex, 0);
+	  h_erb = Hessian(F_ERB, Ex, 0);
+	  val_erb = F_ERB(Ex)(0);
+	}else if(DT==2){
+	  DerivOutput<Type> dx_ERB = getDerivOutput(F_ERB, Ex);
+	  g_erb = dx_ERB.gradientList(0);
+	  h_erb = dx_ERB.hessianList(0);
+	  val_erb = dx_ERB.value(0);
+	}
+	matrix<Type> m_erb = h_erb * Sx;
+	matrix<Type> m_erb2 = m_erb * m_erb;
+	Type E_logERBe = val_erb + 0.5 * matrix_trace(m_erb);
+	Type V_logERBe = (g_erb * (Sx * g_erb)).sum() + 0.5 * matrix_trace(m_erb2);
 	//// Catch
 	Type val_c = 0;
 	vector<Type> g_c;
@@ -938,29 +1073,59 @@ struct EquilibriumRecycler_Stochastic_Worker {
 	matrix<Type> m_spr2 = m_spr * m_spr;
 	Type E_logSPR = val_spr + 0.5 * matrix_trace(m_spr);
 	Type V_logSPR = (g_spr * (Sx * g_spr)).sum() + 0.5 * matrix_trace(m_spr2);
+	//// ERB / Recruitment
+	Type val_erpr = 0;
+	vector<Type> g_erpr;
+	matrix<Type> h_erpr;
+	if(DT==0){
+	  g_erpr = (vector<Type>)G_ERPR(Ex);
+	  h_erpr = asMatrix((vector<Type>)H_ERPR(Ex),Ex.size(),Ex.size());
+	  val_erpr = F_ERPR(Ex)(0);
+	}else if(DT==1){
+	  g_erpr = Gradient(F_ERPR, Ex, 0);
+	  h_erpr = Hessian(F_ERPR, Ex, 0);
+	  val_erpr = F_ERPR(Ex)(0);
+	}else if(DT==2){
+	  DerivOutput<Type> dx_ERPR = getDerivOutput(F_ERPR, Ex);
+	  g_erpr = dx_ERPR.gradientList(0);
+	  h_erpr = dx_ERPR.hessianList(0);
+	  val_erpr = dx_ERPR.value(0);
+	}
+	matrix<Type> m_erpr = h_erpr * Sx;
+	matrix<Type> m_erpr2 = m_erpr * m_erpr;
+	Type E_logERPR = val_erpr + 0.5 * matrix_trace(m_erpr);
+	Type V_logERPR = (g_erpr * (Sx * g_erpr)).sum() + 0.5 * matrix_trace(m_erpr2);
 	if(outType == 0){ // Median
 	  logSe = logspace_add(logSe, E_logSe);
+	  logERBe = logspace_add(logERBe, E_logERBe);
 	  logYe = logspace_add(logYe, E_logYe);
 	  logRe = logspace_add(logRe, E_logRe);
 	  logSPR = logspace_add(logSPR, E_logSPR);
+	  logERPR = logspace_add(logERPR, E_logERPR);
 	  logYPR = logspace_add(logYPR, E_logYPR);
 	}else if(outType == 1){ // Mean
 	  logSe = logspace_add(logSe, E_logSe + 0.5 * V_logSe);
+	  logERBe = logspace_add(logERBe, E_logERBe + 0.5 * V_logERBe);
 	  logYe = logspace_add(logYe, E_logYe + 0.5 * V_logYe);
 	  logRe = logspace_add(logRe, E_logRe + 0.5 * V_logRe);
 	  logSPR = logspace_add(logSPR, E_logSPR + 0.5 * V_logSPR);
+	  logERPR = logspace_add(logERPR, E_logERPR + 0.5 * V_logERPR);
 	  logYPR = logspace_add(logYPR, E_logYPR + 0.5 * V_logYPR);
 	}else if(outType == 2){ // Mode
 	  logSe = logspace_add(logSe, E_logSe - V_logSe);
+	  logERBe = logspace_add(logERBe, E_logERBe - V_logERBe);
 	  logYe = logspace_add(logYe, E_logYe - V_logYe);
 	  logRe = logspace_add(logRe, E_logRe - V_logRe);
 	  logSPR = logspace_add(logSPR, E_logSPR - V_logSPR);
+	  logERPR = logspace_add(logERPR, E_logERPR - V_logERPR);
 	  logYPR = logspace_add(logYPR, E_logYPR - V_logYPR);
 	}else if(outType == 3){ // Quantile
 	  logSe = logspace_add(logSe, qnorm(q, E_logSe, sqrt(V_logSe)));
+	  logERBe = logspace_add(logERBe, qnorm(q, E_logERBe, sqrt(V_logERBe)));
 	  logYe = logspace_add(logYe, qnorm(q, E_logYe, sqrt(V_logYe)));
 	  logRe = logspace_add(logRe, qnorm(q, E_logRe, sqrt(V_logRe)));
 	  logSPR = logspace_add(logSPR, qnorm(q, E_logSPR, sqrt(V_logSPR)));
+	  logERPR = logspace_add(logERPR, qnorm(q, E_logERPR, sqrt(V_logERPR)));
 	  logYPR = logspace_add(logYPR, qnorm(q, E_logYPR, sqrt(V_logYPR)));
 	}
       }
@@ -980,7 +1145,9 @@ struct EquilibriumRecycler_Stochastic_Worker {
     PERREC_t<Type> r2  = {logFbar,// - log(Ntail),
      logYPR - log(Ntail),
      logSPR - log(Ntail),
+     logERPR - log(Ntail),
      logSe - log(Ntail),
+     logERBe - log(Ntail),
      logRe - log(Ntail),
      logYe - log(Ntail),
      dSR0,  // Only calculated once for now
@@ -1032,6 +1199,30 @@ struct EquilibriumRecycler_Stochastic_Worker {
     Type E_logSSB = val_s + 0.5 * matrix_trace(m_s);
     Type V_logSSB = (g_s * (Sx * g_s)).sum() + 0.5 * matrix_trace(m_s2);
 
+   //// ERB
+    Type val_erb = 0;
+    vector<Type> g_erb;
+    matrix<Type> h_erb;
+    if(DT==0){
+      g_erb = (vector<Type>)G_ERB(Ex);
+       h_erb = asMatrix((vector<Type>)H_ERB(Ex),Ex.size(),Ex.size());
+       val_erb = F_ERB(Ex)(0);
+    }else if(DT==1){
+      g_erb = Gradient(F_ERB, Ex, 0);
+      h_erb = Hessian(F_ERB, Ex, 0);
+      val_erb = F_ERB(Ex)(0);
+    }else if(DT==2){
+      DerivOutput<Type> dx_ERB = getDerivOutput(F_ERB, Ex);
+      g_erb = dx_ERB.gradientList(0);
+      h_erb = dx_ERB.hessianList(0);
+      val_erb = dx_ERB.value(0);
+    }
+    matrix<Type> m_erb = h_erb * Sx;
+    matrix<Type> m_erb2 = m_erb * m_erb;
+    Type E_logERB = val_erb + 0.5 * matrix_trace(m_erb);
+    Type V_logERB = (g_erb * (Sx * g_erb)).sum() + 0.5 * matrix_trace(m_erb2);
+
+    
     //// Catch
     Type val_c = 0;
     vector<Type> g_c;
@@ -1105,6 +1296,30 @@ struct EquilibriumRecycler_Stochastic_Worker {
     Type E_logSPR = val_spr + 0.5 * matrix_trace(m_spr);
     Type V_logSPR = (g_spr * (Sx * g_spr)).sum() + 0.5 * matrix_trace(m_spr2);
 
+  //// ERBB / Recruitment
+    Type val_erpr = 0;
+    vector<Type> g_erpr;
+    matrix<Type> h_erpr;
+    if(DT==0){
+      g_erpr = (vector<Type>)G_ERPR(Ex);
+      h_erpr = asMatrix((vector<Type>)H_ERPR(Ex),Ex.size(),Ex.size());
+      val_erpr = F_ERPR(Ex)(0);
+    }else if(DT==1){
+      g_erpr = Gradient(F_ERPR, Ex, 0);
+      h_erpr = Hessian(F_ERPR, Ex, 0);
+      val_erpr = F_ERPR(Ex)(0);
+    }else if(DT==2){
+      DerivOutput<Type> dx_ERPR = getDerivOutput(F_ERPR, Ex);
+      g_erpr = dx_ERPR.gradientList(0);
+      h_erpr = dx_ERPR.hessianList(0);
+      val_erpr = dx_ERPR.value(0);
+    }
+    matrix<Type> m_erpr = h_erpr * Sx;
+    matrix<Type> m_erpr2 = m_erpr * m_erpr;
+    Type E_logERPR = val_erpr + 0.5 * matrix_trace(m_erpr);
+    Type V_logERPR = (g_erpr * (Sx * g_erpr)).sum() + 0.5 * matrix_trace(m_erpr2);
+
+    
     //// Life years lost
     array<Type> logF = logFSel;
     logF.col(newDat.natMor.dim(0)-1) += logFbar;
@@ -1123,7 +1338,9 @@ struct EquilibriumRecycler_Stochastic_Worker {
 
     E_logYPR,// Type E_logYPR;
     E_logSPR,// Type E_logSPR;
+    E_logERPR,
     E_logSSB,// Type E_logSe;
+    E_logERB,
     E_logRecruit,// Type E_logRe;
     E_logYield,// Type E_logYe;
     E_logLifeExpectancy,// Type E_logLifeExpectancy;
@@ -1132,7 +1349,9 @@ struct EquilibriumRecycler_Stochastic_Worker {
     (Type)Sx(0,0),// Type V_logFbar;
     V_logYPR,// Type V_logYPR;
     V_logSPR,// Type V_logSPR;
+    V_logERPR,// Type V_logSPR;
     V_logSSB,// Type V_logSe;
+    V_logERB,// Type V_logSe;
     V_logRecruit,// Type V_logRe;
     V_logYield,// Type V_logYe;
     (Type)0.0,// Type V_logLifeExpectancy;
@@ -1206,7 +1425,9 @@ PERREC_t<Type> EquilibriumRecycler_Stochastic_Median<Type>::operator()(Type logF
   PERREC_t<Type> r2  = {r.E_logFbar,
 	    r.E_logYPR,
 	    r.E_logSPR,
+	    r.E_logERPR,
 	    r.E_logSe,
+	    r.E_logERBe,
 	    r.E_logRe,
 	    r.E_logYe,
 	    r.dSR0,
@@ -1279,7 +1500,9 @@ PERREC_t<Type> EquilibriumRecycler_Stochastic_Mean<Type>::operator()(Type logFba
   PERREC_t<Type> r2  = {r.E_logFbar + 0.5 * r.V_logFbar,
 	    r.E_logYPR + 0.5 * r.V_logYPR,
 	    r.E_logSPR + 0.5 * r.V_logSPR,
+	    r.E_logERPR + 0.5 * r.V_logERPR,
 	    r.E_logSe + 0.5 * r.V_logSe,
+	    r.E_logERBe + 0.5 * r.V_logERBe,
 	    r.E_logRe + 0.5 * r.V_logRe,
 	    r.E_logYe + 0.5 * r.V_logYe,
 	    r.dSR0,
@@ -1352,7 +1575,9 @@ PERREC_t<Type> EquilibriumRecycler_Stochastic_Mode<Type>::operator()(Type logFba
   PERREC_t<Type> r2  = {r.E_logFbar - r.V_logFbar,
 	    r.E_logYPR - r.V_logYPR,
 	    r.E_logSPR - r.V_logSPR,
+	    r.E_logERPR - r.V_logERPR,
 	    r.E_logSe - r.V_logSe,
+	    r.E_logERBe - r.V_logERBe,
 	    r.E_logRe - r.V_logRe,
 	    r.E_logYe - r.V_logYe,
 	    r.dSR0,
@@ -1429,7 +1654,9 @@ PERREC_t<Type> EquilibriumRecycler_Stochastic_Quantile<Type>::operator()(Type lo
   PERREC_t<Type> r2  = {qnorm(q,r.E_logFbar,sqrt(r.V_logFbar)),
 	    qnorm(q,r.E_logYPR, sqrt(r.V_logYPR)),
 	    qnorm(q,r.E_logSPR, sqrt(r.V_logSPR)),
+	    qnorm(q,r.E_logERPR, sqrt(r.V_logERPR)),
 	    qnorm(q,r.E_logSe, sqrt(r.V_logSe)),
+	    qnorm(q,r.E_logERBe, sqrt(r.V_logERBe)),
 	    qnorm(q,r.E_logRe, sqrt(r.V_logRe)),
 	    qnorm(q,r.E_logYe, sqrt(r.V_logYe)),
 	    r.dSR0,

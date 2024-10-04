@@ -110,7 +110,8 @@ PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& c
 
   double logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
   double logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (double)conf.minAge + SAM_Zero);
-  vector<double> ssb = ssbFun(newDat, conf, logN, logF, mort);
+  //vector<double> ssb = ssbFun(newDat, conf, logN, logF, mort);
+  vector<double> ssb = erbFun(newDat, conf, par, logN, logF, mort);
   double logSPR = log(sum(ssb) + SAM_Zero); //log(sum(ssb)); log(sum(ssb) + (T)exp(-12.0));
 
 
@@ -150,7 +151,9 @@ PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& c
     PERREC_t<double> res = {logFbar, // logFbar
 			  logYPR,	   // logYPR
 			  logSPR,	   // logSPR
+			  logSPR,
 			  R_NaReal,	   // logSe
+			  R_NaReal,
 			  R_NaReal,		 // logRe
 			  R_NaReal,// logYe
 			  R_NaReal,// dSR0
@@ -241,7 +244,9 @@ PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& c
   }
 
   vector<double> ssbeq = ssbFun(newDat, conf, logNeq, logF,mort);
+  vector<double> erbeq = erbFun(newDat, conf, par, logNeq, logF,mort);
   double logSe = log(ssbeq(nYears-1));
+  double logERBe = log(erbeq(nYears-1));
   double logYe = log(catYe(nYears-1));
   double logRe = logNeq(0,nYears-1);
   double logDiscYe = logDiscYPR + logRe;
@@ -252,7 +257,9 @@ PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& c
   PERREC_t<double> res = {logFbar, // logFbar
 			logYPR,	// logYPR
 			logSPR,	// logSPR
+			logERBe - logRe,
 			logSe,	// logSe
+			logERBe,
 			logRe,	// logRe
 			logYe,	// logYe
 			dsr0,
