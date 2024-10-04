@@ -50,6 +50,8 @@
 ##' data(nscodData)
 ##' data(nscodConf)
 ##' data(nscodParameters)
+##' nscodData$idxCor
+##' storage.mode(nscodData$idxCor)
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 ##' @references
 ##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}
