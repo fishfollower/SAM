@@ -168,7 +168,7 @@ testonemore:
 	@$(MAKE) testmore/$(ARG)/.
 
 testoneleak:
-	$(R) -d 'valgrind --leak-check=full --show-leak-kinds=all' -f testmore/$(ARG)/script.R > valgrind_${ARG}.txt
+	$(R) -d 'valgrind --leak-check=full --show-leak-kinds=definite,possible' -f testmore/$(ARG)/script.R > valgrind_${ARG}.txt
 
 $(SUBDIRS):
 	@cp testmore/Makefile $@

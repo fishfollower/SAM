@@ -107,7 +107,10 @@ public:
     }
   }
   
-  ~Referencepoint_D() { ptr.reset(); }
+  ~Referencepoint_D() {
+    ptr.reset();
+    delete name;
+  }
 
   const char* makeName(const char* rpnm){
     std::string nam("");

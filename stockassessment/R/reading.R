@@ -324,9 +324,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   name<-NULL
     corList <- list()
   
-  idxCor <- matrix(NA_integer_, nrow=length(fleets)+length(surveys)+ifelse(is.list(residual.fleets),length(residual.fleets),!is.null(residual.fleets)) + ifelse(is.list(sum.residual.fleets),length(sum.residual.fleets),!is.null(sum.residual.fleets)), ncol=nrow(natural.mortality))
+  idxCor <- matrix(NA_real_, nrow=length(fleets)+length(surveys)+ifelse(is.list(residual.fleets),length(residual.fleets),!is.null(residual.fleets)) + ifelse(is.list(sum.residual.fleets),length(sum.residual.fleets),!is.null(sum.residual.fleets)), ncol=nrow(natural.mortality))
   colnames(idxCor)<-rownames(natural.mortality)
-    dat<-data.frame(year=NA_integer_,fleet=NA_integer_,age=NA_integer_,aux=NA_integer_)
+    dat<-data.frame(year=NA_real_,fleet=NA_real_,age=NA_real_,aux=NA_real_)
     fleetAges <- list()
   weight<-NULL
   sumKey<-NULL
