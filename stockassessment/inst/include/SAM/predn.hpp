@@ -14,11 +14,10 @@ vector<Type> predNFun(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   Type logThisSSB=Type(R_NegInf);
 
   if((i-conf.minAge)>=0){
-    Type logThisSSBOld=ssbi(dat,conf,logN,logF,mort,i-conf.minAge, true);
-    logThisSSB=totalReproductiveOutputi(dat,conf,par,logN,logF,mort,i-conf.minAge, true);
-    Rcout << i << ": " << logThisSSBOld << ", " << logThisSSB << ", " << logThisSSB / logThisSSBOld << "\n";
+    // logThisSSB=ssbi(dat,conf,logN,logF,mort,i-conf.minAge, true);    
+    logThisSSB=totalReproductiveOutputi(dat,conf,par,logN,logF,mort,i-conf.minAge, true);    
   }else{
-    //logThisSSB=ssbi(dat,conf,logN,logF,mort,0, true); // use first in beginning
+    // logThisSSB=ssbi(dat,conf,logN,logF,mort,0, true); // use first in beginning       
     logThisSSB=totalReproductiveOutputi(dat,conf,par,logN,logF,mort,0, true); // use first in beginning       
   }
 
