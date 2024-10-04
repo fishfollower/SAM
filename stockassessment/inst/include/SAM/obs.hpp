@@ -553,6 +553,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		Rcout << dat.idxCor(f,y) << ", " << isNAINT(dat.idxCor(f,y)) << ", " << isNA((double)dat.idxCor(f,y)) << "\n";
 		Rcout << R_NaInt << ", " << NA_INTEGER << ", " << INT_MIN << "\n";
 		Rcout << (dat.idxCor(f,y) == R_NaInt) << ", " << (dat.idxCor(f,y) == NA_INTEGER) << ", " << (dat.idxCor(f,y) == INT_MIN) << "\n";
+		Rcout << R_NaReal << ", " << (int)R_NaReal << "\n";
 		if(isNAINT(dat.idxCor(f,y))){
 		  Rcout << "\t\t9-A\n";
 		  nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
