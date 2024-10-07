@@ -268,7 +268,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &
               }
 	      
 	      vv=exp(predObs.segment(idxfrom,idxlength));
-	      mm=dat.ageConfusion(f).transpose();
+	      mm=dat.ageConfusion(f); //.transpose();
 	      currentPred=log(mm*vv);
 	      //std::cout<<"--------------------------------------"<<std::endl;
 	      //std::cout<<"M:\n"<<mm<<std::endl;
