@@ -115,7 +115,6 @@ struct dataSet{
     corList(x.corList),
     sumKey(x.sumKey, x.sumKey.dim)
   {
-    Rcout << "In dataSet(const dataSet<T> &x): " << idxCor(0,0) << ", " << x.idxCor[0] << "\n";
   }
 });
 
@@ -149,9 +148,7 @@ SOURCE(
        propF(), //x.propF),
        propM(),
        corList(),
-       sumKey() {
-	 Rcout << "In dataSet(): " << idxCor.dim << "\n";
-       };
+       sumKey() {       };
        )
 
 SOURCE(
@@ -188,7 +185,6 @@ SOURCE(
       propM = asArray<Type>(getListElement(x,"propM", &Rf_isArray));
       corList = listMatrixFromR<Type>(getListElement(x,"corList"));
       sumKey = asArray<int>(getListElement(x,"sumKey", &Rf_isArray));
-      Rcout << "In  dataSet<Type>::dataSet(SEXP x): " << idxCor(0,0) <<  "\n";
     };
        )
 

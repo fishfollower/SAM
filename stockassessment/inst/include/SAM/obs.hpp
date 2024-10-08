@@ -294,17 +294,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	    int reportingLevel,
 	    objective_function<Type> *of)
   SOURCE({
-      Rcout << "From nllObs 1: " << dat.idxCor(0,0) << "\n";
-      Rcout << "A\n";
       Type nll=0.0;
       // Calculate values to report
       vector<Type> logssb = ssbFun(dat, conf, logN, logF,mort, true);
       vector<Type> ssb = exp(logssb);
-      Rcout << "From nllObs 2: " << dat.idxCor(0,0) << "\n";
-
+  
       vector<Type> logerb = erbFun(dat, conf, par, logN, logF,mort, true);
       vector<Type> erb = exp(logerb);
-      Rcout << "From nllObs 3: " << dat.idxCor(0,0) << "\n";
       vector<Type> logrelativeerb = logerb - logssb;
       vector<Type> relativeerb = exp(logrelativeerb);
       
@@ -312,16 +308,13 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       
       vector<Type> fsb = fsbFun(dat, conf, logN, logF,mort);
       vector<Type> logfsb = log(fsb);
-      Rcout << "From nllObs 4: " << dat.idxCor(0,0) << "\n";
-
+  
       vector<Type> logCatch = catchFun(dat, conf, logN, logF,mort, true);
       vector<Type> cat = exp(logCatch);
-      Rcout << "From nllObs 5: " << dat.idxCor(0,0) << "\n";
-
+  
       matrix<Type> logCatchAge = catchFunAge(dat, conf, logN, logF,mort, true);
       matrix<Type> catAge = logCatchAge.array().exp().matrix();
-      Rcout << "From nllObs 6: " << dat.idxCor(0,0) << "\n";
-
+  
       array<Type> catchByFleet = catchByFleetFun(dat, conf, logN, logF, mort);
       array<Type> logCatchByFleet = catchByFleet;
       for(int i=0; i<logCatchByFleet.dim(0); ++i){
@@ -329,8 +322,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  logCatchByFleet(i,j)=log(catchByFleet(i,j));
 	}
       }
-      Rcout << "From nllObs 7: " << dat.idxCor(0,0) << "\n";
-
+  
       // For caytable
       array<Type> catchByFleetAge = catchByFleetFunAgeNum(dat, conf, logN, logF, mort);
       array<Type> logCatchByFleetAge = catchByFleetAge;
@@ -341,41 +333,30 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }
 	}
       }
-      Rcout << "From nllObs 8: " << dat.idxCor(0,0) << "\n";
-
 
       vector<Type> land = landFun(dat, conf, logN, logF, mort);
       vector<Type> logLand = log(land);
-      Rcout << "From nllObs 9: " << dat.idxCor(0,0) << "\n";
 
       vector<Type> varLogCatch = varLogCatchFun(dat, conf, logN, logF, par, mort);
-      Rcout << "From nllObs 10: " << dat.idxCor(0,0) << "\n";
 
       vector<Type> varLogLand = varLogLandFun(dat, conf, logN, logF, par, mort);
-      Rcout << "From nllObs 11: " << dat.idxCor(0,0) << "\n";
 
       vector<Type> tsb = tsbFun(dat, conf, logN);
       vector<Type> logtsb = log(tsb);
-      Rcout << "From nllObs 12: " << dat.idxCor(0,0) << "\n";
 
       vector<Type> R = rFun(logN);
       vector<Type> logR = log(R);  
-      Rcout << "From nllObs 12: " << dat.idxCor(0,0) << "\n";
 
       vector<Type> fbar = fbarFun(dat,conf, logF);
       vector<Type> logfbar = log(fbar);
       vector<Type> logfbar_Effective = Effective_fbar(dat,conf,mort,true);
-      Rcout << "From nllObs 13: " << dat.idxCor(0,0) << "\n";
 
       vector<Type> fbarL = landFbarFun(dat, conf, logF);
       vector<Type> logfbarL = log(fbarL);
-      Rcout << "From nllObs 14: " << dat.idxCor(0,0) << "\n";
 
       array<Type> comps = scalePFun(conf, dat, logP);
       vector<Type> weekContrib = scaleWeekFun(par, dat, logP);
       int noYearsLAI = yearsPFun(conf,dat);
-      Rcout << "B\n";
-      Rcout << "From nllObs 15: " << dat.idxCor(0,0) << "\n";
 
       if(reportingLevel > 0){
 	NOT_SIMULATE_F(of){  
@@ -424,12 +405,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  
 	}
       }
-      Rcout << "C\n";
 
       vector<Type> predObs = predObsFun(dat, conf, par, logN, logF, comps, logitFseason, weekContrib, mort, logssb, logtsb, logfsb, logCatch, logLand, logfbar, noYearsLAI);
       vector< MVMIX_t<Type> > nllVec = getnllVec(dat, conf, par, of);
-      Rcout << "D\n";
-      Rcout << "From nllObs 16: " << dat.idxCor(0,0) << "\n";
 
       vector<Type> recapturePhi(par.logitRecapturePhi.size());
       vector<Type> recapturePhiVec(dat.nobs);
@@ -444,24 +422,16 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }
 	}
       }
-      Rcout << "E\n";
-      Rcout << "From nllObs 17: " << dat.idxCor(0,0) << "\n";
 
       //eval likelihood
       int noYears = dat.idx1.dim(1); //dat.noYears; Also works when forecast has new data
       for(int y=0;y<noYears;y++){
-	Rcout << "DATA year" << y << "\n";
 	int totalParKey = 0;
 	for(int f=0;f<dat.noFleets;f++){
-	Rcout << "\tDATA fleet" << f << "\n";
-	Rcout << "\tFrom nllObs 18: " << dat.idxCor(f,y) << "\n";
 	  if(!((dat.fleetTypes(f)==5)||(dat.fleetTypes(f)==3)||(dat.fleetTypes(f)==6)||(dat.fleetTypes(f)==80)||(dat.fleetTypes(f)==90)||(dat.fleetTypes(f)==92))){
-	    Rcout << "\t\t1\n";
 	    if(!isNAINT(dat.idx1(f,y))){
-	      Rcout << "\t\t2\n";
 	      int idxfrom=dat.idx1(f,y);
 	      int idxlength=dat.idx2(f,y)-dat.idx1(f,y)+1;
-	      Rcout << "\t\t3\n";
 	    
 	      // ----------------if sum fleet need to update covariance matrix
 	      if(dat.fleetTypes(f)==7){
@@ -513,18 +483,14 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		REPORT_F(combiCov,of);
 		nllVec(f).setSigma(combiCov);
 	      }
-	      Rcout << "\t\t4\n";
 	      // ----------------updating of covariance matrix done
 	      vector<Type> currentVar=nllVec(f).cov().diagonal();
 	      vector<Type> sqrtW(currentVar.size());
-	      Rcout << "\t\t5\n";
 	    
 	      switch(conf.obsLikelihoodFlag(f)){
 	      case 0: // (LN) log-Normal distribution
-		Rcout << "\t\t6\n";
 		for(int idxV=0; idxV<currentVar.size(); ++idxV){
 		  if(isNA(dat.weight(idxfrom+idxV))){
-		    Rcout << "\t\t7-A\n";
 		    sqrtW(idxV)=Type(1.0);
 		    int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
 		    if(conf.predVarObsLink(f,a)>(-1)){
@@ -541,7 +507,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		      }
 		    }
 		  }else{
-		    Rcout << "\t\t7-B\n";
 		    if(conf.fixVarToWeight(f)==1){
 		      sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
 		    }else{
@@ -549,13 +514,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		    }
 		  }
 		}
-		Rcout << "\t\t8\n";
-		Rcout << dat.idxCor(f,y) << ", " << isNAINT(dat.idxCor(f,y)) << ", " << isNA((double)dat.idxCor(f,y)) << "\n";
-		Rcout << R_NaInt << ", " << NA_INTEGER << ", " << INT_MIN << "\n";
-		Rcout << (dat.idxCor(f,y) == R_NaInt) << ", " << (dat.idxCor(f,y) == NA_INTEGER) << ", " << (dat.idxCor(f,y) == INT_MIN) << "\n";
-		Rcout << R_NaReal << ", " << (int)R_NaReal << "\n";
 		if(isNAINT(dat.idxCor(f,y))){
-		  Rcout << "\t\t9-A\n";
 		  nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
 		  nll += (log(sqrtW)*keep.segment(idxfrom,idxlength)).sum();
 		  SIMULATE_F(of){
@@ -568,7 +527,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		    }
 		  }
 		}else{
-		  Rcout << "\t\t9-B\n";
 		  int thisdim=currentVar.size();
 		  matrix<Type> thiscor=dat.corList(dat.idxCor(f,y));
 		  matrix<Type> thiscov(thisdim,thisdim);
@@ -590,7 +548,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		    }
 		  }
 		}
-		Rcout << "\t\t10\n";
 		break;
 	      case 1: // (ALN) Additive logistic-normal proportions + log-normal total numbers
 		nll +=  nllVec(f)(obs_fun::addLogratio((vector<Type>)dat.logobs.segment(idxfrom,idxlength))-obs_fun::addLogratio((vector<Type>)predObs.segment(idxfrom,idxlength)));
@@ -726,7 +683,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  }   
 	}   
       }
-      Rcout << "F\n";
       SIMULATE_F(of) {
 	REPORT_F(logF,of);
 	REPORT_F(logN,of);
@@ -742,7 +698,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	vector<Type> logEmpiricalYPR_D = empiricalYPR(dat, conf, logN, mort, 2, true);
 	REPORT_F(logEmpiricalYPR_D,of);
       }
-      Rcout << "G\n";
       // REPORT_F(obsCov,of);
       REPORT_F(predObs,of);
       if(reportingLevel >= 0){
@@ -762,11 +717,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	ADREPORT_F(comps, of);
 	REPORT_F(weekContrib, of);
       }
-      Rcout << "H\n";
 
       // Additional forecast quantities
       if(forecast.nYears > 0){
-	Rcout << "I\n";
 	vector<Type> dis = disFun(dat, conf, logN, logF, mort);
 	vector<Type> logDis = log(dis);
     
@@ -801,7 +754,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	//}
 	// }
       }
-      Rcout << "J\n";
 
       int timeSteps=logF.dim[1];
       if(reportingLevel >= 0){
@@ -822,9 +774,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	vector<Type> beforeLastLogF = logF.col(timeSteps-2);
 	ADREPORT_F(beforeLastLogF,of);
       }
-      Rcout << "K\n";
       if(forecast.nYears > 0 && forecast.FModel(forecast.FModel.size()-1) == forecast.findMSY){
-	Rcout << "L\n";
 
 	int catchYears = std::min((int)asDouble(forecast.nYears),forecast.nCatchAverageYears);
 	Type catchSum = sum((vector<Type>)cat.tail(catchYears)) / (Type)catchYears;
@@ -839,7 +789,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	ADREPORT_F(logFstatus, of);
 	ADREPORT_F(logSSBstatus, of);    
       }
-      Rcout << "Done with nllObs\n";
       return nll;
     }
     )

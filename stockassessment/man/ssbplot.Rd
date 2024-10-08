@@ -5,17 +5,11 @@
 \alias{ssbplot.default}
 \alias{ssbplot.samforecast}
 \alias{ssbplot.hcr}
-\alias{rbplot.samforecast}
-\alias{rbplot.hcr}
 \title{SAM SSB plot}
 \usage{
 ssbplot(fit, ...)
 
 \method{ssbplot}{default}(fit, ...)
-
-\method{ssbplot}{samforecast}(fit, ...)
-
-\method{ssbplot}{hcr}(fit, ...)
 
 \method{ssbplot}{samforecast}(fit, ...)
 

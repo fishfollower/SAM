@@ -56,7 +56,6 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(idx1); dataset.idx1=idx1;     // minimum index of obs by fleet x year
   DATA_IARRAY(idx2); dataset.idx2=idx2;     // maximum index of obs by fleet x year
   DATA_IARRAY(idxCor); dataset.idxCor=idxCor;
-  Rcout << "From stockassessment.cpp: " << idxCor(0,0) << ", " << dataset.idxCor(0,0) << "\n";
   DATA_IVECTOR(minWeek); dataset.minWeek=minWeek;
   DATA_IVECTOR(maxWeek); dataset.maxWeek=maxWeek;
   DATA_IARRAY(aux); dataset.aux=aux; 
@@ -296,7 +295,6 @@ Type objective_function<Type>::operator() ()
   //   }
   // }
 
-   Rcout << "From stockassessment.cpp 2: " << dataset.idxCor(0,0) << "\n";
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, logitFseason, recruit, mort, keep,reportingLevel, this);
 
   

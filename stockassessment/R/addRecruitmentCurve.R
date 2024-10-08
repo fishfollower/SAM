@@ -65,7 +65,7 @@ addRecruitmentCurve.sam <- function(fit,
        X <- summary(fit)
        R <- X[, 1]
        #S <- X[, 4]
-       S <- rbtable(fit)[,1]
+       S <- erbtable(fit)[,1]
        ## cf <- fit$sdrep$cov.fixed
        ## covEst <- cf[rownames(cf) %in% c("rec_pars"), colnames(cf) %in% c("rec_pars"), drop = FALSE]
        covEst <- fit$sdrep$covRecPars

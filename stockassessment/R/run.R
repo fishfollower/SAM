@@ -250,7 +250,7 @@ doReporting <- function(obj, opt, ignore.parm.uncertainty){
 
     ## S-R pairs
     idx <- names(sdrep$value)%in%c("logssb","logR")
-    idx <- names(sdrep$value)%in%c("logrb","logR")
+    idx <- names(sdrep$value)%in%c("logerb","logR")
     sdrep$covSRpairs <- sdrep$cov[idx,idx, drop = FALSE]
     colnames(sdrep$covSRpairs) <- rownames(sdrep$covSRpairs) <- names(sdrep$value)[idx]
     

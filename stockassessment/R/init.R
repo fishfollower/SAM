@@ -31,7 +31,9 @@ defpar <- function(dat,conf,spinoutyear=10){
   if(conf$stockRecruitmentModelCode==0){ # Random walk
       ret$rec_pars <- numeric(0)
   }else if(conf$stockRecruitmentModelCode==3){ # Constant mean
-      ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)      
+      ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)
+  }else if(conf$stockRecruitmentModelCode==4){ # combined Ricker-Beverton-Holt
+      ret$rec_pars <- c(0,-10,-10, log(100))
   }else if(conf$stockRecruitmentModelCode==60){ # logistic Hockey stick
       ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0)
       ## if(!is.na(conf$hockeyStickCurve))

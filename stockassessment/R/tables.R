@@ -109,19 +109,19 @@ ssbtable.default <- function(fit,...){
 }
 
 
-##' Reproductive biomass table 
+##' Effective reproductive biomass table 
 ##' @param  fit ...
 ##' @param ... extra arguments not currently used
 ##' @details ...
 ##' @export
-rbtable<-function(fit,...){
-    UseMethod("rbtable")
+erbtable<-function(fit,...){
+    UseMethod("erbtable")
 }
-##' @rdname rbtable
-##' @method rbtable default
+##' @rdname erbtable
+##' @method erbtable default
 ##' @export
-rbtable.default <- function(fit,...){
-   ret<-tableit(fit, "logrb", trans=exp,...)
+erbtable.default <- function(fit,...){
+   ret<-tableit(fit, "logerb", trans=exp,...)
    return(ret)
 }
 

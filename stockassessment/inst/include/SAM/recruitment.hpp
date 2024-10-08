@@ -104,6 +104,7 @@ namespace RecruitmentConvenience {
 			 Ricker = 1,
 			 BevertonHolt = 2,
 			 ConstantMean = 3,
+			 RBH = 4,
 			 LogisticHockeyStick = 60,
 			 HockeyStick = 61,
 			 LogAR1 = 62,
@@ -580,7 +581,7 @@ namespace RecruitmentConvenience {
       return exp(loga);
     }
 
-  };
+  };  
 
 
   // Recruitment function 3
@@ -746,6 +747,14 @@ namespace RecruitmentConvenience {
     RecruitmentNumeric<Type>(std::make_shared<RF_##NAME##_t>(p1, p2, p3)) {}; \
   };
 
+#define TO_REC_4PAR(NAME)						\
+  template<class Type>							\
+  struct Rec_##NAME : RecruitmentNumeric<Type>  {			\
+    Rec_##NAME(Type p1, Type p2, Type p3, Type p4) :			\
+    RecruitmentNumeric<Type>(std::make_shared<RF_##NAME##_t>(p1, p2, p3, p4)) {}; \
+  };
+
+  
 #define TO_REC_SPLINE(NAME)						\
   template<class Type>							\
   struct Rec_##NAME : RecruitmentNumeric<Type>  {			\
@@ -753,6 +762,46 @@ namespace RecruitmentConvenience {
     RecruitmentNumeric<Type>(std::make_shared<RF_##NAME##_t>(knots, pars)) {}; \
   };
 
+
+
+  // Recruitment function 4
+  // Combined Ricker-Beverton-Holt
+  struct RF_RBH_t : RecruitmentFunctor {
+    ad logr;			// r
+    ad logp;			// p
+    ad logq;			// q
+    ad logf;			// f
+    ad t;			// age of recruitment (fixed to 1)
+    
+
+    RF_RBH_t(ad lr, ad lp, ad lq, ad lf) :
+      logr(lr), logp(lp), logq(lq), logf(lf), t(1.0) {}
+
+   RF_RBH_t(ad lr, ad lp, ad lq) :
+      logr(lr), logp(lp), logq(lq), logf(0.0), t(1.0) {}
+
+    
+    ad operator()(const ad& logssb){
+      ad logE = logssb + logf;
+      // ad E = exp(logE);
+      ad r = exp(logr);
+      // ad p = exp(logp);
+      // -ln(-E*exp(-(E*p + r)*t)*q + (p + q)*E + r) + ln(E*p + r) + ln(E) + (-E*p - r)*t
+      ad v1 = logspace_add_SAM(logp,logq);
+      ad v2 = logspace_add_SAM(v1 + logE, logr);
+      ad v3 = logE - exp(logp + logE) * t - r * t + logq;
+      ad vx = logspace_sub(v2,v3);
+      ad v = logE - exp(logE + logp) * t - r * t + logspace_add_SAM(logp+logE,logr) - vx;
+      return v;
+    }
+
+    USING_RECFUN;
+  
+  };
+  
+  TO_REC_4PAR(RBH);
+
+  
   
 
   // Recruitment function 63
@@ -1120,6 +1169,10 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
       if(par.rec_pars.size() != conf.constRecBreaks.size() + 1)
 	Rf_error("The constant mean recruitment should have one more parameter than constRecBreaks.");
       r = Recruitment<Type>("constant mean", std::make_shared<RecruitmentConvenience::Rec_ConstantMean<Type> >(par.rec_pars, conf.constRecBreaks));
+    }else if(rm == RecruitmentConvenience::RecruitmentModel::RBH){
+      if(par.rec_pars.size() != 4)
+	Rf_error("The combined Ricker-Beverton Holt recruitment must have three parameters.");
+      r = Recruitment<Type>("Combined Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_RBH<Type> >(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2), par.rec_pars(3)));
     }else if(rm == RecruitmentConvenience::RecruitmentModel::LogisticHockeyStick){
       if(par.rec_pars.size() != 3)
 	Rf_error("The logistic hockey stick recruitment should have three parameters.");

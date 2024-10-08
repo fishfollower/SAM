@@ -491,7 +491,7 @@ ssbplot.hcr <- function(fit,...){
     addforecast(fit,"ssb")
 }
 
-##' SAM Reproductive output biomass plot 
+##' SAM effective reproductive output biomass plot 
 ##' @param fit the object returned from sam.fit
 ##' @param ... extra arguments transferred to plot including the following: \cr
 ##' \code{add} logical, plotting is to be added on existing plot \cr
@@ -499,29 +499,29 @@ ssbplot.hcr <- function(fit,...){
 ##' \code{cicol} color to plot the confidence polygon
 ##' @details Plot of spawning stock biomass 
 ##' @export
-rbplot<-function(fit, ...){
-    UseMethod("rbplot")
+erbplot<-function(fit, ...){
+    UseMethod("erbplot")
 }
-##' @rdname rbplot
-##' @method rbplot default
+##' @rdname erbplot
+##' @method erbplot default
 ##' @export
-rbplot.default <- function(fit,...){
-    plotit(fit, "logrb", ylab="Reproductive biomass", trans=exp,...)
+erbplot.default <- function(fit,...){
+    plotit(fit, "logerb", ylab="Effective reproductive biomass", trans=exp,...)
 }
-##' @rdname ssbplot
-##' @method ssbplot samforecast
+##' @rdname erbplot
+##' @method erbplot samforecast
 ##' @export
-rbplot.samforecast <- function(fit,...){
-    plotit(fit, "logssb", ylab="Reproductive biomass", trans=exp,...)
-    addforecast(fit,"ssb")
+erbplot.samforecast <- function(fit,...){
+    plotit(fit, "logerb", ylab="Effective reproductive biomass", trans=exp,...)
+    addforecast(fit,"erb")
 }
 
-##' @rdname ssbplot
-##' @method ssbplot hcr
+##' @rdname erbplot
+##' @method erbplot hcr
 ##' @export
-rbplot.hcr <- function(fit,...){
-    plotit(fit, "logrb", ylab="Reproductive biomass", trans=exp,...)
-    addforecast(fit,"rb")
+erbplot.hcr <- function(fit,...){
+    plotit(fit, "logerb", ylab="Effective reproductive biomass", trans=exp,...)
+    addforecast(fit,"erb")
 }
 
 
@@ -1098,7 +1098,7 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
                        polylwd = 1,
                        xlim, ylim, add=FALSE, CIlevel = 0.95, addCurve = TRUE, ...){
     X <- summary(fit)
-    RB <- rbtable(fit)
+    RB <- erbtable(fit)
     n<-nrow(X)
     lag <- fit$conf$minAge
     idxR <- (lag+1):n
@@ -1109,7 +1109,7 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
     Rnam<-colnames(X)[1]
     Snam<-colnames(X)[4]
     if(!is.na(fit$conf$fecundityScaling) & fit$conf$fecundityScaling != 1)
-        Snam <- "Reproductive biomass"
+        Snam <- "Effective reproductive biomass"
     y<-rownames(X)
     makeCIpolygon <- function(i){
         mu <- c(log(S)[i],log(R)[i])
