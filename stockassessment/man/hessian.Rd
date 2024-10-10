@@ -19,6 +19,8 @@ hessian(
 
 \item{h}{step size}
 
+\item{columns}{columns of hessian to calculate}
+
 \item{...}{passed to func}
 }
 \value{

@@ -49,7 +49,7 @@ endif
 all:
 	make install
 
-$(PACKAGE)/configure:  $(PACKAGE)/configure.ac
+$(PACKAGE)/configure:  $(PACKAGE)/configure.ac $(PACKAGE)/DESCRIPTION
 	cd $(PACKAGE) && autoconf
 
 doc-update: $(R_FILES)

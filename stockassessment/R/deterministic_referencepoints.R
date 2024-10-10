@@ -644,6 +644,8 @@ recruitmentProperties <- function(fit){
     lapply(rpArgs, makeOne)
 }
 
+##' @importFrom methods cbind2 rbind2
+##' @importFrom Matrix solve invPerm forceSymmetric
     .getJointCovariance <- function(fit){
         ## Adapted from TMB::sdreport
         obj <- fit$obj
@@ -661,9 +663,9 @@ recruitmentProperties <- function(fit){
         ##diag.term2 <- rowSums((A %*% Vtheta)*A)
         G <- hessian.random %*% A
         G <- as.matrix(G) ## Avoid Matrix::cbind2('dsCMatrix','dgeMatrix')
-        M1 <- cbind2(hessian.random,G)
-        M2 <- cbind2(t(G), as.matrix(t(A)%*%G)+hessian.fixed )
-        M <- rbind2(M1,M2)
+        M1 <- methods::cbind2(hessian.random,G)
+        M2 <- methods::cbind2(t(G), as.matrix(t(A)%*%G)+hessian.fixed )
+        M <- methods::rbind2(M1,M2)
         M <- Matrix::forceSymmetric(M,uplo="L")
         dn <- c(names(par)[r],names(par[-r]))
         dimnames(M) <- list(dn,dn)
@@ -893,6 +895,9 @@ deterministicReferencepoints <- function(fit,
 ##' @param biasCorrect Should bias correction be used in \link[TMB]{sdreport}?
 ##' @param newton.control Control arguments passed to the newton optimizer (See \link[TMB]{newton})
 ##' @param run Run estimation? If false, a list of arguments to MakeADFun is returned.
+##' @param equilibriumMethod Method to use to find equilibrium
+##' @param nosim_ci Number of simulations for simulation based confidence intervals (only when equilibriumMethod is EC)
+##' @param ncores Number of cores for simulation
 ##' @param ... other arguments not used
 ##' @return List of estimated reference points
 ##' @method deterministicReferencepoints sam

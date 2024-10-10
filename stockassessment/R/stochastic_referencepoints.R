@@ -613,6 +613,7 @@ predict.rpscurvefit <- function(x,newF,...){
 ##'    \item{Mode}{(NOT IMPLEMENTED YET)}
 ##' }
 ##' To estimate median equilibrium yield, as required by ICES, the method "Q0.5" should be used.
+##' Note that this function is highly experimental.
 ##' 
 ##' @examples
 ##' \dontrun{
@@ -633,10 +634,15 @@ predict.rpscurvefit <- function(x,newF,...){
 ##' @param selYears Years to average over for selectivity
 ##' @param newton.control List of control parameters for optimization
 ##' @param seed Seed for simulations
-##' @param formula Formula to estimate optimization criteria as a function of F
+##' @param knots Number of knots to use
 ##' @param nosim_ci Number of simulations for bootstrap confidence intervals
 ##' @param derivedSummarizer Function to summarize derived per-recruit values
 ##' @param nTail Number of years from the simulation to include in calculations
+##' @param Fsequence F sequence to explore
+##' @param run run it?
+##' @param DT ...
+##' @param equilibriumMethod method to use
+##' @param ncores Number of cores
 ##' @return reference point object
 ##' @export
 stochasticReferencepoints <- function(fit,
@@ -650,6 +656,7 @@ stochasticReferencepoints <- function(fit,
 
 ##' @rdname stochasticReferencepoints
 ##' @method stochasticReferencepoints sam
+##' @importFrom stats lm
 ##' @export
 stochasticReferencepoints.sam <- function(fit,
                                           referencepoints,
@@ -703,7 +710,7 @@ stochasticReferencepoints.sam <- function(fit,
                              Quantile = "^q0\\.[[:digit:]]+$")
         mIndx <- which(sapply(typePatterns, function(p) grepl(p, tolower(method))))
         if(length(mIndx) == 0)
-            stop(sprintf("Error in method specification. %s not recognized.",x))
+            stop(sprintf("Error in method specification. %s not recognized.",typePatterns))
         mIndx <- mIndx[1]
         if(mIndx == 4){            
             q <- as.numeric(gsub("(q)(0\\.[[:digit:]]+)","\\2",tolower(method)))
@@ -785,7 +792,7 @@ stochasticReferencepoints.sam <- function(fit,
                          list())
         cat("Adding starting values...\n")
         ## Add starting values    
-        rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence,stochasticType=0, q=Q)
+        rpArgs <- lapply(rpArgs, .refpointStartingValue, fit = fit, Fsequence = Fsequence,stochasticType=0, q=q)
         ## Add Fsequence for plotting
         ## cat("Adding F sequence...\n")
         ## rp0 <- list(rpType = -1,
@@ -905,6 +912,7 @@ stochasticReferencepoints.sam <- function(fit,
         if(sum(!ii) > 0){
             nan2na <- function(x)ifelse(is.nan(unlist(x)),NA,unlist(x))
             resTabs <- lapply(rownames(vv[!ii][[1]]$Estimates), function(nm){
+                ci_deltaMethod <- FALSE
                 if(ci_deltaMethod){
                     ## DOI:10.1109/WSC.2006.323107
                     Sigma <- fit$sdrep$cov.fixed
@@ -915,7 +923,7 @@ stochasticReferencepoints.sam <- function(fit,
                         colnames(dPar) <- paste0(seq_len(ncol(dPar)),"_",colnames(dPar))
                         d0 <- cbind(data.frame(Theta = log(Theta)), dPar)
                         if(nrow(dPar) > ncol(dPar)){
-                            gr0 <- tail(coef(lm(Theta~.,data=d0)),-1)
+                            gr0 <- tail(coef(stats::lm(Theta~.,data=d0)),-1)
                         }else{
                             gr0 <- sapply(seq_len(ncol(dPar)), function(kk){ sum((dPar[,kk]-dParM[kk])*(Theta-mean(Theta))) / sum((dPar[,kk]-dParM[kk])^2) })
                         }

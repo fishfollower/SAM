@@ -26,7 +26,9 @@ MSE(
 
 \item{nYears}{Number of years to run simulation}
 
-\item{AdviceYears}{Number of years advice given at a time. How advice is given is determined by forecastSettings}
+\item{AdviceForecastSettings}{Settings to do forecast that determines advice}
+
+\item{AdviceYears}{Number of years advice given at a time. How advice is given is determined by AdviceForecastSettings}
 
 \item{AdviceLag}{Lag between assessment and advice}
 
@@ -38,9 +40,9 @@ MSE(
 
 \item{intermediateFleets}{Fleets that are available in the (first) intermediate year}
 
-\item{...}{arguments passed on to addSimulatedYears}
+\item{OMselectivityFixed}{Fix selectivity in OM?}
 
-\item{forecastSettings}{Settings to do forecast that determines advice}
+\item{...}{arguments passed on to addSimulatedYears}
 }
 \value{
 a list with MSE result

@@ -34,8 +34,21 @@ dat<-setup.sam.data(surveys=surveys,
 
 
 conf = loadConf(dat,"modelConf.cfg")
+## conf$maxAgePlusGroup <- c(1,1,0,1)
+## conf$fixVarToWeight <- c(0,0,0,0)
+## conf$fracMixN <- rep(0,conf$maxAge-conf$minAge+1)
 par<-defpar(dat,conf)
 par$logSdLogN = c(-0.35, -5)
 map = list(logSdLogN = as.factor(c(0,NA)))
 fit<-sam.fit(dat,conf,par,map =map)
 cat(fit$opt$objective, file="res.out")
+
+
+library(multiStockassessment,quietly=TRUE,warn.conflicts=FALSE)
+lso <- ls()
+sfitNames <- lso[sapply(lso, function(xx) class(eval(parse(text=xx)))) == "sam"]
+sfits <- lapply(sfitNames, function(x) eval(parse(text = x)))
+mfits <- lapply(sfits, function(fit){
+	cs<-suggestCorStructure(c(fit),nAgeClose=0)
+	multisam.fit(c(fit),~-1,cs)
+})

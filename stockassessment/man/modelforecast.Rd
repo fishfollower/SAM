@@ -18,7 +18,6 @@ modelforecast(fit, ...)
   nosim = 0,
   year.base = max(fit$data$years),
   ave.years = max(fit$data$years) + (-9:0),
-  overwriteBioModel = FALSE,
   rec.years = c(),
   label = NULL,
   overwriteSelYears = NULL,
@@ -68,8 +67,6 @@ modelforecast(fit, ...)
 
 \item{ave.years}{vector of years to average for weights, maturity, M and such}
 
-\item{overwriteBioModel}{Overwrite GMRF models with ave.years?}
-
 \item{rec.years}{vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.}
 
 \item{label}{optional label to appear in short table}
@@ -85,6 +82,8 @@ modelforecast(fit, ...)
 \item{useFHessian}{Use the covariance of F estimates instead of the estimated process covariance for forecasting?}
 
 \item{resampleFirst}{Resample base year when nosim > 0?}
+
+\item{useModelLastN}{Use last N?}
 
 \item{customSel}{supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)}
 
@@ -111,6 +110,8 @@ modelforecast(fit, ...)
 \item{custom_pl}{Parameter list. By default, the parameter list from fit is used.}
 
 \item{useNonLinearityCorrection}{Should a non linearity correction be added to transformation of logF? See Details - Non-linearity correction.}
+
+\item{ncores}{Number of cores to use if simulating}
 }
 \value{
 an object of type samforecast

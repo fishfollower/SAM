@@ -12,6 +12,8 @@ rmvnorm(n = 1, mu, Sigma, pivot = FALSE)
 \item{mu}{the mean vector.}
 
 \item{Sigma}{a positive-definite symmetric matrix specifying the covariance matrix.}
+
+\item{pivot}{Do pivot in chol?}
 }
 \value{
 If n = 1 a vector of the same length as mu, otherwise an n by length(mu) matrix with one sample in each row.

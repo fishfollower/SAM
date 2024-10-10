@@ -127,7 +127,7 @@ updateAssessment <- function(OM, EM, knotRange, AdviceLag, intermediateFleets){
        (EM$conf$stockRecruitmentModelCode == 90 ||
         EM$conf$stockRecruitmentModelCode == 91 ||
         EM$conf$stockRecruitmentModelCode == 92)){
-        capture.output(EM_New <- stockassessment:::getSplineRecBreaks(datNew, confNew, dp, srmc=EM$conf$stockRecruitmentModelCode, knotRange = knotRange, returnFit=TRUE, sim.condRE=c(TRUE,FALSE), silent = TRUE, newtonsteps=0))
+        capture.output(EM_New <- getSplineRecBreaks(datNew, confNew, dp, srmc=EM$conf$stockRecruitmentModelCode, knotRange = knotRange, returnFit=TRUE, sim.condRE=c(TRUE,FALSE), silent = TRUE, newtonsteps=0))
     }else{
         capture.output(EM_New <- sam.fit(datNew, confNew, dp, silent = TRUE, newtonsteps=0))
     }
@@ -150,13 +150,14 @@ updateAssessment <- function(OM, EM, knotRange, AdviceLag, intermediateFleets){
 ##' @param OM sam.fit that will work as operating model
 ##' @param EM sam.fit that will work as estimation model
 ##' @param nYears Number of years to run simulation
-##' @param forecastSettings Settings to do forecast that determines advice
-##' @param AdviceYears Number of years advice given at a time. How advice is given is determined by forecastSettings
+##' @param AdviceForecastSettings Settings to do forecast that determines advice
+##' @param AdviceYears Number of years advice given at a time. How advice is given is determined by AdviceForecastSettings
 ##' @param AdviceLag Lag between assessment and advice 
 ##' @param initialAdvice Advice in the first AdviceLag years
 ##' @param implementationError Function to add implementation error (i.e, transform advice to target catch)
 ##' @param knotRange Range of spline knot values to try
 ##' @param intermediateFleets Fleets that are available in the (first) intermediate year
+##' @param OMselectivityFixed Fix selectivity in OM?
 ##' @param ... arguments passed on to addSimulatedYears
 ##' @return a list with MSE result
 MSE <- function(OM,
@@ -237,7 +238,7 @@ MSE <- function(OM,
     }
     ## Check AdviceForecast is long ennough
     if(length(AdviceForecastSettings$constraints) < AdviceLag + AdviceYears + yx){
-        warning("Length of forecastSettings$constraints should equal AdviceLag + AdviceYears + 1. Modifying to match.")
+        warning("Length of AdviceForecastSettings$constraints should equal AdviceLag + AdviceYears + 1. Modifying to match.")
         ## If it's not set, insert NA to forecast using model
         if(is.null(AdviceForecastSettings$constraints)){
             AdviceForecastSettings$constraints <- rep(NA, length.out = AdviceLag + AdviceYears + yx)
@@ -245,7 +246,7 @@ MSE <- function(OM,
             ## Otherwise, repeat the last constraint to make long enough
             AdviceForecastSettings$constraints <- c(AdviceForecastSettings$constraints,
                                               rep(tail(AdviceForecastSettings$constraints,1),
-                                                  length.out = AdviceLag + AdviceYears + yx - length(forecastSettings$constraints)))
+                                                  length.out = AdviceLag + AdviceYears + yx - length(AdviceForecastSettings$constraints)))
         }        
     }
 
@@ -275,7 +276,7 @@ MSE <- function(OM,
         fcThisYear$constraints <- gsub("%ADVICE%",catch[yr,"Advice"],fcThisYear$constraints)
         fcThisYear$constraints[grepl("C=NA",fcThisYear$constraints)] <- NA
         adviceForecast <- try({do.call(modelforecast, c(list(fit = EM_update, progress=FALSE), fcThisYear))})
-        if(class(adviceForecast) == "try-error"){
+        if(methods::is(adviceForecast,"try-error")){
             msg <- "Advice forecast error"
             break;
         }
@@ -292,7 +293,7 @@ MSE <- function(OM,
         capture.output(OM_update <- try({addSimulatedYears(OM_update, 
                                                           constraints = AdviceToCatchConstraint(rep(catch[yr_tac,"Advice"],length.out = AdviceYears)),
                                                           ...)}))
-        if(class(OM_update) == "try-error"){
+        if(methods::is(OM_update,"try-error")){
             msg <- "Adding simulated year error"
             break;
         }
@@ -303,7 +304,7 @@ MSE <- function(OM,
         
         ## New assessment
         EM_update <- try({updateAssessment(OM_update, EM_update, knotRange, AdviceLag, intermediateFleets)})
-        if(class(EM_update) != "sam"){
+        if(!methods::is(EM_update,"sam")){
             msg <- "Assessment error"
             break;
         }
@@ -321,7 +322,7 @@ MSE <- function(OM,
             cat("\tLast observed data year",tail(rownames(fbartable(OM_update)),1),"\n")
             cat("\tAssessment year",yr[1],"\n")
             EM_update <- try({updateAssessment(OM_update, EM_update, knotRange, AdviceLag - i0,intermediateFleets)})
-            if(class(EM_update) != "sam"){
+            if(methods::is(EM_update,"sam")){
                 msg <- "Assessment error"
                 break;
             }

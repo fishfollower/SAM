@@ -497,6 +497,7 @@ summary.sam<-function(object, ...){
 ##' @param seed random number seed
 ##' @param full.data logical, should each inner list contain a full list of data. Defaults to TRUE  
 ##' @param keep.process Keep logN and logF processes when full.data = TRUE?
+##' @param retain.missing Keep NA in places where observations are missing?
 ##' @param ... extra arguments
 ##' @importFrom stats simulate
 ##' @details simulates data sets from the model fitted and conditioned on the random effects estimated 

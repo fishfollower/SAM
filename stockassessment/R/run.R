@@ -7,13 +7,15 @@
 ##' @param run if FALSE return AD object without running the optimization
 ##' @param lower named list with lower bounds for optimization (only met before extra newton steps)
 ##' @param upper named list with upper bounds for optimization (only met before extra newton steps)
-##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values.
+##' @param sim.condRE logical with default \code{TRUE}. Simulated observations will be conditional on estimated values of F and N, rather than also simulating F and N forward from their initial values. 
 ##' @param ignore.parm.uncertainty option passed to TMB:::sdreport reported uncertainties will not include fixed effect parameter uncertainties
 ##' @param rel.tol option passed to stats:::nlminb sets the convergence criteria
 ##' @param eval.max option passed to stats:::nlminb sets the maximum number of function evaluations
 ##' @param iter.max option passed to stats:::nlminb sets the maximum number of iterations
 ##' @param penalizeSpline Add penalization to spline recruitment?
 ##' @param fullDerived Report all derived values?
+##' @param pre.clean Should a pre cleaning of data be done?
+##' @param check.parameters Should parameters be checked in TMB?
 ##' @param ... extra arguments to MakeADFun
 ##' @return an object of class \code{sam}
 ##' @details The model configuration object \code{conf} is a list of different objects defining different parts of the model. The different elements of the list are: 
@@ -78,8 +80,19 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
             names(conf)[length(conf)] = names(confTmp)[i]
         }
     }
-    
-    tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=c(rep(as.integer(sim.condRE),length = 2),0)))
+
+    ## simFlag (F, N, obs, biopar)
+    if(length(sim.condRE)>=3){
+        simFlag <- c(as.integer(sim.condRE[1:3]),0L)[c(1,2,4,3)]
+    }else if(length(sim.condRE) == 2){
+        simFlag <- c(as.integer(sim.condRE[c(1,2,2)]),0L)[c(1,2,4,3)]        
+    }else if(length(sim.condRE) == 1){
+        simFlag <- c(as.integer(sim.condRE[c(1,1,1)]),0L)[c(1,2,4,3)]
+    }else{
+        stop("Wrong length in sim.condRE")
+    }
+    simRE <- rep(as.integer(sim.condRE),length = 3)
+    tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=simFlag))
     if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
     nmissing <- sum(is.na(data$logobs))
     parameters$missing <- numeric(nmissing)
@@ -233,16 +246,24 @@ getCallValue <- function(name, call){
 }
     
 doReporting <- function(obj, opt, ignore.parm.uncertainty){
+    obj$fn(opt$par)
     sdrep <- sdreport(obj,opt$par, opt$he,
                       ignore.parm.uncertainty = ignore.parm.uncertainty)    
     ## Last two states
-    idx <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"))
-    sdrep$estY <- sdrep$value[idx]
-    sdrep$covY <- sdrep$cov[idx,idx]
+    idxL <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"),
+             which(names(sdrep$value)=="lastLogSW"),which(names(sdrep$value)=="lastLogCW"),
+             which(names(sdrep$value)=="lastLogitMO"),which(names(sdrep$value)=="lastLogNM"))
+    sdrep$estY <- sdrep$value[idxL]
+    sdrep$covY <- sdrep$cov[idxL,idxL]
 
-    idx <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"))
-    sdrep$estYm1 <- sdrep$value[idx]
-    sdrep$covYm1 <- sdrep$cov[idx,idx]
+    idxBL <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"),
+             which(names(sdrep$value)=="beforeLastLogSW"),which(names(sdrep$value)=="beforeLastLogCW"),
+             which(names(sdrep$value)=="beforeLastLogitMO"),which(names(sdrep$value)=="beforeLastLogNM"))
+    sdrep$estYm1 <- sdrep$value[idxBL]
+    sdrep$covYm1 <- sdrep$cov[idxBL,idxBL]
+
+    sdrep$estYYm1 <- sdrep$value[c(idxL,idxBL)]
+    sdrep$covYYm1 <- sdrep$cov[c(idxL,idxBL),c(idxL,idxBL)]
 
     ## rec_pars
     idx <- which(names(sdrep$value)=="rec_pars")
@@ -341,11 +362,6 @@ clean.void.catches<-function(dat, conf){
 }
 
 
-##' @export
-jit <- function(fit, nojit=10, ...){
-    UseMethod("jit")
-}
-
 ##' Jitter runs 
 ##' @param fit a fitted model object as returned from sam.fit
 ##' @param nojit a list of vectors. Each element in the list specifies a run where the fleets mentioned are omitted
@@ -354,12 +370,17 @@ jit <- function(fit, nojit=10, ...){
 ##' @param ncores the number of cores to attemp to use
 ##' @return A "samset" object, which is basically a list of sam fits
 ##' @details ...
+##' @export
+jit <- function(fit, nojit=10, ...){
+    UseMethod("jit")
+}
+
 ##' @importFrom parallel detectCores makeCluster clusterEvalQ parLapply stopCluster
 ##' @importFrom stats rnorm
 ##' @rdname jit
 ##' @method jit sam
 ##' @export
-jit.sam <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=detectCores()){
+jit.sam <- function(fit, nojit=10, par=defpar(fit$data, fit$conf), sd=.25, ncores=detectCores(),...){
   parv <- unlist(par)
   pars <- lapply(1:nojit, function(i)relist(parv+rnorm(length(parv),sd=sd), par))
   if(ncores>1){
@@ -522,7 +543,7 @@ refit <- function(fit, newConf, startingValues, ...){
     ## Update map
     map <- list()
     map0 <- fit2$obj$env$map
-    mapSetBySAM <- c("logFScaleMSY","implicitFunctionDelta","logScaleFmsy","logScaleFmax","logScaleF01","logScaleFcrash","logScaleFext","logScaleFxPercent","logScaleFlim","splinePenalty")
+    mapSetBySAM <- c("logFScaleMSY","implicitFunctionDelta","logScaleFmsy","logScaleFmax","logScaleF01","logScaleFcrash","logScaleFext","logScaleFxPercent","logScaleFlim","splinePenalty","logFecundityScaling")
     for(i in intersect(names(map0), setdiff(names(dp),mapSetBySAM))){
         if(usingOldPar[i] && length(map0[[i]])==length(dp[[i]])){
             map[[i]] <- map0[[i]]

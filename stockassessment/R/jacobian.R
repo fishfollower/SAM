@@ -4,6 +4,9 @@
 ##' @param func function
 ##' @param x parameter values
 ##' @param h step size
+##' @param maxit maximum number of iterations
+##' @param tol tolerance
+##' @param subset subset indices of parameters to calculate jacobian wrt
 ##' @param ... passed to func
 ##' @return jacobian matrix
 jacobian <- function(func, x,
@@ -62,6 +65,7 @@ svd_solve <- function(x){
 ##' @param func function
 ##' @param x parameter values
 ##' @param h step size
+##' @param columns columns of hessian to calculate
 ##' @param ... passed to func
 ##' @return jacobian matrix
 ##' @note Could be made more accurate in some cases

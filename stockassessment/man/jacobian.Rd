@@ -21,6 +21,12 @@ jacobian(
 
 \item{h}{step size}
 
+\item{maxit}{maximum number of iterations}
+
+\item{tol}{tolerance}
+
+\item{subset}{subset indices of parameters to calculate jacobian wrt}
+
 \item{...}{passed to func}
 }
 \value{

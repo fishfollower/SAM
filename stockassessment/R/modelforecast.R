@@ -4,8 +4,12 @@
 ##' @param expr expression
 ##' @param simplify simplify passes to sapply
 ##' @param ncores number of cores
+##' @param env environment
+##' @param par_precall Code to run when starting
+##' @param type type of parallelisation
 ##' @return output
 ##' @importFrom parallel makeCluster clusterSetRNGStream parSapply stopCluster
+##' @importFrom utils sessionInfo
 .SAM_replicate <- function(n, expr, simplify = "array", ncores = 1, env = parent.frame(n+1), par_precall = NULL, type = ifelse(.Platform$OS.type == "unix","mclapply","PSOCK")){
     if(ncores > 1){
         if(type == "mclapply"){
@@ -19,12 +23,12 @@
             eval(expression(2+2),env)       
             ##parallel::clusterExport(cl, "env", environment())
             ## Make everything available on all nodes
-            si <- sessionInfo()
+            si <- utils::sessionInfo()
             e0 <- environment()
             repeat{
                 parallel::clusterExport(cl,
                                         ls(all.names=TRUE,
-                                           env=e0),
+                                           envir=e0),
                                         envir=e0)
                 if(identical(e0, globalenv()))
                     break;
@@ -297,7 +301,6 @@ modelforecast <- function(fit, ...){
 ##' @param nosim number of simulations. If 0, the Laplace approximation is used for forecasting.
 ##' @param year.base starting year default last year in assessment. Currently it is only supported to use last assessment year or the year before  
 ##' @param ave.years vector of years to average for weights, maturity, M and such  
-##' @param overwriteBioModel Overwrite GMRF models with ave.years?
 ##' @param rec.years vector of years to use to resample recruitment from. If the vector is empty, the stock recruitment model is used.
 ##' @param label optional label to appear in short table
 ##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
@@ -306,6 +309,7 @@ modelforecast <- function(fit, ...){
 ##' @param fixedFdeviation Use a fixed F deviation from target?
 ##' @param useFHessian Use the covariance of F estimates instead of the estimated process covariance for forecasting?
 ##' @param resampleFirst Resample base year when nosim > 0?
+##' @param useModelLastN Use last N?
 ##' @param customSel supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
 ##' @param lagR if the second youngest age should be reported as recruits
 ##' @param splitLD if TRUE the result is split in landing and discards
@@ -319,6 +323,7 @@ modelforecast <- function(fit, ...){
 ##' @param newton_config Configuration for newton optimizer to find F values. See ?TMB::newton for details. Use NULL for TMB defaults.
 ##' @param custom_pl Parameter list. By default, the parameter list from fit is used.
 ##' @param useNonLinearityCorrection Should a non linearity correction be added to transformation of logF? See Details - Non-linearity correction.
+##' @param ncores Number of cores to use if simulating
 ##' @details
 ##' Function to forecast the model under specified catch constraints. In the forecast, catch constraints are used to set the mean of the \eqn{log(F)} process for each simulation. Therefore, catch constraints are not matched exactly in individual simulations. Likewise, the summary of a specific set of simulations will not match exactly due to random variability.
 ##' By default, recruitment is forecasted using the estimated recruitment model. If a vector of recruitment years is given, recruitment is forecasted using a log-normal distribution with the same mean and variance as the recruitment in the years given. This is different from the forecast function, which samples from the recruitment estimates.
@@ -447,7 +452,6 @@ modelforecast.sam <- function(fit,
                               nosim = 0,
                               year.base = max(fit$data$years),
                               ave.years = max(fit$data$years)+(-9:0),
-                              overwriteBioModel = FALSE,
                               rec.years = c(), #max(fit$data$years)+(-9:0),
                               label = NULL,
                               overwriteSelYears = NULL,
@@ -529,12 +533,6 @@ modelforecast.sam <- function(fit,
     }
     
 
-    ## if(length(ave.years) == 0){
-    useModelBio <- !overwriteBioModel
-    ##     ave.years = max(fit$data$years)+(-9:0)
-    ## }else{
-    ##     useModelBio <- FALSE
-    ## }
 
     ## Checks
     if(deterministicF && length(fscale) > 0 && any(!is.na(fscale)) && is.null(customSel))
@@ -680,7 +678,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     invisible(obj0$gr(fit$opt$par))
 
     args <- as.list(obj0$env)[methods::formalArgs(TMB::MakeADFun)[methods::formalArgs(TMB::MakeADFun) != "..."]]
-    args$data$simFlag <- c(1,1,1)
+    args$data$simFlag <- c(1,1,1,1)
     args$silent <- silent
     if(is.null(custom_pl)){
         pl <- fit$pl
@@ -689,12 +687,13 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }
     pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),postYears))
     pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),postYears))
+    useModelBio <- TRUE
     if(useModelBio){
         splitArray <- function(a){
             nr <- dim(a)[1]; nc <- dim(a)[2]; na <- dim(a)[3]
             lapply(split(a,rep(seq_len(na),each=nr*nc)), matrix, nrow = nr, ncol = nc)
         }
-        extendBio <- function(x) rbind(x,matrix(x[nrow(x)],postYears,ncol(x)))
+        extendBio <- function(x) rbind(x,matrix(x[nrow(x),],postYears,ncol(x), byrow = TRUE))
         if(nrow(pl$logitMO) > 0){            
             pl$logitMO <- extendBio(pl$logitMO)
         }else{
@@ -748,12 +747,12 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }
     
     if(useFHessian){
-        if(year.base==max(fit$data$years) || (year.base==(max(fit$data$years)-1) && useModelLastN)){
+        if(year.base==max(fit$data$years)){## || (year.base==(max(fit$data$years)-1) && useModelLastN)){
             est <- fit$sdrep$estY
-            FEstCov <- fit$sdrep$covY[grepl("LogF$",names(est)),grepl("LogF$",names(est))]
+            FEstCov <- fit$sdrep$covYYm1[grepl("^lastLogF$",names(est)),grepl("^lastLogF$",names(est))]
         }else if(year.base==(max(fit$data$years)-1)){
             est <- fit$sdrep$estYm1
-            FEstCov <- fit$sdrep$covYm1[grepl("LogF$",names(est)),grepl("LogF$",names(est))]
+            FEstCov <- fit$sdrep$covYm1[grepl("^beforeLastLogF$",names(est)),grepl("^beforeLastLogF$",names(est))]
         }else{
             stop("year.base not implemented yet more than one year before end of assessment.")           
         }
@@ -775,7 +774,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                logRecruitmentMedian = as.numeric(logRecruitmentMedian),
                                logRecruitmentVar = as.numeric(logRecruitmentVar),
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
-                               simFlag = c(0,0,0),
+                               simFlag = c(0,0,0,0),
                                hcrConf = hcrConf,
                                hcrCurrentSSB = hcrCurrentSSB,
                                Fdeviation = rnorm(nrow(pl$logF)),
@@ -809,19 +808,28 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
 
     fleetHasF <- apply(fit$conf$keyLogFsta>-1,1,any)
     if(!is.null(nosim) && nosim > 0){
-        if(year.base==max(fit$data$years) || (year.base==(max(fit$data$years)-1) && useModelLastN)){
-            est <- fit$sdrep$estY
-            cov <- fit$sdrep$covY
-            yearInsert <- max(fit$data$years)
+        if(year.base==(max(fit$data$years)-1) && useModelLastN){
+            idx <- setdiff(grep("(^last)|(^beforeLastLogF$)",names(fit$sdrep$estYYm1)),grep("^lastLogF",names(fit$sdrep$estYYm1)))
+            est <- fit$sdrep$estYYm1[idx]
+            cov <- fit$sdrep$covYYm1[idx,idx]
+            yearInsertBio <- max(fit$data$years)
+            yearInsertF <- max(fit$data$years)-1
+        }else if(year.base==max(fit$data$years)){
+            idx <- grep("^last",names(fit$sdrep$estYYm1))
+            est <- fit$sdrep$estYYm1[idx]
+            cov <- fit$sdrep$covYYm1[idx,idx]
+            yearInsertF <- yearInsertBio <- max(fit$data$years)
         }else if(year.base==(max(fit$data$years)-1)){
-            est <- fit$sdrep$estYm1
-            cov <- fit$sdrep$covYm1
-            yearInsert <- max(fit$data$years)-1
+            idx <- grep("^beforeLast",names(fit$sdrep$estYYm1))
+            est <- fit$sdrep$estYYm1[idx]
+            cov <- fit$sdrep$covYYm1[idx,idx]
+            yearInsertF <- yearInsertBio <- max(fit$data$years)-1
         }else{
             stop("year.base not implemented yet more than one year before end of assessment.")           
         }
-        names(est) <- gsub("(^.*[lL]ast)(Log[NF]$)","\\2",names(est))
-        i0 <- which(fit$data$year == yearInsert)
+        names(est) <- gsub("(^.*[lL]ast)(.+$)","\\2",names(est))
+        i0Bio <- which(fit$data$year == yearInsertBio)
+        i0F <- which(fit$data$year == yearInsertF)
         plMap <- pl
         map <- fit$obj$env$map
         with.map <- intersect(names(plMap), names(map))
@@ -859,10 +867,26 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 names(p) <- rep(names(plMap), times = sapply(plMap,length))
             }            
             ## Only works when year.base is last assessment year
-            indxN <- matrix(which(names(p) %in% "logN"),nrow=length(estList0$LogN))[,i0]
-            indxF <- matrix(which(names(p) %in% "logF"),nrow=length(estList0$LogF))[,i0]
+            indxN <- matrix(which(names(p) %in% "logN"),nrow=length(estList0$LogN))[,i0Bio]
             p[indxN] <- estList0$LogN
+            indxF <- matrix(which(names(p) %in% "logF"),nrow=length(estList0$LogF))[,i0F]
             p[indxF] <- estList0$LogF
+            if(any(grepl("logSW",names(p)))){
+                indxSW <- matrix(which(names(p) %in% "logSW"),ncol=length(estList0$LogSW))[i0Bio,]
+                p[indxSW] <- estList0$LogSW
+            }
+            if(any(grepl("logCW",names(p)))){
+                indxCW <- matrix(which(names(p) %in% "logCW"),ncol=length(estList0$LogCW))[i0Bio,]
+                p[indxCW] <- estList0$LogCW
+            }
+            if(any(grepl("logitMO",names(p)))){
+                indxMO <- matrix(which(names(p) %in% "logitMO"),ncol=length(estList0$LogitMO))[i0Bio,]
+                p[indxMO] <- estList0$LogitMO
+            }
+            if(any(grepl("logNM",names(p)))){
+                indxNM <- matrix(which(names(p) %in% "logNM"),ncol=length(estList0$LogNM))[i0Bio,]
+                p[indxNM] <- estList0$LogNM
+            }
             obj2$env$data$forecast$Fdeviation[] <- dList0$LogF
             obj2$env$data$forecast$FdeviationCov <- cov[names(est) %in% "LogF",names(est) %in% "LogF"]
             v <- obj2$simulate(par = p)
@@ -893,6 +917,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                    logEmpiricalYPR  = sapply(simvals,function(x) (x$logEmpiricalYPR[ii])),
                                    logEmpiricalYPR_L  = sapply(simvals,function(x) (x$logEmpiricalYPR_L[ii])),
                                    logEmpiricalYPR_D  = sapply(simvals,function(x) (x$logEmpiricalYPR_D[ii])),
+                                   bio_stockMeanWeight = t(sapply(simvals,function(x) (x$bio_stockMeanWeight[ii,]))),
+                                   bio_catchMeanWeight = t(sapply(simvals,function(x) (x$bio_catchMeanWeight[ii,]))),
+                                   bio_natMor = t(sapply(simvals,function(x) (x$bio_natMor[ii,]))),
+                                   bio_propMat = t(sapply(simvals,function(x) (x$bio_propMat[ii,]))),
                                    year=y)
             rownames(simlist[[i+1]]$catchatage) <- seq(fit$conf$minAge,fit$conf$maxAge,1)
         }
@@ -975,7 +1003,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         for(i in 0:(length(FModel))){
             y<-year.base+i 
             simlist[[i+1]] <- list(sim=NA, fbar=NA, catch=NA, ssb=NA, rec=NA,
-                                   cwF=NA, catchatage=NA, catchbyfleet=NA, fbarbyfleet=NA, land=NA, fbarL=NA, tsb=NA, logEmpiricalSPR=NA, logEmpiricalYPR=NA, year=y)
+                                   cwF=NA, catchatage=NA, catchbyfleet=NA, fbarbyfleet=NA, land=NA, fbarL=NA, tsb=NA, logEmpiricalSPR=NA, logEmpiricalYPR=NA, bio_stockMeanWeight=NA,  bio_catchMeanWeight=NA, bio_natMor = NA, bio_propMat = NA, year=y)
         }
 
         attr(simlist, "fit")<-fit

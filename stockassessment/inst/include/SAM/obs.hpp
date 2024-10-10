@@ -697,6 +697,17 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(logEmpiricalYPR_L,of);
 	vector<Type> logEmpiricalYPR_D = empiricalYPR(dat, conf, logN, mort, 2, true);
 	REPORT_F(logEmpiricalYPR_D,of);
+
+	// REPORT biopar
+	matrix<Type> bio_stockMeanWeights = dat.stockMeanWeight.matrix();
+	REPORT_F(bio_stockMeanWeights,of);
+	matrix<Type> bio_catchMeanWeights = dat.catchMeanWeight.matrix();
+	REPORT_F(bio_catchMeanWeights,of);
+	matrix<Type> bio_propMat = dat.propMat.matrix();
+	REPORT_F(bio_propMat,of);
+	matrix<Type> bio_natMor = dat.natMor.matrix();
+	REPORT_F(bio_natMor,of);
+	
       }
       // REPORT_F(obsCov,of);
       REPORT_F(predObs,of);
@@ -716,6 +727,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(comps, of);
 	ADREPORT_F(comps, of);
 	REPORT_F(weekContrib, of);
+	
       }
 
       // Additional forecast quantities
@@ -750,7 +762,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(logCatchByFleetAge,of);
 	REPORT_F(logFbarByFleet, of);
 	REPORT_F(logLand,of);
-	REPORT_F(logtsb,of);      
+	REPORT_F(logtsb,of);
+	
 	//}
 	// }
       }
@@ -767,7 +780,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	vector<Type> lastLogN = logN.col(timeSteps-1);
 	ADREPORT_F(lastLogN,of);
 	vector<Type> lastLogF = logF.col(timeSteps-1);
-	ADREPORT_F(lastLogF,of);  
+	ADREPORT_F(lastLogF,of);
 
 	vector<Type> beforeLastLogN = logN.col(timeSteps-2);
 	ADREPORT_F(beforeLastLogN,of);

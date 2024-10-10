@@ -25,6 +25,8 @@
 
 \item{keep.process}{Keep logN and logF processes when full.data = TRUE?}
 
+\item{retain.missing}{Keep NA in places where observations are missing?}
+
 \item{...}{extra arguments}
 }
 \value{

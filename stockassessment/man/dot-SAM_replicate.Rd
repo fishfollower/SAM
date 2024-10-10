@@ -22,6 +22,12 @@
 \item{simplify}{simplify passes to sapply}
 
 \item{ncores}{number of cores}
+
+\item{env}{environment}
+
+\item{par_precall}{Code to run when starting}
+
+\item{type}{type of parallelisation}
 }
 \value{
 output

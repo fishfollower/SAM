@@ -6,21 +6,79 @@ HEADER(
 template <class Type>
 struct bioResult {
   Type nll;
-  matrix<Type> Sigma_RR;
-  matrix<Type> MeanAdjScale;
-  vector<Type> mu;
 
-  density::MVNORM_t<Type> dens;
-
-  bioResult(Type nll_, matrix<Type> Sigma_RR_, matrix<Type> MeanAdjScale_, vector<Type> mu_) :
-    nll(nll_), Sigma_RR(Sigma_RR_), MeanAdjScale(MeanAdjScale_), mu(mu_), dens(Sigma_RR_) {};
+  matrix<Type> Sigma_GMRF;
+  matrix<Type> mu;
+  int nYears;
+  int nAges;
+ 
+  bioResult(Type nll_, matrix<Type> Sigma_GMRF_, matrix<Type> mu_, int nYears_, int nAges_) :
+    nll(nll_), Sigma_GMRF(Sigma_GMRF_), mu(mu_), nYears(nYears_), nAges(nAges_) {};
   
-  vector<Type> pred(vector<Type>& x){
-    return mu + MeanAdjScale * (vector<Type>)(x - mu);
+
+ matrix<Type> getSigmaMarginal(int y){
+    if(y < 0 || y >= mu.rows())
+      Rf_error("Year is out of bounds in biopar getSigmaSubsets");
+    matrix<Type> Sigma_11(nAges,nAges); // (Ages year y) x (Ages year y)
+    Sigma_11.setZero();
+    
+    for(int j1 = 0; j1 < nAges; ++j1){
+      for(int j2 = 0; j2 < nAges; ++j2){
+	Sigma_11(j1,j2) = Sigma_GMRF(y + j1 * nYears,y + j2 * nYears);
+      }
+    }   
+    return Sigma_11;
   }
-  vector<Type> simulate(vector<Type>& x){
-    return pred(x) + dens.simulate();
+  
+  vector<matrix<Type> > getSigmaSubsets(int y){
+    if(y <= 0 || y >= mu.rows())
+      Rf_error("Year is out of bounds in biopar getSigmaSubsets");
+    matrix<Type> Sigma_11(nAges,nAges); // (Ages year y) x (Ages year y)
+    Sigma_11.setZero();
+    matrix<Type> Sigma_12(nAges,nAges); // (Ages year y) x (Ages year y-1) 
+    Sigma_12.setZero();
+    matrix<Type> Sigma_21(nAges,nAges); // (Ages year y-1) x (Ages year y) 
+    Sigma_21.setZero();
+    matrix<Type> Sigma_22(nAges,nAges); // (Ages year y-1) x (Ages year y-1) 
+    Sigma_22.setZero();
+    
+    for(int j1 = 0; j1 < nAges; ++j1){
+      for(int j2 = 0; j2 < nAges; ++j2){
+	Sigma_11(j1,j2) = Sigma_GMRF(y + j1 * nYears,y + j2 * nYears);
+	Sigma_12(j1,j2) = Sigma_GMRF(y + j1 * nYears,(y-1) + j2 * nYears);
+	Sigma_21(j1,j2) = Sigma_GMRF((y-1) + j1 * nYears,y + j2 * nYears);
+	Sigma_22(j1,j2) = Sigma_GMRF((y-1) + j1 * nYears,(y-1) + j2 * nYears);
+      }
+    }
+    vector<matrix<Type> > res(4);
+    res(0) = Sigma_11;
+    res(1) = Sigma_12;
+    res(2) = Sigma_21;
+    res(3) = Sigma_22;
+    return res;
   }
+
+  vector<Type> simulate(vector<Type>& x, int y){
+    if(y < 0 || y > mu.rows())
+      Rf_error("Year is out of bounds in biopar simulation");
+    if(y == 0){
+      matrix<Type> Sigma = getSigmaMarginal(y);
+      density::MVNORM_t<Type> dens(Sigma);
+      vector<Type> mu1 = mu.row(y);
+      return mu1 + dens.simulate();
+    }
+    vector<matrix<Type> > Sigmas = getSigmaSubsets(y);
+    matrix<Type> Prec_22 = atomic::matinv(Sigmas(3));
+    matrix<Type> MeanAdj = Sigmas(1) * Prec_22;
+    matrix<Type> Cov_1given2 = Sigmas(0) - Sigmas(1) * Prec_22 * Sigmas(2);
+    density::MVNORM_t<Type> dens(Cov_1given2);
+    vector<Type> mu1 = mu.row(y);
+    vector<Type> mu2 = mu.row(y-1);
+    vector<Type> tmp = x - mu2;
+    vector<Type> pred = mu1 + MeanAdj * tmp;
+    return pred + dens.simulate();
+  }
+  
 
 }
        )
@@ -77,38 +135,12 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
     if(logPhi.size()==3){
       Q-=phi(2)*Wp;
     }
-    
-    // Conditional distribution of last time given one before
-    matrix<Type> Qlast(2*ncol,2*ncol); Qlast.setZero();
-    idx = 0;
-    for(int i = 0; i < n; ++i)
-      if(r(i) > 0 && r(i) < 3)
-	for(int j = 0; j < n; ++j) // Find ages
-	  if(r(j) > 0 && r(j) < 3){	// last two years
-	    int ki = c(i) + ncol * (2 - r(i));
-	    int kj = c(j) + ncol * (2 - r(j));
-	    Qlast(ki,kj) = Q(i,j);
-	  }
-    Qlast *= exp(-2.0 * logSdP);
 
-    // matrix<Type> SigmaLast = atomic::matinv(Qlast);
-    // // Conditioning  on first column
-    // matrix<Type> SigmaLast_Ran_Cond = SigmaLast.block(ncol,0,ncol,ncol);
-    // matrix<Type> SigmaLast_Ran_Ran = SigmaLast.block(ncol,ncol,ncol,ncol);
-    // matrix<Type> Q_Cond_Cond = Qlast.block(0,0,ncol,ncol);
-    // matrix<Type> Sigma_Ran = SigmaLast_Ran_Ran - SigmaLast_Ran_Cond * Q_Cond_Cond * (matrix<Type>)SigmaLast_Ran_Cond.transpose();
-    matrix<Type> Q_RR = Qlast.block(ncol,ncol,ncol,ncol);
-    matrix<Type> Q_CR = Qlast.block(ncol,0,ncol,ncol);
-    matrix<Type> Sigma_RR = atomic::matinv(Q_RR);
-    matrix<Type> MeanAdjScale = Sigma_RR * Q_CR;
-    vector<Type> mu(mP.dim(1));
-    for(int j=0; j<ncol; ++j){
-	mu(j)=meanVec(keyMeanVec(j));
-    }
-    
+    matrix<Type> Sigma_GMRF = atomic::matinv(Q) * exp(2.0*logSdP);
+
     Type nll = density::SCALE(density::GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
 
-    bioResult<Type> res(nll, Sigma_RR, MeanAdjScale, mu);
+    bioResult<Type> res(nll, Sigma_GMRF, mP.matrix(), P.dim[0], P.dim[1]);
 
     return res;
   });
@@ -132,9 +164,9 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	  dat.stockMeanWeight(i,j)=exp(logSW(i,j));
 	}
 	SIMULATE_F(of){
-	  if((forecast.nYears > 0 && forecast.forecastYear(i) > 0) || (conf.simFlag(1)==0 && i > 0)){
+	  if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	    vector<Type> v = logSW.matrix().row(i-1);
-	    vector<Type> p = br.simulate(v);
+	    vector<Type> p = br.simulate(v,i);
 	    for(int j=0; j<sw.dim[1]; ++j){
 	      logSW(i,j) = p(j);
 	      dat.stockMeanWeight(i,j)=exp(logSW(i,j));
@@ -145,6 +177,11 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
       array<Type> stockMeanWeight = dat.stockMeanWeight;
       REPORT_F(stockMeanWeight,of);
       ADREPORT_F(logSW,of);	// Needed for R based forecast
+      int timeSteps = dat.years.size();
+      vector<Type> lastLogSW = logSW.matrix().row(timeSteps-1);
+      ADREPORT_F(lastLogSW,of);
+      vector<Type> beforeLastLogSW = logSW.matrix().row(timeSteps-2);
+      ADREPORT_F(beforeLastLogSW,of);
       return nll;
     }
     return Type(0);
@@ -174,9 +211,9 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	  dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
 	}
 	SIMULATE_F(of){
-	  if((forecast.nYears > 0 && forecast.forecastYear(i) > 0) || (conf.simFlag(1)==0 && i > 0)){
+	  if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	    vector<Type> v = logCW.col(k).matrix().row(i-1);
-	    vector<Type> p = br.simulate(v);
+	    vector<Type> p = br.simulate(v,i);
 	    for(int j=0; j<cw.dim[1]; ++j){
 	      logCW(i,j,k) = p(j);
 	      dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
@@ -188,6 +225,11 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
     array<Type> catchMeanWeight = dat.catchMeanWeight;
     REPORT_F(catchMeanWeight,of);
     ADREPORT_F(logCW,of);	// Needed for R based forecast
+    int timeSteps = dat.years.size();
+    vector<Type> lastLogCW = logCW.matrix().row(timeSteps-1);
+    ADREPORT_F(lastLogCW,of);
+    vector<Type> beforeLastLogCW = logCW.matrix().row(timeSteps-2);
+    ADREPORT_F(beforeLastLogCW,of);
     return nll;
   }
   return Type(0);
@@ -227,9 +269,9 @@ template <class Type>
 	dat.propMat(i,j)=m;
       }
       SIMULATE_F(of){
-	if((forecast.nYears > 0 && forecast.forecastYear(i) > 0) || (conf.simFlag(1)==0 && i > 0)){
+	if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	  vector<Type> v = logitMO.matrix().row(i-1);
-	  vector<Type> p = br.simulate(v);
+	  vector<Type> p = br.simulate(v,i);
 	  for(int j=0; j<mo.dim[1]; ++j){
 	    logitMO(i,j) = p(j);
 	    dat.propMat(i,j)=invlogit(logitMO(i,j));
@@ -240,6 +282,11 @@ template <class Type>
     array<Type> propMat = dat.propMat;
     REPORT_F(propMat, of);
     ADREPORT_F(logitMO,of);	// Needed for R based forecast
+    int timeSteps = dat.years.size();
+    vector<Type> lastLogitMO = logitMO.matrix().row(timeSteps-1);
+    ADREPORT_F(lastLogitMO,of);
+    vector<Type> beforeLastLogitMO = logitMO.matrix().row(timeSteps-2);
+    ADREPORT_F(beforeLastLogitMO,of);
     return nll;
   }
   return Type(0);
@@ -266,9 +313,10 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	dat.natMor(i,j)=exp(logNM(i,j));
       }
       SIMULATE_F(of){
-	if((forecast.nYears > 0 && forecast.forecastYear(i) > 0) || (conf.simFlag(1)==0 && i > 0)){
+	if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	  vector<Type> v = logNM.matrix().row(i-1);
-	  vector<Type> p = br.simulate(v);
+	  vector<Type> p = br.simulate(v,i);
+	
 	  for(int j=0; j<nm.dim[1]; ++j){
 	    logNM(i,j) = p(j);
 	    dat.natMor(i,j)=exp(logNM(i,j));
@@ -279,6 +327,11 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
     array<Type> natMor = dat.natMor;
     REPORT_F(natMor, of);
     ADREPORT_F(logNM,of);	// Needed for R based forecast
+    int timeSteps = dat.years.size();
+    vector<Type> lastLogNM = logNM.matrix().row(timeSteps-1);
+    ADREPORT_F(lastLogNM,of);
+    vector<Type> beforeLastLogNM = logNM.matrix().row(timeSteps-2);
+    ADREPORT_F(beforeLastLogNM,of);
     return nll;
   }
   return Type(0);

@@ -109,7 +109,6 @@ public:
   
   ~Referencepoint_D() {
     ptr.reset();
-    delete name;
   }
 
   const char* makeName(const char* rpnm){
@@ -122,7 +121,7 @@ public:
     nam.append(name);
     nam.append("_");
     nam.append(rpnm);
-    return strdup(nam.data());
+    return Rf_acopy_string(nam.data());
   }
   
   void adreport(objective_function<Type> *of){

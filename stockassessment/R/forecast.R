@@ -2,6 +2,7 @@
 ##' @param n the number of samples.
 ##' @param mu the mean vector.
 ##' @param Sigma a positive-definite symmetric matrix specifying the covariance matrix.
+##' @param pivot Do pivot in chol?
 ##' @details Generates samples via the Cholesky decomposition, which is less platform dependent than eigenvalue decomposition.
 ##' @return If n = 1 a vector of the same length as mu, otherwise an n by length(mu) matrix with one sample in each row.
 ##' @export
@@ -270,7 +271,7 @@ forecast <- function(fit,
             N <- c(resample(recpool,1),N[-n]*exp(-Z[-n])+c(rep(0,n-2),N[n]*exp(-Z[n])))
             ## Recruitment does not use model prediction, so no effect of logNMeanAssumption
             if(fit$conf$logNMeanAssumption[2] == 1){ # Mean on natural scale
-                N <- N + c(0,-0.5 * exp(2.0 * fit$pl$logSdLogN[conf$keyVarLogN[-1]]))
+                N <- N + c(0,-0.5 * exp(2.0 * fit$pl$logSdLogN[fit$conf$keyVarLogN[-1]]))
             }else if(fit$conf$logNMeanAssumption[2] == 2){ # Mode on natural scale
                 N <- N + c(0,exp(2.0 * fit$pl$logSdLogN[fit$conf$keyVarLogN[-1]]))                
             }
@@ -350,12 +351,14 @@ forecast <- function(fit,
 
                                         # Get final state
     if(year.base==max(fit$data$years)){
-        est <- fit$sdrep$estY
-        cov <- fit$sdrep$covY
+        idxNF <- which(names(fit$sdrep$estY) %in% c("lastLogN","lastLogF"))
+        est <- fit$sdrep$estY[idxNF]
+        cov <- fit$sdrep$covY[idxNF,idxNF]
     }
-    if(year.base==(max(fit$data$years)-1)){  
-        est <- fit$sdrep$estYm1
-        cov <- fit$sdrep$covYm1
+    if(year.base==(max(fit$data$years)-1)){
+        idxNF <- which(names(fit$sdrep$estY) %in% c("beforeLastLogN","beforeLastLogF"))
+        est <- fit$sdrep$estYm1[idxNF]
+        cov <- fit$sdrep$covYm1[idxNF,idxNF]
     }
     if(year.base<(max(fit$data$years)-1)){
         stop("State not saved, so cannot proceed from this year")

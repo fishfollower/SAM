@@ -58,6 +58,8 @@ stochasticReferencepoints(fit, referencepoints, ...)
 
 \item{seed}{Seed for simulations}
 
+\item{knots}{Number of knots to use}
+
 \item{nosim_ci}{Number of simulations for bootstrap confidence intervals}
 
 \item{derivedSummarizer}{Function to summarize derived per-recruit values}
@@ -68,7 +70,15 @@ stochasticReferencepoints(fit, referencepoints, ...)
 
 \item{deterministicF}{If FALSE, modelled logF process noise will be added to target logF in forecasts.}
 
-\item{formula}{Formula to estimate optimization criteria as a function of F}
+\item{Fsequence}{F sequence to explore}
+
+\item{run}{run it?}
+
+\item{DT}{...}
+
+\item{equilibriumMethod}{method to use}
+
+\item{ncores}{Number of cores}
 }
 \value{
 reference point object
@@ -97,6 +107,7 @@ Reference points can be estimated using these methods:
    \item{Mode}{(NOT IMPLEMENTED YET)}
 }
 To estimate median equilibrium yield, as required by ICES, the method "Q0.5" should be used.
+Note that this function is highly experimental.
 }
 \examples{
 \dontrun{

@@ -56,6 +56,10 @@ sam.fit(
 
 \item{fullDerived}{Report all derived values?}
 
+\item{pre.clean}{Should a pre cleaning of data be done?}
+
+\item{check.parameters}{Should parameters be checked in TMB?}
+
 \item{...}{extra arguments to MakeADFun}
 }
 \value{

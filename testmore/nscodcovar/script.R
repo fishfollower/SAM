@@ -78,7 +78,7 @@ dat<-setup.sam.data(surveys=surveys,
 
 conf<-defcon(dat)
 conf$fbarRange <- c(2,4)
-conf$fixVarToWeight[1] <- 1
+conf$fixVarToWeight[] <- 1
 conf$keyVarObs[3,] = c(2,2,2,2,-1,-1)
 conf$obsCorStruct[] <- c("ID","ID","ID")
 par<-defpar(dat,conf)

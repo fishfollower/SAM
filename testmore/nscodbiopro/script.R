@@ -60,6 +60,22 @@ conf$keyMortalityObsVar<-rep(0,6)
 par<-defpar(dat,conf)
 fit1<-sam.fit(dat,conf,par)
 
+m0 <- modelforecast(fit0,rep("F=0.2",2),nosim=100,useModelLastN=TRUE,year.base=2018,resampleFirst=TRUE)
+
+round(cov(m0[[2]]$sim),2)
+round(fit0$sdrep$covY,2)
+
+m0x <- modelforecast(fit0,rep("F=0.2",2),nosim=100,year.base=2019,resampleFirst=TRUE)
+m1 <- modelforecast(fit1,rep("F=0.2",2),nosim=1000,useModelLastN=TRUE,year.base=2018)
+
+matplot(fit1$dat$year[1] + seq_len(nrow(fit1$pl$logSW))-1,fit1$pl$logSW)
+for(y in 1:3)
+for(i in 1:6)
+    points(m1[[y]]$year,mean(log(m1[[y]]$bio_stockMeanWeight[,i])),pch=5)
+points(rep(2019,6),fit1$sdrep$estY[13:18])
+points(rep(2018,6),fit1$sdrep$estYm1[13:18])
+
+m1x <- modelforecast(fit1,rep("F=0.2",2),nosim=100,year.base=2019,resampleFirst=TRUE)
 
 definit <- defpar(dat, conf)
 if (!identical(par, relist(unlist(par), skeleton = definit))) 

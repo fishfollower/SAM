@@ -1108,7 +1108,7 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
     S<-RB[idxS,1]
     Rnam<-colnames(X)[1]
     Snam<-colnames(X)[4]
-    if(!is.na(fit$conf$fecundityScaling) & fit$conf$fecundityScaling != 1)
+    if(is.na(fit$conf$fecundityScaling) || fit$conf$fecundityScaling != 1)
         Snam <- "Effective reproductive biomass"
     y<-rownames(X)
     makeCIpolygon <- function(i){

@@ -46,6 +46,12 @@ deterministicReferencepoints(fit, referencepoints, ...)
 \item{newton.control}{Control arguments passed to the newton optimizer (See \link[TMB]{newton})}
 
 \item{run}{Run estimation? If false, a list of arguments to MakeADFun is returned.}
+
+\item{equilibriumMethod}{Method to use to find equilibrium}
+
+\item{nosim_ci}{Number of simulations for simulation based confidence intervals (only when equilibriumMethod is EC)}
+
+\item{ncores}{Number of cores for simulation}
 }
 \value{
 List of estimated reference points
