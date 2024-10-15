@@ -164,7 +164,7 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	  dat.stockMeanWeight(i,j)=exp(logSW(i,j));
 	}
 	SIMULATE_F(of){
-	  if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	  if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	    vector<Type> v = logSW.matrix().row(i-1);
 	    vector<Type> p = br.simulate(v,i);
 	    for(int j=0; j<sw.dim[1]; ++j){
@@ -211,7 +211,7 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	  dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
 	}
 	SIMULATE_F(of){
-	  if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	  if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	    vector<Type> v = logCW.col(k).matrix().row(i-1);
 	    vector<Type> p = br.simulate(v,i);
 	    for(int j=0; j<cw.dim[1]; ++j){
@@ -269,7 +269,7 @@ template <class Type>
 	dat.propMat(i,j)=m;
       }
       SIMULATE_F(of){
-	if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	  vector<Type> v = logitMO.matrix().row(i-1);
 	  vector<Type> p = br.simulate(v,i);
 	  for(int j=0; j<mo.dim[1]; ++j){
@@ -313,7 +313,7 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	dat.natMor(i,j)=exp(logNM(i,j));
       }
       SIMULATE_F(of){
-	if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && (!forecast.useModelLastN || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	  vector<Type> v = logNM.matrix().row(i-1);
 	  vector<Type> p = br.simulate(v,i);
 	

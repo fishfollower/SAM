@@ -488,13 +488,7 @@ refit <- function(fit, newConf, startingValues, ...){
     fit2$data$landFrac <- toArray(fit2$data$landFrac)
     fit2$data$propF <- toArray(fit2$data$propF)
 
-    ## Fix maxAgePlusGroup
-    if(length(fit$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
-        fit2$conf$maxAgePlusGroup[] <- 0
-        fit2$conf$maxAgePlusGroup[fit2$data$maxAgePerFleet==fit2$conf$maxAge] <- fit$conf$maxAgePlusGroup[1]
-    }   
-
-    
+      
     if(!missing(newConf))
         fit2$conf[names(newConf)] <- newConf
     
@@ -519,6 +513,12 @@ refit <- function(fit, newConf, startingValues, ...){
         ##return(fit2$conf[[n]])
     })
     names(fit2$conf) <- nms
+
+     ## Fix maxAgePlusGroup
+    if(length(fit$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
+        fit2$conf$maxAgePlusGroup[] <- 0
+        fit2$conf$maxAgePlusGroup[fit2$data$maxAgePerFleet==fit2$conf$maxAge] <- fit$conf$maxAgePlusGroup[1]
+        }   
   
     ## Update parameters
     dp <- defpar(fit2$data,fit2$conf)

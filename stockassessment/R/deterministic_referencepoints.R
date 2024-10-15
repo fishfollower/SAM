@@ -645,7 +645,7 @@ recruitmentProperties <- function(fit){
 }
 
 ##' @importFrom methods cbind2 rbind2
-##' @importFrom Matrix solve invPerm forceSymmetric
+##' @importFrom Matrix solve invPerm forceSymmetric cbind2 rbind2 t
     .getJointCovariance <- function(fit){
         ## Adapted from TMB::sdreport
         obj <- fit$obj
@@ -659,13 +659,15 @@ recruitmentProperties <- function(fit){
         tmp <- f(par, order = 1, type = "ADGrad", keepx=nonr, keepy=r) ## TMBad only !!!
         if(!is.matrix(tmp)) ## Happens if length(r)==1
             tmp <- matrix(tmp, ncol=length(nonr) )
-        A <- solve(hessian.random, tmp)
+        A <- as.matrix(solve(hessian.random, tmp))
+        cat(class(A),"\n")
         ##diag.term2 <- rowSums((A %*% Vtheta)*A)
         G <- hessian.random %*% A
         G <- as.matrix(G) ## Avoid Matrix::cbind2('dsCMatrix','dgeMatrix')
-        M1 <- methods::cbind2(hessian.random,G)
-        M2 <- methods::cbind2(t(G), as.matrix(t(A)%*%G)+hessian.fixed )
-        M <- methods::rbind2(M1,M2)
+        cat(class(G), class(t(G)), class(A), class(as.matrix(t(A)%*%G)), class(hessian.fixed),class(as.matrix(t(A)%*%G)+hessian.fixed),"\n")
+        M1 <- cbind2(hessian.random,G)
+        M2 <- cbind2(t(G), as.matrix(t(A)%*%G)+hessian.fixed )
+        M <- rbind2(M1,M2)
         M <- Matrix::forceSymmetric(M,uplo="L")
         dn <- c(names(par)[r],names(par[-r]))
         dimnames(M) <- list(dn,dn)

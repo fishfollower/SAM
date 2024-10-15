@@ -149,8 +149,8 @@ HEADER(
 	   Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
 
 	   // Calculate spawners
-	   //vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);
-	   vector<Type> ssb = erbFun(newDat, conf, par, logN, logF, mort);
+	   vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);
+	   // vector<Type> ssbb = erbFun(newDat, conf, par, logN, logF, mort);
 	   Type logSPR = log(sum(ssb) + SAM_Zero);
 
 	   ////////////////////////////////////////////////////////////////////////////////
