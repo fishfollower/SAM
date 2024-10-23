@@ -24,6 +24,37 @@ rmvnorm <- function(n = 1, mu, Sigma){
     }
 }
 
+
+##' helper function to set, save and restore the state the Random Number Generator
+##' @param seed a single value, interpreted as an integer, or NULL
+##' @return A list with 4 items. The random number seed, the current RNG state, the RNG kind, and a function to restore an RNG state.
+##' @source This function is taken from the \code{DHARMa} package, see \url{https://cran.r-project.org/web/packages/DHARMa/index.html} or \url{https://github.com/florianhartig/DHARMa}.
+##' @export
+getRandomState <- function(seed = NULL){
+  
+  current = mget(".Random.seed", envir = .GlobalEnv, ifnotfound = list(NULL))[[1]]
+  
+  if(!is.null(seed) && is.logical(seed) && seed == FALSE){
+    restoreCurrent <- function(){}    
+  }else{
+    restoreCurrent <- function(){
+      if(is.null(current)) rm(".Random.seed", envir = .GlobalEnv) else assign(".Random.seed", current , envir = .GlobalEnv)
+    }    
+  }
+  
+  # setting seed
+  if(is.numeric(seed)) set.seed(seed)
+  
+  # ensuring that RNG has been initialized
+  if (is.null(current))runif(1) 
+  
+  randomState = list(seed = seed, state = get(".Random.seed", globalenv()), kind = RNGkind(), restoreCurrent = restoreCurrent)  
+  return(randomState)
+}
+
+
+
+
 ##' forecast function to do shortterm
 ##' @param fit an assessment object of type sam, as returned from the function sam.fit
 ##' @param fscale a vector of f-scales. See details.  
@@ -74,7 +105,14 @@ forecast <- function(fit,
                      ave.years=max(fit$data$years)+(-4:0),
                      rec.years=max(fit$data$years)+(-9:0),
                      label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE,  customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel>=1), useCWmodel=(fit$conf$catchWeightModel>=1), useMOmodel=(fit$conf$matureModel>=1), useNMmodel=(fit$conf$mortalityModel>=1), savesim=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
-    ## if(sum(fit$data$fleetTypes==0) > 1)
+  
+   
+  # store input data
+  forecast_args           <- c(mget(ls(environment(), sorted=F)), match.call(expand.dots=F)$...) 
+  forecast_args           <- forecast_args[names(forecast_args) != "fit"] 
+  forecast_args$rng_state <- getRandomState()    # store current RNG state, call this function before the first call to the RNG is made                                     
+  
+  ## if(sum(fit$data$fleetTypes==0) > 1)
     ##     stop("Forecast for multi fleet models not implemented yet")
     dp1<-function (expr, collapse = " ", width.cutoff = 500L, ...) paste(deparse(expr, width.cutoff, ...), collapse = collapse)
     estimateLabel <- dp1(substitute(estimate))
@@ -822,6 +860,7 @@ forecast <- function(fit,
     ## >>>>>>> multi   !!!End of conflict block 3 -- NOT FULLY MERGED!!!
     class(simlist) <- "samforecast"
     attr(simlist,"estimateLabel") <- estimateLabel
+    attr(simlist,"forecast_arguments") <- forecast_args
     if(!savesim){  
         simlistsmall<-lapply(simlist, function(x)list(year=x$year))
         attributes(simlistsmall)<-attributes(simlist)
