@@ -541,7 +541,12 @@ refit <- function(fit, newConf, startingValues, ...){
     }
 
     ## Update map
-    map <- list()
+    args <- list(...)
+    if(is.null(args$map)){
+        map <- list()
+    }else{
+        map <- args$map
+    }
     map0 <- fit2$obj$env$map
     mapSetBySAM <- c("logFScaleMSY","implicitFunctionDelta","logScaleFmsy","logScaleFmax","logScaleF01","logScaleFcrash","logScaleFext","logScaleFxPercent","logScaleFlim","splinePenalty","logFecundityScaling")
     for(i in intersect(names(map0), setdiff(names(dp),mapSetBySAM))){
@@ -551,9 +556,14 @@ refit <- function(fit, newConf, startingValues, ...){
             warning(sprintf("Map for %s was not used. Check that dimensions for the parameter and map matches each other and the new version of SAM.",i))
         }
     }
+    args$map <- map
     
     ##runwithout(fit2, ...)
-    fitNew <- sam.fit(fit2$data, fit2$conf, dp, map = map, ...)
+    args$data <- fit2$data
+    args$conf <- fit2$conf
+    args$parameters <- dp    
+    ##fitNew <- sam.fit(fit2$data, fit2$conf, dp, map = map, ...)
+    fitNew <- do.call(sam.fit, args)
     if(methods::is(fitNew,"sam")){
         ld <- abs(as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
         if(ld > 1e-4)

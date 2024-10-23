@@ -905,6 +905,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                    fbar = sapply(simvals,function(x) exp(x$logfbar[ii])),
                                    catch = sapply(simvals,function(x) exp(x$logCatch[ii])),
                                    ssb = sapply(simvals,function(x) exp(x$logssb[ii])),
+                                   erb = sapply(simvals,function(x) exp(x$logerb[ii])),
                                    rec = sapply(simvals,function(x) exp(x$logN[1,ii])),
                                    cwF = rep(NA, nosim),
                                    catchatage = do.call("cbind",lapply(simvals,function(x) exp(x$logCatchAge[,ii]))),
@@ -937,6 +938,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         fbarL <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$fbarL))),3)  
         rec <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$rec))))
         ssb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$ssb))))
+        erb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$erb))))
         tsb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$tsb))))
         catch <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$catch))))
         land <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$land))))  
@@ -992,7 +994,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                              bias.correct= biasCorrect,
                              skip.delta.method = biasCorrect,
                              bias.correct.control = list(sd = TRUE,
-                                                         split = lapply(obj$env$ADreportIndex()[c("logfbar","logssb","logR","logCatch","logtsb","logLagR","logLand","logDis","loglandfbar","logdisfbar")[c(TRUE,TRUE,TRUE,TRUE,addTSB,lagR,splitLD,splitLD,splitLD,splitLD)]], utils::tail, n = nYears + 1 + (fit$data$noYears-1) * as.numeric(returnAllYears))
+                                                         split = lapply(obj$env$ADreportIndex()[c("logfbar","logssb","logR","logCatch","logerb","logtsb","logLagR","logLand","logDis","loglandfbar","logdisfbar")[c(TRUE,TRUE,TRUE,TRUE,TRUE,addTSB,lagR,splitLD,splitLD,splitLD,splitLD)]], utils::tail, n = nYears + 1 + (fit$data$noYears-1) * as.numeric(returnAllYears))
                                                          )
                              )
         ssdr <- summary(sdr)
@@ -1002,7 +1004,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         simlist <- list()
         for(i in 0:(length(FModel))){
             y<-year.base+i 
-            simlist[[i+1]] <- list(sim=NA, fbar=NA, catch=NA, ssb=NA, rec=NA,
+            simlist[[i+1]] <- list(sim=NA, fbar=NA, catch=NA, ssb=NA, erb=NA, rec=NA,
                                    cwF=NA, catchatage=NA, catchbyfleet=NA, fbarbyfleet=NA, land=NA, fbarL=NA, tsb=NA, logEmpiricalSPR=NA, logEmpiricalYPR=NA, bio_stockMeanWeight=NA,  bio_catchMeanWeight=NA, bio_natMor = NA, bio_propMat = NA, year=y)
         }
 
@@ -1021,6 +1023,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         if(lagR)
             rec <- toCI(ssdr[rownames(ssdr) %in% "logLagR",indx])
         ssb <- toCI(ssdr[rownames(ssdr) %in% "logssb",indx])
+        erb <- toCI(ssdr[rownames(ssdr) %in% "logerb",indx])
         catch <- toCI(ssdr[rownames(ssdr) %in% "logCatch",indx])
         cayvec <- toCI(ssdr[rownames(ssdr) %in% "logCatchAge",indx])
         cbfvec <- toCI(ssdr[rownames(ssdr) %in% "logCatchByFleet",indx])

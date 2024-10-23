@@ -181,8 +181,8 @@ recruitmentProperties <- function(fit){
         invalidRP <- sort(unique(c(invalidRP,-2,-1, 1,2,6,7,8,9)))
     if(!recProp$isCompensatory)
         invalidRP <- sort(unique(c(invalidRP,10)))
-    if(!recProp$hasFiniteMaxGradient)
-        invalidRP <- sort(unique(c(invalidRP,10,11)))
+    ## if(!recProp$hasFiniteMaxGradient)
+    ##     invalidRP <- sort(unique(c(invalidRP,10,11)))
     srName <- recProp$name
     
     i <- match(rparg$rpType, invalidRP)
@@ -660,11 +660,9 @@ recruitmentProperties <- function(fit){
         if(!is.matrix(tmp)) ## Happens if length(r)==1
             tmp <- matrix(tmp, ncol=length(nonr) )
         A <- as.matrix(solve(hessian.random, tmp))
-        cat(class(A),"\n")
         ##diag.term2 <- rowSums((A %*% Vtheta)*A)
         G <- hessian.random %*% A
         G <- as.matrix(G) ## Avoid Matrix::cbind2('dsCMatrix','dgeMatrix')
-        cat(class(G), class(t(G)), class(A), class(as.matrix(t(A)%*%G)), class(hessian.fixed),class(as.matrix(t(A)%*%G)+hessian.fixed),"\n")
         M1 <- cbind2(hessian.random,G)
         M2 <- cbind2(t(G), as.matrix(t(A)%*%G)+hessian.fixed )
         M <- rbind2(M1,M2)
@@ -676,7 +674,7 @@ recruitmentProperties <- function(fit){
         Matrix::solve(InvSigma)
     }
     
-.refpointOptimizer <- function(fit, rpArgs, nsim, ncores = 1, incpb = function(x){}){
+.refpointOptimizer <- function(fit, rpArgs, nsim = 0, ncores = 1, incpb = function(x){}){
     objs <- .refpointObjective(rpArgs, fit)
     fitOne <- function(i, objs){
         obj <- objs[[i]]
@@ -704,7 +702,7 @@ recruitmentProperties <- function(fit){
 #### Optimize
         if(ncores==1){
             uncEst <- lapply(simParList, function(pl){
-                objsP <- .refpointObjective(rpArgs, fit)
+                objsP <- .refpointObjective(rpArgs, fit, pl = pl)
                 v <- unlist(lapply(seq_along(objs), fitOne, objs = objsP))
                 incpb("Uncertainty")
                 v
@@ -960,7 +958,7 @@ deterministicReferencepoints.sam <- function(fit,
                 stochasticType=0,
                 q=NA_real_)
     ##rpArgs <- c(list(rp0), rpArgs)
-
+    
     if(equilibriumMethod == "AD"){
         ## Make list for TMB
         obj0 <- fit$obj

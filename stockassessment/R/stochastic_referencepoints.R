@@ -461,7 +461,7 @@ predict.rpscurvefit <- function(x,newF,...){
         }else if(rp$rpType == 10){ ## Crash
             stop("Reference point type not implemented yet")
         }else if(rp$rpType == 11){ ## Ext
-            return((exp(PRvals$logSe) - 1)^2)
+            return(((PRvals$logSe) - 0)^2)
         }else if(rp$rpType == 12){ ## Lim
             stop("Reference point type not implemented yet")
         }else{
@@ -536,7 +536,7 @@ predict.rpscurvefit <- function(x,newF,...){
     ##names(Curves) <- names(rpArgs)
     D <- sapply(F, getDerivedValues)    
     res <- rbind(logF=unname(F),D)
-    colnames(res) <- Reduce("c",lapply(Forig,names))
+    #colnames(res) <- Reduce("c",lapply(Forig,names))
     rownames(res) <- gsub("^log","",rownames(res))
     ## Fseq <- seq(min(Fvals),max(Fvals),len=200)
     ## GraphVals <- rbind(logF=Fseq,sapply(Fseq, getDerivedValues))
@@ -752,7 +752,7 @@ stochasticReferencepoints.sam <- function(fit,
          attr(res,"equilibriumMethod") <- equilibriumMethod
         return(res)
         
-    }else if(method == "AD"){
+    }else if(equilibriumMethod == "AD"){
 ##########################################################################################
 ################################## Approximation #########################################
 ##########################################################################################
@@ -842,7 +842,7 @@ stochasticReferencepoints.sam <- function(fit,
         cat("Return...\n")                
         return(res)
         
-    }else if(method == "ES"){
+    }else if(equilibriumMethod == "ES"){
 ##########################################################################################
 ################################## Simulation ############################################
 ##########################################################################################
