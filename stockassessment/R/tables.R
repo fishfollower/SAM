@@ -412,100 +412,105 @@ qtable.sam<-function(fit,...){
 ##' @param Flimit Upper limit for Fbar
 ##' @param Fdelta increments on the Fbar axis 
 ##' @param aveYears Number of years back to use when calculating averages (selection, weights, ...)
-##' @param ageLimit Oldest age used (should be high)
 ##' @param sprProp Proportion of SPR at F=0, for example 0.35 if F0.35SPR
 ##' @param ... extra arguments not currently used
 ##' @export
-ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100, sprProp=0.35, ...){
+ypr<-function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), sprProp=0.35, ...){
     UseMethod("ypr")
 }
 ##' @rdname ypr
 ##' @method ypr sam
 ##' @export
-ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), ageLimit=100, sprProp=0.35, ...){
-  barAges <- do.call(":",as.list(fit$conf$fbarRange))+(1-fit$conf$minAge) 
-  last.year.used=max(fit$data$years)
-  idxno<-which(fit$data$years==last.year.used)
-  F <- t(faytable(fit))
-  F[is.na(F)]<-0
-  
-  sel<-function(){
-    Sa<-rep(0,nrow(F))
-    K<-0
-    for(i in 0:(aveYears-1)){
-      thisF<-F[,idxno-i]
-      Sa<-Sa+thisF
-      K<-K+fbartable(fit)[idxno-i]
+ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$years)), sprProp=0.35, ...){
+    if(fit$conf$stockWeightModel==1){
+      stockMeanWeight <- exp(fit$pl$logSW)[1:nrow(fit$data$stockMeanWeight),]
+      attr(stockMeanWeight, "dimnames")<-attr(fit$data$stockMeanWeight, "dimnames")  
+    }else{
+      stockMeanWeight <- fit$data$stockMeanWeight
     }
-    return(Sa/K)
-  }
+    if(fit$conf$catchWeightModel==1){
+      catchMeanWeight <- exp(fit$pl$logCW)[1:dim(fit$data$catchMeanWeight)[1],,,drop=FALSE]
+      attr(catchMeanWeight, "dimnames")<-attr(fit$data$catchMeanWeight, "dimnames")
+    }else{
+      catcMeanWeight <- fit$data$catchMeanWeight
+    }
+    if(fit$conf$mortalityModel==1){
+      natMor <- exp(fit$pl$logNM)[1:nrow(fit$data$natMor),]
+      attr(natMor, "dimnames")<-attr(fit$data$natMor, "dimnames")  
+    }else{
+      natMor <- fit$data$natMor
+    }
+    if(fit$conf$matureModel==1){
+      propMat <- plogis(fit$pl$logitMO)[1:nrow(fit$data$propmat),]
+      attr(propMat, "dimnames")<-attr(fit$data$propMat, "dimnames")  
+    }else{
+      propMat <- fit$data$propMat
+    }
 
-  extend<-function(x,len=100){
-    ret<-numeric(len)
-    ret[1:length(x)]<-x
-    ret[-c(1:length(x))]<-x[length(x)]
+    barAges <- do.call(":", as.list(fit$conf$fbarRange)) + (1 - fit$conf$minAge)
+    last.year.used = max(fit$data$years)
+    idxno <- which(fit$data$years == last.year.used)
+    F <- t(faytable(fit))
+    F[is.na(F)] <- 0
+    sel <- function() {
+        Sa <- rep(0, nrow(F))
+        K <- 0
+        for (i in 0:(aveYears - 1)) {
+            thisF <- F[, idxno - i]
+            Sa <- Sa + thisF
+            K <- K + fbartable(fit)[idxno - i]
+        }
+        return(Sa/K)
+    }
+    aveByCatch <- function(X) {
+        fun <- function(f) {
+            cay <- caytable(fit, f)
+            XX <- X[, , f]
+            cay <- cay[rownames(cay) %in% rownames(XX), ]
+            cay.safe <- cay
+            cay.safe[cay == 0] <- 1
+            cay * XX/cay.safe
+        }
+        Reduce("+", lapply(which(fit$data$fleetTypes == 0), fun))
+    }
+    ave.sl <- sel()
+    ave.sw <- colMeans(stockMeanWeight[(idxno - aveYears + 1):idxno, , drop = FALSE])
+    ave.cw <- colMeans(aveByCatch(catchMeanWeight)[(idxno - aveYears + 1):(idxno - 1), , drop = FALSE])
+    ave.pm <- colMeans(propMat[(idxno - aveYears + 1):idxno, , drop = FALSE])
+    ave.nm <- colMeans(natMor[(idxno - aveYears + 1):idxno, , drop = FALSE])
+    ave.lf <- colMeans(aveByCatch(fit$data$landFrac)[(idxno - aveYears + 1):(idxno - 1), , drop = FALSE])
+    ave.cw.land <- colMeans(aveByCatch(fit$data$landMeanWeight)[(idxno - aveYears + 1):(idxno - 1), , drop = FALSE])
+    N <- numeric(length(ave.nm))
+    deltafirst <- 1e-05
+    delta <- Fdelta
+    scales <- c(0, deltafirst, seq(0.01, Flimit, by = delta))
+    yields <- numeric(length(scales))
+    ssbs <- numeric(length(scales))
+    for (i in 1:length(scales)) {
+        scale <- scales[i]
+        F <- ave.sl * scale
+        Z <- ave.nm + F
+        N <- exp(-cumsum(c(0,Z[-length(Z)])))
+        N[length(N)]<-N[length(N)]/(1-exp(-Z[length(N)]))
+        C <- F/Z * (1 - exp(-Z)) * N * ave.lf
+        Y <- sum(C * ave.cw)
+        yields[i] <- Y
+        ssbs[i] <- sum(N * ave.pm * ave.sw)
+    }
+    fmaxidx <- which.max(yields)
+    fmax <- scales[fmaxidx]
+    deltaY <- diff(yields)
+    f01idx <- which.min((deltaY/delta - 0.1 * deltaY[1]/deltafirst)^2) + 1
+    f01 <- scales[f01idx]
+    f35spridx <- which.min((ssbs - sprProp * ssbs[1])^2) + 1
+    f35 <- scales[f35spridx]
+    fbarlab <- substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], 
+        Y = fit$conf$fbarRange[2]))
+    ret <- list(fbar = scales, ssb = ssbs, yield = yields, fbarlab = fbarlab, 
+        fsprProp = f35, f01 = f01, fmax = fmax, fsprPropIdx = f35spridx, 
+        f01Idx = f01idx, fmaxIdx = fmaxidx, sprProp = sprProp)
+    class(ret) <- "samypr"
     ret
-  }
-  aveByCatch <- function(X) {
-    fun <- function(f) {
-      cay <- caytable(fit, f)
-      XX <- X[, , f]
-      cay <- cay[rownames(cay) %in% rownames(XX), ]
-      cay.safe<-cay
-      cay.safe[cay==0]<-1
-      cay * XX/cay.safe
-    }
-    Reduce("+", lapply(which(fit$data$fleetTypes == 0), fun))
-  }
-  ave.sl<-sel()
-  ave.sw<-colMeans(fit$data$stockMeanWeight[(idxno-aveYears+1):idxno,,drop=FALSE])
-  ave.cw<-colMeans(aveByCatch(fit$data$catchMeanWeight)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
-  ave.pm<-colMeans(fit$data$propMat[(idxno-aveYears+1):idxno,,drop=FALSE])
-  ave.nm<-colMeans(fit$data$natMor[(idxno-aveYears+1):idxno,,drop=FALSE])
-  ave.lf<-colMeans(aveByCatch(fit$data$landFrac)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
-  ave.cw.land<-colMeans(aveByCatch(fit$data$landMeanWeight)[(idxno-aveYears+1):(idxno-1),,drop=FALSE])
-
-  N<-numeric(ageLimit)
-  N[1]<-1.0
-  M<-extend(ave.nm)
-  sw<-extend(ave.sw)
-  cw<-extend(ave.cw.land)
-  pm<-extend(ave.pm)
-  lf<-extend(ave.lf)
- 
-  deltafirst <- 0.00001
-  delta <- Fdelta
-  scales<-c(0, deltafirst, seq(0.01, Flimit, by=delta))
-  yields<-numeric(length(scales))
-  ssbs<-numeric(length(scales))
-  for(i in 1:length(scales)){
-    scale<-scales[i]
-    F<-extend(ave.sl*scale)
-    Z<-M+F
-    for(a in 2:length(N)){
-      N[a]<-N[a-1]*exp(-Z[a-1])  
-    }
-    C<-F/Z*(1-exp(-Z))*N*lf  
-    Y<-sum(C*cw)
-    yields[i]<-Y
-    ssbs[i]<-sum(N*pm*sw)
-  }
-
-  fmaxidx<-which.max(yields)
-  fmax<-scales[fmaxidx]
-
-  deltaY<-diff(yields)
-  f01idx<-which.min((deltaY/delta-0.1*deltaY[1]/deltafirst)^2)+1
-  f01<-scales[f01idx]
-
-  f35spridx<-which.min((ssbs-sprProp*ssbs[1])^2)+1
-  f35<-scales[f35spridx]
-  
-  fbarlab <- substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2]))
-  ret<-list(fbar=scales, ssb=ssbs, yield=yields, fbarlab=fbarlab, fsprProp=f35, f01=f01, fmax=fmax, 
-            fsprPropIdx=f35spridx, f01Idx=f01idx, fmaxIdx=fmaxidx, sprProp=sprProp)
-  class(ret)<-"samypr"
-  return(ret)
 }
 
 
