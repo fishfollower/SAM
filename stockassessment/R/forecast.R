@@ -104,7 +104,15 @@ forecast <- function(fit,
                      year.base=max(fit$data$years),
                      ave.years=max(fit$data$years)+(-4:0),
                      rec.years=max(fit$data$years)+(-9:0),
-                     label=NULL, overwriteSelYears=NULL, deterministic=FALSE, processNoiseF=TRUE,  customWeights=NULL, customSel=NULL, lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel>=1), useCWmodel=(fit$conf$catchWeightModel>=1), useMOmodel=(fit$conf$matureModel>=1), useNMmodel=(fit$conf$mortalityModel>=1), savesim=FALSE, cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=length(catchval)), cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=length(catchval)), estimate=median){
+                     label=NULL, overwriteSelYears=NULL, deterministic=FALSE,
+                     processNoiseF=TRUE,  customWeights=NULL, customSel=NULL, 
+                     lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel>=1), useCWmodel=(fit$conf$catchWeightModel>=1), 
+                     useMOmodel=(fit$conf$matureModel>=1), useNMmodel=(fit$conf$mortalityModel>=1), 
+                     savesim=FALSE, 
+                     cf.cv.keep.cv=NULL, 
+                     cf.cv.keep.fv=NULL, 
+                     cf.keep.fv.offset=NULL, 
+                     estimate=median){
   
    
   # store input data
@@ -116,6 +124,8 @@ forecast <- function(fit,
     ##     stop("Forecast for multi fleet models not implemented yet")
     dp1<-function (expr, collapse = " ", width.cutoff = 500L, ...) paste(deparse(expr, width.cutoff, ...), collapse = collapse)
     estimateLabel <- dp1(substitute(estimate))
+    attributes(forecast_args$estimate) <- list("estimateLabel" = estimateLabel)
+    
     idxN <- 1:nrow(fit$rep$nvar)
     
     idxF <- 1:nrow(fit$rep$fvar)+nrow(fit$rep$nvar)
@@ -140,6 +150,12 @@ forecast <- function(fit,
     if(missing(nextssb)) nextssb <-rep(NA,ns)
     if(missing(landval)) landval <-rep(NA,ns)  
     if(missing(cwF)) cwF <-rep(NA,ns)  
+    
+    
+    if(missing(cf.cv.keep.cv)) cf.cv.keep.cv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=ns)
+    if(missing(cf.cv.keep.fv)) cf.cv.keep.fv=matrix(NA, ncol=2*sum(fit$data$fleetTypes==0), nrow=ns) 
+    if(missing(cf.keep.fv.offset)) cf.keep.fv.offset=matrix(0, ncol=sum(fit$data$fleetTypes==0), nrow=ns) 
+    
 
     if(!all(rowSums(!is.na(cbind(fscale, catchval, catchval.exact, fval, nextssb, landval, cwF)))==1)){
         stop("For each forecast year exactly one of fscale, catchval or fval must be specified (all others must be set to NA)")
