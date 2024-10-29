@@ -25,36 +25,6 @@ rmvnorm <- function(n = 1, mu, Sigma){
 }
 
 
-##' helper function to set, save and restore the state the Random Number Generator
-##' @param seed a single value, interpreted as an integer, or NULL
-##' @return A list with 4 items. The random number seed, the current RNG state, the RNG kind, and a function to restore an RNG state.
-##' @source This function is taken from the \code{DHARMa} package, see \url{https://cran.r-project.org/web/packages/DHARMa/index.html} or \url{https://github.com/florianhartig/DHARMa}.
-##' @export
-getRandomState <- function(seed = NULL){
-  
-  current = mget(".Random.seed", envir = .GlobalEnv, ifnotfound = list(NULL))[[1]]
-  
-  if(!is.null(seed) && is.logical(seed) && seed == FALSE){
-    restoreCurrent <- function(){}    
-  }else{
-    restoreCurrent <- function(){
-      if(is.null(current)) rm(".Random.seed", envir = .GlobalEnv) else assign(".Random.seed", current , envir = .GlobalEnv)
-    }    
-  }
-  
-  # setting seed
-  if(is.numeric(seed)) set.seed(seed)
-  
-  # ensuring that RNG has been initialized
-  if (is.null(current))runif(1) 
-  
-  randomState = list(seed = seed, state = get(".Random.seed", globalenv()), kind = RNGkind(), restoreCurrent = restoreCurrent)  
-  return(randomState)
-}
-
-
-
-
 ##' forecast function to do shortterm
 ##' @param fit an assessment object of type sam, as returned from the function sam.fit
 ##' @param fscale a vector of f-scales. See details.  
@@ -116,10 +86,11 @@ forecast <- function(fit,
   
    
   # store input data
-  forecast_args           <- c(mget(ls(environment(), sorted=F)), match.call(expand.dots=F)$...) 
-  forecast_args           <- forecast_args[names(forecast_args) != "fit"] 
-  forecast_args$rng_state <- getRandomState()    # store current RNG state, call this function before the first call to the RNG is made                                     
-  
+  forecast_args                    <- c(mget(ls(environment(), sorted=F)), match.call(expand.dots=F)$...) 
+  forecast_args                    <- forecast_args[names(forecast_args) != "fit"] 
+  attr(forecast_args, "RNG_state") <- mget(".Random.seed", envir = .GlobalEnv, ifnotfound = list(NULL))[[1]]   # store current RNG state before the first call to the RNG
+  attr(forecast_args, "RNG_kind")  <- "RNG_kind" 
+
   ## if(sum(fit$data$fleetTypes==0) > 1)
     ##     stop("Forecast for multi fleet models not implemented yet")
     dp1<-function (expr, collapse = " ", width.cutoff = 500L, ...) paste(deparse(expr, width.cutoff, ...), collapse = collapse)
