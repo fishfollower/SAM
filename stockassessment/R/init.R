@@ -49,7 +49,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   }else if(conf$stockRecruitmentModelCode %in% c(90,91,92,93)){
       ret$rec_pars <- numeric(length(conf$constRecBreaks) + 1)
       ret$rec_pars[length(ret$rec_pars)] <- 5
-  }else if(conf$stockRecruitmentModelCode %in% c(201,202)){ # Depensatory Ricker, BevHolt
+  }else if(conf$stockRecruitmentModelCode %in% c(201,202,270)){ # Depensatory Ricker, BevHolt
       ret$rec_pars <- numeric(3)
       ret$rec_pars[3] <- C
   }else if(conf$stockRecruitmentModelCode==260){ # depensatory logistic Hockey stick
@@ -75,7 +75,7 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars[length(ret$rec_pars)] <- C
 
 
- }else if(conf$stockRecruitmentModelCode %in% c(401,402)){ # Depensatory C Ricker, BevHolt
+ }else if(conf$stockRecruitmentModelCode %in% c(401,402,470)){ # Depensatory C Ricker, BevHolt
      ret$rec_pars <- numeric(4)
      ret$rec_pars[3] <- C
 

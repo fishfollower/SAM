@@ -436,6 +436,8 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	  Btrigger *= b0;
 	  // }else if(biomassType == 3){ // % of Bmsy
 	  //   BforHCR = exp(getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
+	}else if(biomassType == 3){ // ERB
+	  BforHCR = exp(getLogERB(dat, conf, par, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
 	}else{
 	  Rf_error("Wrong biomass type for HCR");
 	}

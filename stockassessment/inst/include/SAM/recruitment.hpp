@@ -128,12 +128,14 @@ namespace RecruitmentConvenience {
 			 Depensatory_B_Power = 264,
 			 Depensatory_B_Shepherd = 266,
 			 Depensatory_B_Hassel_Deriso = 267,
+			 Depensatory_B_SmoothHockeyStick = 270,
 			 Depensatory_B_Spline_CMP = 290,
 			 Depensatory_B_Spline_ConvexCompensatory = 293,
 			 Depensatory_C_Ricker = 401,
 			 Depensatory_C_BevertonHolt = 402,
+			 Depensatory_C_SmoothHockeyStick = 470,
 			 Depensatory_C_Spline_CMP = 490,
-			 Depensatory_C_Spline_ConvexCompensatory = 493,
+			 Depensatory_C_Spline_ConvexCompensatory = 493,			 
 			 Num_Ricker = 991,
 			 Num_BevertonHolt = 992
 		    
@@ -767,31 +769,34 @@ namespace RecruitmentConvenience {
   // Recruitment function 4
   // Combined Ricker-Beverton-Holt
   struct RF_RBH_t : RecruitmentFunctor {
-    ad logr;			// r
-    ad logp;			// p
-    ad logq;			// q
-    ad logf;			// f
+    // R'(t) = -(r + p * S + q * R(t)) * R(t), R(0) = f * S
+    ad logr;			// r = baseline hazard
+    ad logp;			// p = RI-like "cannibalism" hazard
+    ad logq;			// q = BH-like competition hazard
+    ad loga;			// a = f * exp(-r*t), slope at origin
     ad t;			// age of recruitment (fixed to 1)
     
 
-    RF_RBH_t(ad lr, ad lp, ad lq, ad lf) :
-      logr(lr), logp(lp), logq(lq), logf(lf), t(1.0) {}
+    RF_RBH_t(ad lr, ad lp, ad lq, ad la, ad t_) :
+      logr(lr), logp(lp), logq(lq), loga(la), t(t_) {}
 
-   RF_RBH_t(ad lr, ad lp, ad lq) :
-      logr(lr), logp(lp), logq(lq), logf(0.0), t(1.0) {}
+    RF_RBH_t(ad lr, ad lp, ad lq, ad la) :
+      logr(lr), logp(lp), logq(lq), loga(la), t(1.0) {}
 
     
     ad operator()(const ad& logssb){
-      ad logE = logssb + logf;
       // ad E = exp(logE);
       ad r = exp(logr);
+      // a = f * exp(-r * t)
+      ad logf = loga + r * t; 
       // ad p = exp(logp);
-      // -ln(-E*exp(-(E*p + r)*t)*q + (p + q)*E + r) + ln(E*p + r) + ln(E) + (-E*p - r)*t
-      ad v1 = logspace_add_SAM(logp,logq);
-      ad v2 = logspace_add_SAM(v1 + logE, logr);
-      ad v3 = logE - exp(logp + logE) * t - r * t + logq;
+      // ln(-exp(-(S*p + r)*t)*S*f*q + (f*q + p)*S + r)
+      ad v1 = logspace_add_SAM(logp,logq+logf) + logssb; // (f*q + p)*S
+      ad v2 = logspace_add_SAM(v1, logr); // (f*q + p)*S + r)
+      ad v3 = logssb + logf + logq - exp(logp + logssb) * t - r * t; // exp(-(S*p + r)*t)*S*f*q
       ad vx = logspace_sub(v2,v3);
-      ad v = logE - exp(logE + logp) * t - r * t + logspace_add_SAM(logp+logE,logr) - vx;
+      // -ln(-exp(-(S*p + r)*t)*S*f*q + (f*q + p)*S + r) + ln(S*p + r) + ln(S) + ln(f) + (-S*p - r)*t
+      ad v = logssb + logf - exp(logssb + logp) * t - r * t + logspace_add_SAM(logp+logssb,logr) - vx;
       return v;
     }
 
@@ -1278,6 +1283,12 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
 	Rf_error("The depensatory B Hassel/Deriso recruitment should have four parameters.");
       r = Recruitment<Type>("type B depensatory Hassel/Deriso",RecruitmentConvenience::Rec_DepensatoryB<Type>(std::make_shared<RecruitmentConvenience::Rec_HasselDeriso<ad> >(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)),par.rec_pars(3)));
 
+ }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_SmoothHockeyStick){
+      if(par.rec_pars.size() != 3)
+	Rf_error("The depensatory B Smooth Hockey Stick recruitment should have three parameters.");
+      r = Recruitment<Type>("type B depensatory Smooth Hockey Stick",RecruitmentConvenience::Rec_DepensatoryB<Type>(std::make_shared<RecruitmentConvenience::Rec_SmoothHockeyStick<ad> >(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2)));
+
+      
     }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_B_Spline_CMP){
       if(par.rec_pars.size() != conf.constRecBreaks.size() + 2 && conf.constRecBreaks.size() >= 3)
 	Rf_error("The depensatory B spline recruitment should have two parameters more than the number of knots which should be at least 3.");
@@ -1301,6 +1312,12 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
 	Rf_error("The depensatory C Beverton-Holt recruitment should have four parameters.");
       r = Recruitment<Type>("type C depensatory Beverton-Holt",RecruitmentConvenience::Rec_DepensatoryC<Type>(std::make_shared<RecruitmentConvenience::Rec_BevertonHolt<ad> >(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
 
+}else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_C_SmoothHockeyStick){
+      if(par.rec_pars.size() != 4)
+	Rf_error("The depensatory C Smooth Hockey Stick recruitment should have three parameters.");
+      r = Recruitment<Type>("type C depensatory Smooth Hockey Stick",RecruitmentConvenience::Rec_DepensatoryC<Type>(std::make_shared<RecruitmentConvenience::Rec_SmoothHockeyStick<ad> >(par.rec_pars(0), par.rec_pars(1)),par.rec_pars(2), par.rec_pars(3)));
+
+      
     }else if(rm == RecruitmentConvenience::RecruitmentModel::Depensatory_C_Spline_CMP){
       if(par.rec_pars.size() != conf.constRecBreaks.size() + 3 && conf.constRecBreaks.size() >= 3)
 	Rf_error("The depensatory C spline recruitment should have three parameters more than the number of knots which should be at least 3.");

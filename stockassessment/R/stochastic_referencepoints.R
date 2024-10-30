@@ -739,7 +739,7 @@ stochasticReferencepoints.sam <- function(fit,
                 DT = DT,
                 Ntail = nTail
                 )
-        #rpArgs <- c(list(rp0),rpArgs)
+        rpArgs <- c(list(rp0),rpArgs)
        pb <- .SAMpb(min = 0, max = nosim_ci + 1, label="Point estimate")
         incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
         ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci,ncores, incpb)

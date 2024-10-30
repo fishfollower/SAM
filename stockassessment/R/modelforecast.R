@@ -85,15 +85,15 @@
             sign <- -1
         attr(v,"lag") <- sign * as.numeric(gsub("(\\*)(+|-)([[:digit:]]+)","\\3",s))
     }
-    if(as.character(type) != gsub("(\\*)(F|C|SSB|TSB|L)(.*)","\\2",s))
+    if(as.character(type) != gsub("(\\*)(F|C|SSB|TSB|ERB|L)(.*)","\\2",s))
         stop(sprintf("%s values can only be relative to %s values",as.character(type),as.character(type)))
     ## Find relative type
-    if(grepl("^\\*(F|C|SSB|TSB|L)$",s)){ #Relative to total
+    if(grepl("^\\*(F|C|SSB|ERB|TSB|L)$",s)){ #Relative to total
         v <- -1
         attr(v,"lag") <- 1
         return(-1)
-    }else if(grepl("^\\*(F|C|SSB|TSB|L)(\\[[[:digit:]]+\\])$",s)){
-        v <- as.numeric(gsub("(^\\*(F|C|SSB|TSB|L))(\\[)([[:digit:]]+)(\\]$)","\\4",s))-1
+    }else if(grepl("^\\*(F|C|SSB|ERB|TSB|L)(\\[[[:digit:]]+\\])$",s)){
+        v <- as.numeric(gsub("(^\\*(F|C|SSB|ERB|TSB|L))(\\[)([[:digit:]]+)(\\]$)","\\4",s))-1
         attr(v,"lag") <- 1
         return(v)
     }
@@ -104,7 +104,7 @@
     nCF <- sum(fleetTypes == 0)
     ## Split constraints
     sL <- strsplit(s,"[[:space:]]*&+[[:space:]]*")
-    forecastEnum <- c("F","C","SSB","TSB","L","KeepRelF","HCR")
+    forecastEnum <- c("F","C","SSB","TSB","L","KeepRelF","HCR","ERB")
     getAgeFleetSettings <- function(spec, type){
         if(spec == ""){                 # Not specified
             Amin <- as.numeric(ifelse(type=="F",FbarRange[1],ageRange[1]))
@@ -140,7 +140,7 @@
         ## Match 9: Trigger type (SSB, TSB)
         ## Match 10: Trigger settings (age range)
         ## Match 11: Trigger lag
-        frmt <- "^(HCR)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]+)(F|C|L)?(\\[.+\\])?(~)([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB|B0)?(\\[.+\\])?(-[[:digit:]]*)?$"
+        frmt <- "^(HCR)(\\[.+\\])?(=)([[:digit:]]*\\.?[[:digit:]]+)(F|C|L)?(\\[.+\\])?(~)([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB|B0|ERB)?(\\[.+\\])?(-[[:digit:]]*)?$"
         if(!grepl(frmt,ss))
             stop("Wrong specification of HCR")
         type <- factor(gsub(frmt,"\\1",ss),forecastEnum)
@@ -158,7 +158,7 @@
         targetSpec <- gsub(frmt,"\\6",ss)
         targetSettings <- getAgeFleetSettings(targetSpec,targetType)
         ## Get trigger info (Need to trick gsub)     
-        frmtTrig <- "^([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB|B0)?(\\[.+\\])?(-[[:digit:]]*)?$"
+        frmtTrig <- "^([[:digit:]]*\\.?[[:digit:]]+)(SSB|TSB|B0|ERB)?(\\[.+\\])?(-[[:digit:]]*)?$"
         ssTrig <- gsub(".+~","",ss)
         if(!grepl(frmtTrig,ssTrig))
             stop("Wrong specification of HCR trigger")     
@@ -166,7 +166,7 @@
         triggerType <- gsub(frmtTrig,"\\2",ssTrig)
         if(triggerType == "")
             triggerType <- "SSB"
-        triggerTypeI <- match(triggerType, c("SSB","TSB","B0"))-1
+        triggerTypeI <- match(triggerType, c("SSB","TSB","B0","ERB"))-1
         triggerSpec <- gsub(frmtTrig,"\\3",ssTrig)
         triggerSettings <- getAgeFleetSettings(triggerSpec,triggerType)
         triggerLag <- gsub(frmtTrig,"\\4",ssTrig)
