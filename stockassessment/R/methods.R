@@ -449,7 +449,7 @@ nobs.sam<-function(object, ...){
 ##' @importFrom TMB oneStepPredict
 ##' @details ...
 ##' @export
-residuals.sam<-function(object, discrete=FALSE, ...){
+residuals.sam<-function(object, discrete=FALSE, subset=1:nobs(object), ...){
   pp<-object$pl
   attr(pp,"what") <- NULL
   pp$missing <- NULL
@@ -461,9 +461,9 @@ residuals.sam<-function(object, discrete=FALSE, ...){
   close(fakefile)
   object.co<-sam.fit(object$data, conf, pp, run=FALSE, map = object$obj$env$map)
   cat("One-observation-ahead residuals. Total number of observations: ", nobs(object), "\n")  
-  res <- oneStepPredict(object.co$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete,...)
+  res <- oneStepPredict(object.co$obj, observation.name="logobs", data.term.indicator="keep", discrete=discrete, subset=subset,...)
   cat("One-observation-ahead residuals. Done\n")  
-  ret <- cbind(object.co$data$aux, res)
+  ret <- cbind(object.co$data$aux[subset,], res)
   attr(ret,"fleetNames") <- attr(object.co$data, "fleetNames")
   class(ret)<-"samres"
   ret
