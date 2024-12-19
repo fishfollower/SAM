@@ -475,6 +475,7 @@ modelforecast.sam <- function(fit,
                               custom_pl = NULL,
                               useNonLinearityCorrection = (nosim > 0 && !deterministicF),
                               ncores = 1,
+                              overwriteBioProcessModel = FALSE,
                               ...
                               ){
     ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
@@ -687,34 +688,34 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }
     pl$logF <- cbind(pl$logF,matrix(pl$logF[,ncol(pl$logF)],nrow(pl$logF),postYears))
     pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),postYears))
-    useModelBio <- TRUE
-    if(useModelBio){
-        splitArray <- function(a){
-            nr <- dim(a)[1]; nc <- dim(a)[2]; na <- dim(a)[3]
-            lapply(split(a,rep(seq_len(na),each=nr*nc)), matrix, nrow = nr, ncol = nc)
-        }
-        extendBio <- function(x) rbind(x,matrix(x[nrow(x),],postYears,ncol(x), byrow = TRUE))
-        if(nrow(pl$logitMO) > 0){            
-            pl$logitMO <- extendBio(pl$logitMO)
-        }else{
-            #warning(sprintf("No MO random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
-        }
-        if(nrow(pl$logNM) > 0){            
-            pl$logNM <- extendBio(pl$logNM)
-        }else{
-            #warning(sprintf("No NM random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
-        }
-        if(nrow(pl$logSW) > 0){            
-            pl$logSW <- extendBio(pl$logSW)
-        }else{
-            #warning(sprintf("No SW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
-        }
-        if(dim(pl$logCW)[1] > 0){            
-            pl$logCW <- simplify2array(lapply(splitArray(pl$logCW), extendBio))
-        }else{
-            #warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
-        }
+    ## useModelBio <- TRUE
+    ## if(useModelBio){
+    splitArray <- function(a){
+        nr <- dim(a)[1]; nc <- dim(a)[2]; na <- dim(a)[3]
+        lapply(split(a,rep(seq_len(na),each=nr*nc)), matrix, nrow = nr, ncol = nc)
     }
+    extendBio <- function(x) rbind(x,matrix(x[nrow(x),],postYears,ncol(x), byrow = TRUE))
+    if(nrow(pl$logitMO) > 0){            
+        pl$logitMO <- extendBio(pl$logitMO)
+    }else{
+                                        #warning(sprintf("No MO random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+    }
+    if(nrow(pl$logNM) > 0){            
+        pl$logNM <- extendBio(pl$logNM)
+    }else{
+                                        #warning(sprintf("No NM random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+    }
+    if(nrow(pl$logSW) > 0){            
+        pl$logSW <- extendBio(pl$logSW)
+    }else{
+                                        #warning(sprintf("No SW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+    }
+    if(dim(pl$logCW)[1] > 0){            
+        pl$logCW <- simplify2array(lapply(splitArray(pl$logCW), extendBio))
+    }else{
+                                        #warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+    }
+    ## }
     d0 <- dim(pl$logitFseason)
     lfsOld <- pl$logitFseason
     pl$logitFseason <- array(0, c(d0[1],postYears+d0[2], d0[3]))
@@ -774,7 +775,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                logRecruitmentMedian = as.numeric(logRecruitmentMedian),
                                logRecruitmentVar = as.numeric(logRecruitmentVar),
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
-                               simFlag = c(0,0,0,0),
+                               ## logF, logN, obs, biopar
+                               simFlag = c(0,0,0,as.numeric(overwriteBioProcessModel)),
                                hcrConf = hcrConf,
                                hcrCurrentSSB = hcrCurrentSSB,
                                Fdeviation = rnorm(nrow(pl$logF)),

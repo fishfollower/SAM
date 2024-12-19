@@ -3,7 +3,7 @@ SAM_DEPENDS(define)
 SAM_DEPENDS(incidence)
 
 
-#ifndef COMPILING_FROM_MSAM
+#ifdef COMPILING_FROM_MSAM
 void msam_reserved()SOURCE({
   return;
   })
