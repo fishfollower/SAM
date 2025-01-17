@@ -4,7 +4,7 @@
 \alias{residuals.sam}
 \title{Extract residuals from sam object}
 \usage{
-\method{residuals}{sam}(object, discrete = FALSE, ...)
+\method{residuals}{sam}(object, discrete = FALSE, subset = 1:nobs(object), ...)
 }
 \arguments{
 \item{object}{sam fitted object as returned from the \code{\link{sam.fit}} function}
