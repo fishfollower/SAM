@@ -361,7 +361,7 @@ forecast <- function(fit,
     sim<-rmvnorm(nosim, mu=est, Sigma=cov)
 
     if(is.null(overwriteSelYears) & is.null(customSel))  
-        if(!isTRUE(all.equal(est,getState(getN(est),getF(est)))))
+        if(!isTRUE(all.equal(unname(est),unname(getState(getN(est),getF(est))))))
             stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
     doAve <- function(x){
         if(length(dim(x))==2){
