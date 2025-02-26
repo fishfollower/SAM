@@ -392,13 +392,12 @@ qtable<-function(fit,...){
 ##' @param ... extra arguments not currently used
 ##' @export
 qtable.sam<-function(fit,...){
-  key<-fit$conf$keyLogFpar[-1,]+1
+  key <- fit$conf$keyLogFpar[-fit$data$fleetTypes!=0, ] + 1
   key[key==0]<-NA
-  noSurveys<-nrow(key)-1
   cf<-coef(fit)
   cfsd <- attr(cf,"sd")
   qt <- matrix( cf[ names(cf)=="logFpar" ][key],nrow=nrow(key),ncol=ncol(key) )
-  rownames(qt)<-attr(fit$data, "fleetNames")[-1]
+  rownames(qt) <- attr(fit$data, "fleetNames")[-fit$data$fleetTypes!=0]
   colnames(qt)<-fit$conf$minAge:fit$conf$maxAge
   sds <- qt
   sds[] <- cfsd[ names(cf)=="logFpar" ][key]
