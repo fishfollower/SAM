@@ -431,7 +431,7 @@ ypr.sam <- function(fit, Flimit=2, Fdelta=0.01, aveYears=min(15,length(fit$data$
       catchMeanWeight <- exp(fit$pl$logCW)[1:dim(fit$data$catchMeanWeight)[1],,,drop=FALSE]
       attr(catchMeanWeight, "dimnames")<-attr(fit$data$catchMeanWeight, "dimnames")
     }else{
-      catcMeanWeight <- fit$data$catchMeanWeight
+      catchMeanWeight <- fit$data$catchMeanWeight
     }
     if(fit$conf$mortalityModel==1){
       natMor <- exp(fit$pl$logNM)[1:nrow(fit$data$natMor),]
