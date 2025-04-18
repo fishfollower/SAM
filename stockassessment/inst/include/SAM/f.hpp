@@ -136,7 +136,7 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   matrix<Type> fvar(stateDimF,stateDimF);
   matrix<Type> fcor(stateDimF,stateDimF);
   vector<Type> fsd(stateDimF);  
-  vector<Type> statesFleets(stateDimF);
+  vector<int> statesFleets(stateDimF);
   
   //Fill statesFleets:
   for(int f=0; f<noFleets;f++){
@@ -154,7 +154,6 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
   // for(int i=0; i<stateDimF; ++i){
   //   fcor(i,i)=1.0;
   // }
-  
   int count=0; //if corFlag varies between 0-2, itrans_rho is shorter than comm fleet length
   for(int f=0;f<noFleets;f++){
     bool nxtPar = false;
@@ -166,11 +165,22 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 	  case 0:		// Independent
 	    fcor(j,i) = 0.0;
 	    break;
+	  case 10:		// Independent
+	    fcor(j,i) = 0.0;
+	    break;
 	  case 1:		// Compound symmetry
 	    fcor(j,i)=toInterval((Type)par.itrans_rho(count),Type(-1.0),Type(1.0),Type(2.0));
 	    nxtPar = true;
 	    break;
+	  case 11:		// Compound symmetry
+	    fcor(j,i)=toInterval((Type)par.itrans_rho(count),Type(-1.0),Type(1.0),Type(2.0));
+	    nxtPar = true;
+	    break;
 	  case 2:		// AR(1) structure
+	    fcor(j,i)=pow(toInterval((Type)par.itrans_rho(count),Type(-1.0),Type(1.0),Type(2.0)),abs(i-j));
+	    nxtPar = true;
+	    break;
+	  case 12:		// AR(1) structure
 	    fcor(j,i)=pow(toInterval((Type)par.itrans_rho(count),Type(-1.0),Type(1.0),Type(2.0)),abs(i-j));
 	    nxtPar = true;
 	    break;
@@ -217,7 +227,50 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
 SAM_SPECIALIZATION(matrix<double> get_fvar(dataSet<double>&, confSet&, paraSet<double>&, array<double>&));
 SAM_SPECIALIZATION(matrix<TMBad::ad_aug> get_fvar(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
 
+
+
+template<class Type>
+vector<Type> get_fphi(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF)SOURCE({
+  // using CppAD::abs;
+  int stateDimF=logF.dim[0];
+  int timeSteps=logF.dim[1];
+  int noFleets=conf.keyLogFsta.dim[0];
+  int stateDimN=conf.keyLogFsta.dim[1];
+  vector<int> statesFleets(stateDimF);
   
+  //Fill statesFleets:
+  for(int f=0; f<noFleets;f++){
+    for(int i=0;i<stateDimF;i++){
+      for(int j=0;j<stateDimN;j++){
+	if(conf.keyLogFsta(f,j)==i){
+	  statesFleets(i)=f;
+	  break;
+	}  
+      }
+    }
+  }
+  
+  vector<Type> phi(stateDimF);
+  phi = Type(1.0);
+  int whichPar=-1;
+  int lastSuchFleet = -1;
+  for(int i=0; i<stateDimF; ++i){
+    int f=statesFleets(i);
+    if(conf.corFlag(f)>9.5){
+      if(f!=lastSuchFleet){
+        lastSuchFleet=f;
+	whichPar++; 
+      }
+      //std::cout<<statesFleets<<"\n";
+      //std::cout<<i<<" "<<f<<" "<<lastSuchFleet<<" "<<whichPar<<"\n";
+      phi(i)=toInterval((Type)par.itrans_rhoTime(whichPar),Type(-1.0),Type(1.0),Type(2.0));
+    }
+  }
+  return phi;
+  })
+
+SAM_SPECIALIZATION(vector<double> get_fphi(dataSet<double>&, confSet&, paraSet<double>&, array<double>&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> get_fphi(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
   
 template <class Type>
 Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
@@ -237,6 +290,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
  
   //density::MVNORM_t<Type> neg_log_densityF(fvar);
   matrix<Type> fvar = get_fvar(dat, conf, par, logF);
+  vector<Type> phi = get_fphi(dat, conf, par, logF);
   MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
   Eigen::LLT< Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> > lltCovF(fvar);
   matrix<Type> LF = lltCovF.matrixL();
@@ -268,7 +322,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     	}
       }
     }else{
-      nll+=neg_log_densityF(logF.col(i)-logF.col(i-1)); // F-Process likelihood
+      nll+=neg_log_densityF(logF.col(i)-phi*logF.col(i-1)); // F-Process likelihood
       SIMULATE_F(of){
 	if(conf.simFlag(0)==0){
 	  logF.col(i)=logF.col(i-1)+neg_log_densityF.simulate();
@@ -286,6 +340,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     ADREPORT_F(resF,of);
   }
   REPORT_F(fvar,of);
+  REPORT_F(phi,of);
   return nll;
   }
   )

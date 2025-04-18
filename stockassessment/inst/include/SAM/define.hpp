@@ -388,7 +388,8 @@ struct paraSet{
   vector<Type> transfIRARdist;
   vector<Type> sigmaObsParUS;
   vector<Type> rec_pars; 
-  vector<Type> itrans_rho; 
+  vector<Type> itrans_rho;
+  vector<Type> itrans_rhoTime; 
   vector<Type> rhop;
   vector<Type> logScale;
   vector<Type> logitReleaseSurvival;   
@@ -441,7 +442,8 @@ struct paraSet{
     transfIRARdist(other.transfIRARdist),
     sigmaObsParUS(other.sigmaObsParUS),
     rec_pars(other.rec_pars), 
-    itrans_rho(other.itrans_rho), 
+    itrans_rho(other.itrans_rho),
+    itrans_rhoTime(other.itrans_rhoTime),      
     rhop(other.rhop),
     logScale(other.logScale),
     logitReleaseSurvival(other.logitReleaseSurvival),   
@@ -488,7 +490,8 @@ SOURCE(
        transfIRARdist(),
        sigmaObsParUS(),
        rec_pars(), 
-       itrans_rho(), 
+       itrans_rho(),
+       itrans_rhoTime(),       
        rhop(),
        logScale(),
        logitReleaseSurvival(),   
@@ -535,6 +538,7 @@ SOURCE(
 	   sigmaObsParUS = asVector<Type>(getListElement(x,"sigmaObsParUS", &Rf_isNumeric));
 	   rec_pars = asVector<Type>(getListElement(x,"rec_pars", &Rf_isNumeric));
 	   itrans_rho = asVector<Type>(getListElement(x,"itrans_rho", &Rf_isNumeric));
+	   itrans_rhoTime = asVector<Type>(getListElement(x,"itrans_rhoTime", &Rf_isNumeric));
 	   rhop = asVector<Type>(getListElement(x,"rhop", &Rf_isNumeric));
 	   logScale = asVector<Type>(getListElement(x,"logScale", &Rf_isNumeric));
 	   logitReleaseSurvival = asVector<Type>(getListElement(x,"logitReleaseSurvival", &Rf_isNumeric));

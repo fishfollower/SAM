@@ -83,7 +83,8 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- numeric(2)
   }
   
-  ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0 || x==4){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))
+  ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0 || x==4 || x==10){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))
+  ret$itrans_rhoTime=unlist(lapply(as.list(conf$corFlag),function(x){if(x < 9.5){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))
 
   ret$rhop = if(length(conf$keyVarLogP)>0){0.5}else{numeric(0)}
 
@@ -103,6 +104,7 @@ defpar <- function(dat,conf,spinoutyear=10){
     ret$sepFlogSd = rep(-1,2)
     ret$logSdLogFsta = numeric(0)
     ret$itrans_rho = numeric(0)
+    ret$itrans_rhoTime = numeric(0)
 
   }else{
     ret$sepFalpha=numeric(0)

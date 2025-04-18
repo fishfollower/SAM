@@ -152,7 +152,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(transfIRARdist); paraset.transfIRARdist=transfIRARdist; //transformed distances for IRAR cor obs structure
   PARAMETER_VECTOR(sigmaObsParUS); paraset.sigmaObsParUS=sigmaObsParUS; //choleski elements for unstructured cor obs structure
   PARAMETER_VECTOR(rec_pars); paraset.rec_pars=rec_pars;  
-  PARAMETER_VECTOR(itrans_rho); paraset.itrans_rho=itrans_rho;  
+  PARAMETER_VECTOR(itrans_rho); paraset.itrans_rho=itrans_rho;
+  PARAMETER_VECTOR(itrans_rhoTime); paraset.itrans_rhoTime=itrans_rhoTime;    
   PARAMETER_VECTOR(rhop); paraset.rhop=rhop;                       //Correlation of beta RW components
   PARAMETER_VECTOR(logScale); paraset.logScale=logScale; 
   PARAMETER_VECTOR(logitReleaseSurvival); paraset.logitReleaseSurvival=logitReleaseSurvival;    
@@ -223,10 +224,6 @@ Type objective_function<Type>::operator() ()
       dataset.logobs(i)=missing(idxmis++);
     }    
   }
-
-  
-  
-
 
   Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
 
