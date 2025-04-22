@@ -226,7 +226,7 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	  }else if(forecast.simFlag(3)==1){
 	    for(int j=0; j<cw.dim[1]; ++j){
 	      logCW(i,j,k) = log(cw(i,j,k));
-	      dat.catchMeanWeight(i,j,k) = sw(i,j,k);
+	      dat.catchMeanWeight(i,j,k) = cw(i,j,k);
 	    }
 	  }
 	}
