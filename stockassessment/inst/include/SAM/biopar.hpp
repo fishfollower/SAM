@@ -171,6 +171,11 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	      logSW(i,j) = p(j);
 	      dat.stockMeanWeight(i,j)=exp(logSW(i,j));
 	    }
+	  }else if(forecast.simFlag(3)==1){
+	    for(int j=0; j<sw.dim[1]; ++j){
+	      logSW(i,j) = log(sw(i,j));
+	      dat.stockMeanWeight(i,j) = sw(i,j);
+	    }
 	  }
 	}
       }
@@ -217,6 +222,11 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	    for(int j=0; j<cw.dim[1]; ++j){
 	      logCW(i,j,k) = p(j);
 	      dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
+	    }
+	  }else if(forecast.simFlag(3)==1){
+	    for(int j=0; j<cw.dim[1]; ++j){
+	      logCW(i,j,k) = log(cw(i,j,k));
+	      dat.catchMeanWeight(i,j,k) = sw(i,j,k);
 	    }
 	  }
 	}
@@ -276,6 +286,11 @@ template <class Type>
 	    logitMO(i,j) = p(j);
 	    dat.propMat(i,j)=invlogit(logitMO(i,j));
 	  }
+	}else if(forecast.simFlag(3)==1){
+	    for(int j=0; j<mo.dim[1]; ++j){
+	      logitMO(i,j) = logit(mo(i,j);
+		dat.propMat(i,j) = invlogit(logitMO(i,j));
+	    }
 	}
       }
     }
@@ -320,6 +335,11 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	  for(int j=0; j<nm.dim[1]; ++j){
 	    logNM(i,j) = p(j);
 	    dat.natMor(i,j)=exp(logNM(i,j));
+	  }
+	}else if(forecast.simFlag(3)==1){
+	  for(int j=0; j<nm.dim[1]; ++j){
+	    logNM(i,j) = log(nm(i,j));
+	    dat.natMor(i,j) = nm(i,j);
 	  }
 	}
       }
