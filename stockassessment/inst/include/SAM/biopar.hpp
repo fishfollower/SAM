@@ -288,7 +288,7 @@ template <class Type>
 	  }
 	}else if(forecast.simFlag(3)==1){
 	    for(int j=0; j<mo.dim[1]; ++j){
-	      logitMO(i,j) = logit(mo(i,j);
+	      logitMO(i,j) = logit(mo(i,j));
 		dat.propMat(i,j) = invlogit(logitMO(i,j));
 	    }
 	}
