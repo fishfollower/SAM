@@ -1577,8 +1577,8 @@ predstdplot = function(fit, fleet ,age = NULL,type = "log",ylim = NULL,
   #Plot confidence bounds
   N = 20000
   ss = rmvnorm(N,mu = fit$opt$par,Sigma = fit$sdrep$cov.fixed)
-  alphaSim = exp(ss[,which(names(fit$opt$par)=="logSdLogObs")])[,fit$conf$keyVarObs[fleet,ageIndex] + 1]
-  betaSim = exp(ss[,which(names(fit$opt$par)=="predVarObs")])[,fit$conf$predVarObsLink[fleet,ageIndex]+1] + 1
+  alphaSim = exp(ss[,which(names(fit$opt$par)=="logSdLogObs"), drop = FALSE])[,fit$conf$keyVarObs[fleet,ageIndex] + 1]
+  betaSim = exp(ss[,which(names(fit$opt$par)=="predVarObs"), drop = FALSE])[,fit$conf$predVarObsLink[fleet,ageIndex]+1] + 1
   sigmaSim = matrix(NA,N,length(pred))
   if(type == "log"){
     for(i in 1:N){
