@@ -508,3 +508,51 @@ SAM_SPECIALIZATION(vector<double> disFbarFun(dataSet<double>&, confSet&, array<d
 SAM_SPECIALIZATION(vector<TMBad::ad_aug> disFbarFun(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&));
 
 
+
+template <class Type>
+vector<Type> iceland_logRefBio(dataSet<Type> &dat, confSet &conf, array<Type> &logN)SOURCE({
+  int timeSteps=logN.dim[1];
+  vector<Type> logRefBio(timeSteps);
+  logRefBio.setConstant(R_NegInf);  
+  for(int y=0;y<timeSteps;y++){  
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+      // n*stock_weight/(1+exp(-25.224-5.307*log(stock_weight*1e3/(44.5^3.0))))
+      Type logSW = log(dat.stockMeanWeight(y,a-conf.minAge));
+      Type tmp = logN(a-conf.minAge,y) + logSW - logspace_add_SAM(Type(0.0),-25.224-5.307*(logSW + log(1000) - 3 * log(44.5)));
+      logRefBio(y) = logspace_add_SAM(logRefBio(y),tmp);      
+    }
+  }
+  return logRefBio;
+  })
+
+  
+SAM_SPECIALIZATION(vector<double> iceland_logRefBio(dataSet<double>&, confSet&, array<double>&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> iceland_logRefBio(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&));
+
+
+
+
+
+template <class Type>
+vector<Type> iceland_logRefBio4plus(dataSet<Type> &dat, confSet &conf, array<Type> &logN)SOURCE({
+  int timeSteps=logN.dim[1];
+  vector<Type> logRefBio(timeSteps);
+  logRefBio.setConstant(R_NegInf);  
+  for(int y=0;y<timeSteps;y++){  
+    for(int a=conf.minAge;a<=conf.maxAge;a++){
+      if(a >= 4){
+	// n*stock_weight/(1+exp(-25.224-5.307*log(stock_weight*1e3/(44.5^3.0))))
+	Type logSW = log(dat.stockMeanWeight(y,a-conf.minAge));
+	Type tmp = logN(a-conf.minAge,y) + logSW;
+	logRefBio(y) = logspace_add_SAM(logRefBio(y),tmp);
+      }
+    }
+  }
+  return logRefBio;
+  })
+
+  
+SAM_SPECIALIZATION(vector<double> iceland_logRefBio4plus(dataSet<double>&, confSet&, array<double>&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> iceland_logRefBio4plus(dataSet<TMBad::ad_aug>&, confSet&, array<TMBad::ad_aug>&));
+
+  

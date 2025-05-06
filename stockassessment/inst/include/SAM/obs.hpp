@@ -549,6 +549,16 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       ADREPORT_F(logLand,of);
       ADREPORT_F(logtsb,of);
 
+      vector<Type> IS_logRefBio = iceland_logRefBio(dat,conf,logN);
+      vector<Type> IS_logRefBio4plus = iceland_logRefBio4plus(dat,conf,logN);
+      vector<Type> IS_logHR = logCatch - IS_logRefBio;
+      vector<Type> IS_logHR4plus = logCatch - IS_logRefBio4plus;
+
+      ADREPORT_F(IS_logRefBio, of);
+      ADREPORT_F(IS_logRefBio4plus, of);
+      ADREPORT_F(IS_logHR, of);
+      ADREPORT_F(IS_logHR4plus, of);
+      
       REPORT_F(comps, of);
       ADREPORT_F(comps, of);
       REPORT_F(weekContrib, of);
