@@ -771,7 +771,16 @@ forecast <- function(fit,
         ## ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
         ## recsim <- exp(sim[,1])
         catchbysim <- apply(sim, 1, function(x)attr(catch(x, nm=nm, cw=cw), "byFleet"))
-        simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, catchby=catchbysim,  year=y)
+
+### ICELAND HR
+        IS_refbio <- apply(sim, 1, function(x)sum(getN(x) * sw / (1+exp(-25.224-5.307*log(sw*1e3/(44.5^3.0))))))        
+        IS_refbio4plus <- apply(sim, 1, function(x)sum((getN(x) * sw)[fit$conf$minAge:fit$conf$maxAge >= 4]))
+        IS_HR <- catchsim / IS_refbio
+        IS_HR4plus <- catchsim / IS_refbio4plus
+###
+
+        
+        simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, catchby=catchbysim, IS_refbio=IS_refbio, IS_refbio4plus=IS_refbio4plus, IS_HR=IS_HR, IS_HR4plus=IS_HR4plus, year=y)
         ## >>>>>>> multi   !!!End of conflict block 2 -- NOT FULLY MERGED!!!
     }
     attr(simlist, "fit")<-fit
@@ -787,10 +796,14 @@ forecast <- function(fit,
     ssb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$ssb))))
     tsb <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$tsb))))
     catch <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$catch))))
+    IS_refbio <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$IS_refbio))))
+    IS_refbio4plus <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$IS_refbio4plus))))
+    IS_HR <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$IS_HR))),3)
+    IS_HR4plus <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$IS_HR4plus))),3)
     ## <<<<<<< HEAD   !!!Conflict block 3; From master -- NOT FULLY MERGED!!!
     land <- round(do.call(rbind, lapply(simlist, function(xx)collect(xx$land))))  
     caytable<-round(do.call(rbind, lapply(simlist, function(xx)apply(xx$catchatage,1,collect)))) 
-    tab <- cbind(fbar,rec,ssb,catch)
+    tab <- cbind(fbar,rec,ssb,catch,IS_refbio,IS_HR,IS_refbio4plus,IS_HR4plus)
     if(splitLD){
         tab<-cbind(tab,fbarL,fbar-fbarL,land,catch-land)
     }
@@ -800,7 +813,7 @@ forecast <- function(fit,
     if(!missing(customWeights)) tab <- cbind(tab,cwF=round(do.call(rbind, lapply(simlist, function(xx)collect(xx$cwF))),3))
     rownames(tab) <- unlist(lapply(simlist, function(xx)xx$year))
     nam <- c(estimateLabel,"low","high")
-    basename<-c("fbar:","rec:","ssb:","catch:")
+    basename<-c("fbar:","rec:","ssb:","catch:","IS_refbio:","IS_HR:","IS_refbio4plus:","IS_HR4plus:")
     if(splitLD){
         basename<-c(basename,"fbarL:","fbarD:","Land:","Discard:")    
     }
