@@ -224,7 +224,7 @@ catchbyfleettable<-function(fit, obs.show=FALSE){
    colnames(low)<-paste0("Low(",fnam,")")
    hig <- matrix(ret[,"High"], ncol=nf)
    colnames(hig)<-paste0("High(",fnam,")")
-   sop <- xtabs(cw~y+f)
+   sop <- xtabs(cw~y+f, na.action = na.omit)
    ret <- cbind(est,low,hig)
    rownames(ret)<-yy
    if(obs.show){
