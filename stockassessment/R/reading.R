@@ -237,7 +237,7 @@ read.ices<-function(filen){
 setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL, 
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
-                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, agesampledata=NULL){
+                           natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, agesampledata=numeric(0)){
   # Function to write records in state-space assessment format and create 
   # collected data object for future use 
   fleet.idx<-0
@@ -359,7 +359,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleet=NULL,
     name<-c(name,"Recaptures")
   }
 
-  if(!is.null(agesampledata)){
+  if(!(is.numeric(agesampledata) & length(agesampledata)==0)){
     agesampledata<-as.data.frame(agesampledata)      
     if(!isTRUE(all.equal(colnames(agesampledata), c("age", "sample", "data")))){
       stop('agesampledata must have exactly 3 columns: "age", "sample", and "data"')
