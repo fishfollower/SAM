@@ -283,3 +283,136 @@ FBound<Type> get_fbound(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, a
 
 SAM_SPECIALIZATION(FBound<double> get_fbound(dataSet<double>&, confSet&, paraSet<double>&, array<double>&));
 SAM_SPECIALIZATION(FBound<TMBad::ad_aug> get_fbound(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));
+
+// Bound by TAC
+
+HEADER(
+       template<class Type>
+       struct FBound_TAC {
+	 vector<Type> k;
+	 vector<Type> a;
+	 array<int> keyLogFsta;
+	 vector<Type> operator()(vector<Type> lastLogF, vector<Type> nextLogN, vector<Type> lastTAC, vector<Type> nextTAC, vector<Type> nextM, vector<Type> CW);
+       };
+       )
+
+SOURCE(
+       template<class Type>
+       vector<Type> FBound_TAC<Type>::operator()(vector<Type> lastLogF, vector<Type> nextLogN, vector<Type> lastTAC, vector<Type> nextTAC, vector<Type> nextM, vector<Type> CW){
+	 if(nextTAC.size() == 0 || k.size() == 0 || a.size() == 0)
+	   return 0 * lastLogF;
+
+	 // Average F
+	 Type avgF = sum(exp(lastLogF)) / lastLogF.size();
+	 
+	 vector<Type> logCFleet(nextTAC.size());
+	 logCFleet.setZero();
+	 for(int i = 0; i < keyLogFsta.dim(0); ++i){ // Loop over fleets
+	   for(int j = 0; j < keyLogFsta.dim(1); ++j){ // Loop over ages
+	     if(keyLogFsta(i,j) > (-1)){
+	       Type Z = exp(lastLogF(keyLogFsta(i,j))) + nextM(j);
+	       Type Cya = lastLogF(keyLogFsta(i,j)) - log(Z) + logspace_sub_SAM(Type(0.0),-Z) + nextLogN(j) + log(CW(j));
+	       logCFleet(i) = logspace_add_SAM(logCFleet(i), Cya);// Approximation C=F/Z*(1-exp(-Z))*N (without seasons)
+	       //logCFleet(i) += lastLogF(keyLogFsta(i,j)) + nextLogN(j) + log(CW(j));
+	     }
+	   }
+	 }
+	 vector<Type> logC(lastLogF.size());
+	 logC.setZero();
+	 vector<Type> tacVec(lastLogF.size());
+	 tacVec.setZero();
+	 vector<Type> ltacVec(lastLogF.size());
+	 ltacVec.setZero();
+	 vector<Type> dC(lastLogF.size());
+	 for(int i = 0; i < keyLogFsta.dim(0); ++i){ // Loop over fleets
+	   for(int j = 0; j < keyLogFsta.dim(1); ++j){ // Loop over ages
+	     if(keyLogFsta(i,j) > (-1)){
+	       logC(keyLogFsta(i,j)) = logCFleet(i); 
+	       tacVec(keyLogFsta(i,j)) = log(nextTAC(i)+0.00001); // Assumes F is only in one fleet
+	       ltacVec(keyLogFsta(i,j)) = log(lastTAC(i)+0.00001);
+	       Type Z = exp(lastLogF(keyLogFsta(i,j))) + nextM(j);
+	       Type tmpC = lastLogF(keyLogFsta(i,j)) - log(Z) + logspace_sub_SAM(Type(0.0),-Z) + nextLogN(j) + log(CW(j));
+	       dC(keyLogFsta(i,j)) = 1 - exp(lastLogF(keyLogFsta(i,j)))/(exp(lastLogF(keyLogFsta(i,j))) + nextM(j)) + exp(lastLogF(keyLogFsta(i,j)))*exp(-exp(lastLogF(keyLogFsta(i,j))) - nextM(j))/(1 - exp(-exp(lastLogF(keyLogFsta(i,j))) - nextM(j)));
+	       //dC(keyLogFsta(i,j)) = 1;
+	     }
+	   }
+	 }
+	 // Make penalty vector
+	 vector<Type> pen(lastLogF.size());
+	 pen.setZero();
+	 for(int i = 0; i < pen.size(); ++i){
+	   if(isNA(tacVec(i))){
+	     pen(i) = 0.0;
+	   }else{
+	     Type d = tacVec(i) - logC(i) + a(i);	     
+	     Type v1 = 0.5 * (d + sqrt(d * d + 0.1)); // max(0,d) (i.e., TAC>C => higher F)
+	     Type v2 = 0.5 * (-d + sqrt(d * d + 0.1)); // max(0,-d) (i.e., C>TAC => lower F)
+	     pen(i) = - v2 * k(i); // This is working!
+	   }
+	 }
+	 return pen;
+       }
+       )
+
+SAM_SPECIALIZATION(struct FBound_TAC<double>);
+SAM_SPECIALIZATION(struct FBound_TAC<TMBad::ad_aug>);
+
+
+template<class Type>
+FBound_TAC<Type> get_fbound_TAC(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logF)SOURCE({    
+  int stateDimF=logF.dim[0];
+
+  vector<Type> kappa(logF.dim(0));
+  kappa.setZero();
+  vector<Type> alpha(logF.dim(0));
+  alpha.setZero();
+  
+  if(par.boundFTAC_kappa.size()==0 && par.boundFTAC_alpha.size()==0){
+    FBound_TAC<Type> FB = {vector<Type>(0),vector<Type>(0),conf.keyLogFsta};
+    return FB;
+  }
+  
+  int stateDimN=conf.keyLogFsta.dim[1];
+  int noFleets=conf.keyLogFsta.dim[0];
+ vector<Type> statesFleets(stateDimF);
+   //Fill statesFleets:
+  for(int f=0; f<noFleets;f++){
+    for(int i=0;i<stateDimF;i++){
+      for(int j=0;j<stateDimN;j++){
+	if(conf.keyLogFsta(f,j)==i){
+	  statesFleets(i)=f;
+	  break;
+	}  
+      }
+    }
+  }
+  
+
+  vector<bool> done(kappa.size());
+  done.setConstant(false);
+
+  for(int f=0;f<noFleets;f++){
+    for(int a = 0; a < conf.keyLogFsta.dim(1); ++a){
+      int Findx = conf.keyLogFsta(f,a);
+      int muIndxK = conf.keyLogFboundTAC_kappa(f,a);
+      int muIndxA = conf.keyLogFboundTAC_alpha(f,a);
+      // int muIndxT = conf.keyLogFbound_tau(f,a);
+      
+      if(Findx > (-1) && !done(Findx)){
+	if(muIndxK > (-1))
+	  kappa(Findx) = exp(par.boundFTAC_kappa(muIndxK));
+	if(muIndxA > (-1))
+	  alpha(Findx) = par.boundFTAC_alpha(muIndxA);
+	// if(muIndxT > (-1))
+	//   tau(Findx) = par.boundF_tau(muIndxT);
+	done(Findx) = true;
+      }
+    }
+  }
+  FBound_TAC<Type> FB = {kappa,alpha,conf.keyLogFsta};
+  return FB;
+  })
+
+
+SAM_SPECIALIZATION(FBound_TAC<double> get_fbound_TAC(dataSet<double>&, confSet&, paraSet<double>&, array<double>&));
+SAM_SPECIALIZATION(FBound_TAC<TMBad::ad_aug> get_fbound_TAC(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&));

@@ -71,7 +71,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(disMeanWeight); dataset.disMeanWeight=disMeanWeight; 
   DATA_ARRAY(landMeanWeight); dataset.landMeanWeight=landMeanWeight; 
   DATA_ARRAY(propF); dataset.propF=propF; 
-  DATA_ARRAY(propM); dataset.propM=propM; 
+  DATA_ARRAY(propM); dataset.propM=propM;
+  DATA_ARRAY(TAC); dataset.TAC=TAC; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
   DATA_IARRAY(sumKey); dataset.sumKey=sumKey; 
 
@@ -88,6 +89,8 @@ Type objective_function<Type>::operator() ()
   DATA_IARRAY(keyLogFbound_kappa); confset.keyLogFbound_kappa=keyLogFbound_kappa; 
   DATA_IARRAY(keyLogFbound_alpha); confset.keyLogFbound_alpha=keyLogFbound_alpha; 
   DATA_IARRAY(keyLogFbound_tau); confset.keyLogFbound_tau=keyLogFbound_tau; 
+  DATA_IARRAY(keyLogFboundTAC_kappa); confset.keyLogFboundTAC_kappa=keyLogFboundTAC_kappa; 
+  DATA_IARRAY(keyLogFboundTAC_alpha); confset.keyLogFboundTAC_alpha=keyLogFboundTAC_alpha; 
   DATA_IVECTOR(corFlag); confset.corFlag=corFlag; 
   DATA_IARRAY(keyLogFpar); confset.keyLogFpar=keyLogFpar; 
   DATA_IARRAY(keyQpow); confset.keyQpow=keyQpow; 
@@ -162,6 +165,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(boundF_kappa); paraset.boundF_kappa = boundF_kappa;
   PARAMETER_VECTOR(boundF_alpha); paraset.boundF_alpha = boundF_alpha;
   PARAMETER_VECTOR(boundF_tau); paraset.boundF_tau = boundF_tau;
+  PARAMETER_VECTOR(boundFTAC_kappa); paraset.boundFTAC_kappa = boundFTAC_kappa;
+  PARAMETER_VECTOR(boundFTAC_alpha); paraset.boundFTAC_alpha = boundFTAC_alpha;
   PARAMETER_VECTOR(logSdLogN); paraset.logSdLogN=logSdLogN;  
   PARAMETER_VECTOR(logSdLogP); paraset.logSdLogP=logSdLogP;       //Beta random walk components var
   PARAMETER_VECTOR(logSdLogObs); paraset.logSdLogObs=logSdLogObs; 
@@ -275,7 +280,7 @@ Type objective_function<Type>::operator() ()
 
   ans += nllP(confset, paraset, logP, keep, this);
 
-  ans += nllF(dataset, confset, paraset, forecast, logF, keep, this);
+  ans += nllF(dataset, confset, paraset, forecast, logF, logN, keep, this);
   ans += nllSeason(dataset, confset, paraset, forecast, logitFseason, keep, this);
 
   // Update mortalities if simulating

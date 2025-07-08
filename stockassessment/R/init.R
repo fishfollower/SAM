@@ -15,6 +15,8 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$boundF_kappa=numeric(max(conf$keyLogFbound_kappa)+1)
   ret$boundF_alpha=numeric(max(conf$keyLogFbound_alpha)+1)
   ret$boundF_tau=numeric(max(conf$keyLogFbound_tau)+1)
+  ret$boundFTAC_kappa=numeric(max(conf$keyLogFboundTAC_kappa)+1)
+  ret$boundFTAC_alpha=numeric(max(conf$keyLogFboundTAC_alpha)+1)
   ret$logSdLogN=numeric(max(conf$keyVarLogN)+1)-.35
   ret$logSdLogP=if(length(conf$keyVarLogP)>0){numeric(max(conf$keyVarLogP)+1)-.7} else { numeric(0)}
   ret$logSdLogObs=numeric(max(conf$keyVarObs)+1)-.35
@@ -34,6 +36,8 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- numeric(length(unique(conf$constRecBreaks))+1)
   }else if(conf$stockRecruitmentModelCode==4){ # combined Ricker-Beverton-Holt
       ret$rec_pars <- c(0,-10,-10, log(100))
+  }else if(conf$stockRecruitmentModelCode==5){ # combined power-Ricker-Beverton-Holt
+      ret$rec_pars <- c(0,-10,-10, log(100),0,0,0)
   }else if(conf$stockRecruitmentModelCode==60){ # logistic Hockey stick
       ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0)
       ## if(!is.na(conf$hockeyStickCurve))

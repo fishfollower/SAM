@@ -126,7 +126,7 @@ namespace f_fun {
 
   
 template <class Type>
-Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
+Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, array<Type> &logF, array<Type> &logN, data_indicator<vector<Type>,Type> &keep, objective_function<Type> *of)SOURCE({
     Type nll=0; 
     int stateDimF=logF.dim[0];
     int timeSteps=logF.dim[1];
@@ -142,8 +142,9 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     }
 
     vector<Type> muF = get_fmu(dat,conf,par, logF);
-    vector<Type> rhoF = get_frho(dat,conf,par, logF);
+    vector<Type> rhoF = get_frho(dat,conf,par, logF);    
     FBound<Type> FB = get_fbound(dat,conf,par, logF);
+    FBound_TAC<Type> FB_TAC = get_fbound_TAC(dat,conf,par, logF);
 
     //density::MVNORM_t<Type> neg_log_densityF(fvar);
     matrix<Type> fvar = get_fvar(dat, conf, par, logF);
@@ -162,9 +163,17 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       }
     }
 
- 
+    matrix<Type> PEN(stateDimF,timeSteps);
+    PEN.setZero();
     for(int i=1;i<timeSteps;i++){     
-      vector<Type> predF = muF + rhoF * (logF.col(i-1) - muF) + FB((vector<Type>)logF.col(i-1));
+      vector<Type> predF;
+      vector<Type> TACp(stateDimF);
+      TACp.setZero();
+      if(dat.TAC.rows() > 0){
+	TACp = FB_TAC((vector<Type>)logF.col(i-1),(vector<Type>)logN.col(i), (vector<Type>)dat.TAC.matrix().row(std::min(i-1,dat.catchMeanWeight.dim(0)-1)), (vector<Type>)dat.TAC.matrix().row(std::min(i,dat.catchMeanWeight.dim(0)-1)),(vector<Type>)dat.natMor.matrix().row(i),(vector<Type>)dat.catchMeanWeight.matrix().row(std::min(i,dat.catchMeanWeight.dim(0)-1)));
+      }
+      PEN.col(i) = TACp;
+      predF = muF + rhoF * (logF.col(i-1) - muF) + FB((vector<Type>)logF.col(i-1)) + TACp; 
       resF.col(i-1) = LinvF*(vector<Type>(logF.col(i)-predF));
 
       if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
@@ -192,7 +201,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
 	}
       }
     }
-
+    REPORT_F(PEN,of);
     if(CppAD::Variable(keep.sum()) && conf.initState == 0){ // add wide prior for first state, but _only_ when computing ooa residuals
       Type huge = 10;
       for (int i = 0; i < stateDimF; i++) nll -= dnorm(logF(i, 0), Type(0), huge, true);  
@@ -208,5 +217,5 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
 
 
 
-SAM_SPECIALIZATION(double nllF(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, data_indicator<vector<double>,double>&, objective_function<double>*));
-SAM_SPECIALIZATION(TMBad::ad_aug nllF(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));
+SAM_SPECIALIZATION(double nllF(dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, array<double>&, array<double>&, data_indicator<vector<double>,double>&, objective_function<double>*));
+SAM_SPECIALIZATION(TMBad::ad_aug nllF(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, data_indicator<vector<TMBad::ad_aug>,TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

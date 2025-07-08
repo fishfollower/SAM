@@ -55,6 +55,8 @@ defcon<-function(dat, level=1){
     ret$keyLogFbound_kappa <- xOff - 1
     ret$keyLogFbound_alpha <- xOff - 1
     ret$keyLogFbound_tau <- xOff - 1
+    ret$keyLogFboundTAC_kappa <- xOff - 1
+    ret$keyLogFboundTAC_alpha <- xOff - 1
 
     ret$corFlag <- rep(2,length(which(fleetTypes==0)))
     x <- matrix(0, nrow=nFleets, ncol=nAges)
@@ -171,7 +173,7 @@ defcon<-function(dat, level=1){
     ret$isFishingSeason <- 1
     ret$seasonFirstYear <- -Inf
     ret$seasonFixedEffect <- 0
-    ret$boundF <- c(NA_real_,NA_real_)
+    ##ret$boundF <- c(NA_real_,NA_real_)
     ret$fecundityScaling <- 1
     return(ret) 
 }

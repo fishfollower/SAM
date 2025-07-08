@@ -105,6 +105,7 @@ namespace RecruitmentConvenience {
 			 BevertonHolt = 2,
 			 ConstantMean = 3,
 			 RBH = 4,
+			 RBHx = 5,
 			 LogisticHockeyStick = 60,
 			 HockeyStick = 61,
 			 LogAR1 = 62,
@@ -756,6 +757,14 @@ namespace RecruitmentConvenience {
     RecruitmentNumeric<Type>(std::make_shared<RF_##NAME##_t>(p1, p2, p3, p4)) {}; \
   };
 
+#define TO_REC_7PAR(NAME)						\
+  template<class Type>							\
+  struct Rec_##NAME : RecruitmentNumeric<Type>  {			\
+    Rec_##NAME(Type p1, Type p2, Type p3, Type p4, Type p5, Type p6, Type p7) :			\
+    RecruitmentNumeric<Type>(std::make_shared<RF_##NAME##_t>(p1, p2, p3, p4, p5, p6, p7)) {}; \
+  };
+
+  
   
 #define TO_REC_SPLINE(NAME)						\
   template<class Type>							\
@@ -771,7 +780,7 @@ namespace RecruitmentConvenience {
   struct RF_RBH_t : RecruitmentFunctor {
     // R'(t) = -(r + p * S + q * R(t)) * R(t), R(0) = f * S
     ad logr;			// r = baseline hazard
-    ad logp;			// p = RI-like "cannibalism" hazard
+    ad logp;			// p = RI-like compensatory hazard
     ad logq;			// q = BH-like competition hazard
     ad loga;			// a = f * exp(-r*t), slope at origin
     ad t;			// age of recruitment (fixed to 1)
@@ -805,6 +814,51 @@ namespace RecruitmentConvenience {
   };
   
   TO_REC_4PAR(RBH);
+
+  // Recruitment function 5
+  // Combined polynomial Ricker-Beverton-Holt
+  struct RF_RBHx_t : RecruitmentFunctor {
+    // R'(t) = -(r + p * S^b + q * R(t)^d) * R(t), R(0) = f * S^a
+    // Parameterize b = a*bx
+    ad logr;			// r = baseline hazard
+    ad logp;			// p = RI-like compensatory hazard
+    ad logq;			// q = BH-like competition hazard
+    ad logf;
+    ad loga;			//
+    ad logb;
+    ad logd;
+    
+    ad t;			// age of recruitment (fixed to 1)
+    
+
+    RF_RBHx_t(ad lr, ad lp, ad lq, ad lf, ad la, ad lb, ad ld,  ad t_) :
+      logr(lr), logp(lp), logq(lq), logf(lf), loga(la), logb(lb), logd(ld), t(t_) {}
+
+    RF_RBHx_t(ad lr, ad lp, ad lq, ad lf, ad la, ad lb, ad ld) :
+      logr(lr), logp(lp), logq(lq), logf(lf), loga(la), logb(lb), logd(ld), t(1.0) {}
+
+    
+    ad operator()(const ad& logssb){
+      // exp(-t*(r + p*S^b))* (((S^(-a)/f)^d*p*S^b + (S^(-a)/f)^d*r - exp(-(r + p*S^b)*d*t)*q + q)/(r + p*S^b))^(-1/d) = exp(v1) * exp(v2)      
+      // v1 = -t*(r + p*S^b)
+      ad v1 = -t * (exp(logr) + exp(logp + exp(logb+loga) * logssb));
+      // v2 = (-1/d) * log {  ((S^(-a)/f)^d*p*S^b + (S^(-a)/f)^d*r - exp(-(r + p*S^b)*d*t)*q + q)/(r + p*S^b)  } = (-1/d) * log { ( v2_1 + v2_2 - v2_3 ) / v2_4
+      // logv2_1 = log{ (S^(-a)/f)^d*p*S^b } ) 
+      ad logv2_1 = logp + (exp(logb+loga) - exp(loga + logd)) * logssb - exp(logd)* logf;
+      // logv2_2 = log{  (S^(-a)/f)^d*r }
+      ad logv2_2 = logr + -exp(loga + logd) * logssb - exp(logd) * logf;
+      // logv2_3 = log( (1 - exp(-(r + p*S^b)*d*t)) * q )
+      ad logv2_3 = logq + logspace_sub_SAM(ad(0.0), -t*exp(logd) *(exp(logr) + exp(logp + exp(logb+loga) * logssb)));
+      ad logv2_4 = logspace_add_SAM(logr, logp + exp(logb+loga) * logssb);
+      ad v = v1 - exp(-logd) * (logspace_add_SAM(logspace_add_SAM(logv2_1,logv2_2),logv2_3) - logv2_4);
+      return v;
+    }
+
+    USING_RECFUN;
+  
+  };
+  
+  TO_REC_7PAR(RBHx);
 
   
   
@@ -1178,6 +1232,11 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
       if(par.rec_pars.size() != 4)
 	Rf_error("The combined Ricker-Beverton Holt recruitment must have three parameters.");
       r = Recruitment<Type>("Combined Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_RBH<Type> >(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2), par.rec_pars(3)));
+ }else if(rm == RecruitmentConvenience::RecruitmentModel::RBHx){
+      if(par.rec_pars.size() != 7)
+	Rf_error("The combined power-Ricker-Beverton-Holt recruitment must have seven parameters.");
+      r = Recruitment<Type>("Combined power-Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_RBHx<Type> >(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2), par.rec_pars(3), par.rec_pars(4), par.rec_pars(5), par.rec_pars(6)));
+      
     }else if(rm == RecruitmentConvenience::RecruitmentModel::LogisticHockeyStick){
       if(par.rec_pars.size() != 3)
 	Rf_error("The logistic hockey stick recruitment should have three parameters.");

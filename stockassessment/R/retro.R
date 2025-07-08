@@ -61,7 +61,8 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
     }else{
         data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,drop=FALSE]
     }
-    data$aux[,"fleet"] <- match(data$aux[,"fleet"],suf)
+    data$TAC <- data$TAC[rownames(data$TAC)%in%data$years,,drop=FALSE]
+    data$aux[,"fleet"] <- match(data$aux[,"fleet"],suf) 
     data$minAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=min)
     data$maxAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=max)
     if(any(data$fleetTypes >= 80)){
@@ -84,6 +85,11 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
         conf$keyLogFpar <- .reidx(conf$keyLogFpar[suf,,drop=FALSE])
         conf$keyLogFmu <- .reidx(conf$keyLogFmu[suf,,drop=FALSE])
         conf$keyLogFrho <- .reidx(conf$keyLogFrho[suf,,drop=FALSE])
+        conf$keyLogFbound_kappa <- .reidx(conf$keyLogFbound_kappa[suf,,drop=FALSE])
+        conf$keyLogFbound_alpha <- .reidx(conf$keyLogFbound_alpha[suf,,drop=FALSE])
+        conf$keyLogFbound_tau <- .reidx(conf$keyLogFbound_tau[suf,,drop=FALSE])
+        conf$keyLogFboundTAC_kappa <- .reidx(conf$keyLogFboundTAC_kappa[suf,,drop=FALSE])
+        conf$keyLogFboundTAC_alpha <- .reidx(conf$keyLogFboundTAC_alpha[suf,,drop=FALSE])
         conf$keyQpow <- .reidx(conf$keyQpow[suf,,drop=FALSE])
         conf$keyVarF <- .reidx(conf$keyVarF[suf,,drop=FALSE])
         conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
@@ -122,7 +128,7 @@ runwithout <- function(fit, year, fleet, ...){
 ##' @rdname runwithout
 ##' @method runwithout sam
 ##' @export
-runwithout.sam <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...){
+runwithout.sam <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map,rm.unidentified=TRUE,initialize.par=TRUE,initialize.re=FALSE, ...){
   data <- reduce(fit$data, year=year, fleet=fleet, conf=fit$conf)      
   conf <- attr(data, "conf")
   fakefile <- file()
@@ -132,8 +138,13 @@ runwithout.sam <- function(fit, year=NULL, fleet=NULL, map=fit$obj$env$map, ...)
   conf <- loadConf(data, fakefile, patch=TRUE)
   close(fakefile)
   par <- defpar(data,conf)
-  par[!names(par)%in%c("logN", "logF", "logSW", "logCW", "logitMO", "logNM","logP","logitFseason")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF", "logSW", "logCW", "logitMO", "logNM","logP","logitFseason")]
-  ret <- sam.fit(data, conf, par, rm.unidentified=TRUE, map=map, lower=fit$low, upper=fit$hig, ...)
+  if(initialize.par)
+      par[!names(par)%in%c("logN", "logF", "logSW", "logCW", "logitMO", "logNM","logP","logitFseason")]<-fit$pl[!names(fit$pl)%in%c("missing", "logN", "logF", "logSW", "logCW", "logitMO", "logNM","logP","logitFseason")]
+  if(initialize.re){
+      par$logN <- fit$pl$logN[,match(data$years,fit$data$years)]
+      par$logF <- fit$pl$logF[,match(data$years,fit$data$years)]
+  }
+  ret <- sam.fit(data, conf, par, rm.unidentified=rm.unidentified, map=map, lower=fit$low, upper=fit$hig, ...)
   return(ret)
 }
 

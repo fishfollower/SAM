@@ -178,8 +178,8 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   
   lower2<-rep(-Inf,length(obj$par))
   upper2<-rep(Inf,length(obj$par))
-  for(nn in names(lower)) lower2[names(obj$par)==nn]=lower[[nn]]
-  for(nn in names(upper)) upper2[names(obj$par)==nn]=upper[[nn]]
+  for(nn in names(lower)) if(length(lower[[nn]])>0) lower2[names(obj$par)==nn]=lower[[nn]]
+  for(nn in names(upper)) if(length(upper[[nn]])>0) upper2[names(obj$par)==nn]=upper[[nn]]
 
   if(!run) return( list(sdrep=NA, pl=parameters, plsd=NA, data=data, conf=conf, opt=NA, obj=obj) )
 
@@ -187,7 +187,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ## if(intern){
   ##     opt <- nlminb(obj$par, obj$fn,obj$gr, obj$he, control=list(trace=1, eval.max=2000, iter.max=1000, rel.tol=rel.tol),lower=lower2,upper=upper2)
   ##     he <- obj$he
-  ## }else{
+    ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=eval.max, iter.max=iter.max, rel.tol=rel.tol),lower=lower2,upper=upper2)
   
     he <- function(par){ optimHess(par, obj$fn, obj$gr) }
@@ -455,6 +455,9 @@ refit <- function(fit, newConf, startingValues, ...){
                                    ncol=fit2$data$noYears)
     if(is.null(fit2$data$sumKey))
         fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
+
+    if(is.null(fit2$data$TAC))
+        fit2$data$TAC <- matrix(0,nrow=length(fit2$data$years),ncol=0)
 
     if(is.null(fit2$data$sampleTimesStart))
         fit2$data$sampleTimesStart <- ifelse(fit2$data$fleetTypes == 0, 0, fit2$data$sampleTimes)

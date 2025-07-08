@@ -312,6 +312,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
                            natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL, aux.fleets=NULL,
+                           TAC = NULL,
                            keep.all.ages = FALSE,
                            average.sampleTimes.survey = TRUE,
                            fleetnames.remove.space = TRUE){
@@ -494,6 +495,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   if(is.null(prop.m)){
     prop.m<-matrix(0,nrow=ydim2, ncol=adim2,dimnames=list(ynam2,anam2)) 
   }
+    if(is.null(TAC)){
+        TAC <- matrix(0, nrow=ydim2, ncol=0,dimnames=list(ynam2,NULL))
+    }
     
   dat$aux[which(dat$aux<=0)] <- NA_integer_
   dat<-dat[!is.na(dat$year),]
@@ -636,7 +640,8 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   attr(dat,'land.mean.weight')<-cutYA(land.mean.weight)
   attr(dat,'natural.mortality')<-cutY(natural.mortality)
   attr(dat,'prop.f')<-cutYA(prop.f)
-  attr(dat,'prop.m')<-cutY(prop.m)
+    attr(dat,'prop.m')<-cutY(prop.m)
+    attr(dat,'TAC')<-cutY(TAC)
 
   attr(dat,'land.frac')<-cutYA(land.frac)  
   ft <- as.integer(attr(dat,'type'))
@@ -685,6 +690,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     landMeanWeight=attr(dat,'land.mean.weight'),
     propF=attr(dat,'prop.f'),
     propM=attr(dat,'prop.m'),
+    TAC=attr(dat,'TAC'),
     corList=corList,
     sumKey=attr(dat,'sumKey')
   )

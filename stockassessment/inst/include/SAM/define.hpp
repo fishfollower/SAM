@@ -75,6 +75,7 @@ struct dataSet{
   array<Type> landMeanWeight;
   array<Type> propF;
   array<Type> propM;
+  array<Type> TAC;
   listMatrixFromR<Type> corList;
   array<int> sumKey;
 
@@ -112,6 +113,7 @@ struct dataSet{
     landMeanWeight(x.landMeanWeight, x.landMeanWeight.dim), //x.landMeanWeight),
     propF(x.propF, x.propF.dim), //x.propF),
     propM(x.propM, x.propM.dim),
+    TAC(x.TAC, x.TAC.dim),
     corList(x.corList),
     sumKey(x.sumKey, x.sumKey.dim)
   {
@@ -147,6 +149,7 @@ SOURCE(
        landMeanWeight(), //x.landMeanWeight),
        propF(), //x.propF),
        propM(),
+       TAC(),
        corList(),
        sumKey() {       };
        )
@@ -183,6 +186,7 @@ SOURCE(
       landMeanWeight = asArray<Type>(getListElement(x,"landMeanWeight", &Rf_isArray));
       propF = asArray<Type>(getListElement(x,"propF", &Rf_isArray));
       propM = asArray<Type>(getListElement(x,"propM", &Rf_isArray));
+      TAC = asArray<Type>(getListElement(x,"TAC", &Rf_isArray));
       corList = listMatrixFromR<Type>(getListElement(x,"corList"));
       sumKey = asArray<int>(getListElement(x,"sumKey", &Rf_isArray));
     };
@@ -202,6 +206,8 @@ struct confSet{
   array<int> keyLogFbound_kappa;
   array<int> keyLogFbound_alpha;
   array<int> keyLogFbound_tau;
+  array<int> keyLogFboundTAC_kappa;
+  array<int> keyLogFboundTAC_alpha;
   vector<int> corFlag;
   array<int> keyLogFpar;
   array<int> keyQpow;
@@ -265,6 +271,8 @@ SOURCE(
 	 keyLogFbound_kappa = asArray<int>(getListElement(x,"keyLogFbound_kappa", &Rf_isArray));
 	 keyLogFbound_alpha = asArray<int>(getListElement(x,"keyLogFbound_alpha", &Rf_isArray));
 	 keyLogFbound_tau = asArray<int>(getListElement(x,"keyLogFbound_tau", &Rf_isArray));
+	 keyLogFboundTAC_kappa = asArray<int>(getListElement(x,"keyLogFboundTAC_kappa", &Rf_isArray));
+	 keyLogFboundTAC_alpha = asArray<int>(getListElement(x,"keyLogFboundTAC_alpha", &Rf_isArray));
 	 corFlag = asVector<int>(getListElement(x,"corFlag", &Rf_isNumeric));
 	 keyLogFpar = asArray<int>(getListElement(x,"keyLogFpar", &Rf_isArray));
 	 keyQpow = asArray<int>(getListElement(x,"keyQpow", &Rf_isArray));
@@ -322,6 +330,8 @@ SOURCE(
 	 keyLogFbound_kappa(),
 	 keyLogFbound_alpha(),
 	 keyLogFbound_tau(),
+	 keyLogFboundTAC_kappa(),
+	 keyLogFboundTAC_alpha(),
 	 corFlag(),
 	 keyLogFpar(),
 	 keyQpow(),
@@ -379,6 +389,8 @@ SOURCE(
 	 keyLogFbound_kappa(other.keyLogFbound_kappa),
 	 keyLogFbound_alpha(other.keyLogFbound_alpha),
 	 keyLogFbound_tau(other.keyLogFbound_tau),
+	 keyLogFboundTAC_kappa(other.keyLogFboundTAC_kappa),
+	 keyLogFboundTAC_alpha(other.keyLogFboundTAC_alpha),
 	 corFlag(other.corFlag),
 	 keyLogFpar(other.keyLogFpar),
 	 keyQpow(other.keyQpow),
@@ -436,6 +448,8 @@ struct paraSet{
   vector<Type> boundF_kappa; 
   vector<Type> boundF_alpha; 
   vector<Type> boundF_tau; 
+  vector<Type> boundFTAC_kappa; 
+  vector<Type> boundFTAC_alpha; 
   vector<Type> logSdLogN; 
   vector<Type> logSdLogP;
   vector<Type> logSdLogObs;
@@ -499,7 +513,9 @@ struct paraSet{
      boundF_kappa(other.boundF_kappa),
      boundF_alpha(other.boundF_alpha),
      boundF_tau(other.boundF_tau),
-    logSdLogN(other.logSdLogN), 
+    boundFTAC_kappa(other.boundFTAC_kappa),
+    boundFTAC_alpha(other.boundFTAC_alpha),
+     logSdLogN(other.logSdLogN), 
     logSdLogP(other.logSdLogP), 
     logSdLogObs(other.logSdLogObs),
     logSdLogTotalObs(other.logSdLogTotalObs),
@@ -551,7 +567,14 @@ SOURCE(
        paraSet<Type>::paraSet() :
        logFpar(), 
        logQpow(), 
-       logSdLogFsta(), 
+       logSdLogFsta(),
+       muF(), 
+       trans_rho_F(),
+       boundF_kappa(),
+       boundF_alpha(),
+       boundF_tau(),
+       boundFTAC_kappa(),  
+       boundFTAC_alpha(),  
        logSdLogN(), 
        logSdLogP(), 
        logSdLogObs(),
@@ -605,6 +628,8 @@ SOURCE(
 	   boundF_kappa = asVector<Type>(getListElement(x,"boundF_kappa", &Rf_isNumeric));
 	   boundF_alpha = asVector<Type>(getListElement(x,"boundF_alpha", &Rf_isNumeric));
 	   boundF_tau = asVector<Type>(getListElement(x,"boundF_tau", &Rf_isNumeric));
+	   boundFTAC_kappa = asVector<Type>(getListElement(x,"boundFTAC_kappa", &Rf_isNumeric));
+	   boundFTAC_alpha = asVector<Type>(getListElement(x,"boundFTAC_alpha", &Rf_isNumeric));
 	   logSdLogN = asVector<Type>(getListElement(x,"logSdLogN", &Rf_isNumeric));
 	   logSdLogP = asVector<Type>(getListElement(x,"logSdLogP", &Rf_isNumeric));
 	   logSdLogObs = asVector<Type>(getListElement(x,"logSdLogObs", &Rf_isNumeric));
