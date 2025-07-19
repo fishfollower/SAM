@@ -136,7 +136,13 @@ namespace RecruitmentConvenience {
 			 Depensatory_C_BevertonHolt = 402,
 			 Depensatory_C_SmoothHockeyStick = 470,
 			 Depensatory_C_Spline_CMP = 490,
-			 Depensatory_C_Spline_ConvexCompensatory = 493,			 
+			 Depensatory_C_Spline_ConvexCompensatory = 493,
+			 Climate_RBH_Additive = 600,
+			 Climate_Ricker_Additive = 601,
+			 Climate_BevHolt_Additive = 602,
+			 Climate_RBH_Multiplicative = 700,
+			 Climate_Ricker_Multiplicative = 701,
+			 Climate_BevHolt_Multiplicative = 702,
 			 Num_Ricker = 991,
 			 Num_BevertonHolt = 992
 		    
@@ -145,6 +151,7 @@ namespace RecruitmentConvenience {
   typedef TMBad::ad_aug ad;
   
   struct RecruitmentFunctor { // : NewtonFunctor {
+    
     virtual ad operator()(const ad& x){
       return R_NaReal;
     }
@@ -249,8 +256,8 @@ namespace RecruitmentConvenience {
 
     std::shared_ptr<RecruitmentFunctor> ptr;
   
-    RecruitmentNumeric(const std::shared_ptr<RecruitmentFunctor>& p_) : RecruitmentWorker<Type>(0,0), ptr(p_) {};  
-   
+    RecruitmentNumeric(const std::shared_ptr<RecruitmentFunctor>& p_) : RecruitmentWorker<Type>(0,0), ptr(p_) {};
+ 
     Type operator()(Type logssb, Type lastLogR, Type year){
       return ptr->safe_eval(logssb);
     }
@@ -296,6 +303,10 @@ namespace RecruitmentConvenience {
     }  
   };
 
+
+
+
+  
 
 
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -1196,13 +1207,457 @@ namespace RecruitmentConvenience {
 
   TO_REC_2PAR(NumBevHolt)
 
+//////////////////////////////////////////////////////////////////////////////////////////
+
+  template<class Type>
+  Type smax(Type x, Type y){
+    Type eps = 0.0001;
+    return 0.5 * (x + y + sqrt((x-y)*(x-y) + eps));
+  }
+
+  template<class Type>
+  Type pos(Type x){
+    Type eps = 0.0001;
+    return smax(x,Type(0.0));
+  }
+  
+  template<class Type>
+  Type linspline(Type x, Type m, Type a, Type b){
+    return a * (x - m) + (b - a) * pos(x-m);
+  }
+
+  
+  template<class Type>
+  Type ClimateHazard(Type v, Type m, Type a, Type b){
+    return linspline(v, m, a, b);
+  }
+
+// Recruitment function 600
+// Combined Ricker-Beverton-Holt w climate effects on independent mortality
+// Solves R'(t) = -(p + h(X(t)) + r*S + q*R(t)) * R(t), R(0) = f*S
+// R(t) = f*S*exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. t))/(1 + Int(exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. _z1))*q, _z1 = 0 .. t)*S*f)
+template<class Type>
+struct Rec_Climate_RBH_A : RecruitmentWorker<Type> {
+
+  Type logp;
+  Type logr;
+  Type logq;
+  Type logf; 
+  vector<Type> pC;
+  array<Type> RecruitClimate;
+  vector<Type> years;
+
+  Rec_Climate_RBH_A(Type lp, Type lr, Type lq, Type lf, vector<Type> p, array<Type> RC, vector<Type> yr): RecruitmentWorker<Type>(0,1), logp(lp), logr(lr), logq(lq), logf(lf), pC(p), RecruitClimate(RC,RC.dim), years(yr) {};
+  
+  Type operator()(Type logssb, Type lastLogR, Type year){
+    // "integrate" climate hazard effect; always integrate one time unit
+    Type int1 = 0.0;
+    Type int2 = 0.0;
+    Type dt = 1.0 / Type(RecruitClimate.dim[1]);
+    int k = CppAD::Integer(year - years(0));
+    if(RecruitClimate.dim[1] > 1){
+      for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time
+	int1 += (exp(logr + logssb) + exp(logp)) * dt;
+	  for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate
+	    Type m = pC(3 * i);
+	    Type a = exp(pC(3 * i + 1));	    
+	    Type b = exp(pC(3 * i + 2));
+	    //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
+	    Type xx = RecruitClimate(k,j,i) - m;
+	    //Type hx = b * xx * xx;//b * 0.5 * (xx + sqrt(xx*xx + 0.001));
+	    Type hx = ClimateHazard(xx, m, a, b);
+	    int1 += hx * dt;
+	    int2 += exp(-int1) * dt;
+	  }
+      }
+      //Type logf = loga - intx;
+      return logf + logssb + (-int1) - logspace_add_SAM(Type(0.0), log(int2) + logf + logssb + logq);
+    }
+    Type H = 0.0;
+    for(int i = 0; i < RecruitClimate.dim[2]; ++i){
+      Type m = pC(3 * i);
+      Type a = exp(pC(3 * i + 1));	    
+      Type b = exp(pC(3 * i + 2));
+      //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
+      Type xx = RecruitClimate(k,0,i) - m;
+      H += ClimateHazard(xx, m, a, b);;
+    }
+    Type logPH = logspace_add_SAM(logp, log(H));
+    Type v1 = logf + logssb + logspace_add_SAM(logr + logssb, logPH);
+    // (exp(H*p*t)*exp(S*r*t) - 1 ) *S*f*q  + exp(H*p*t)*exp(S*r*t)* (  p*H + r*S)
+    // = v2_1 * exp(v2_2) - exp(v2_3)
+    Type v2_x = exp(logPH) + exp(logssb + logr);
+    Type v2_1 = logspace_sub_SAM(v2_x, Type(0.0)) + logssb + logf + logq;    
+    Type v2_2 = v2_x + log(v2_x);
+    Type v2 = logspace_add_SAM(v2_1,v2_2);
+    return v1 - v2;
+    return v1 - v2;
+  }
+  
+  Type logSe(Type logLambda){    
+    return R_NaReal;
+  }
+  Type dSR(Type logssb){
+    return R_NaReal;
+  }
+  Type logSAtMaxR(){
+    return R_NaReal;
+  }
+  Type logMaxR(){
+    return R_NaReal;
+  }
+  Type maxGradient(){
+    return R_NaReal;
+  }
+
+};
+
+
+
+
+// Recruitment function 601
+// Ricker w climate effects on independent mortality
+// Solves R'(t) = -(p + h(X(t)) + r*S) * R(t), R(0) = f*S (f/p is not identifiable, so p=1)
+// R(t) = f*S*exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. t))/(1 + Int(exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. _z1))*q, _z1 = 0 .. t)*S*f)
+template<class Type>
+struct Rec_Climate_Ricker_A : RecruitmentWorker<Type> {
+
+  Type logf;
+  Type logr;
+  vector<Type> pC;
+  array<Type> RecruitClimate;
+  vector<Type> years;
+
+  Rec_Climate_Ricker_A(Type lf, Type lr, vector<Type> p, array<Type> RC, vector<Type> yr): RecruitmentWorker<Type>(0,1), logf(lf), logr(lr), pC(p), RecruitClimate(RC,RC.dim), years(yr) {};
+  
+  Type operator()(Type logssb, Type lastLogR, Type year){
+    // "integrate" climate hazard effect; always integrate one time unit
+    Type int1 = 0.0;
+    Type dt = 1.0 / Type(RecruitClimate.dim[1]);
+    int k = CppAD::Integer(year - years(0));
+    if(RecruitClimate.dim[1] > 1){
+      for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time
+	  for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate	 
+	    Type m = pC(3 * i);
+	    Type a = exp(pC(3 * i + 1));	    
+	    Type b = exp(pC(3 * i + 2));
+	    Type xx = RecruitClimate(k,j,i) - m;
+	    Type hx = ClimateHazard(xx, m, a, b);
+	    int1 += hx * dt;
+	  }
+      }
+      return logf + logssb - int1 - exp(logr + logssb);
+    }
+    Type H = 0.0;
+    for(int i = 0; i < RecruitClimate.dim[2]; ++i){
+      Type m = pC(3 * i);
+      Type a = exp(pC(3 * i + 1));	    
+      Type b = exp(pC(3 * i + 2));
+      Type xx = RecruitClimate(k,0,i) - m;
+      H += ClimateHazard(xx, m, a, b);
+    }
+    return logf + logssb - H - exp(logr + logssb);
+  }
+  
+  Type logSe(Type logLambda){    
+    return R_NaReal;
+  }
+  Type dSR(Type logssb){
+    return R_NaReal;
+  }
+  Type logSAtMaxR(){
+    return R_NaReal;
+  }
+  Type logMaxR(){
+    return R_NaReal;
+  }
+  Type maxGradient(){
+    return R_NaReal;
+  }
+
+};
+
+
+// Recruitment function 602
+// Beverton-Holt w climate effects on independent mortality
+// Solves R'(t) = -(p + h(X(t)) + q*R(t)) * R(t), R(0) = f*S (f/p/q is not identifiable (?), so p=1)
+// R(t) = f*S*exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. t))/(1 + Int(exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. _z1))*q, _z1 = 0 .. t)*S*f)
+template<class Type>
+struct Rec_Climate_BevHolt_A : RecruitmentWorker<Type> {
+
+  Type logf;
+  Type logq;
+  vector<Type> pC;
+  array<Type> RecruitClimate;
+  vector<Type> years;
+
+  Rec_Climate_BevHolt_A(Type lf, Type lq, vector<Type> p, array<Type> RC, vector<Type> yr): RecruitmentWorker<Type>(0,1), logf(lf), logq(lq), pC(p), RecruitClimate(RC,RC.dim), years(yr) {};
+  
+  Type operator()(Type logssb, Type lastLogR, Type year){
+    // "integrate" climate hazard effect; always integrate one time unit
+    Type int1 = 0.0;
+    Type int2 = 0.0;
+    Type dt = 1.0 / Type(RecruitClimate.dim[1]);
+    int k = CppAD::Integer(year - years(0));
+    if(RecruitClimate.dim[1] > 1){
+      for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time
+	for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate
+	  Type m = pC(3 * i);
+	  Type a = exp(pC(3 * i + 1));	    
+	  Type b = exp(pC(3 * i + 2));
+	  //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
+	  Type xx = RecruitClimate(k,j,i) - m;
+	  //Type hx = b * xx * xx;//b * 0.5 * (xx + sqrt(xx*xx + 0.001));
+	  Type hx = ClimateHazard(xx, m, a, b);
+	  int1 += hx * dt;
+	  int2 += exp(-int1) * dt;
+	}
+      }
+      //Type logf = loga - intx;
+      return logf + logssb + (-int1) - logspace_add_SAM(Type(0.0), log(int2) + logf + logssb + logq);
+    }
+    Type H = 0.0;
+    for(int i = 0; i < RecruitClimate.dim[2]; ++i){
+      Type m = pC(3 * i);
+      Type a = exp(pC(3 * i + 1));	    
+      Type b = exp(pC(3 * i + 2));
+      //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
+      Type xx = RecruitClimate(k,0,i) - m;
+      H += ClimateHazard(xx, m, a, b);
+    }
+    Type logph = logspace_add(Type(0.0),log(H));
+    Type v1 = logf + logssb + logq + logspace_sub_SAM(exp(logph),Type(0.0));
+    Type v2 = logph + exp(logph);
+    logf + logssb + logph - logspace_add_SAM(v1,v2);
+  }
+  
+  Type logSe(Type logLambda){    
+    return R_NaReal;
+  }
+  Type dSR(Type logssb){
+    return R_NaReal;
+  }
+  Type logSAtMaxR(){
+    return R_NaReal;
+  }
+  Type logMaxR(){
+    return R_NaReal;
+  }
+  Type maxGradient(){
+    return R_NaReal;
+  }
+
+};
+
+
+  
+  
+
+template<class Type>
+struct Rec_Climate_RBH_B : RecruitmentWorker<Type> { // Multiplicative effect
+
+  Type logp;
+  Type logr;
+  Type logq;
+  Type logf; // Slope at S=0
+  vector<Type> pC;
+  array<Type> RecruitClimate;
+  vector<Type> years;
+
+  Rec_Climate_RBH_B(Type lp, Type lr, Type lq, Type lf, vector<Type> p, array<Type> RC, vector<Type> yr): RecruitmentWorker<Type>(0,1), logp(lp), logr(lr), logq(lq), logf(lf), pC(p), RecruitClimate(RC,RC.dim), years(yr) {};
+  
+  Type operator()(Type logssb, Type lastLogR, Type year){
+    // "integrate" climate hazard effect; always integrate one time unit
+    Type int1 = 0.0;
+    Type int2 = 0.0;
+    Type dt = 1.0 / Type(RecruitClimate.dim[1]);
+    int k = CppAD::Integer(year - years(0));
+    if(RecruitClimate.dim[1] > 1){
+      for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time
+	int1 += (exp(logr + logssb)) * dt;
+	Type loghx = logp;
+	for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate
+	  loghx += pC(i) * RecruitClimate(k,j,i);
+	}
+	int1 += exp(loghx) * dt;
+	int2 += exp(-int1) * dt;
+      }
+      //Type logf = loga - intx;
+      return logf + logssb + (-int1) - logspace_add_SAM(Type(0.0), log(int2) + logf + logssb + logq);
+    }
+    Type logH = logp;
+    for(int i = 0; i < RecruitClimate.dim[2]; ++i){
+      logH += pC(i) * RecruitClimate(k,0,i);
+    }
+    //Type logf = loga - (exp(logH));
+    // f*S*(p + h(X) + r*S)
+    Type v1 = logf + logssb + logspace_add_SAM(logr + logssb, logH);
+    // (exp(H*p*t)*exp(S*r*t) - 1 ) *S*f*q  + exp(H*p*t)*exp(S*r*t)* (  p*H + r*S)
+    // = v2_1 * exp(v2_2) - exp(v2_3)
+    Type v2_x = exp(logH) + exp(logssb + logr);
+    Type v2_1 = logspace_sub_SAM(v2_x, Type(0.0)) + logssb + logf + logq;    
+    Type v2_2 = v2_x + log(v2_x);
+    Type v2 = logspace_add_SAM(v2_1,v2_2);
+    return v1 - v2;
+  }
+  
+  Type logSe(Type logLambda){    
+    return R_NaReal;
+  }
+  Type dSR(Type logssb){
+    return R_NaReal;
+  }
+  Type logSAtMaxR(){
+    return R_NaReal;
+  }
+  Type logMaxR(){
+    return R_NaReal;
+  }
+  Type maxGradient(){
+    return R_NaReal;
+  }
+
+};
+
+  
+
+
+
+
+// Recruitment function 601
+// Ricker w climate effects on independent mortality
+// Solves R'(t) = -(p + h(X(t)) + r*S) * R(t), R(0) = f*S (f/p is not identifiable, so p=1)
+// R(t) = f*S*exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. t))/(1 + Int(exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. _z1))*q, _z1 = 0 .. t)*S*f)
+template<class Type>
+struct Rec_Climate_Ricker_B : RecruitmentWorker<Type> {
+
+  Type logf;
+  Type logr;
+  vector<Type> pC;
+  array<Type> RecruitClimate;
+  vector<Type> years;
+
+  Rec_Climate_Ricker_B(Type lf, Type lr, vector<Type> p, array<Type> RC, vector<Type> yr): RecruitmentWorker<Type>(0,1), logf(lf), logr(lr), pC(p), RecruitClimate(RC,RC.dim), years(yr) {};
+  
+  Type operator()(Type logssb, Type lastLogR, Type year){
+    // "integrate" climate hazard effect; always integrate one time unit
+    Type int1 = 0.0;
+    Type dt = 1.0 / Type(RecruitClimate.dim[1]);
+    int k = CppAD::Integer(year - years(0));
+    if(RecruitClimate.dim[1] > 1){
+      for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time	
+	Type loghx = 0.0;
+	for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate
+	  loghx += pC(i) * RecruitClimate(k,j,i);
+	}
+	int1 += exp(loghx) * dt;
+      }
+      return logf + logssb - int1 - exp(logr + logssb);
+    }
+    Type logH = 0.0;
+    for(int i = 0; i < RecruitClimate.dim[2]; ++i){
+      logH += pC(i) * RecruitClimate(k,0,i);
+    }
+    return logf + logssb - exp(logH) - exp(logr + logssb);
+  }
+  
+  Type logSe(Type logLambda){    
+    return R_NaReal;
+  }
+  Type dSR(Type logssb){
+    return R_NaReal;
+  }
+  Type logSAtMaxR(){
+    return R_NaReal;
+  }
+  Type logMaxR(){
+    return R_NaReal;
+  }
+  Type maxGradient(){
+    return R_NaReal;
+  }
+
+};
+
+
+// Recruitment function 602
+// Beverton-Holt w climate effects on independent mortality
+// Solves R'(t) = -(p + h(X(t)) + q*R(t)) * R(t), R(0) = f*S (f/p/q is not identifiable (?), so p=1)
+// R(t) = f*S*exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. t))/(1 + Int(exp(Int(-p - h(X(_z1)) - r*S, _z1 = 0 .. _z1))*q, _z1 = 0 .. t)*S*f)
+template<class Type>
+struct Rec_Climate_BevHolt_B : RecruitmentWorker<Type> {
+
+  Type logf;
+  Type logq;
+  vector<Type> pC;
+  array<Type> RecruitClimate;
+  vector<Type> years;
+
+  Rec_Climate_BevHolt_B(Type lf, Type lq, vector<Type> p, array<Type> RC, vector<Type> yr): RecruitmentWorker<Type>(0,1), logf(lf), logq(lq), pC(p), RecruitClimate(RC,RC.dim), years(yr) {};
+  
+  Type operator()(Type logssb, Type lastLogR, Type year){
+    // "integrate" climate hazard effect; always integrate one time unit
+    Type int1 = 0.0;
+    Type int2 = 0.0;
+    Type dt = 1.0 / Type(RecruitClimate.dim[1]);
+    int k = CppAD::Integer(year - years(0));
+    if(RecruitClimate.dim[1] > 1){
+      for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time	
+	Type loghx = 0.0;
+	for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate
+	  loghx += pC(i) * RecruitClimate(k,j,i);
+	}
+	int1 += exp(loghx) * dt;
+	int2 += exp(-int1) * dt;
+      }
+      return logf + logssb + (-int1) - logspace_add_SAM(Type(0.0), log(int2) + logf + logssb + logq);
+    }
+    Type logH = 0.0;
+    for(int i = 0; i < RecruitClimate.dim[2]; ++i){
+      logH += pC(i) * RecruitClimate(k,0,i);
+    }
+    Type v1 = logf + logssb + exp(logH);
+    Type v2_1 = logspace_sub_SAM(exp(logH),Type(0.0)) + logq + logf + logssb;
+    Type v2_2 = logH + exp(logH);
+    return v1 - logspace_add_SAM(v2_1,v2_2);
+  }
+  
+  Type logSe(Type logLambda){    
+    return R_NaReal;
+  }
+  Type dSR(Type logssb){
+    return R_NaReal;
+  }
+  Type logSAtMaxR(){
+    return R_NaReal;
+  }
+  Type logMaxR(){
+    return R_NaReal;
+  }
+  Type maxGradient(){
+    return R_NaReal;
+  }
+
+};
+
+
+  
+
+
+
+
+  
+  
 }
 #endif
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Type>
-Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Type>& par)SOURCE({
+Recruitment<Type> makeRecruitmentFunction( dataSet<Type>& dat,  confSet& conf,  paraSet<Type>& par)SOURCE({
     RecruitmentConvenience::RecruitmentModel rm = static_cast<RecruitmentConvenience::RecruitmentModel>(conf.stockRecruitmentModelCode);
     typedef TMBad::ad_aug ad;
     Recruitment<Type> r;
@@ -1400,6 +1855,42 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
 	Rf_error("The Numeric Beverton Holt recruitment must have two parameters.");
       r = Recruitment<Type>("numeric Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_NumBevHolt<Type> >(par.rec_pars(0), par.rec_pars(1)));
 
+      ///////////////////////////////////////////// Climate /////////////////////////////////////////////
+      /////////////////////// Additive
+ }else if(rm == RecruitmentConvenience::RecruitmentModel::Climate_RBH_Additive){
+      if(!(par.rec_pars.size() >= 7 && (par.rec_pars.size()-4) % 3 == 0))
+	Rf_error("The additive Climate Ricker-Beverton-Holt recruitment must have many parameters.");
+      r = Recruitment<Type>("Additive Climate Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_Climate_RBH_A<Type> >(par.rec_pars(0), par.rec_pars(1),par.rec_pars(2),par.rec_pars(3),(vector<Type>)par.rec_pars.segment(4,par.rec_pars.size()-4),dat.RecruitClimate, dat.years)); //,(array<Type>)dat.RecruitClimate.template cast<Type>(),(vector<Type>)dat.years.template cast<Type>()));
+
+ }else if(rm == RecruitmentConvenience::RecruitmentModel::Climate_Ricker_Additive){
+      if(!(par.rec_pars.size() >= 5 && (par.rec_pars.size()-2) % 3 == 0))
+	Rf_error("The additive Climate Ricker recruitment must have many parameters.");
+      r = Recruitment<Type>("Additive Climate Ricker",std::make_shared<RecruitmentConvenience::Rec_Climate_Ricker_A<Type> >(par.rec_pars(0), par.rec_pars(1),(vector<Type>)par.rec_pars.segment(2,par.rec_pars.size()-2),dat.RecruitClimate, dat.years)); //,(array<Type>)dat.RecruitClimate.template cast<Type>(),(vector<Type>)dat.years.template cast<Type>()));
+
+
+    }else if(rm == RecruitmentConvenience::RecruitmentModel::Climate_BevHolt_Additive){
+      if(!(par.rec_pars.size() >= 5 && (par.rec_pars.size()-2) % 3 == 0))
+	Rf_error("The additive Climate Beverton-Holt recruitment must have many parameters.");
+      r = Recruitment<Type>("Additive Climate Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_Climate_BevHolt_A<Type> >(par.rec_pars(0), par.rec_pars(1),(vector<Type>)par.rec_pars.segment(2,par.rec_pars.size()-2),dat.RecruitClimate, dat.years)); //,(array<Type>)dat.RecruitClimate.template cast<Type>(),(vector<Type>)dat.years.template cast<Type>()));
+
+
+      /////////////////////// Multiplicative
+    }else if(rm == RecruitmentConvenience::RecruitmentModel::Climate_RBH_Multiplicative){
+      if(!(par.rec_pars.size() == 4 + dat.RecruitClimate.dim[2]))
+	Rf_error("The multiplicative Climate Ricker-Beverton-Holt recruitment must have many parameters.");
+      r = Recruitment<Type>("Multiplicative Climate Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_Climate_RBH_B<Type> >(par.rec_pars(0), par.rec_pars(1),par.rec_pars(2),par.rec_pars(3),(vector<Type>)par.rec_pars.segment(4,par.rec_pars.size()-4),dat.RecruitClimate, dat.years)); //,(array<Type>)dat.RecruitClimate.template cast<Type>(),(vector<Type>)dat.years.template cast<Type>()));
+
+       }else if(rm == RecruitmentConvenience::RecruitmentModel::Climate_Ricker_Multiplicative){
+      if(!(par.rec_pars.size() == 2 + dat.RecruitClimate.dim[2]))
+	Rf_error("The multiplicative Climate Ricker recruitment must have many parameters.");
+      r = Recruitment<Type>("Multiplicative Climate Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_Climate_Ricker_B<Type> >(par.rec_pars(0), par.rec_pars(1),(vector<Type>)par.rec_pars.segment(2,par.rec_pars.size()-2),dat.RecruitClimate, dat.years)); //,(array<Type>)dat.RecruitClimate.template cast<Type>(),(vector<Type>)dat.years.template cast<Type>()));
+
+       }else if(rm == RecruitmentConvenience::RecruitmentModel::Climate_BevHolt_Multiplicative){
+      if(!(par.rec_pars.size() == 2 + dat.RecruitClimate.dim[2]))
+	Rf_error("The multiplicative Climate Beverton-Holt recruitment must have many parameters.");
+      r = Recruitment<Type>("Multiplicative Climate Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_Climate_BevHolt_B<Type> >(par.rec_pars(0), par.rec_pars(1),(vector<Type>)par.rec_pars.segment(2,par.rec_pars.size()-2),dat.RecruitClimate, dat.years)); //,(array<Type>)dat.RecruitClimate.template cast<Type>(),(vector<Type>)dat.years.template cast<Type>()));
+
+      
       ///////////////////////////////////////////// The End /////////////////////////////////////////////
     
     }else{
@@ -1410,8 +1901,8 @@ Recruitment<Type> makeRecruitmentFunction(const confSet& conf, const paraSet<Typ
   
   });
 
-SAM_SPECIALIZATION(Recruitment<double> makeRecruitmentFunction<double>(const confSet&,const paraSet<double>&));
-SAM_SPECIALIZATION(Recruitment<TMBad::ad_aug> makeRecruitmentFunction<TMBad::ad_aug>(const confSet&,const paraSet<TMBad::ad_aug>&));
+SAM_SPECIALIZATION(Recruitment<double> makeRecruitmentFunction<double>(dataSet<double>&, confSet&, paraSet<double>&));
+SAM_SPECIALIZATION(Recruitment<TMBad::ad_aug> makeRecruitmentFunction<TMBad::ad_aug>( dataSet<TMBad::ad_aug>&,  confSet&, paraSet<TMBad::ad_aug>&));
 
   
  

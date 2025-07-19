@@ -89,6 +89,18 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars[length(ret$rec_pars) - 1] <- C
       ret$rec_pars[length(ret$rec_pars)] <- 0
 
+}else if(conf$stockRecruitmentModelCode %in% c(600)){
+    tmp <- rbind(apply(dat$RecruitClimate,3,mean),-2,-2)
+    undim <- function(x){ dim(x) <- NULL; x}
+    ret$rec_pars <- c(-5,-5,-5, 3,undim(tmp))
+}else if(conf$stockRecruitmentModelCode %in% c(601,602)){
+    tmp <- rbind(apply(dat$RecruitClimate,3,mean),-2,-2)
+    undim <- function(x){ dim(x) <- NULL; x}
+    ret$rec_pars <- c(3,-5,undim(tmp))
+}else if(conf$stockRecruitmentModelCode %in% c(700)){
+     ret$rec_pars <- c(-5,-5,-5, 3,numeric(dim(dat$RecruitClimate)[3]))
+}else if(conf$stockRecruitmentModelCode %in% c(701,702)){
+     ret$rec_pars <- c(3,-5,numeric(dim(dat$RecruitClimate)[3]))
       
   }else{ # The rest
       ret$rec_pars <- numeric(2)

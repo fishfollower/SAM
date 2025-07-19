@@ -11,6 +11,7 @@ SAM_DEPENDS(reproductive)
 SAM_DEPENDS(equilibrium)
 SAM_DEPENDS(empirical_pr)
 SAM_DEPENDS(dirichlet)
+SAM_DEPENDS(predn)
 
 template <class Type>
 matrix<Type> setupVarCovMatrix(int dim, int offset, vector<int> rhoMap, vector<Type> rhoVec, vector<int> sdMap, vector<Type> sdVec)SOURCE({
@@ -303,7 +304,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       vector<Type> erb = exp(logerb);
       vector<Type> logrelativeerb = logerb - logssb;
       vector<Type> relativeerb = exp(logrelativeerb);
-      
+
+      array<Type> predN = logN;
+      for(int i = 1; i < predN.dim[1]; ++i){
+	predN.col(i) = predNFun(dat,conf,par,logN,logF,recruit,mort,i);
+      }
+      REPORT_F(predN,of);
 
       
       vector<Type> fsb = fsbFun(dat, conf, logN, logF,mort);
@@ -660,8 +666,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		// Additive logistic transformation of predicted proportions
 		vector<Type> logPuse = log_P.segment(0,nSeasons-1) - log_P(nSeasons-1);
 		// Quick fix for now
-		for(int i = 0; i < logXuse.size(); ++i)
-		  nll += nllVec(f)((vector<Type>)(logXuse - logPuse), K2);	       
+		// for(int i = 0; i < logXuse.size(); ++i)
+		MVMIX_t<Type> thisNll = nllVec(f);
+		nll += thisNll((vector<Type>)(logXuse - logPuse), K2);
+		SIMULATE_F(of){	      
+		  dat.logobs.segment(dat.idx1(f,y),dat.idx2(f,y)-dat.idx1(f,y)+1) = logPuse + thisNll.simulate();
+		}
 	      }else if(conf.obsLikelihoodFlag(f) == 2){ // Dirichlet
 		Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
 		// Transform log_X to log proportions
@@ -707,6 +717,15 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(bio_propMat,of);
 	matrix<Type> bio_natMor = dat.natMor.matrix();
 	REPORT_F(bio_natMor,of);
+
+	// REPORT ssb fbar
+	REPORT_F(logssb,of);
+	REPORT_F(logfbar,of);
+	REPORT_F(logCatch,of);
+	REPORT_F(logerb,of);
+	REPORT_F(logrelativeerb,of);
+	REPORT_F(logfbar_Effective,of);
+	REPORT_F(logtsb,of);
 	
       }
       // REPORT_F(obsCov,of);

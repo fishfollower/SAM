@@ -53,7 +53,7 @@ PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& c
   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
   newDat.noYears = nYears;
 
-  Recruitment<double> recruit = makeRecruitmentFunction(conf, par);
+  Recruitment<double> recruit = makeRecruitmentFunction(newDat,conf, par);
 
   // Make logF array
   array<double> logF(logSel.size(), nYears);
@@ -293,7 +293,10 @@ struct F_dFunctionalSR2 {
     T logssb = x(x.size()-1);
     paraSet<T> par;
     par.rec_pars = rec_pars;
-    Recruitment<T> rec = makeRecruitmentFunction(conf, par);
+    dataSet<T> dat;
+    if(srmc >= 600 && srmc < 700)
+      Rf_error("Not working for climate recruit!");
+    Recruitment<T> rec = makeRecruitmentFunction(dat,conf, par);
     return rec(logssb, T(year), T(lastR));
   
   }
@@ -535,7 +538,10 @@ extern "C" {
     conf.stockRecruitmentModelCode = srmc;
     conf.constRecBreaks = crb;
     // Make recruitment
-    Recruitment<double> rec = makeRecruitmentFunction(conf, par);
+    dataSet<double> dat;
+    if(srmc >= 600 && srmc < 700)
+      Rf_error("Not working for climate recruit!");
+    Recruitment<double> rec = makeRecruitmentFunction(dat,conf, par);
     // Calculate
     int n = Rf_length(logssb);
     SEXP v = PROTECT(Rf_allocVector(REALSXP, n));
@@ -564,7 +570,10 @@ extern "C" {
     conf.stockRecruitmentModelCode = srmc;
     conf.constRecBreaks = crb;
     // Make recruitment
-    Recruitment<double> rec = makeRecruitmentFunction(conf, par);
+    dataSet<double> dat;
+    if(srmc >= 600 && srmc < 700)
+      Rf_error("Not working for climate recruit!");
+    Recruitment<double> rec = makeRecruitmentFunction(dat,conf, par);
     // Calculate	
     double v = rec(b, y, lr);
     F_dFunctionalSR2 Fd = {srmc,y,lr,crb};
@@ -592,7 +601,10 @@ extern "C" {
   SEXP recruitmentProperties(SEXP tmbdat, SEXP pl){
     confSet c0(tmbdat);
     paraSet<double> p0(pl);
-    Recruitment<double> rec = makeRecruitmentFunction(c0,p0);
+    dataSet<double> dat;
+    if(c0.stockRecruitmentModelCode >= 600 && c0.stockRecruitmentModelCode < 700)
+      Rf_error("Not working for climate recruit!");
+    Recruitment<double> rec = makeRecruitmentFunction(dat,c0,p0);
     const char *resNms[] = {"name","hasEquilibrium", "isCompensatory", "hasMaxAtFiniteS", "isAutoregressive","isTimevarying","hasOvercompensation","hasFiniteMax","hasFiniteMaxGradient", "logSAtMaxR", "logMaxR", "maxGradient", ""}; // Must end with ""
     SEXP res;
     PROTECT(res = Rf_mkNamed(VECSXP, resNms));

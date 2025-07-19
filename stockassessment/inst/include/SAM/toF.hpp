@@ -858,7 +858,8 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 			      newton::newton_config& cfg)SOURCE({
   
   paraSet<TMBad::ad_aug> parad(par);  
-  Recruitment<TMBad::ad_aug> recruit = makeRecruitmentFunction(conf,parad);
+  dataSet<TMBad::ad_aug> datad(dat);  
+  Recruitment<TMBad::ad_aug> recruit = makeRecruitmentFunction(datad,conf,parad);
   if(ICESrec.size() == 2){
     confSet c2(conf);
     recruit = makeICESrecruitment(TMBad::ad_aug(ICESrec(0)),TMBad::ad_aug(ICESrec(1)));

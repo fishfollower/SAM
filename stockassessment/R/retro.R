@@ -7,6 +7,8 @@
 ##' @details When more than one vector is supplied they need to be of same length, as only the pairs are excluded
 ##' @export
 reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
+    yOrig <- min(as.numeric(data$aux[,"year"])):max(as.numeric(data$aux[,"year"]))
+    aOrig <- min(as.numeric(data$aux[data$aux[,"age"]>=0,"age"])):max(as.numeric(data$aux[,"age"]))
     nam<-c("year", "fleet", "age")[c(length(year)>0,length(fleet)>0,length(age)>0)]
     if((length(year)==0) & (length(fleet)==0) & (length(age)==0)){
         idx <- rep(TRUE,nrow(data$aux))
@@ -25,43 +27,45 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
     data$sampleTimesEnd <- data$sampleTimesEnd[suf]
     oldYears <- data$years
     data$years <- min(as.numeric(data$aux[,"year"])):max(as.numeric(data$aux[,"year"]))
-    ages <- min(as.numeric(data$aux[,"age"])):max(as.numeric(data$aux[,"age"]))
+    ages <- min(as.numeric(data$aux[data$aux[,"age"]>=0,"age"])):max(as.numeric(data$aux[,"age"]))
     data$noYears <- length(data$years)
     mmfun<-function(f,y, ff){idx<-which(data$aux[,"year"]==y & data$aux[,"fleet"]==f); ifelse(length(idx)==0, NA, ff(idx)-1)}
     data$idx1 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=min)
     data$idx2 <- outer(suf, data$years, Vectorize(mmfun,c("f","y")), ff=max)
     data$idxCor <- data$idxCor[suf,match(data$years,oldYears)]
     data$nobs <- length(data$logobs[idx])  
-    data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages,drop=FALSE]
-    data$stockMeanWeight <- data$stockMeanWeight[rownames(data$stockMeanWeight)%in%data$years, colnames(data$stockMeanWeight)%in%ages,drop=FALSE]
-    data$natMor <- data$natMor[rownames(data$natMor)%in%data$years, colnames(data$natMor)%in%ages,drop=FALSE]
+    ##data$propMat <- data$propMat[rownames(data$propMat)%in%data$years, colnames(data$propMat)%in%ages,drop=FALSE]
+    data$propMat <- data$propMat[match(data$years,yOrig), match(ages,aOrig),drop=FALSE]
+    data$stockMeanWeight <- data$stockMeanWeight[match(data$years,yOrig), match(ages,aOrig),drop=FALSE]
+    data$natMor <- data$natMor[match(data$years,yOrig), match(ages,aOrig),drop=FALSE]
     if(length(dim(data$propF))==3){
-        data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages,,drop=FALSE]
+        data$propF <- data$propF[match(data$years,yOrig), match(ages,aOrig),,drop=FALSE]
     }else{
-        data$propF <- data$propF[rownames(data$propF)%in%data$years, colnames(data$propF)%in%ages,drop=FALSE]
+        data$propF <- data$propF[match(data$years,yOrig), match(ages,aOrig),drop=FALSE]
     }
-    data$propM <- data$propM[rownames(data$propM)%in%data$years, colnames(data$propM)%in%ages,drop=FALSE]
+    data$propM <- data$propM[match(data$years,yOrig), match(ages,aOrig),drop=FALSE]
     if(length(dim(data$landFrac))==3){
-        data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages,,drop=FALSE]
+        data$landFrac <- data$landFrac[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),,drop=FALSE]
     }else{
-        data$landFrac <- data$landFrac[rownames(data$landFrac)%in%data$years, colnames(data$landFrac)%in%ages,drop=FALSE]
+        data$landFrac <- data$landFrac[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),drop=FALSE]
     }
     if(length(dim(data$catchMeanWeight))==3){
-        data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages,,drop=FALSE]
+        data$catchMeanWeight <- data$catchMeanWeight[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),,drop=FALSE]
     }else{
-        data$catchMeanWeight <- data$catchMeanWeight[rownames(data$catchMeanWeight)%in%data$years, colnames(data$catchMeanWeight)%in%ages,drop=FALSE]
+        data$catchMeanWeight <- data$catchMeanWeight[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),drop=FALSE]
     }
     if(length(dim(data$disMeanWeight))==3){
-        data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages,,drop=FALSE]
+        data$disMeanWeight <- data$disMeanWeight[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),,drop=FALSE]
     }else{
-        data$disMeanWeight <- data$disMeanWeight[rownames(data$disMeanWeight)%in%data$years, colnames(data$disMeanWeight)%in%ages,drop=FALSE]
+        data$disMeanWeight <- data$disMeanWeight[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),drop=FALSE]
     }
     if(length(dim(data$landMeanWeight))==3){
-        data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,,drop=FALSE]
+        data$landMeanWeight <- data$landMeanWeight[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),,drop=FALSE]
     }else{
-        data$landMeanWeight <- data$landMeanWeight[rownames(data$landMeanWeight)%in%data$years, colnames(data$landMeanWeight)%in%ages,drop=FALSE]
+        data$landMeanWeight <- data$landMeanWeight[na.omit(match(data$years,yOrig[1:nrow(data$landFrac)])), match(ages,aOrig),drop=FALSE]
     }
-    data$TAC <- data$TAC[rownames(data$TAC)%in%data$years,,drop=FALSE]
+    data$TAC <- data$TAC[match(data$years,yOrig),,drop=FALSE]
+    data$RecruitClimate <- data$RecruitClimate[match(data$years,yOrig),,,drop=FALSE]
     data$aux[,"fleet"] <- match(data$aux[,"fleet"],suf) 
     data$minAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=min)
     data$maxAgePerFleet <- tapply(as.integer(data$aux[,"age"]), INDEX=data$aux[,"fleet"], FUN=max)
@@ -95,8 +99,10 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL){
         conf$keyVarObs <- .reidx(conf$keyVarObs[suf,,drop=FALSE])
         conf$predVarObsLink <- .reidx(conf$predVarObsLink[suf,,drop=FALSE])
         conf$obsCorStruct <- conf$obsCorStruct[suf]
+        conf$fixVarToWeight <- conf$fixVarToWeight[suf]
         conf$maxAgePlusGroup <- conf$maxAgePlusGroup[suf]
         conf$keyCorObs <- .reidx(conf$keyCorObs[suf,,drop=FALSE])
+        conf$keyLogFseason <- .reidx(conf$keyLogFseason[suf,,drop=FALSE])
         yidx <- conf$keyScaledYears%in%data$aux[data$aux[,'fleet']==1,'year']
         if(length(conf$keyScaledYears)>0){
             conf$noScaledYears <- sum(yidx)

@@ -459,6 +459,10 @@ refit <- function(fit, newConf, startingValues, ...){
     if(is.null(fit2$data$TAC))
         fit2$data$TAC <- matrix(0,nrow=length(fit2$data$years),ncol=0)
 
+    if(is.null(fit2$data$RecruitClimate))
+        fit2$data$RecruitClimate <- array(0,dim=c(length(fit2$data$years),0,0))
+
+    
     if(is.null(fit2$data$sampleTimesStart))
         fit2$data$sampleTimesStart <- ifelse(fit2$data$fleetTypes == 0, 0, fit2$data$sampleTimes)
     if(is.null(fit2$data$sampleTimesEnd))

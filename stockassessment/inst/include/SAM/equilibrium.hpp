@@ -81,6 +81,7 @@ HEADER(
 	   extendArray(newDat.propF, nMYears, nYears, aveYears, false);
 	   // propM (No biopar process)
 	   extendArray(newDat.propM, nMYears, nYears, aveYears, false);
+	   extendArray(newDat.RecruitClimate, nMYears, nYears, aveYears, false);
 	   newDat.noYears = nYears;
 
 	   logFSel = array<Type>(logSel.size(), nYears);
@@ -103,9 +104,9 @@ HEADER(
 	 PERREC_t<Type> operator()(Type logFbar){
 	
 	 
-	   Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);
+	   Recruitment<Type> recruit = makeRecruitmentFunction(newDat,conf, par);
 	   confSet conf2(conf); conf2.stockRecruitmentModelCode = -1;
-	   Recruitment<Type> rec0 = makeRecruitmentFunction(conf2, par);
+	   Recruitment<Type> rec0 = makeRecruitmentFunction(newDat,conf2, par);
 
 	   // Make logF array
 	   array<Type> logF = logFSel;

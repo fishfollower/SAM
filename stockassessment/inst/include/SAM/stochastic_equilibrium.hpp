@@ -33,7 +33,7 @@ struct stochasticCalculator {
 			// vector<Type>& logSel
 			) :
     dat(dat), conf(conf), par(par), logFSel(logFSel_, logFSel_.dim), logFseason(logFseason_,logFseason_.dim), CT(CT_), mort(dat,conf,par,logFSel,logFseason) {
-    recruit = makeRecruitmentFunction(conf,par);
+    recruit = makeRecruitmentFunction(dat,conf,par);
   }
   
   template<class T>
@@ -46,7 +46,7 @@ struct stochasticCalculator {
     CT(x.CT),
     mort(dat,conf,par,logFSel,logFseason)
   {
-    recruit = makeRecruitmentFunction(conf,par);
+    recruit = makeRecruitmentFunction(dat,conf,par);
   }
 
   Type dSR(Type logssb){
@@ -732,6 +732,7 @@ struct EquilibriumRecycler_Stochastic_Worker {
     extendArray(newDat.propF, nMYears, nYears, aveYears, false);
     // propM (No biopar process)
     extendArray(newDat.propM, nMYears, nYears, aveYears, false);
+    extendArray(newDat.RecruitClimate, nMYears, nYears, aveYears, false);
     newDat.noYears = nYears;
 
     // Recruitment<Type> recruit = makeRecruitmentFunction(conf, par);

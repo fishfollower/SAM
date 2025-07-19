@@ -76,6 +76,7 @@ struct dataSet{
   array<Type> propF;
   array<Type> propM;
   array<Type> TAC;
+  array<Type> RecruitClimate;
   listMatrixFromR<Type> corList;
   array<int> sumKey;
 
@@ -114,6 +115,7 @@ struct dataSet{
     propF(x.propF, x.propF.dim), //x.propF),
     propM(x.propM, x.propM.dim),
     TAC(x.TAC, x.TAC.dim),
+    RecruitClimate(x.RecruitClimate, x.RecruitClimate.dim),
     corList(x.corList),
     sumKey(x.sumKey, x.sumKey.dim)
   {
@@ -150,6 +152,7 @@ SOURCE(
        propF(), //x.propF),
        propM(),
        TAC(),
+       RecruitClimate(),
        corList(),
        sumKey() {       };
        )
@@ -187,6 +190,7 @@ SOURCE(
       propF = asArray<Type>(getListElement(x,"propF", &Rf_isArray));
       propM = asArray<Type>(getListElement(x,"propM", &Rf_isArray));
       TAC = asArray<Type>(getListElement(x,"TAC", &Rf_isArray));
+      RecruitClimate = asArray<Type>(getListElement(x,"RecruitClimate", &Rf_isArray));
       corList = listMatrixFromR<Type>(getListElement(x,"corList"));
       sumKey = asArray<int>(getListElement(x,"sumKey", &Rf_isArray));
     };

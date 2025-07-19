@@ -72,7 +72,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(landMeanWeight); dataset.landMeanWeight=landMeanWeight; 
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM;
-  DATA_ARRAY(TAC); dataset.TAC=TAC; 
+  DATA_ARRAY(TAC); dataset.TAC=TAC;
+  DATA_ARRAY(RecruitClimate); dataset.RecruitClimate=RecruitClimate; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
   DATA_IARRAY(sumKey); dataset.sumKey=sumKey; 
 
@@ -254,7 +255,7 @@ Type objective_function<Type>::operator() ()
     }    
   }
 
-  Recruitment<Type> recruit = makeRecruitmentFunction(confset, paraset);
+  Recruitment<Type> recruit = makeRecruitmentFunction(dataset, confset, paraset);
 
   prepareForForecast(forecast, dataset, confset, paraset, logF, logN, recruit, this);
 
