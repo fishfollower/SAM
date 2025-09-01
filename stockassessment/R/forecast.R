@@ -87,6 +87,10 @@ forecast <- function(fit,
     require(MASS)
     require(Matrix)
     require(TMB)
+    if(recpersim){
+        deterministic <- TRUE
+        warnings("deterministic has been set to TRUE since recpersim was set to TRUE")
+    }
    
   # store input data
   forecast_args                    <- c(mget(ls(environment(), sorted=F)), match.call(expand.dots=F)$...) 
