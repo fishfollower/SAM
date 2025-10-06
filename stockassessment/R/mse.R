@@ -11,7 +11,7 @@ addSimulatedYears <- function(fit, constraints,resampleFirst=FALSE,trueSel=NULL,
     }
     
     doSim <- modelforecast(fit, constraints, nosim=1, returnObj=2,addDataYears=TRUE,resampleFirst=resampleFirst, useModelLastN = FALSE,customSel = trueSel, custom_pl = pl0, ...)
-    
+    v <- doSim()
     obj <- environment(doSim)$obj
     names(v) <- gsub("dat\\.","",names(v))
     dat <- fit$data

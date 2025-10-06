@@ -46,6 +46,8 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M))  + log(2),C + log(F+M) - log(F) -log(1 - exp(-F -M)))
   }else if(conf$stockRecruitmentModelCode==63){ # Bent hypoerbola / Hockey-stick-like
       ret$rec_pars <- c(C + log(F+M) - log(F) -log(1 - exp(-F -M)) ,log(0.5),log(20))
+  }else if(conf$stockRecruitmentModelCode==71){
+      ret$rec_pars <- numeric(4)
       ## if(!is.na(conf$hockeyStickCurve))
       ##     ret$rec_pars[3] <- log(conf$hockeyStickCurve)
   }else if(conf$stockRecruitmentModelCode %in% c(66,67,68,69)){ # Shepherd, Deriso

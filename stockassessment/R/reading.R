@@ -648,7 +648,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   attr(dat,'prop.f')<-cutYA(prop.f)
     attr(dat,'prop.m')<-cutY(prop.m)
     attr(dat,'TAC')<-cutY(TAC)
-    attr(dat,'RecruitClimate')<-cutY(RecruitClimate)
+    attr(dat,'RecruitClimate')<-cutYA(RecruitClimate)
 
   attr(dat,'land.frac')<-cutYA(land.frac)  
   ft <- as.integer(attr(dat,'type'))

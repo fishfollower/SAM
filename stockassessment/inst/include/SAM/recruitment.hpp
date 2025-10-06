@@ -117,6 +117,7 @@ namespace RecruitmentConvenience {
 			 SailaLorda = 68,
 			 SigmoidalBevertonHolt = 69,
 			 SmoothHockeyStick = 70,
+			 SmoothHockeyStickAllee = 71,
 			 Spline_CMP = 90,
 			 Spline_Smooth = 91,
 			 Spline_General = 92,
@@ -1083,6 +1084,33 @@ namespace RecruitmentConvenience {
 
   TO_REC_2PAR(SmoothHockeyStick);
   
+  struct RF_SmoothHockeyStickAllee_t : RecruitmentFunctor{
+    ad logRm;			// Level
+    ad logSm;			// 'Breakpoint'
+    ad logneglogD1;
+    ad logD2;
+
+    RF_SmoothHockeyStickAllee_t(ad logRm_, ad logSm_, ad logneglogD1_, ad logD2_) :
+      logRm(logRm_), logSm(logSm_), logneglogD1(logneglogD1_), logD2(logD2_) {}
+
+    ad operator()(const ad& logssb){
+      ad smooth = 0.1;
+      ad logSstar = 0.5 * (logssb + logSm - sqrt( (logssb - logSm) * (logssb - logSm) + smooth));
+      ad logSmstar = 0.5 * (logSm + logSm - sqrt( (logSm - logSm) * (logSm - logSm) + smooth));
+      ad d2 = exp(logD2);
+      ad logD1use = -exp(logneglogD1) + logSm; // Ensure that 0 < D1 < 1
+      ad logD = -logspace_add_SAM(ad(0.0), -d2 * (logSstar - logD1use));
+      logD -= -logspace_add_SAM(ad(0.0), -d2 * (logSmstar - logD1use));
+      ad minval = 0.5 * (logssb + logSm - sqrt( (logssb - logSm) * (logssb - logSm) + smooth));
+      return logD + logRm - logSm + minval;
+    }
+
+    USING_RECFUN;
+  
+  };
+
+  TO_REC_4PAR(SmoothHockeyStickAllee);
+  
   
 
   // Recruitment function 90
@@ -1740,6 +1768,13 @@ Recruitment<Type> makeRecruitmentFunction( dataSet<Type>& dat,  confSet& conf,  
 	Rf_error("The sigmoidal Beverton-Holt recruitment should have three parameters.");
       r = Recruitment<Type>("sigmoidal Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_SigmoidalBevHolt<Type> >(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2)));
 
+  //////////////////////////////////////// 4 parameter models ///////////////////////////////////////
+    }else if(rm == RecruitmentConvenience::RecruitmentModel::SmoothHockeyStickAllee){
+      if(par.rec_pars.size() != 4)
+	Rf_error("The Allee effect smooth Hockey Stick recruitment should have four parameters.");
+      r = Recruitment<Type>("Allee effect smooth Hockey Stick",std::make_shared<RecruitmentConvenience::Rec_SmoothHockeyStickAllee<Type> >(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2), par.rec_pars(3)));
+
+      
       //////////////////////////////////////// Spline recruitment ///////////////////////////////////////
     
     }else if(rm == RecruitmentConvenience::RecruitmentModel::Spline_CMP){

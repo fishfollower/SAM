@@ -187,7 +187,11 @@ matrix<Type> get_fvar(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, arr
       }
       if(stop)break;
     }
-    fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
+    if(stop){
+      fsd(i)=sdLogFsta(conf.keyVarF(ff,j));
+    }else{
+      fsd(i) = 1.0; //SAM_Zero;
+    }
   }
  
   for(int i=0; i<stateDimF; ++i){
