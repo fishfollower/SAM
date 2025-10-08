@@ -15,7 +15,11 @@ as.matrix.FLQuant <- function(v){
     unm <- "unique"
     ap <- c(2,1)
     if(length(dim(x)) == 3){
-        unm <- dimnames(x)[[3]]
+        if(!is.null(dimnames(x)[[3]])){
+            unm <- dimnames(x)[[3]]
+        }else{
+            unm <- paste0("Fleet_",seq_len(dim(x)[3]))
+        }
         ap <- c(2,1,3)
     }
     FLQuant(aperm(x,ap),dimnames=list(age=as.numeric(colnames(x)),
@@ -34,7 +38,7 @@ as.matrix.FLQuant <- function(v){
     if(length(dim(x))==2)
         x <- array(x, dim = c(dim(x),1), dimnames = c(dimnames(x),NULL))
     
-    x1 <- array(NA,dim = c(length(years),length(ages),dim(x)[3]), dimnames = list(years,ages,dimnames(x)[3]))
+    x1 <- array(NA,dim = c(length(years),length(ages),dim(x)[3]), dimnames = list(years,ages,dimnames(x)[[3]]))
     x1[match(rownames(x),rownames(x1)),match(colnames(x),colnames(x1)),] <- x
     if(replicate){
         ## Years
@@ -56,6 +60,7 @@ as.matrix.FLQuant <- function(v){
 
 
 as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted = FALSE, biopar = TRUE){
+    ## Issues with multi-fleet!
     require(FLCore)
     toFLQ <- .SAM_FLR_HELP_toFLQ
     resize <- .SAM_FLR_HELP_resize
@@ -64,9 +69,9 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
     ## catch.n
     ages <- fit$conf$minAge:fit$conf$maxAge
     years <- fit$data$years
-    CN_all <- simplify2array(lapply(which(fit$data$fleetTypes %in% c(0,1,7)),function(i)getFleet(fit,i, predicted)))
-    CN <- toFLQ(resize(na2zero(CN_all),ages,years))
-    LF <- toFLQ(resize(fit$data$landFrac,ages,years,TRUE))
+    CN_all <- Reduce("+",lapply(which(fit$data$fleetTypes %in% c(0,1,7)),function(i)getFleet(fit,i, predicted)))
+    CN <- toFLQ(apply(resize(na2zero(CN_all),ages,years),1:2,sum))
+    LF <- toFLQ(apply(resize(fit$data$landFrac,ages,years,TRUE),1:2,mean))
     ## mat
     if(biopar && fit$conf$matureModel > 0){
         xx <- fit$rep$propMat
@@ -89,16 +94,16 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
     if(biopar && fit$conf$catchWeightModel > 0){
         xx <- fit$rep$catchMeanWeight
         dimnames(xx) <- dimnames(fit$data$catchMeanWeight)
-        CW <- toFLQ(resize(xx,ages,years,TRUE))
+        CW <- toFLQ(apply(resize(xx,ages,years,TRUE),1:2,mean))
     }else{
-        CW <- toFLQ(resize(fit$data$catchMeanWeight,ages,years,TRUE), unit.w)
+        CW <- toFLQ(apply(resize(fit$data$catchMeanWeight,ages,years,TRUE),1:2,mean), unit.w)
     }
     ## discards.wt
-    DW <- toFLQ(resize(fit$data$disMeanWeight,ages,years,TRUE), unit.w)
+    DW <- toFLQ(apply(resize(fit$data$disMeanWeight,ages,years,TRUE),1:2,mean), unit.w)
     ## discards.n
     DN <- CN * (1 - LF)
     ## landings.wt
-    LW <- toFLQ(resize(fit$data$landMeanWeight,ages,years,TRUE), unit.w)
+    LW <- toFLQ(apply(resize(fit$data$landMeanWeight,ages,years,TRUE),1:2,mean), unit.w)
     ## landings.n
     LN <- CN * LF
     ## m
@@ -110,7 +115,7 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
         M <- toFLQ(resize(fit$data$natMor,ages,years,TRUE))
     }
     ## harvest.spwn
-    PF <- toFLQ(resize(fit$data$propF,ages,years,TRUE))
+    PF <- toFLQ(apply(resize(fit$data$propF,ages,years,TRUE),1:2,mean))
     ## m.spwn
     PM <- toFLQ(resize(fit$data$propM,ages,years,TRUE))
     ## harvest
