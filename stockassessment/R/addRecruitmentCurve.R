@@ -92,6 +92,13 @@ addRecruitmentCurve.sam <- function(fit,
            g <- matrix(v$Gradient_recpars, ncol = 1)
            valsd <- as.vector(sqrt(t(g) %*% covar %*% g))
            pisig <- exp(fit$pl$logSdLogN[fit$conf$keyVarLogN[1]+1])
+           if(length(fit$pl$recVarScalePar) > 0){
+               lv <- 0#pisig*pisig
+               lv <- lv + fit$pl$recVarScalePar[1] * logssb
+               if(length(fit$pl$recVarScalePar) > 1)
+                   lv <- lv + fit$pl$recVarScalePar[2] * val
+               pisig <- pisig * exp(lv)
+           }
            res <- exp(val)
            attr(res,"ci_low") <- exp(val - 2 * valsd)
            attr(res,"ci_high") <- exp(val + 2 * valsd)

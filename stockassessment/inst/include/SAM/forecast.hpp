@@ -46,6 +46,7 @@ struct forecastSet {
   vector<FModelType> FModel;
   // vector<Type> target;
   vector<FConstraintList<Type> > constraints;
+	 vector<FConstraintList<Type> > upperbound_constraints;
   newton::newton_config cfg;
   vector<Type> selectivity;
   vector<recModelType> recModel;
@@ -86,6 +87,7 @@ struct forecastSet {
 						FModel(x.FModel),
 						// target(x.target),
 						constraints(x.constraints),
+						upperbound_constraints(x.upperbound_constraints),
 						cfg(x.cfg),
 						selectivity(x.selectivity),
 						recModel(x.recModel),
@@ -215,7 +217,7 @@ SOURCE(
 	     forecastCalculatedMedian.col(i) = predF;// logF.col(indx - 1);
 	     break;
 	   case constrainedF:
-	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),logN,logF,logitFseason, aveYears, fvar, nvar, ICESrec, logSelUse, indx, cfg);    
+	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),upperbound_constraints(i),logN,logF,logitFseason, aveYears, fvar, nvar, ICESrec, logSelUse, indx, cfg);    
 	     break;
 	   case fastFixedF:
 	     forecastCalculatedMedian.col(i) = constraints(i)(0).target + logSelUse;
@@ -277,6 +279,7 @@ SOURCE(
 		  FModel(),
 		  // target(0),
 		  constraints(),
+	 upperbound_constraints(),
 		  cfg(),
 		  selectivity(),
 		  recModel(),
@@ -313,6 +316,7 @@ SOURCE(
 	     FModel = vector<FModelType>(0);
 	     // target = vector<Type>(0);
 	     constraints = vector<FConstraintList<Type> >(0);
+	     upperbound_constraints = vector<FConstraintList<Type> >(0);
 	     cfg = newton::newton_config();
 	     selectivity = vector<Type>(0);
 	     recModel = vector<recModelType>(0);
@@ -352,6 +356,13 @@ SOURCE(
 	     for(int i = 0; i < Rf_length(ctmp); ++i){
 	       SEXP tmp = VECTOR_ELT(ctmp, i);
 	       constraints(i) = FConstraintList<Type>(tmp);
+	     }
+	     UNPROTECT(1);
+	     SEXP ubctmp = PROTECT(getListElement(x,"upperbound_constraints"));
+	     upperbound_constraints = vector<FConstraintList<Type> >(Rf_length(ubctmp));
+	     for(int i = 0; i < Rf_length(ubctmp); ++i){
+	       SEXP tmp = VECTOR_ELT(ubctmp, i);
+	       upperbound_constraints(i) = FConstraintList<Type>(tmp);
 	     }
 	     UNPROTECT(1);
 	     cfg = newton::newton_config(getListElement(x,"cfg"));

@@ -33,6 +33,20 @@ struct FConstraint {
   int relative; 		// -3: Absolute; -2: relative to last year; -1: relative to total; >=0: relative to fleet #
   ConstraintType cstr;
   Type target;
+  /* settings should be:
+     0: Indicator of SSB year (-1,0,1)
+     1: Indicator of biomass type (TSB,SSB,...)
+     2: Indicator of target Type (F, Catch, Landing,...)
+     3: Amin for TSB/SSB
+     4: Amax for TSB/SSB
+     5: F_origin for HCR
+     6: F_cap for HCR
+     7: B_origin for HCR
+     8: B_cap for HCR
+     9: B_trigger for HCR
+     10: Soft cap?
+     11: upper bound penalty
+  */
   vector<Type> settings;
   int useNonLinearityCorrection;
 
@@ -418,6 +432,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	   8: B_cap for HCR
 	   9: B_trigger for HCR
 	   10: Soft cap?
+	   11: bound penalty
 	*/
 	int biomassType = CppAD::Integer(cstr.settings(1));
 	//int targetType = CppAD::Integer(cstr.settings(2));
@@ -550,6 +565,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
     vector<int> cFleets;
     Recruitment<ad> recruit;
     FConstraintList<ad> cstrs;
+    FConstraintList<ad> ub_cstrs;
     array<ad> logN;
     array<ad> historicalLogF;
     array<ad> logitFseason;
@@ -558,16 +574,11 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
     matrix<ad> nvar;
     vector<ad> logSel;
     
-    ForecastF(dataSet<ad> dat_, confSet conf_, paraSet<ad> par_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, array<ad> logN_, array<ad> histLogF_, array<ad> lfs_, int y_, matrix<ad> fvar_, matrix<ad> nvar_, vector<ad> logSel_) : dat(dat_), conf(conf_), par(par_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), logN(logN_), historicalLogF(histLogF_), logitFseason(lfs_), y(y_), fvar(fvar_), nvar(nvar_), logSel(logSel_) {};
+    ForecastF(dataSet<ad> dat_, confSet conf_, paraSet<ad> par_, vector<int> cFleets_, Recruitment<ad> recruit_, FConstraintList<ad> cstrs_, FConstraintList<ad> ub_cstrs_, array<ad> logN_, array<ad> histLogF_, array<ad> lfs_, int y_, matrix<ad> fvar_, matrix<ad> nvar_, vector<ad> logSel_) : dat(dat_), conf(conf_), par(par_), cFleets(cFleets_), recruit(recruit_), cstrs(cstrs_), ub_cstrs(ub_cstrs_), logN(logN_), historicalLogF(histLogF_), logitFseason(lfs_), y(y_), fvar(fvar_), nvar(nvar_), logSel(logSel_) {};
     
 
     ad operator()(const vector<ad>& logFs){
       ad kappa = 0.0;
-      //
-      // matrix<ad> llogF = toFleetMatrix(dat, conf, lastLogF, (vector<ad>)(logFs * ad(0.0)));
-      // vector<ad> llfs = (vector<ad>)(lastLogF - lastLFB);
-      // matrix<ad> logF = toFleetMatrix(dat, conf, lastLogF, logFs);
-
       vector<ad> newLogF = logSel;
    
       vector<bool> done(newLogF.size());
@@ -617,201 +628,44 @@ SAM_SPECIALIZATION(TMBad::ad_aug getLogTSB(dataSet<TMBad::ad_aug>&, confSet&, ar
 	kappa += tmp * tmp;
 	  
       }
-	// int compareLag = CppAD::Integer(cstr.settings(0));
-	// // New F values
-	// vector<ad> fleetLogFbar = getFleetLogFbar(dat, conf, cFleets, newLogF, cstr.Amin, cstr.Amax);
-	// ad logFbar = logspace_sum(fleetLogFbar);
-	
-	// // Predict year y and y+1, add one year
-	// // logisticFseason is already updated at this point;
-	// array<ad> hLogF2 = historicalLogF;
-	// hLogF2.col(y) = newLogF;
-	// hLogF2.col(y+1) = newLogF;
-	// MortalitySet<ad> mort(dat, conf, par, hLogF2, logitFseason);
-	// array<ad> logN2 = logN;
-	// logN2.col(y) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y);
-	// logN2.col(y+1) = predNFun(dat,conf,par,logN2,hLogF2,recruit,mort,y+1);
 
-	// // Add constraint
-	// if(cstr.cstr == ConstraintType::Constrain_Fbar){
-	//   vector<ad> lastLogF = historicalLogF.col(y-compareLag);   
-	//   // Previous F values
-	//   vector<ad> lastFleetLogFbar = getFleetLogFbar(dat, conf, cFleets, lastLogF, cstr.Amin, cstr.Amax);
-	//   ad lastLogFbar = logspace_sum(lastFleetLogFbar);
+      // Upper bound contribution
+      ad ub_kappa = 0.0;
+      for(int i = 0; i < ub_cstrs.size(); ++i){
+	FConstraint<ad> ub_cstr = ub_cstrs(i);
+	if(ub_cstr.cstr == ConstraintType::Constrain_NONE){
+	  continue;
+	}
+	// Functor
+	ForecastF_Fun F(dat, conf, par, cFleets, recruit, ub_cstr, logN, historicalLogF, logitFseason, y);
+	// Target
+	vector<ad> nlf(2*logN.rows() + historicalLogF.rows());
+	nlf.setZero();
+	nlf.segment(2*logN.rows(), historicalLogF.rows()) = newLogF;
+	ad trgt = F.getTarget(newLogF);	  
+	// Transformed F
+	ad transF = F(nlf);
 
-	//   if(cstr.fleet == (-1)){	// Total F
-	//     ad trgt = cstr.target;
-	//     RELATIVE_CONSTRAINTS(
-	// 			 // Last year
-	// 			 trgt += lastLogFbar;
-	// 			 ,
-	// 			 // Total
-	// 			 Rf_error("A total F constraint can only be relative to last year");
-	// 			 ,
-	// 			 // Fleet
-	// 			 Rf_error("A total F constraint can only be relative to last year");
-	// 			 )
-	//     ad tmp = logFbar - trgt;
-	//     kappa += tmp * tmp;
-	//   }else{
-	//     ad trgt = cstr.target;
-	//     RELATIVE_CONSTRAINTS(
-	// 			 // Last year
-	// 			 trgt += lastFleetLogFbar(cstr.fleet);
-	// 			 ,
-	// 			 // Total
-	// 			 trgt += logFbar;
-	// 			 ,
-	// 			 // Fleet
-	// 			 trgt += fleetLogFbar(cstr.relative);
-	// 			 )
-	//       ad tmp = fleetLogFbar(cstr.fleet) - trgt;
-	//     kappa += tmp * tmp;
-	//   }
-
-	// }else if(cstr.cstr == ConstraintType::Constrain_Catch){
-
-	//   ad logC = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
-	//   ad trgt = cstr.target;
-	//   RELATIVE_CONSTRAINTS(
-	// 		       // Last year
-	// 		       ad logCL = getFleetCatch(dat, conf, logN2, hLogF2, mort, y-compareLag, cstr.Amin, cstr.Amax, cstr.fleet);
-	// 		       trgt += logCL;
-	// 		       ,
-	// 		       // Total
-	// 		       ad logCL = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, -1);
-	// 		       trgt += logCL;
-	// 		       ,
-	// 		       // Fleet
-	// 		       ad logCL = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.relative);
-	// 		       trgt += logCL;
-	// 		       )	
-	//   ad tmp = logC - trgt;
-	//   kappa += tmp * tmp;
-
-	// }else if(cstr.cstr == ConstraintType::Constrain_SSB){
-	//   SAM_ASSERT(cstr.relative <= -2, "SSB constraints can only be relative to last year");
-	//   //ad logB = getSSB(dat,conf, cFleets, recruit, logN, newLogF, historicalLogF, y, cstr.Amin, cstr.Amax, cstr.relative == (-2));
-	//   ad logB = getLogSSB(dat, conf, logN2, hLogF2, mort, y+1, cstr.Amin, cstr.Amax);
-	//   if(cstr.relative == (-2))
-	//     logB -= getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, cstr.Amin, cstr.Amax);
-	//   ad tmp = logB - cstr.target;
-	//   kappa += tmp * tmp;
-	  
-	// }else if(cstr.cstr == ConstraintType::Constrain_TSB){
-	//   SAM_ASSERT(cstr.relative <= -2, "TSB constraints can only be relative to last year");
-	//   ad logB = getLogTSB(dat, conf, logN2, hLogF2, mort, y+1, cstr.Amin, cstr.Amax);
-	//   if(cstr.relative == (-2))
-	//     logB -= getLogTSB(dat, conf, logN2, hLogF2, mort, y-compareLag, cstr.Amin, cstr.Amax);
-	//   ad tmp = logB - cstr.target;
-	//   kappa += tmp * tmp;
-	  
-	// }else if(cstr.cstr == ConstraintType::Constrain_Landing){
-
-	//   ad logL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
-	//   ad trgt = cstr.target;
-	//   RELATIVE_CONSTRAINTS(
-	// 		       // Last year
-	// 		       ad logLL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y-compareLag, cstr.Amin, cstr.Amax, cstr.fleet);
-	// 		       trgt += logLL;
-	// 		       ,
-	// 		       // Total
-	// 		       ad logLL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, -1);
-	// 		       trgt += logLL;
-	// 		       ,
-	// 		       // Fleet
-	// 		       ad logLL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.relative);
-	// 		       trgt += logLL;
-	// 		       )	
-	//   ad tmp = logL - trgt;
-	//   kappa += tmp * tmp;
-
-	// }else if(cstr.cstr == ConstraintType::Constrain_KeepRelF){
-	//   vector<ad> lastLogF = historicalLogF.col(y-compareLag);	  
-	//   // Previous F values
-	//   vector<ad> lastFleetLogFbar = getFleetLogFbar(dat, conf, cFleets, lastLogF, cstr.Amin, cstr.Amax);
-	//   SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total");
-	//   SAM_ASSERT(cstr.relative >= 0 && cstr.fleet != cstr.relative, "Keep relative can only be used relative to other fleets in same year");
-	//   ad tmp = (lastFleetLogFbar(cstr.fleet) - lastFleetLogFbar(cstr.relative)) - (fleetLogFbar(cstr.fleet) - fleetLogFbar(cstr.relative));
-	//   kappa += tmp * tmp;
-
-	// }else if(cstr.cstr == ConstraintType::Constrain_HCR){
-	//   // Give error if the relative flag makes it this far:
-	//   RELATIVE_CONSTRAINTS(
-	// 		       // Last year
-	// 		       Rf_error("A HCR target cannot be relative");
-	// 		       ,
-	// 		       // Total
-	// 		       Rf_error("A HCR target cannot be relative");
-	// 		       ,
-	// 		       // Fleet
-	// 		       Rf_error("A HCR target cannot be relative");
-	// 		       );
-  
-	//   /* cstr.settings should be:
-	//      0: Indicator of SSB year (-1,0,1)
-	//      1: Indicator of biomass type (TSB,SSB,...)
-	//      2: Indicator of target Type (F, Catch, Landing,...)
-	//      3: Amin for TSB/SSB
-	//      4: Amax for TSB/SSB
-	//      5: F_origin for HCR
-	//      6: F_cap for HCR
-	//      7: B_origin for HCR
-	//      8: B_cap for HCR
-	//      9: B_trigger for HCR
-	//      10: Soft cap?
-	//    */
-	//   int biomassType = CppAD::Integer(cstr.settings(1));
-	//   int targetType = CppAD::Integer(cstr.settings(2));
-	//   int bioA0 = CppAD::Integer(cstr.settings(3));
-	//   int bioA1 = CppAD::Integer(cstr.settings(4));
-	//   // Get current biomass
-	//   ad BforHCR = 0.0;
-	//   ad Btrigger = exp(cstr.target);
-	//   if(biomassType == 0){	// SSB
-	//     BforHCR = exp(getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
-	//   }else if(biomassType ==1){ // TSB
-	//     BforHCR = exp(getLogTSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
-	//   }else if(biomassType == 2){ // % of B0
-	//     BforHCR = exp(getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
-	//     ad b0 = B0_i(dat,conf,par,hLogF2,y-compareLag,0,100);
-	//     Btrigger *= b0;
-	//   // }else if(biomassType == 3){ // % of Bmsy
-	//   //   BforHCR = exp(getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
-	//   }else{
-	//     Rf_error("Wrong biomass type for HCR");
-	//   }
-	//   // Get optimization target
-	//   vector<ad> hcrConf = cstr.settings.segment(4,6); // Start to early and overwrite
-	//   // Insert target
-	//   hcrConf(0) = Btrigger;
-	//   ad trgt = hcr(BforHCR, hcrConf);
-	//   array<ad> logitFseason(0,historicalLogF.dim[1],0);
-	  
-	//   // kappa
-	//   if(targetType == 0){	  // F target
-	//     if(cstr.fleet == (-1)){	// Total
-	//       ad tmp = logFbar - trgt;
-	//       kappa += tmp * tmp;
-	//     }else{		// Fleet
-	//       ad tmp = fleetLogFbar(cstr.fleet) - trgt;
-	//       kappa += tmp * tmp;
-	//     }
-	//   }else if(targetType == 1){ // Catch target
-	//     ad logC = getFleetCatch(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
-	//     ad tmp = logC - trgt;
-	//     kappa += tmp * tmp;
-	//   }else if(targetType == 2){ // Landing target
-	//     ad logL = getFleetLanding(dat, conf, logN2, hLogF2, mort, y, cstr.Amin, cstr.Amax, cstr.fleet);
-	//     ad tmp = logL - trgt;
-	//     kappa += tmp * tmp;
-	//   }else{
-	//     Rf_error("Unknown target type for HCR");
-	//   }
-	// }else{
-	//   Rf_error("Constraint type not implemented");
-	// }      
-      return kappa;
+	// Stochastic correction
+	ad v = 0.0;
+	if(ub_cstr.useNonLinearityCorrection){
+	  matrix<ad> H = autodiff::hessian(F, nlf);
+	  matrix<ad> Sigma(2*logN.rows() + historicalLogF.rows(),2*logN.rows() + historicalLogF.rows());
+	  Sigma.setZero();
+	  Sigma.block(0,0,logN.rows(),logN.rows()) = nvar;
+	  Sigma.block(logN.rows(),logN.rows(),logN.rows(),logN.rows()) = nvar;
+	  Sigma.block(2*logN.rows(),2*logN.rows(),historicalLogF.rows(),historicalLogF.rows()) = fvar; 
+	  //ad cx1 = (newLogF*(vector<ad>(H*newLogF))).sum();
+	  ad tr = (H.vec() * Sigma.vec()).sum();
+	  v = 0.5 * tr; // (tr + cx1);
+	}
+	ad pen = 1000.0;
+	if(ub_cstr.settings.size() >= 12)
+	  pen = ub_cstr.settings(11);
+	ad tmp = softmax2(transF + v - trgt, (ad)0.0,(ad)0.00001);
+	ub_kappa += pen * tmp * tmp;	  
+      }      
+      return kappa + ub_kappa;
     }
    
   };
@@ -846,6 +700,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
 			      confSet& conf,
 			      paraSet<Type>& par,
 			      FConstraintList<Type>& cstrs,
+			      FConstraintList<Type>& ubound_cstrs,
 			      array<Type>& logN,
 			      array<Type>& logF,
 			      array<Type>& logitFseason,
@@ -929,7 +784,7 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   }
 
   // Should be deleted by NewtonWrapper
-  std::shared_ptr<ConstrainCalculations::ForecastF> p_fc0 = std::make_shared<ConstrainCalculations::ForecastF>(newDat,conf,par,cFleets,recruit,cstrs,logN2,logF2, logitFseason2, y, fvar, nvar, logSel);
+  std::shared_ptr<ConstrainCalculations::ForecastF> p_fc0 = std::make_shared<ConstrainCalculations::ForecastF>(newDat,conf,par,cFleets,recruit,cstrs,ubound_cstrs,logN2,logF2, logitFseason2, y, fvar, nvar, logSel);
   std::shared_ptr<NewtonFunctor> p_fc = std::dynamic_pointer_cast<NewtonFunctor>(p_fc0);
  
   // vector<double> s0(cFleets.size());
@@ -957,6 +812,6 @@ vector<Type> calculateNewFVec(dataSet<Type>& dat,
   return newLogF;
 				})
 
-SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, array<double>&,array<double>&,array<double>&, vector<int>&, matrix<double>&, matrix<double>, vector<double>&, vector<double>&, int, newton::newton_config&));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,vector<int>&,matrix<TMBad::ad_aug>&, matrix<TMBad::ad_aug>, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, newton::newton_config&));
+SAM_SPECIALIZATION(vector<double> calculateNewFVec(dataSet<double>&, confSet&, paraSet<double>&, FConstraintList<double>&, FConstraintList<double>&, array<double>&,array<double>&,array<double>&, vector<int>&, matrix<double>&, matrix<double>, vector<double>&, vector<double>&, int, newton::newton_config&));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> calculateNewFVec(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, FConstraintList<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,array<TMBad::ad_aug>&,vector<int>&,matrix<TMBad::ad_aug>&, matrix<TMBad::ad_aug>, vector<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, int, newton::newton_config&));
 

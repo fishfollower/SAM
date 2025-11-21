@@ -109,6 +109,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(fbarRange); confset.fbarRange=fbarRange; 
   DATA_IVECTOR(keyBiomassTreat); confset.keyBiomassTreat=keyBiomassTreat;   
   DATA_IVECTOR(simFlag); confset.simFlag=simFlag;  //1 means simulations should not redo F and N
+  DATA_INTEGER(simKeepRec); confset.simKeepRec=simKeepRec;  //1 mean simulations should be conditional on estimated recruitment
   DATA_INTEGER(resFlag); confset.resFlag=resFlag;  
   DATA_FACTOR(obsLikelihoodFlag); confset.obsLikelihoodFlag=obsLikelihoodFlag; 
   DATA_IVECTOR(fixVarToWeight);
@@ -187,6 +188,7 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(sepFlogitRho); paraset.sepFlogitRho=sepFlogitRho;    
   PARAMETER_VECTOR(sepFlogSd); paraset.sepFlogSd=sepFlogSd;    
   PARAMETER_VECTOR(predVarObs); paraset.predVarObs=predVarObs;
+  PARAMETER_VECTOR(recVarScalePar); paraset.recVarScalePar=recVarScalePar;
   PARAMETER(logFecundityScaling); paraset.logFecundityScaling=logFecundityScaling;
   
   PARAMETER_VECTOR(logPhiSW); paraset.logPhiSW=logPhiSW;

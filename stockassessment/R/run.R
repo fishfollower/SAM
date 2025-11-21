@@ -57,7 +57,7 @@
 ##' fit <- sam.fit(nscodData, nscodConf, nscodParameters, silent = TRUE)
 ##' @references
 ##' Albertsen, C. M. and Trijoulet, V. (2020) Model-based estimates of reference points in an age-based state-space stock assessment model. Fisheries Research, 230, 105618. \doi{10.1016/j.fishres.2020.105618}
-sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, eval.max=2000,iter.max=1000, penalizeSpline = FALSE, fullDerived = FALSE, pre.clean=TRUE, check.parameters=TRUE, ...){
+sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE, run=TRUE, lower=getLowerBounds(parameters, conf), upper=getUpperBounds(parameters, conf), sim.condRE=TRUE, ignore.parm.uncertainty = FALSE, rel.tol=1e-10, eval.max=2000,iter.max=1000, penalizeSpline = FALSE, fullDerived = FALSE, pre.clean=TRUE, check.parameters=TRUE, sim.keepRec=FALSE, ...){
     if(length(conf$maxAgePlusGroup)==1){
         tmp <- conf$maxAgePlusGroup    
         conf$maxAgePlusGroup <- defcon(data)$maxAgePlusGroup
@@ -92,7 +92,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
         stop("Wrong length in sim.condRE")
     }
     simRE <- rep(as.integer(sim.condRE),length = 3)
-    tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=simFlag))
+    tmball <- c(data, list(forecast=list(), referencepoints=list()), conf, list(simFlag=simFlag,simKeepRec=as.numeric(sim.keepRec)))
     if(is.null(tmball$resFlag)){tmball$resFlag <- 0}  
     nmissing <- sum(is.na(data$logobs))
     parameters$missing <- numeric(nmissing)

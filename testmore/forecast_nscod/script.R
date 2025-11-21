@@ -47,6 +47,8 @@ fit<-sam.fit(dat,conf,par)
 
 catchtable(fit)
 
+## mf <- modelforecast(fit, rep("C=80000|F=1.0 & F=1.25*",20))
+
 tol <- 1e-6
 ## Test fscale
 target <- c(0.9,0.9,0.9,1.1,1.1,1.1,1,1,1)

@@ -175,6 +175,7 @@ defcon<-function(dat, level=1){
     ret$seasonFixedEffect <- 0
     ##ret$boundF <- c(NA_real_,NA_real_)
     ret$fecundityScaling <- 1
+    ret$recVarScaleDegree <- 0
     return(ret) 
 }
 

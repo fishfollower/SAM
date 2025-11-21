@@ -228,7 +228,8 @@ struct confSet{
   matrix<int> keyParScaledYA;
   vector<int> fbarRange;
   vector<int> keyBiomassTreat;
-  vector<int> simFlag; 
+  vector<int> simFlag;
+  int simKeepRec;
   int resFlag; 
   vector<int> obsLikelihoodFlag;
   vector<int> fixVarToWeight;
@@ -294,6 +295,7 @@ SOURCE(
 	 fbarRange = asVector<int>(getListElement(x,"fbarRange", &Rf_isNumeric));
 	 keyBiomassTreat = asVector<int>(getListElement(x,"keyBiomassTreat", &Rf_isNumeric));
 	 simFlag = asVector<int>(getListElement(x,"simFlag", &Rf_isNumeric));
+	 simKeepRec = Rf_asInteger(getListElement(x,"simKeepRec", &isNumericScalar));
 	 resFlag = Rf_asInteger(getListElement(x,"resFlag", &isNumericScalar));
 	 obsLikelihoodFlag = asVector<int>(getListElement(x,"obsLikelihoodFlag", &Rf_isNumeric));
 	 fixVarToWeight = asVector<int>(getListElement(x,"fixVarToWeight", &Rf_isNumeric)); 
@@ -353,6 +355,7 @@ SOURCE(
 	 fbarRange(),
 	 keyBiomassTreat(),
 	 simFlag(),
+	 simKeepRec(),
 	 resFlag(),
 	 obsLikelihoodFlag(),
 	 fixVarToWeight(),
@@ -412,6 +415,7 @@ SOURCE(
 	 fbarRange(other.fbarRange),
 	 keyBiomassTreat(other.keyBiomassTreat),
 	 simFlag(other.simFlag),
+	 simKeepRec(other.simKeepRec),
 	 resFlag(other.resFlag),
 	 obsLikelihoodFlag(other.obsLikelihoodFlag),
 	 fixVarToWeight(other.fixVarToWeight),
@@ -472,6 +476,7 @@ struct paraSet{
   vector<Type> sepFlogitRho;   
   vector<Type> sepFlogSd;
   vector<Type> predVarObs;
+  vector<Type> recVarScalePar;
   Type logFecundityScaling;
   Type logFScaleMSY;
   Type implicitFunctionDelta;
@@ -537,6 +542,7 @@ struct paraSet{
     sepFlogitRho(other.sepFlogitRho),
     sepFlogSd(other.sepFlogSd),
      predVarObs(other.predVarObs),
+     recVarScalePar(other.recVarScalePar),
      logFecundityScaling(other.logFecundityScaling),
     logFScaleMSY(other.logFScaleMSY),
     implicitFunctionDelta(other.implicitFunctionDelta),
@@ -596,6 +602,7 @@ SOURCE(
        sepFlogitRho(),
        sepFlogSd(),
        predVarObs(),
+       recVarScalePar(),
        logFecundityScaling(),
        logFScaleMSY(),
        implicitFunctionDelta(),
@@ -651,7 +658,8 @@ SOURCE(
 	   sepFalpha = asVector<Type>(getListElement(x,"sepFalpha", &Rf_isNumeric));
 	   sepFlogitRho = asVector<Type>(getListElement(x,"sepFlogitRho", &Rf_isNumeric));
 	   sepFlogSd = asVector<Type>(getListElement(x,"sepFlogSd", &Rf_isNumeric));
-	   predVarObs = asVector<Type>(getListElement(x,"predVarObs", &Rf_isNumeric));
+	   predVarObs = asVector<Type>(getListElement(x,"predVarObs", &Rf_isNumeric));	   
+	   recVarScalePar = asVector<Type>(getListElement(x,"recVarScalePar", &Rf_isNumeric));
 	     logFecundityScaling = (Type)Rf_asReal(getListElement(x,"logFecundityScaling", &isNumericScalar));
 	   logFScaleMSY = (Type)Rf_asReal(getListElement(x,"logFScaleMSY", &isNumericScalar));
 	   implicitFunctionDelta = (Type)Rf_asReal(getListElement(x,"implicitFunctionDelta", &isNumericScalar));

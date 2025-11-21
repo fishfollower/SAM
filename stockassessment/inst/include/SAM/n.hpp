@@ -72,7 +72,10 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       nll+= neg_log_densityN(logN.col(0)-par.initN) ;//density::MVNORM(diagonalMatrix(Type(0.1),stateDimN))(logN.col(0)-par.initN); //neg_log_densityN(logN.col(0)-par.initN); // N-Process likelihood 
       SIMULATE_F(of){
 	if(conf.simFlag(1)==0){
+	  Type logR = logN(0,0);
 	  logN.col(0) = par.initN + neg_log_densityN.simulate(); //SCALE(N01(par.initN),1.0); // + neg_log_densityN.simulate();
+	  if(conf.simKeepRec)
+	    logN(0,0) = logR;
 	}
       }
     }
@@ -80,6 +83,27 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
     for(int i = 1; i < timeSteps; ++i){
       vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort, i);
       pn.col(i) = predN;
+      vector<Type> logVarScale(predN.size());
+      logVarScale.setZero();
+      if(par.recVarScalePar.size() > 0){
+	Type sigmaR = sqrt(nvar(0,0));
+	Type logThisSSB=Type(R_NegInf);
+	if((i-conf.minAge)>=0){
+	  // logThisSSB=ssbi(dat,conf,logN,logF,mort,i-conf.minAge, true);    
+	  logThisSSB=erbi(dat,conf,par,logN,logF,mort,i-conf.minAge, true);    
+	}else{
+	  // logThisSSB=ssbi(dat,conf,logN,logF,mort,0, true); // use first in beginning       
+	  logThisSSB=erbi(dat,conf,par,logN,logF,mort,0, true); // use first in beginning       
+	}	 
+	Type xx = 0.0;
+	Type xv = 1.0;
+	for(int qq = 0; qq < par.recVarScalePar.size(); ++qq){
+	  xv *=  (predN(0) - logThisSSB);
+	  xx += (exp( par.recVarScalePar(qq) )-1) * xv;
+	}	  
+	Type k = log(sigmaR) + xx;
+	logVarScale(0) = log(sqrt(log(exp(k)+Type(1))) / sigmaR);	  	 
+      }      
       if(forecast.nYears > 0 &&
          forecast.forecastYear(i) > 0 &&
          forecast.recModel(CppAD::Integer(forecast.forecastYear(i))-1) != forecast.asRecModel){
@@ -88,6 +112,7 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
         Nscale.setZero();
         Nscale += 1.0;
         Nscale(0) = sqrt(forecast.logRecruitmentVar) / sqrt(nvar(0,0));
+	Nscale *= exp(logVarScale);
         vector<Type> predNTmp = predN;
         predNTmp(0) = forecast.logRecruitmentMedian;
         // MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
@@ -99,8 +124,8 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
 	//   }
 	// }
       }else{
-	resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));    
-	nll+=neg_log_densityN(logN.col(i)-predN); // N-Process likelihood
+	resN.col(i-1) = LinvN*(vector<Type>(logN.col(i)-predN));
+	nll+=neg_log_densityN((logN.col(i)-predN)/exp(logVarScale)); // N-Process likelihood	
 	SIMULATE_F(of){
 	  // THIS IS DONE IN forecastSimulation(...)
 	  // if(forecast.nYears > 0 &&
@@ -117,12 +142,15 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
 	  if(conf.simFlag(1)==0){
 	    // Do pre-forecast simulation here
 	    if(forecast.nYears == 0 || forecast.forecastYear(i) == 0){
-	      vector<Type> noiseN = neg_log_densityN.simulate();
+	      Type logR = logN(0,i);	 
+	      vector<Type> noiseN = exp(logVarScale) * neg_log_densityN.simulate();
 	      logN.col(i) = predN + noiseN;
 	      // Handle recruitment if minAge == 0, assuming propMat(-,0)=0
 	      if(conf.minAge == 0){
 		logN(0,i) = predNFun(dat,conf,par,logN,logF,recruit,mort,i)(0) + noiseN(0);
 	      }
+	      if(conf.simKeepRec)
+		logN(0,i) = logR;
 	    }
 	  }
 	}

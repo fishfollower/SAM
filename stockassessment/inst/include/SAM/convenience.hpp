@@ -97,6 +97,23 @@ Type softmax(Type x, Type y, Type k DEFARG(=1.0))SOURCE({
 SAM_SPECIALIZATION(double softmax(double, double, double));
 SAM_SPECIALIZATION(TMBad::ad_aug softmax(TMBad::ad_aug, TMBad::ad_aug, TMBad::ad_aug));
 
+template<class Type>
+Type softabs(Type x, Type k DEFARG(=0.01))SOURCE({
+    return sqrt((x) * (x) + k);
+  });
+
+SAM_SPECIALIZATION(double softabs(double, double));
+SAM_SPECIALIZATION(TMBad::ad_aug softabs(TMBad::ad_aug, TMBad::ad_aug));
+
+
+template<class Type>
+Type softmax2(Type x, Type y, Type k DEFARG(=0.01))SOURCE({
+    return 0.5 * (x + y + softabs(x-y,k));
+  });
+
+SAM_SPECIALIZATION(double softmax2(double, double, double));
+SAM_SPECIALIZATION(TMBad::ad_aug softmax2(TMBad::ad_aug, TMBad::ad_aug, TMBad::ad_aug));
+
 
 
 /*
