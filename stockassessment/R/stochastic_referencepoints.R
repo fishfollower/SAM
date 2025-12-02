@@ -238,7 +238,7 @@ predict.rpscurvefit <- function(x,newF,...){
     ## f2$sdrep <- fit$sdrep[c("estY","covY")]
     ## class(f2) <- "sam"
     if(is.null(doSim))
-        doSim <- .getDoSim(logf[1], fit, nYears, aveYears, selYears, pl, logCustomSel, deterministicF)
+        doSim <- .getDoSim(logf[1], fit, nYears, aveYears, selYears, pl, logCustomSel, deterministicF, ...)
     if(isTRUE(all.equal(pl,fit$pl))){
         re_pl <- NULL
     }else{
@@ -665,8 +665,8 @@ stochasticReferencepoints.sam <- function(fit,
                                           nYears = 100,
                                           Frange = c(0,2),
                                           nosim = 200,
-                                          aveYears = max(fit$data$years)+(-9:0),
-                                          selYears = max(fit$data$years),
+                                          aveYears = max(fit$data$years)+(-4:0),
+                                          selYears = max(fit$data$years)+(-4:0),
                                           newton.control = list(),
                                           seed = .timeToSeed(),
                                           knots = round(nosim / 20),
@@ -674,11 +674,12 @@ stochasticReferencepoints.sam <- function(fit,
                                           derivedSummarizer = NA,
                                           nTail = 1,
                                           constraint = "F=%f",
-                                          deterministicF = TRUE,
+                                          deterministicF = FALSE,
+                                          processNoiseF = FALSE,
                                           Fsequence = seq(Frange[1],Frange[2], len = 50),
                                           run = TRUE,
                                           DT = 0,
-                                          equilibriumMethod = c("EC","ES","AD"),
+                                          equilibriumMethod = c("ES","EC","AD"),
                                           ncores = 1,
                                           ...){
 
@@ -886,12 +887,12 @@ stochasticReferencepoints.sam <- function(fit,
             stop("The reference points specified needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
 
         doSim <- .getDoSim(logf1=tail(log(fbartable(fit)[,1]),1),
-                           fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl, constraint=constraint,deterministicF=deterministicF,...)
+                           fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl, constraint=constraint,deterministicF=deterministicF, processNoiseF=processNoiseF,...)
         
         pb <- .SAMpb(min = 0, max = nosim * (nosim_ci + 1 + is.function(derivedSummarizer)*length(rpArgs)))
         incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
 
-        v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint,deterministicF=deterministicF, knots=knots, ...)
+        v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint,deterministicF=deterministicF, processNoiseF=processNoiseF, knots=knots, ...)
 
         ## Sample to get CIs
         if(nosim_ci > 0){

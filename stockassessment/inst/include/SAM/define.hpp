@@ -44,6 +44,48 @@ SAM_SPECIALIZATION(struct listMatrixFromR<TMBad::ad_aug>);
 
 
 HEADER(
+template<class Type>
+struct listArrayFromR : vector<array<Type> > {
+
+  listArrayFromR();
+  listArrayFromR(int n);
+  listArrayFromR(SEXP x);
+
+  template<class T>
+  inline listArrayFromR(const listArrayFromR<T>& other) : vector<array<Type> >(other.size()) {
+    for(int i = 0; i < other.size(); ++i)
+      (*this)(i) = array<Type>(other(i));
+  }
+};
+       )
+
+SOURCE(
+template<class Type>
+listArrayFromR<Type>::listArrayFromR() : vector<array<Type> >() {};
+	 )
+
+SOURCE(
+template<class Type>
+listArrayFromR<Type>::listArrayFromR(int n) : vector<array<Type> >(n) {};
+	 )
+
+SOURCE(
+	 template<class Type>
+	 listArrayFromR<Type>::listArrayFromR(SEXP x) : vector<array<Type> >(Rf_length(x)){ 
+	   //(*this).resize(LENGTH(x));
+	   for(int i=0; i<Rf_length(x); i++){
+	     SEXP sm = VECTOR_ELT(x, i);
+	     (*this)(i) = tmbutils::asArray<Type>(sm);
+	   }
+	 }
+	 )
+
+SAM_SPECIALIZATION(struct listArrayFromR<double>);
+SAM_SPECIALIZATION(struct listArrayFromR<TMBad::ad_aug>);
+
+
+
+HEADER(
 template <class Type>
 struct dataSet{
   int noFleets;

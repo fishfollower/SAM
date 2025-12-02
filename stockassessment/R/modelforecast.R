@@ -1,3 +1,19 @@
+simVAR <- function(ny, nx, mu, rho, Sigma){
+    X <- matrix(NA,nx,ny)    
+    if(!is.matrix(rho)){
+        rho <- rep(rho, length.out = nx)
+        rho <- diag(rho)
+    }
+    A2 <- kronecker(rho,rho)
+    Sig0 <- matrix(solve(diag(1,nrow(A2))-A2) %*% as.vector(Sigma),nx,nx)
+    x0 <- mu + rmvnorm(1,mu=rep(0,nrow(Sig0)),Sigma=Sig0)
+    X[,1] <- x0
+    for(i in 2:ny){
+        X[,i] <- mu + rho %*% (X[,i-1] - mu) + rmvnorm(1,mu=rep(0,nrow(Sigma)),Sigma=Sigma)
+    }
+    X
+}
+
 ##' Parallel replicate for modelforecast
 ##'
 ##' @param n number of replicates
@@ -489,6 +505,26 @@ modelforecast.sam <- function(fit,
                               useNonLinearityCorrection = (nosim > 0 && !deterministicF),
                               ncores = 1,
                               overwriteBioProcessModel = FALSE,
+                              useManagementLag = FALSE,
+                              assessmentErrorMean_F = 0,
+                              assessmentErrorRho_F = 0,
+                              assessmentErrorSigma_F = 0,
+                              assessmentErrorMean_N = 0,
+                              assessmentErrorRho_N = 0,
+                              assessmentErrorSigma_N = 0,
+                              assessmentErrorMean_M = 0,
+                              assessmentErrorRho_M = 0,
+                              assessmentErrorSigma_M = 0,
+                              assessmentErrorMean_Mat = 0,
+                              assessmentErrorRho_Mat = 0,
+                              assessmentErrorSigma_Mat = 0,
+                              assessmentErrorMean_SW = 0,
+                              assessmentErrorRho_SW = 0,
+                              assessmentErrorSigma_SW = 0,
+                              assessmentErrorMean_CW = 0,
+                              assessmentErrorRho_CW = 0,
+                              assessmentErrorSigma_CW = 0,
+                              implementationErrorRho_F = 0,
                               ...
                               ){
     ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
@@ -781,6 +817,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }else{
         FEstCov <- matrix(0,0,0)
     }
+
+    ## Prep assessment error
     
     args$data$forecast <- list(nYears = as.numeric(nYears),
                                preYears = as.numeric(preYears),
@@ -791,6 +829,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                ##target = as.numeric(target),
                                constraints = cstr,
                                upperbound_constraints = ubcstr,
+                               hasManagementLag = as.numeric(useManagementLag),
                                cfg = newton_config,
                                selectivity = as.numeric(customSel),
                                recModel = as.numeric(recModel),
@@ -804,7 +843,15 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                Fdeviation = rnorm(nrow(pl$logF)),
                                FdeviationCov = diag(1,nrow(pl$logF),nrow(pl$logF)),
                                FEstCov = FEstCov,
-                               useModelLastN = useModelLastN)
+                               useModelLastN = useModelLastN,
+                               assessmentErrorDeviation_F = matrix(0,0,0),#assessmentErrorDeviance_F,
+                               assessmentErrorDeviation_N = matrix(0,0,0),#assessmentErrorDeviance_N,
+                               assessmentErrorDeviation_M = matrix(0,0,0),#assessmentErrorDeviance_M,
+                               assessmentErrorDeviation_Mat = matrix(0,0,0),#assessmentErrorDeviance_Mat,
+                               assessmentErrorDeviation_SW = matrix(0,0,0),#assessmentErrorDeviance_CW)
+                               assessmentErrorDeviation_CW = matrix(0,0,0),
+                               implementationErrorRho_F = implementationErrorRho_F
+                               )
 
     if(any(!is.na(findMSY))){
         args$map$logFScaleMSY <- NULL
@@ -913,6 +960,20 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             }
             obj2$env$data$forecast$Fdeviation[] <- dList0$LogF
             obj2$env$data$forecast$FdeviationCov <- cov[names(est) %in% "LogF",names(est) %in% "LogF"]
+            ## Simulate assessment error
+            ny <- length(obj2$env$data$forecast$forecastYear)
+            nage <- nrow(pl$logN)
+            nflt <- dim(obj2$env$data$catchMeanWeight)[3]
+            toMatr <- function(x, n){
+                if(is.matrix(x)) return(x)
+                diag(rep(x, length.out=n),n,n)
+            }
+            obj2$env$data$forecast$assessmentErrorDeviation_F = simVAR(ny,nrow(pl$logF),assessmentErrorMean_F,assessmentErrorRho_F,toMatr(assessmentErrorSigma_F,nrow(pl$logF)))
+            obj2$env$data$forecast$assessmentErrorDeviation_N = simVAR(ny,nage,assessmentErrorMean_N,assessmentErrorRho_N,toMatr(assessmentErrorSigma_N,nage))
+            obj2$env$data$forecast$assessmentErrorDeviation_M = simVAR(ny,nage,assessmentErrorMean_M,assessmentErrorRho_M,toMatr(assessmentErrorSigma_M,nage))
+            obj2$env$data$forecast$assessmentErrorDeviation_Mat = simVAR(ny,nage,assessmentErrorMean_Mat,assessmentErrorRho_Mat,toMatr(assessmentErrorSigma_Mat,nage))
+            obj2$env$data$forecast$assessmentErrorDeviation_SW = simVAR(ny,nage,assessmentErrorMean_SW,assessmentErrorRho_SW,toMatr(assessmentErrorSigma_SW,nage))
+            obj2$env$data$forecast$assessmentErrorDeviation_CW = simplify2array(replicate(nflt,simVAR(ny,nage,assessmentErrorMean_CW,assessmentErrorRho_CW,toMatr(assessmentErrorSigma_CW,nage)),FALSE))
             v <- obj2$simulate(par = p)
             sniii <<- sniii+1
             incpb()

@@ -986,6 +986,7 @@ deterministicReferencepoints.sam <- function(fit,
     }else if(equilibriumMethod == "EC"){
         pb <- .SAMpb(min = 0, max = nosim_ci + 1, label="Point estimate")
         incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
+        sdr <- NA
         ssdr <- .refpointOptimizer(fit, rpArgs, nosim_ci,ncores, incpb)
     }
     ## Make tables        
@@ -993,10 +994,12 @@ deterministicReferencepoints.sam <- function(fit,
                            c(), #Fsequence,
                            referencepoints)
     attr(res,"equilibriumMethod") <- equilibriumMethod
-       attr(res,"aveYears") <-  aveYearsIn
-        attr(res,"selYears") <- selYearsIn
-        
-        attr(res,"fit") <- fit
+    attr(res,"aveYears") <-  aveYearsIn
+    attr(res,"selYears") <- selYearsIn
+    attr(res,"sdr") <- sdr
+    attr(res,"ssdr") <- ssdr
+    
+    attr(res,"fit") <- fit
     return(res)
 }
 

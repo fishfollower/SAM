@@ -47,6 +47,7 @@ struct forecastSet {
   // vector<Type> target;
   vector<FConstraintList<Type> > constraints;
 	 vector<FConstraintList<Type> > upperbound_constraints;
+	 int hasManagementLag;
   newton::newton_config cfg;
   vector<Type> selectivity;
   vector<recModelType> recModel;
@@ -61,6 +62,13 @@ struct forecastSet {
 	 matrix<Type> FdeviationCov;
 	 matrix<Type> FEstCov;
 	 int useModelLastN;
+	 matrix<Type> assessmentErrorDeviation_F;
+	 matrix<Type> assessmentErrorDeviation_N;
+	 matrix<Type> assessmentErrorDeviation_M;
+	 matrix<Type> assessmentErrorDeviation_Mat;
+	 matrix<Type> assessmentErrorDeviation_SW;
+	 array<Type> assessmentErrorDeviation_CW;
+	 Type implementationErrorRho_F;
 
   matrix<Type> forecastCalculatedMedian;
   vector<Type> forecastCalculatedLogSdCorrection;
@@ -88,6 +96,7 @@ struct forecastSet {
 						// target(x.target),
 						constraints(x.constraints),
 						upperbound_constraints(x.upperbound_constraints),
+						hasManagementLag(x.hasManagementLag),
 						cfg(x.cfg),
 						selectivity(x.selectivity),
 						recModel(x.recModel),
@@ -101,6 +110,13 @@ struct forecastSet {
 						FdeviationCov(x.FdeviationCov),
 						FEstCov(x.FEstCov),
 						useModelLastN(x.useModelLastN),
+						assessmentErrorDeviation_F(x.assessmentErrorDeviation_F),
+						assessmentErrorDeviation_N(x.assessmentErrorDeviation_N),
+						assessmentErrorDeviation_M(x.assessmentErrorDeviation_M),
+						assessmentErrorDeviation_Mat(x.assessmentErrorDeviation_Mat),
+						assessmentErrorDeviation_SW(x.assessmentErrorDeviation_SW),
+						assessmentErrorDeviation_CW(x.assessmentErrorDeviation_CW),
+						implementationErrorRho_F(x.implementationErrorRho_F),
 						forecastCalculatedMedian(x.forecastCalculatedMedian),
 						forecastCalculatedLogSdCorrection(x.forecastCalculatedLogSdCorrection),
 						sel(x.sel),
@@ -207,7 +223,57 @@ SOURCE(
 	   }else{
 	     ICESrec = vector<Type>(0);
 	   }
-    
+
+	   // Add assessment error
+	   dataSet<Type> dat2 = dat;
+	   array<Type> logF2 = logF;
+	   array<Type> logN2 = logN;	   
+	   for(int qq = indx-4; qq <= indx + 4; qq++){
+	     if(assessmentErrorDeviation_SW.cols() > 0)
+	       if(dat2.stockMeanWeight.rows() > qq)
+		 for(int aa = 0; aa < dat2.stockMeanWeight.cols(); ++aa)
+		   dat2.stockMeanWeight(qq,aa) = exp(log(dat.stockMeanWeight(qq,aa)) + assessmentErrorDeviation_SW(aa,qq));
+	     if(assessmentErrorDeviation_CW.cols() > 0)
+	       if(dat2.catchMeanWeight.dim[0] > qq)
+		 for(int aa = 0; aa < dat2.catchMeanWeight.dim[1]; ++aa)
+		   for(int ff = 0; ff < dat2.catchMeanWeight.dim[2]; ++ff)
+		     dat2.catchMeanWeight(qq,aa,ff) = exp(log(dat.catchMeanWeight(qq,aa,ff)) + assessmentErrorDeviation_CW(aa,qq,ff));
+	     if(assessmentErrorDeviation_M.cols() > 0)
+	       if(dat2.natMor.rows() > qq)
+		 for(int aa = 0; aa < dat2.natMor.cols(); ++aa)
+		   dat2.natMor(qq,aa) = exp(log(dat.natMor(qq,aa)) + assessmentErrorDeviation_M(aa,qq));
+	     if(assessmentErrorDeviation_Mat.cols() > 0){
+	       if(dat2.propMat.rows() > qq){
+		 for(int aa = 0; aa < dat2.propMat.cols(); ++aa){
+		   Type mIn = dat.propMat(qq,aa);
+		   Type tmp = log(mIn / (1 - mIn)) + assessmentErrorDeviation_Mat(aa,qq);
+		   dat2.propMat(qq,aa) += 1.0 / (1.0 + exp(-tmp));
+		 }
+	       }
+	     }
+	     if(assessmentErrorDeviation_F.cols() > 0){
+	       if(logF2.cols() > qq){
+		 for(int aa = 0; aa < logF2.rows(); ++aa){
+		   logF2(aa,qq) += assessmentErrorDeviation_F(aa,qq);
+	       }
+	       }
+	     }
+	     if(assessmentErrorDeviation_N.cols() > 0){
+	       if(logN2.cols() > qq){
+		 for(int aa = 0; aa < logN2.rows(); ++aa){
+		   logN2(aa,qq) += assessmentErrorDeviation_N(aa,qq);
+		 }
+	       }
+	     }
+	     // ADD ASSESSMENT ERROR ON LOGITFSEASON
+	   }
+	   
+	   vector<Type> lastAdvice;
+	   if(i > 0){
+	     lastAdvice = forecastCalculatedMedian.col(i-1);
+	   }else{
+	     lastAdvice = logF.col(indx-1);
+	   }
 	   // Calculate CV correction
 	   switch(FModel(i)) { // target is not used. F is a random walk
 	   case asFModel:
@@ -217,7 +283,7 @@ SOURCE(
 	     forecastCalculatedMedian.col(i) = predF;// logF.col(indx - 1);
 	     break;
 	   case constrainedF:
-	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat,conf,par,constraints(i),upperbound_constraints(i),logN,logF,logitFseason, aveYears, fvar, nvar, ICESrec, logSelUse, indx, cfg);    
+	     forecastCalculatedMedian.col(i) = calculateNewFVec(dat2,conf,par,constraints(i),upperbound_constraints(i),logN2,logF2,logitFseason, lastAdvice, aveYears, fvar, nvar, ICESrec, logSelUse, hasManagementLag, indx, cfg);    
 	     break;
 	   case fastFixedF:
 	     forecastCalculatedMedian.col(i) = constraints(i)(0).target + logSelUse;
@@ -280,6 +346,7 @@ SOURCE(
 		  // target(0),
 		  constraints(),
 	 upperbound_constraints(),
+	 hasManagementLag(),
 		  cfg(),
 		  selectivity(),
 		  recModel(),
@@ -294,6 +361,13 @@ SOURCE(
 	 FdeviationCov(),
 	 FEstCov(),
 	 useModelLastN(),
+	 assessmentErrorDeviation_F(),
+	 assessmentErrorDeviation_N(),
+	 assessmentErrorDeviation_M(),
+	 assessmentErrorDeviation_Mat(),
+	 assessmentErrorDeviation_SW(),
+	 assessmentErrorDeviation_CW(),
+	 implementationErrorRho_F(),
 	 forecastCalculatedMedian(),
 		  forecastCalculatedLogSdCorrection(),
 		  sel(),
@@ -317,6 +391,7 @@ SOURCE(
 	     // target = vector<Type>(0);
 	     constraints = vector<FConstraintList<Type> >(0);
 	     upperbound_constraints = vector<FConstraintList<Type> >(0);
+	     hasManagementLag = 0;
 	     cfg = newton::newton_config();
 	     selectivity = vector<Type>(0);
 	     recModel = vector<recModelType>(0);
@@ -331,6 +406,7 @@ SOURCE(
 	     FdeviationCov = matrix<Type>();
 	     FEstCov = matrix<Type>();
 	     useModelLastN = 1;
+	     implementationErrorRho_F = 0;
 	     forecastCalculatedMedian = matrix<Type>(0,0);
 	     forecastCalculatedLogSdCorrection = vector<Type>(0);	     
 	     sel = vector<Type>(0);
@@ -365,6 +441,7 @@ SOURCE(
 	       upperbound_constraints(i) = FConstraintList<Type>(tmp);
 	     }
 	     UNPROTECT(1);
+	     hasManagementLag = (int)*REAL(getListElement(x,"hasManagementLag"));
 	     cfg = newton::newton_config(getListElement(x,"cfg"));
 	     selectivity = asVector<Type>(getListElement(x,"selectivity"));
 	     vector<int> recModelTmp = asVector<int>(getListElement(x,"recModel"));
@@ -385,6 +462,13 @@ SOURCE(
 	     FdeviationCov = asMatrix<Type>(getListElement(x,"FdeviationCov"));
 	     FEstCov = asMatrix<Type>(getListElement(x,"FEstCov"));
 	     useModelLastN = Rf_asInteger(getListElement(x,"useModelLastN"));
+	     assessmentErrorDeviation_F = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_F"));
+	     assessmentErrorDeviation_N = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_N"));
+	     assessmentErrorDeviation_M = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_M"));
+	     assessmentErrorDeviation_Mat = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_Mat"));
+	     assessmentErrorDeviation_SW = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_SW"));
+	     assessmentErrorDeviation_CW = asArray<Type>(getListElement(x,"assessmentErrorDeviation_CW"));
+	     implementationErrorRho_F = (Type)*REAL(getListElement(x,"implementationErrorRho_F"));
 	   }
 	 }
 	 );

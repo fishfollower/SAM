@@ -22,19 +22,16 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
   // int stateDimF=logF.dim[0];
   // int timeSteps=logF.dim[1];
   // int stateDimN=conf.keyLogFsta.dim[1];
-
   // Setup for F
   matrix<Type> fvar = get_fvar(dat, conf, par, logF);
   if(forecast.FEstCov.cols() > 0)
     fvar = forecast.FEstCov;
   MVMIX_t<Type> neg_log_densityF(fvar,Type(conf.fracMixF));
-
   // Setup for N
   matrix<Type> nvar = get_nvar(dat, conf, par, logN, logF);
   vector<Type> fracMixN(conf.fracMixN.size());
   for(int i=0; i<conf.fracMixN.size(); ++i){fracMixN(i)=conf.fracMixN(i);}
   MVMIX_t<Type> neg_log_densityN(nvar,fracMixN);
-
   int nYears = forecast.nYears;
   for(int i = 0; i < nYears; ++i){
     int indx = forecast.preYears + i;//forecast.forecastYear.size() - nYears + i;
@@ -47,7 +44,11 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
       if(forecast.fsdTimeScaleModel(i) == forecast.fixedDeviation){
 	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i);
       }else{
-	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + neg_log_densityF.simulate() * timeScale;
+	vector<Type> Fmu = (vector<Type>)forecast.forecastCalculatedMedian.col(i);
+	if(fabs(forecast.implementationErrorRho_F) > 1e-8 && i > 0){
+	  Fmu = (vector<Type>)forecast.forecastCalculatedMedian.col(i) + forecast.implementationErrorRho_F * (logF.col(indx-1) - (vector<Type>)forecast.forecastCalculatedMedian.col(i));
+	}
+	logF.col(indx) = Fmu + neg_log_densityF.simulate() * timeScale;
       }
       mort.updateYear(dat, conf, par, logF, logitFseason,indx);
     }
