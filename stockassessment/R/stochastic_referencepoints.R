@@ -499,7 +499,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 MT$monotone <- "n"
                 MT$formula <- ~ibc(F,knots)
                 if(what %in% c("logSPR","logSe","logLifeExpectancy")){
-                    MT$formula <- ~iibc(F,5)
+                    MT$formula <- ~iibc(F,knots)
                     MT$monotone <- "d"
                 }else if(what %in% c("logYearsLost")){
                     MT$formula <- ~iibc(F,knots)
