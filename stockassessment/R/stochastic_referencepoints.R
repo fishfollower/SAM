@@ -256,23 +256,23 @@ predict.rpscurvefit <- function(x,newF,...){
     
     do.call("rbind",lapply(logf, function(lf){
         v <- doSim(sprintf(constraint,exp(lf)))
-        logRe <- tail(v$logN[1,],nTail)
-        logSe <- tail(v$logssb,nTail)
-        logSPR <- tail(v$logEmpiricalSPR,nTail)
+        logRe <- mean(tail(v$logN[1,],nTail))
+        logSe <- mean(tail(v$logssb,nTail))
+        logSPR <- mean(tail(v$logEmpiricalSPR,nTail))
         if(ct == 0){
-            logYe <- tail(v$logCatch,nTail)
-            logYPR <- tail(v$logEmpiricalYPR,nTail)
+            logYe <- mean(tail(v$logCatch,nTail))
+            logYPR <- mean(tail(v$logEmpiricalYPR,nTail))
         }else if(ct == 1){
-            logYe <- tail(v$logLand,nTail)
-            logYPR <- tail(v$logEmpiricalYPR_L,nTail)
+            logYe <- mean(tail(v$logLand,nTail))
+            logYPR <- mean(tail(v$logEmpiricalYPR_L,nTail))
         }else{
-            logYe <- tail(log(exp(v$logCatch)-(v$logLand)),nTail)
-            logYPR <- tail(v$logEmpiricalYPR_D,nTail)
+            logYe <- mean(tail(log(exp(v$logCatch)-(v$logLand)),nTail))
+            logYPR <- mean(tail(v$logEmpiricalYPR_D,nTail))
         }
         logLE <- NA_real_ # tail(v$logLifeExpectancy,nTail)
         logYL <- NA_real_ #tail(v$logYLTF,nTail)
 
-        res <- list(logF = rep(lf,length.out = nTail),
+        res <- list(logF = mean(rep(lf,length.out = nTail)),
                 logYPR = logYPR,
                 logSPR = logSPR,
                 logSe = logSe,
