@@ -954,7 +954,6 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         sniii <- 1
         doSim <- function(re_constraint = NULL, re_pl = NULL){
             obj2 <- obj
-            obj2$retape()
             if(!is.null(re_constraint)){
                 ## Check length of constraints?
                 cstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
@@ -1018,7 +1017,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             obj2$env$data$forecast$assessmentErrorDeviation_Mat = simVAR(ny,nage,assessmentErrorMean_Mat,assessmentErrorRho_Mat,toMatr(assessmentErrorSigma_Mat,nage))
             obj2$env$data$forecast$assessmentErrorDeviation_SW = simVAR(ny,nage,assessmentErrorMean_SW,assessmentErrorRho_SW,toMatr(assessmentErrorSigma_SW,nage))
             obj2$env$data$forecast$assessmentErrorDeviation_CW = simplify2array(replicate(nflt,simVAR(ny,nage,assessmentErrorMean_CW,assessmentErrorRho_CW,toMatr(assessmentErrorSigma_CW,nage)),FALSE))
+            ##obj2$retape()              
             v <- obj2$simulate(par = p)
+            attr(v,"re_constraint") <- re_constraint
+            attr(v,"obj") <- obj2
             sniii <<- sniii+1
             incpb()
             return(v)

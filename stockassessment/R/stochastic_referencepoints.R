@@ -238,7 +238,7 @@ predict.rpscurvefit <- function(x,newF,...){
     ## f2$sdrep <- fit$sdrep[c("estY","covY")]
     ## class(f2) <- "sam"
     if(is.null(doSim))
-        doSim <- .getDoSim(logf[1], fit, nYears, aveYears, selYears, pl, logCustomSel, deterministicF, ...)
+        doSim <- .getDoSim(max(logf)+0.2, fit, nYears, aveYears, selYears, pl, logCustomSel, deterministicF, ...)
     if(isTRUE(all.equal(pl,fit$pl))){
         re_pl <- NULL
     }else{
@@ -959,7 +959,7 @@ stochasticReferencepoints.sam <- function(fit,
         if (!.checkFullDerived(fit) && any(sapply(rpArgs, function(x) x$rpType %in% c(3,4,5))))
             stop("The reference points specified needs a fit with all derived values. Fit with `fullDerived=TRUE` or update with `getAllDerivedValues`.")
 
-        doSim <- .getDoSim(logf1=tail(log(fbartable(fit)[,1]),1),
+        doSim <- .getDoSim(logf1= max(Frange)+0.2,##tail(log(fbartable(fit)[,1]),1),
                            fit=fit, nYears = nYears, aveYears = aveYears, selYears = selYears, pl = fit$pl, constraint=constraint,deterministicF=deterministicF, processNoiseF=processNoiseF,...)
         
         pb <- .SAMpb(min = 0, max = nosim * (nosim_ci + 1 + is.function(derivedSummarizer)*length(rpArgs)))
