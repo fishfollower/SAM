@@ -26,10 +26,10 @@ simVAR <- function(ny, nx, mu, rho, Sigma){
 ##' @return output
 ##' @importFrom parallel makeCluster clusterSetRNGStream parSapply stopCluster
 ##' @importFrom utils sessionInfo
-.SAM_replicate <- function(n, expr, simplify = "array", ncores = 1, env = parent.frame(n+1), par_precall = NULL, type = ifelse(.Platform$OS.type == "unix","mclapply","PSOCK")){
+.SAM_replicate <- function(n, expr, simplify = "array", ncores = 1, env = parent.frame(n+1), par_precall = NULL, type = "FORK"){
     if(ncores > 1){
         if(type == "mclapply"){
-            v <- parallel::mclapply(integer(n),  eval(substitute(function(...) expr),env))
+            v <- parallel::mclapply(integer(n),  eval(substitute(function(...) expr),env), mc.cores=ncores)
             if (!isFALSE(simplify)) 
                 v <- simplify2array(v, higher = (simplify == "array"))
         }else{
@@ -68,8 +68,50 @@ simVAR <- function(ny, nx, mu, rho, Sigma){
                     simplify = simplify)
     }
     v
-
 }
+
+
+.SAM_lapply <- function(X, FUN,  ncores = 1, env = parent.frame(n+1), par_precall = NULL, type = ifelse(.Platform$OS.type == "unix","mclapply","PSOCK"),...){
+    if(ncores > 1){
+        if(type == "mclapply"){
+            v <- parallel::mclapply(X,  FUN, ..., mc.cores=ncores)           
+        }else{
+            cl <- parallel::makeCluster(ncores,outfile='', type = type)
+            on.exit(parallel::stopCluster(cl))
+            parallel::clusterSetRNGStream(cl)
+            eval(expression(2+2),env)       
+            ##parallel::clusterExport(cl, "env", environment())
+            ## Make everything available on all nodes
+            si <- utils::sessionInfo()
+            e0 <- environment()
+            repeat{
+                parallel::clusterExport(cl,
+                                        ls(all.names=TRUE,
+                                           envir=e0),
+                                        envir=e0)
+                if(identical(e0, globalenv()))
+                    break;
+                e0 <- parent.env(environment())
+            }
+            ## Load base packages
+            if(!is.null(si$basePkgs))
+                parallel::clusterEvalQ(cl, sapply(names(si$basePkgs),require, character.only=TRUE))
+            if(!is.null(si$otherPkgs))
+                parallel::clusterEvalQ(cl, sapply(names(si$otherPkgs),require, character.only=TRUE))
+            if(!is.null(par_precall)){
+                cat("Retaping...\n")
+                parallel::clusterEvalQ(cl, eval(par_precall,env))
+            }
+            cat("Ready for results...\n")
+            v <- parallel::parLapply(cl, X, FUN,...)
+        }
+    }else{
+        v <- lapply(X, FUN, ...)
+    }
+    v
+}
+
+
 
 .forecastDefault <- function(){
     ## list(specification = "DEFAULT_NOT_TO_BE_USED",
@@ -504,6 +546,7 @@ modelforecast.sam <- function(fit,
                               custom_pl = NULL,
                               useNonLinearityCorrection = (nosim > 0 && !deterministicF),
                               ncores = 1,
+                              mc.type = "mclapply",
                               overwriteBioProcessModel = FALSE,
                               useManagementLag = FALSE,
                               assessmentErrorMean_F = 0,
@@ -911,6 +954,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         sniii <- 1
         doSim <- function(re_constraint = NULL, re_pl = NULL){
             obj2 <- obj
+            obj2$retape()
             if(!is.null(re_constraint)){
                 ## Check length of constraints?
                 cstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
@@ -981,7 +1025,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         }
         if(as.integer(returnObj)==2)
             return(doSim)
-        simvals <- .SAM_replicate(nosim, doSim(), simplify = FALSE, ncores = ncores, env = environment(doSim), par_precall = expression(obj$retape()))
+        simvals <- .SAM_replicate(nosim, doSim(), simplify = FALSE, ncores = ncores, env = environment(doSim), par_precall = expression(obj$retape()), type = mc.type)
         simlist <- vector("list",length(FModel) + 1)
         for(i in 0:(length(FModel))){
             y<-year.base+i
