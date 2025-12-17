@@ -287,6 +287,7 @@ struct confSet{
   matrix<int> keyCatchWeightObsVar;
   int matureModel;
   vector<int> keyMatureMean;
+  vector<int> keyMatureObsVar;
   int mortalityModel;
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
@@ -353,6 +354,7 @@ SOURCE(
 	 keyCatchWeightObsVar = asMatrix<int>(getListElement(x,"keyCatchWeightObsVar", &Rf_isMatrix));
 	 matureModel = Rf_asInteger(getListElement(x,"matureModel", &isNumericScalar));
 	 keyMatureMean = asVector<int>(getListElement(x,"keyMatureMean", &Rf_isNumeric));
+	 keyMatureObsVar = asVector<int>(getListElement(x,"keyMatureObsVar", &Rf_isNumeric));
 	 mortalityModel = Rf_asInteger(getListElement(x,"mortalityModel", &isNumericScalar));
 	 keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean", &Rf_isNumeric));
 	 keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar", &Rf_isNumeric));
@@ -413,6 +415,7 @@ SOURCE(
 	 keyCatchWeightObsVar(),
 	 matureModel(),
 	 keyMatureMean(),
+	 keyMatureObsVar(),
 	 mortalityModel(),
 	 keyMortalityMean(),
 	 keyMortalityObsVar(),
@@ -473,6 +476,7 @@ SOURCE(
 	 keyCatchWeightObsVar(other.keyCatchWeightObsVar),
 	 matureModel(other.matureModel),
 	 keyMatureMean(other.keyMatureMean),
+	 keyMatureObsVar(other.keyMatureObsVar),
 	 mortalityModel(other.mortalityModel),
 	 keyMortalityMean(other.keyMortalityMean),
 	 keyMortalityObsVar(other.keyMortalityObsVar),

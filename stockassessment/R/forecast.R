@@ -11,6 +11,9 @@ rmvnorm <- function(n = 1, mu, Sigma, pivot = FALSE){
     if(!all(dim(Sigma) == c(p, p))){
         stop("incompatible arguments")
     }
+    if(any(!is.finite(Sigma))){       
+        Sigma[!is.finite(Sigma) & row(Sigma) != col(Sigma)] <- 0
+    }
     idx <- diag(Sigma) > .Machine$double.xmin 
     L <- matrix(0,p,p)
     if(any(idx)){

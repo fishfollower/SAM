@@ -862,7 +862,12 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }
 
     ## Prep assessment error
-    
+    useAssessmentError <- as.integer(any(range(assessmentErrorSigma_F) > 0) ||
+                                     any(range(assessmentErrorSigma_N) > 0) ||
+                                     any(range(assessmentErrorSigma_Mat) > 0) ||
+                                     any(range(assessmentErrorSigma_M) > 0) ||
+                                     any(range(assessmentErrorSigma_SW) > 0) ||
+                                     any(range(assessmentErrorSigma_CW) > 0))
     args$data$forecast <- list(nYears = as.numeric(nYears),
                                preYears = as.numeric(preYears),
                                nCatchAverageYears = as.numeric(nCatchAverageYears),
@@ -887,6 +892,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                FdeviationCov = diag(1,nrow(pl$logF),nrow(pl$logF)),
                                FEstCov = FEstCov,
                                useModelLastN = useModelLastN,
+                               useAssessmentError = useAssessmentError,
                                assessmentErrorDeviation_F = matrix(0,0,0),#assessmentErrorDeviance_F,
                                assessmentErrorDeviation_N = matrix(0,0,0),#assessmentErrorDeviance_N,
                                assessmentErrorDeviation_M = matrix(0,0,0),#assessmentErrorDeviance_M,
@@ -1011,12 +1017,14 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 if(is.matrix(x)) return(x)
                 diag(rep(x, length.out=n),n,n)
             }
-            obj2$env$data$forecast$assessmentErrorDeviation_F = simVAR(ny,nrow(pl$logF),assessmentErrorMean_F,assessmentErrorRho_F,toMatr(assessmentErrorSigma_F,nrow(pl$logF)))
-            obj2$env$data$forecast$assessmentErrorDeviation_N = simVAR(ny,nage,assessmentErrorMean_N,assessmentErrorRho_N,toMatr(assessmentErrorSigma_N,nage))
-            obj2$env$data$forecast$assessmentErrorDeviation_M = simVAR(ny,nage,assessmentErrorMean_M,assessmentErrorRho_M,toMatr(assessmentErrorSigma_M,nage))
-            obj2$env$data$forecast$assessmentErrorDeviation_Mat = simVAR(ny,nage,assessmentErrorMean_Mat,assessmentErrorRho_Mat,toMatr(assessmentErrorSigma_Mat,nage))
-            obj2$env$data$forecast$assessmentErrorDeviation_SW = simVAR(ny,nage,assessmentErrorMean_SW,assessmentErrorRho_SW,toMatr(assessmentErrorSigma_SW,nage))
-            obj2$env$data$forecast$assessmentErrorDeviation_CW = simplify2array(replicate(nflt,simVAR(ny,nage,assessmentErrorMean_CW,assessmentErrorRho_CW,toMatr(assessmentErrorSigma_CW,nage)),FALSE))
+            if(useAssessmentError){
+                obj2$env$data$forecast$assessmentErrorDeviation_F = simVAR(ny,nrow(pl$logF),assessmentErrorMean_F,assessmentErrorRho_F,toMatr(assessmentErrorSigma_F,nrow(pl$logF)))
+                obj2$env$data$forecast$assessmentErrorDeviation_N = simVAR(ny,nage,assessmentErrorMean_N,assessmentErrorRho_N,toMatr(assessmentErrorSigma_N,nage))
+                obj2$env$data$forecast$assessmentErrorDeviation_M = simVAR(ny,nage,assessmentErrorMean_M,assessmentErrorRho_M,toMatr(assessmentErrorSigma_M,nage))
+                obj2$env$data$forecast$assessmentErrorDeviation_Mat = simVAR(ny,nage,assessmentErrorMean_Mat,assessmentErrorRho_Mat,toMatr(assessmentErrorSigma_Mat,nage))
+                obj2$env$data$forecast$assessmentErrorDeviation_SW = simVAR(ny,nage,assessmentErrorMean_SW,assessmentErrorRho_SW,toMatr(assessmentErrorSigma_SW,nage))
+                obj2$env$data$forecast$assessmentErrorDeviation_CW = simplify2array(replicate(nflt,simVAR(ny,nage,assessmentErrorMean_CW,assessmentErrorRho_CW,toMatr(assessmentErrorSigma_CW,nage)),FALSE))
+            }
             ##obj2$retape()              
             v <- obj2$simulate(par = p)
             attr(v,"re_constraint") <- re_constraint

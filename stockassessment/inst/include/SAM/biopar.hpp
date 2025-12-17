@@ -265,7 +265,7 @@ template <class Type>
         if(!isNA(mo(i,j))){
 
  	  //Francisco Cribari-Neto, Achim Zeileis (2010). "Beta Regression in R."
-	  prec=invlogit(par.logSdMO(0))*1.0e3;
+	  prec=invlogit(par.logSdMO(conf.keyMatureObsVar(j)))*1.0e3;
 	  a = m*prec;                 //
           b = (Type(1)-m)*prec;       //v=mu*(1-mu)/(1+precision)
 	  //v=m*(1-m)/(1+exp(logPrecision));

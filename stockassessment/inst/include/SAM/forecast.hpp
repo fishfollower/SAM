@@ -62,6 +62,7 @@ struct forecastSet {
 	 matrix<Type> FdeviationCov;
 	 matrix<Type> FEstCov;
 	 int useModelLastN;
+	 int useAssessmentError;
 	 matrix<Type> assessmentErrorDeviation_F;
 	 matrix<Type> assessmentErrorDeviation_N;
 	 matrix<Type> assessmentErrorDeviation_M;
@@ -110,12 +111,13 @@ struct forecastSet {
 						FdeviationCov(x.FdeviationCov),
 						FEstCov(x.FEstCov),
 						useModelLastN(x.useModelLastN),
+						useAssessmentError(x.useAssessmentError),
 						assessmentErrorDeviation_F(x.assessmentErrorDeviation_F),
 						assessmentErrorDeviation_N(x.assessmentErrorDeviation_N),
 						assessmentErrorDeviation_M(x.assessmentErrorDeviation_M),
 						assessmentErrorDeviation_Mat(x.assessmentErrorDeviation_Mat),
 						assessmentErrorDeviation_SW(x.assessmentErrorDeviation_SW),
-						assessmentErrorDeviation_CW(x.assessmentErrorDeviation_CW),
+						assessmentErrorDeviation_CW(x.assessmentErrorDeviation_CW,x.assessmentErrorDeviation_CW.dim),
 						implementationErrorRho_F(x.implementationErrorRho_F),
 						forecastCalculatedMedian(x.forecastCalculatedMedian),
 						forecastCalculatedLogSdCorrection(x.forecastCalculatedLogSdCorrection),
@@ -227,45 +229,47 @@ SOURCE(
 	   // Add assessment error
 	   dataSet<Type> dat2 = dat;
 	   array<Type> logF2 = logF;
-	   array<Type> logN2 = logN;	   
-	   for(int qq = indx-4; qq <= indx + 4; qq++){
-	     if(assessmentErrorDeviation_SW.cols() > 0)
-	       if(dat2.stockMeanWeight.rows() > qq)
-		 for(int aa = 0; aa < dat2.stockMeanWeight.cols(); ++aa)
-		   dat2.stockMeanWeight(qq,aa) = exp(log(dat.stockMeanWeight(qq,aa)) + assessmentErrorDeviation_SW(aa,qq));
-	     if(assessmentErrorDeviation_CW.cols() > 0)
-	       if(dat2.catchMeanWeight.dim[0] > qq)
-		 for(int aa = 0; aa < dat2.catchMeanWeight.dim[1]; ++aa)
-		   for(int ff = 0; ff < dat2.catchMeanWeight.dim[2]; ++ff)
-		     dat2.catchMeanWeight(qq,aa,ff) = exp(log(dat.catchMeanWeight(qq,aa,ff)) + assessmentErrorDeviation_CW(aa,qq,ff));
-	     if(assessmentErrorDeviation_M.cols() > 0)
-	       if(dat2.natMor.rows() > qq)
-		 for(int aa = 0; aa < dat2.natMor.cols(); ++aa)
-		   dat2.natMor(qq,aa) = exp(log(dat.natMor(qq,aa)) + assessmentErrorDeviation_M(aa,qq));
-	     if(assessmentErrorDeviation_Mat.cols() > 0){
-	       if(dat2.propMat.rows() > qq){
-		 for(int aa = 0; aa < dat2.propMat.cols(); ++aa){
-		   Type mIn = dat.propMat(qq,aa);
-		   Type tmp = log(mIn / (1 - mIn)) + assessmentErrorDeviation_Mat(aa,qq);
-		   dat2.propMat(qq,aa) += 1.0 / (1.0 + exp(-tmp));
+	   array<Type> logN2 = logN;
+	   if(useAssessmentError){
+	     for(int qq = indx-4; qq <= indx + 4; qq++){
+	       if(assessmentErrorDeviation_SW.cols() > 0)
+		 if(dat2.stockMeanWeight.rows() > qq)
+		   for(int aa = 0; aa < dat2.stockMeanWeight.cols(); ++aa)
+		     dat2.stockMeanWeight(qq,aa) = exp(log(dat.stockMeanWeight(qq,aa)) + assessmentErrorDeviation_SW(aa,qq));
+	       if(assessmentErrorDeviation_CW.cols() > 0)
+		 if(dat2.catchMeanWeight.dim[0] > qq)
+		   for(int aa = 0; aa < dat2.catchMeanWeight.dim[1]; ++aa)
+		     for(int ff = 0; ff < dat2.catchMeanWeight.dim[2]; ++ff)
+		       dat2.catchMeanWeight(qq,aa,ff) = exp(log(dat.catchMeanWeight(qq,aa,ff)) + assessmentErrorDeviation_CW(aa,qq,ff));
+	       if(assessmentErrorDeviation_M.cols() > 0)
+		 if(dat2.natMor.rows() > qq)
+		   for(int aa = 0; aa < dat2.natMor.cols(); ++aa)
+		     dat2.natMor(qq,aa) = exp(log(dat.natMor(qq,aa)) + assessmentErrorDeviation_M(aa,qq));
+	       if(assessmentErrorDeviation_Mat.cols() > 0){
+		 if(dat2.propMat.rows() > qq){
+		   for(int aa = 0; aa < dat2.propMat.cols(); ++aa){
+		     Type mIn = dat.propMat(qq,aa);
+		     Type tmp = log(mIn / (1 - mIn)) + assessmentErrorDeviation_Mat(aa,qq);
+		     dat2.propMat(qq,aa) += 1.0 / (1.0 + exp(-tmp));
+		   }
 		 }
 	       }
-	     }
-	     if(assessmentErrorDeviation_F.cols() > 0){
-	       if(logF2.cols() > qq){
-		 for(int aa = 0; aa < logF2.rows(); ++aa){
-		   logF2(aa,qq) += assessmentErrorDeviation_F(aa,qq);
-	       }
-	       }
-	     }
-	     if(assessmentErrorDeviation_N.cols() > 0){
-	       if(logN2.cols() > qq){
-		 for(int aa = 0; aa < logN2.rows(); ++aa){
-		   logN2(aa,qq) += assessmentErrorDeviation_N(aa,qq);
+	       if(assessmentErrorDeviation_F.cols() > 0){
+		 if(logF2.cols() > qq){
+		   for(int aa = 0; aa < logF2.rows(); ++aa){
+		     logF2(aa,qq) += assessmentErrorDeviation_F(aa,qq);
+		   }
 		 }
 	       }
+	       if(assessmentErrorDeviation_N.cols() > 0){
+		 if(logN2.cols() > qq){
+		   for(int aa = 0; aa < logN2.rows(); ++aa){
+		     logN2(aa,qq) += assessmentErrorDeviation_N(aa,qq);
+		   }
+		 }
+	       }
+	       // ADD ASSESSMENT ERROR ON LOGITFSEASON
 	     }
-	     // ADD ASSESSMENT ERROR ON LOGITFSEASON
 	   }
 	   
 	   vector<Type> lastAdvice;
@@ -279,7 +283,7 @@ SOURCE(
 	   case asFModel:
 	     if(fsdTimeScaleModel(i) != oneScale)
 	       Rf_warning("F time scale model is ignored when the F model is used for forecasting.");
-	     forecastCalculatedLogSdCorrection(i) = 1.0;
+	     forecastCalculatedLogSdCorrection(i) = log(1.0);
 	     forecastCalculatedMedian.col(i) = predF;// logF.col(indx - 1);
 	     break;
 	   case constrainedF:
@@ -310,18 +314,18 @@ SOURCE(
 	   switch(fsdTimeScaleModel(i)) {
 	   case rwScale:
 	     if(!sim){
-	       forecastCalculatedLogSdCorrection(i) = sqrt(y+1);
+	       forecastCalculatedLogSdCorrection(i) = log(sqrt(y+1));
 	     }else{
-	       forecastCalculatedLogSdCorrection(i) = 1.0;
+	       forecastCalculatedLogSdCorrection(i) = log(1.0);
 	       for(int j = 0; j < forecastCalculatedMedian.rows(); ++j)
 		 forecastCalculatedMedian(j,i) += cumEpsilon(j,i);
 	     }
 	     break;
 	   case oneScale:
-	     forecastCalculatedLogSdCorrection(i) = 1.0;
+	     forecastCalculatedLogSdCorrection(i) = log(1.0);
 	     break;
 	   case zeroScale:
-	     forecastCalculatedLogSdCorrection(i) = 1e-6;
+	     forecastCalculatedLogSdCorrection(i) = log(1e-6);
 	     break;
 	   case fixedDeviation:
 	     forecastCalculatedMedian.col(i) = (vector<Type>)forecastCalculatedMedian.col(i) + Fdeviation;
@@ -361,6 +365,7 @@ SOURCE(
 	 FdeviationCov(),
 	 FEstCov(),
 	 useModelLastN(),
+	 useAssessmentError(),
 	 assessmentErrorDeviation_F(),
 	 assessmentErrorDeviation_N(),
 	 assessmentErrorDeviation_M(),
@@ -378,7 +383,7 @@ SOURCE(
 
 SOURCE(
 	 template <class Type>
-	 forecastSet<Type>::forecastSet(SEXP x) {
+	 forecastSet<Type>::forecastSet(SEXP x) : forecastSet<Type>() {
 	   // If nYears is NULL or 0; only set nYears to 0 -> no forecast
 	   if(Rf_isNull(getListElement(x,"nYears")) ||
 	      (int)*REAL(getListElement(x,"nYears")) == 0){
@@ -406,6 +411,15 @@ SOURCE(
 	     FdeviationCov = matrix<Type>();
 	     FEstCov = matrix<Type>();
 	     useModelLastN = 1;
+	     useAssessmentError = 0;
+	     assessmentErrorDeviation_F = matrix<Type>(0,0);
+	     assessmentErrorDeviation_N = matrix<Type>(0,0);
+	     assessmentErrorDeviation_M = matrix<Type>(0,0);
+	     assessmentErrorDeviation_Mat = matrix<Type>(0,0);
+	     assessmentErrorDeviation_SW = matrix<Type>(0,0);
+	     vector<int> d(3);
+	     d << 0,0,0;
+	     assessmentErrorDeviation_CW = array<Type>(d);
 	     implementationErrorRho_F = 0;
 	     forecastCalculatedMedian = matrix<Type>(0,0);
 	     forecastCalculatedLogSdCorrection = vector<Type>(0);	     
@@ -462,6 +476,7 @@ SOURCE(
 	     FdeviationCov = asMatrix<Type>(getListElement(x,"FdeviationCov"));
 	     FEstCov = asMatrix<Type>(getListElement(x,"FEstCov"));
 	     useModelLastN = Rf_asInteger(getListElement(x,"useModelLastN"));
+	     useAssessmentError = Rf_asInteger(getListElement(x,"useAssessmentError"));
 	     assessmentErrorDeviation_F = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_F"));
 	     assessmentErrorDeviation_N = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_N"));
 	     assessmentErrorDeviation_M = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_M"));
@@ -469,6 +484,12 @@ SOURCE(
 	     assessmentErrorDeviation_SW = asMatrix<Type>(getListElement(x,"assessmentErrorDeviation_SW"));
 	     assessmentErrorDeviation_CW = asArray<Type>(getListElement(x,"assessmentErrorDeviation_CW"));
 	     implementationErrorRho_F = (Type)*REAL(getListElement(x,"implementationErrorRho_F"));
+	     forecastCalculatedMedian = matrix<Type>(0,0);
+	     forecastCalculatedLogSdCorrection = vector<Type>(0);	     
+	     sel = vector<Type>(0);
+	     selFull = vector<Type>(0);
+	     initialFbar = 0;
+	     cumEpsilon = matrix<Type>(0,0);
 	   }
 	 }
 	 );

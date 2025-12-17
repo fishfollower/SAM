@@ -179,7 +179,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
 	// Forecast
 	int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
-	Type timeScale = forecast.forecastCalculatedLogSdCorrection(forecastIndex);
+	Type timeScale = exp(forecast.forecastCalculatedLogSdCorrection(forecastIndex));
 
 	nll += neg_log_densityF((logF.col(i) - (vector<Type>)forecast.forecastCalculatedMedian.col(forecastIndex)) / timeScale) + log(timeScale) * Type(stateDimF);
 

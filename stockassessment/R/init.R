@@ -160,7 +160,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$logPhiMO=if(conf$matureModel==0){numeric(0)}else{numeric(conf$matureModel+1)}
   ret$logSdProcLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
   ret$meanLogitMO=if(conf$matureModel==0){numeric(0)}else{numeric(max(conf$keyMatureMean,na.rm=TRUE)+1)}
-  ret$logSdMO=if(conf$matureModel==0){numeric(0)}else{numeric(1)}
+  ret$logSdMO=if(conf$matureModel==0){numeric(0)}else{numeric(max(conf$keyMatureObsVar,na.rm=TRUE)+1)}
 
   ret$logPhiNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(conf$mortalityModel+1)}
   ret$logSdProcLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(1)}

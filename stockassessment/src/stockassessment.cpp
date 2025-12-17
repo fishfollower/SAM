@@ -144,6 +144,7 @@ Type objective_function<Type>::operator() ()
   DATA_IMATRIX(keyCatchWeightObsVar); confset.keyCatchWeightObsVar=keyCatchWeightObsVar; 
   DATA_INTEGER(matureModel); confset.matureModel=matureModel;
   DATA_IVECTOR(keyMatureMean); confset.keyMatureMean=keyMatureMean;
+  DATA_IVECTOR(keyMatureObsVar); confset.keyMatureObsVar=keyMatureObsVar;
   DATA_INTEGER(mortalityModel); confset.mortalityModel=mortalityModel;
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
