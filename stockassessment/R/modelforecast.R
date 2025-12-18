@@ -715,7 +715,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         gsub("([^|]+)(\\|.+)","\\1",x)
     }
     getBound <- function(x){
-        gsub("(.+\\|)(.+)","\\2",x)
+        ifelse(!grepl("\\|",x),"",gsub("(.+\\|)(.+)","\\2",x))
     }
     cstr[!is.na(constraints)] <- .parseForecast(removeBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)
     ubcstr[!is.na(constraints)] <- .parseForecast(getBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection, isUpper = TRUE)
