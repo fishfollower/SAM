@@ -916,6 +916,7 @@ deterministicReferencepoints.sam <- function(fit,
                                              equilibriumMethod = c("AD","EC"),
                                              nosim_ci = 200,
                                              ncores = 1,
+                                             addSequence = FALSE,
                                              ...){
 
     equilibriumMethod <- match.arg(equilibriumMethod)
@@ -957,7 +958,8 @@ deterministicReferencepoints.sam <- function(fit,
                 logN0=numeric(0),
                 stochasticType=0,
                 q=NA_real_)
-    ##rpArgs <- c(list(rp0), rpArgs)
+    if(addSequence)
+        rpArgs <- c(list(rp0), rpArgs)
     
     if(equilibriumMethod == "AD"){
         ## Make list for TMB
