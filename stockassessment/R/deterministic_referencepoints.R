@@ -37,7 +37,7 @@ recruitmentProperties <- function(fit){
 .logFbar <- function(logF, selYears, conf){
     frng <- conf$fbarRange[1]:conf$fbarRange[2]
     totalF <- exp(.logTotalF(logF,conf))[,selYears+1,drop=FALSE]
-    log(sum(colMeans(totalF[frng-conf$minAge+1,,drop=FALSE])))
+    log(sum(colMeans(totalF[frng-conf$minAge+1,,drop=FALSE]))) - log(length(selYears))
 }
 
 .logFtoSel <- function(logF, selYears, conf){
@@ -939,6 +939,7 @@ deterministicReferencepoints.sam <- function(fit,
         stop("selYears has years without data.")
 
     ## Parse input reference points
+    cat(selYears,"\n\n")
     rpArgs <- Reduce(.refpointMerger,
                      lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=numeric(0),stochasticType=0,q=NA_real_),
                      list())
