@@ -51,8 +51,8 @@ struct forecastSet {
   newton::newton_config cfg;
   vector<Type> selectivity;
   vector<recModelType> recModel;
-  Type logRecruitmentMedian;
-  Type logRecruitmentVar;
+  vector<Type> logRecruitmentMedian;
+  vector<Type> logRecruitmentVar;
   vector<FSdTimeScaleModel> fsdTimeScaleModel;
   vector<int> simFlag;
   vector<Type> hcrConf;
@@ -220,8 +220,8 @@ SOURCE(
 	   vector<Type> ICESrec;
 	   if(recModel(i) == useIID){
 	     ICESrec = vector<Type>(2);
-	     ICESrec(0) = logRecruitmentMedian;
-	     ICESrec(1) = sqrt(logRecruitmentVar);
+	     ICESrec(0) = logRecruitmentMedian(i);
+	     ICESrec(1) = sqrt(logRecruitmentVar(i));
 	   }else{
 	     ICESrec = vector<Type>(0);
 	   }
@@ -400,8 +400,8 @@ SOURCE(
 	     cfg = newton::newton_config();
 	     selectivity = vector<Type>(0);
 	     recModel = vector<recModelType>(0);
-	     logRecruitmentMedian = 0;
-	     logRecruitmentVar = 0;
+	     logRecruitmentMedian = vector<Type>(0);
+	     logRecruitmentVar = vector<Type>(0);
 	     fsdTimeScaleModel = vector<FSdTimeScaleModel>(0);
 	     simFlag = vector<int>(0);
 	     hcrConf = vector<Type>(0);
@@ -462,8 +462,8 @@ SOURCE(
 	     recModel = vector<recModelType>(recModelTmp.size());
 	     for(int i = 0; i < recModel.size(); ++i)
 	       recModel(i) = static_cast<recModelType>(recModelTmp(i));
-	     logRecruitmentMedian = (Type)*REAL(getListElement(x,"logRecruitmentMedian"));
-	     logRecruitmentVar = (Type)*REAL(getListElement(x,"logRecruitmentVar"));
+	     logRecruitmentMedian = asVector<Type>(getListElement(x,"logRecruitmentMedian"));
+	     logRecruitmentVar = asVector<Type>(getListElement(x,"logRecruitmentVar"));
 	     vector<int> fsdTimeScaleModelTmp = asVector<int>(getListElement(x,"fsdTimeScaleModel"));
 	     fsdTimeScaleModel = vector<FSdTimeScaleModel>(fsdTimeScaleModelTmp.size());
 	     for(int i = 0; i < fsdTimeScaleModel.size(); ++i)

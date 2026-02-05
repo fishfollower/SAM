@@ -57,9 +57,9 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
       vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort,indx);
       vector<Type> Nscale(logN.rows());
       Nscale.setConstant((Type)1.0);
-      if(forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) != forecast.asRecModel){
-	Nscale(0) = sqrt(forecast.logRecruitmentVar) / sqrt(nvar(0,0));
-	predN(0) = forecast.logRecruitmentMedian;
+      if(forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.useIID){
+	Nscale(0) = sqrt(forecast.logRecruitmentVar(CppAD::Integer(forecast.forecastYear(indx))-1)) / sqrt(nvar(0,0));
+	predN(0) = forecast.logRecruitmentMedian(CppAD::Integer(forecast.forecastYear(indx))-1);
       }
       // logN.col(indx) = predN + neg_log_densityN.simulate();// * Nscale;
       vector<Type> noiseN = neg_log_densityN.simulate() * Nscale;

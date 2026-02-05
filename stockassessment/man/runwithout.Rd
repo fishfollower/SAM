@@ -7,7 +7,16 @@
 \usage{
 runwithout(fit, year, fleet, ...)
 
-\method{runwithout}{sam}(fit, year = NULL, fleet = NULL, map = fit$obj$env$map, ...)
+\method{runwithout}{sam}(
+  fit,
+  year = NULL,
+  fleet = NULL,
+  map = fit$obj$env$map,
+  rm.unidentified = TRUE,
+  initialize.par = TRUE,
+  initialize.re = FALSE,
+  ...
+)
 }
 \arguments{
 \item{fit}{a fitted model object as returned from sam.fit}

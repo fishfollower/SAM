@@ -163,8 +163,10 @@ defcon<-function(dat, level=1){
     ret$keyMatureMean <- rep(NA_integer_,nAges)
     ret$keyMatureObsVar <- rep(NA_integer_,nAges)
     ret$mortalityModel <- 0
+    ret$mortalityModelMeanStructure <- -1
     ret$keyMortalityMean <- rep(NA_integer_,nAges)
     ret$keyMortalityObsVar <- rep(NA_integer_,nAges)  
+    ret$keyMortalityCovariate <- rep(NA_integer_,nAges)
     ret$keyXtraSd<-matrix(NA_integer_, nrow=0, ncol=4)
     ret$logNMeanAssumption <- c(0,0)
     ret$initState <- 0
@@ -174,6 +176,7 @@ defcon<-function(dat, level=1){
     ret$isFishingSeason <- 1
     ret$seasonFirstYear <- -Inf
     ret$seasonFixedEffect <- 0
+    ret$keyScaleMModel <- 0
     ##ret$boundF <- c(NA_real_,NA_real_)
     ret$fecundityScaling <- 1
     ret$recVarScaleDegree <- 0
@@ -265,8 +268,10 @@ saveConf <- function(x, file="", overwrite=FALSE){
         txt$matureModel <- "Integer code describing the treatment of proportion mature in the model (0 use as known, 1 use as observations to inform proportion mature process (GMRF with cohort and within year correlations on logit(proportion mature))), 2 to add extra correlation to plusgroup"
         txt$keyMatureMean <- "Coupling of mature process mean parameters (not used if matureModel==0)"
         txt$mortalityModel <- "Integer code describing the treatment of natural mortality in the model (0 use as known, 1 use as observations to inform natural mortality process (GMRF with cohort and within year correlations)), 2 to add extra correlation to plusgroup"
+        txt$mortalityModelMeanStructure <- "..."
         txt$MortalityMean <- "Coupling of natural mortality process mean parameters (not used if mortalityModel==0)"
         txt$keyMortalityObsVar <- "Coupling of natural mortality observation variance parameters (not used if mortalityModel==0)"
+        txt$keyMortalityCovariate <- "..."
         txt$keyXtraSd<-"An integer matrix with 4 columns (fleet year age coupling), which allows additional uncertainty to be estimated for the specified observations"
         txt$logNMeanAssumption <- "Flags indicating what the population model should correspond to. 0: Median, 1: Mean, 2: Mode. Two values are are given to differentiate recruitment and other ages."
         txt$initState <- "Flag indicating whether initial parameters should be added for the latent processes."

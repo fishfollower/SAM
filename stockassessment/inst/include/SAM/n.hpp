@@ -106,15 +106,15 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       }      
       if(forecast.nYears > 0 &&
          forecast.forecastYear(i) > 0 &&
-         forecast.recModel(CppAD::Integer(forecast.forecastYear(i))-1) != forecast.asRecModel){
+         forecast.recModel(CppAD::Integer(forecast.forecastYear(i))-1) == forecast.useIID){
         // Forecast
         vector<Type> Nscale(logN.rows());
         Nscale.setZero();
         Nscale += 1.0;
-        Nscale(0) = sqrt(forecast.logRecruitmentVar) / sqrt(nvar(0,0));
+        Nscale(0) = sqrt(forecast.logRecruitmentVar(CppAD::Integer(forecast.forecastYear(i))-1)) / sqrt(nvar(0,0));
 	Nscale *= exp(logVarScale);
         vector<Type> predNTmp = predN;
-        predNTmp(0) = forecast.logRecruitmentMedian;
+        predNTmp(0) = forecast.logRecruitmentMedian(CppAD::Integer(forecast.forecastYear(i))-1);
         // MVMIX_t<Type> nllTmp(nvar,Type(conf.fracMixN));
         nll+=neg_log_densityN((logN.col(i)-predNTmp) / Nscale) + (log(Nscale)).sum();
 	// THIS IS DONE IN forecastSimulation(...)

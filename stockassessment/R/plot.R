@@ -149,6 +149,8 @@ addforecast.samforecast <- function(fit, what, dotcol="black", dotpch=19, dotcex
     points(y,x[,paste(what,attr(fit,"estimateLabel"), sep=":")], pch=dotpch, cex=dotcex, col=dotcol)
 }
 
+##' @method addforecast hcr
+##' @export
 addforecast.hcr <- function(fit, what, dotcol="black", dotpch=19, dotcex=1.5, intervalcol=gray(.5,alpha=.5),...){
     addforecast(fit$forecast, what = what, dotcol = dotcol, dotpch = dotpch, dotcex = dotcex, intervalcol = intervalcol, ...)
 }

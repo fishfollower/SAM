@@ -73,7 +73,8 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM;
   DATA_ARRAY(TAC); dataset.TAC=TAC;
-  DATA_ARRAY(RecruitClimate); dataset.RecruitClimate=RecruitClimate; 
+  DATA_ARRAY(RecruitClimate); dataset.RecruitClimate=RecruitClimate;
+  DATA_ARRAY(Mcovariate); dataset.Mcovariate=Mcovariate; 
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
   DATA_IARRAY(sumKey); dataset.sumKey=sumKey; 
 
@@ -146,8 +147,10 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(keyMatureMean); confset.keyMatureMean=keyMatureMean;
   DATA_IVECTOR(keyMatureObsVar); confset.keyMatureObsVar=keyMatureObsVar;
   DATA_INTEGER(mortalityModel); confset.mortalityModel=mortalityModel;
+  DATA_INTEGER(mortalityModelMeanStructure); confset.mortalityModelMeanStructure=mortalityModelMeanStructure;
   DATA_IVECTOR(keyMortalityMean); confset.keyMortalityMean=keyMortalityMean;
   DATA_IVECTOR(keyMortalityObsVar); confset.keyMortalityObsVar=keyMortalityObsVar; 
+  DATA_IVECTOR(keyMortalityCovariate); confset.keyMortalityCovariate=keyMortalityCovariate; 
   DATA_IMATRIX(keyXtraSd); confset.keyXtraSd=keyXtraSd; 
   DATA_IVECTOR(logNMeanAssumption); confset.logNMeanAssumption=logNMeanAssumption;
   DATA_INTEGER(initState); confset.initState = initState;
@@ -156,7 +159,7 @@ Type objective_function<Type>::operator() ()
   DATA_IVECTOR(isFishingSeason); confset.isFishingSeason = isFishingSeason;
   DATA_SCALAR(seasonFirstYear); confset.seasonFirstYear = asDouble(seasonFirstYear);
   DATA_INTEGER(seasonFixedEffect); confset.seasonFixedEffect = seasonFixedEffect;
-  
+  DATA_INTEGER(keyScaleMModel); confset.keyScaleMModel = keyScaleMModel;
   DATA_INTEGER(reportingLevel);
 
   paraSet<Type> paraset;
@@ -207,10 +210,12 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(logPhiNM); paraset.logPhiNM=logPhiNM;
   PARAMETER_VECTOR(logSdProcLogNM); paraset.logSdProcLogNM=logSdProcLogNM;
   PARAMETER_VECTOR(meanLogNM); paraset.meanLogNM=meanLogNM;
+  PARAMETER_MATRIX(Mbeta); paraset.Mbeta=Mbeta;
   PARAMETER_VECTOR(logSdLogNM); paraset.logSdLogNM=logSdLogNM;
   PARAMETER_VECTOR(logXtraSd); paraset.logXtraSd=logXtraSd;
   PARAMETER_VECTOR(initF); paraset.initF = initF;
   PARAMETER_VECTOR(initN); paraset.initN = initN;
+  PARAMETER_VECTOR(scaleMpars); paraset.scaleMpars = scaleMpars;
 
   PARAMETER_MATRIX(seasonMu); paraset.seasonMu = seasonMu;
   PARAMETER_VECTOR(seasonLogitRho); paraset.seasonLogitRho = seasonLogitRho;

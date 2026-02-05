@@ -22,6 +22,7 @@ sam.fit(
   fullDerived = FALSE,
   pre.clean = TRUE,
   check.parameters = TRUE,
+  sim.keepRec = FALSE,
   ...
 )
 }

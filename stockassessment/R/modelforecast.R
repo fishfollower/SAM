@@ -524,6 +524,8 @@ modelforecast.sam <- function(fit,
                               year.base = max(fit$data$years),
                               ave.years = max(fit$data$years)+(-9:0),
                               rec.years = c(), #max(fit$data$years)+(-9:0),
+                              rec.fixval = numeric(0),
+                              rec.fixvalVar = (1e-6)^2,
                               label = NULL,
                               overwriteSelYears = NULL,
                               deterministicF = FALSE,
@@ -737,16 +739,20 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }
 
     ## Get recruitment model
-    if(length(rec.years) == 0){
+    if(length(rec.fixval) > 0){
+        recModel <- rep(1,nYears)
+        logRecruitmentMedian <- rep(log(rec.fixval),nYears)
+        logRecruitmentVar <- rep(rec.fixvalVar,nYears)
+    }else if(length(rec.years) == 0){
         recModel <- rep(0,nYears)
-        logRecruitmentMedian <- NA_real_
-        logRecruitmentVar <- NA_real_
+        logRecruitmentMedian <- rep(NA_real_,nYears)
+        logRecruitmentVar <- rep(NA_real_,nYears)
     }else{
         rectab <- rectable(fit)
         recpool <- rectab[rownames(rectab)%in%rec.years,1]
         recModel <- rep(1,nYears)
-        logRecruitmentMedian <- log(median(recpool))
-        logRecruitmentVar <- stats::var(log(recpool))
+        logRecruitmentMedian <- rep(log(median(recpool)),nYears)
+        logRecruitmentVar <- rep(stats::var(log(recpool)),nYears)
     }
 
     ## Get F process time scale model
@@ -836,7 +842,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         args$data$aux <- rbind(args$data$aux,newAux)
         args$data$auxData <- rbind(args$data$auxData,do.call("rbind",replicate(nYears,args$data$auxData[lastIndx,,drop=FALSE], simplify = FALSE)))
         args$data$nobs <- as.numeric(nrow(args$data$aux))
-        args$data$logobs <- c(args$data$logobs,rep(0,nrow(newAux)))
+        args$data$logobs <- c(args$data$logobs,rep(NA,nrow(newAux)))
         suf <- sort(unique(args$data$aux[,"fleet"])) # sort-unique-fleet
         yy <- min(as.numeric(args$data$aux[,"year"])):max(as.numeric(args$data$aux[,"year"]))
         aa <- min(as.numeric(args$data$aux[,"age"])):max(as.numeric(args$data$aux[,"age"]))

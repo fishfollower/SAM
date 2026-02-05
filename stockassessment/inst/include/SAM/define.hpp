@@ -119,6 +119,7 @@ struct dataSet{
   array<Type> propM;
   array<Type> TAC;
   array<Type> RecruitClimate;
+  array<Type> Mcovariate;  
   listMatrixFromR<Type> corList;
   array<int> sumKey;
 
@@ -158,6 +159,7 @@ struct dataSet{
     propM(x.propM, x.propM.dim),
     TAC(x.TAC, x.TAC.dim),
     RecruitClimate(x.RecruitClimate, x.RecruitClimate.dim),
+    Mcovariate(x.Mcovariate,x.Mcovariate.dim),
     corList(x.corList),
     sumKey(x.sumKey, x.sumKey.dim)
   {
@@ -195,6 +197,7 @@ SOURCE(
        propM(),
        TAC(),
        RecruitClimate(),
+       Mcovariate(),
        corList(),
        sumKey() {       };
        )
@@ -233,6 +236,7 @@ SOURCE(
       propM = asArray<Type>(getListElement(x,"propM", &Rf_isArray));
       TAC = asArray<Type>(getListElement(x,"TAC", &Rf_isArray));
       RecruitClimate = asArray<Type>(getListElement(x,"RecruitClimate", &Rf_isArray));
+      Mcovariate = asArray<Type>(getListElement(x,"Mcovariate", &Rf_isArray));
       corList = listMatrixFromR<Type>(getListElement(x,"corList"));
       sumKey = asArray<int>(getListElement(x,"sumKey", &Rf_isArray));
     };
@@ -289,8 +293,10 @@ struct confSet{
   vector<int> keyMatureMean;
   vector<int> keyMatureObsVar;
   int mortalityModel;
+  int mortalityModelMeanStructure;
   vector<int> keyMortalityMean;
   vector<int> keyMortalityObsVar;
+  vector<int> keyMortalityCovariate;
   matrix<int> keyXtraSd;
   vector<int> logNMeanAssumption;
   int initState;
@@ -299,6 +305,7 @@ struct confSet{
   vector<int> isFishingSeason;
   double seasonFirstYear;
   int seasonFixedEffect;
+  int keyScaleMModel;
   
   confSet();
 
@@ -356,8 +363,10 @@ SOURCE(
 	 keyMatureMean = asVector<int>(getListElement(x,"keyMatureMean", &Rf_isNumeric));
 	 keyMatureObsVar = asVector<int>(getListElement(x,"keyMatureObsVar", &Rf_isNumeric));
 	 mortalityModel = Rf_asInteger(getListElement(x,"mortalityModel", &isNumericScalar));
+	 mortalityModelMeanStructure = Rf_asInteger(getListElement(x,"mortalityModelMeanStructure", &isNumericScalar));
 	 keyMortalityMean = asVector<int>(getListElement(x,"keyMortalityMean", &Rf_isNumeric));
 	 keyMortalityObsVar = asVector<int>(getListElement(x,"keyMortalityObsVar", &Rf_isNumeric));
+	 keyMortalityCovariate = asVector<int>(getListElement(x,"keyMortalityCovariate", &Rf_isNumeric));
 	 keyXtraSd = asMatrix<int>(getListElement(x,"keyXtraSd", &Rf_isMatrix));
 	 logNMeanAssumption = asVector<int>(getListElement(x,"logNMeanAssumption", &Rf_isNumeric));
 	 initState = Rf_asInteger(getListElement(x,"initState", &isNumericScalar));
@@ -366,6 +375,7 @@ SOURCE(
 	 isFishingSeason = asVector<int>(getListElement(x,"isFishingSeason", &Rf_isNumeric));
 	 seasonFirstYear = Rf_asReal(getListElement(x,"seasonFirstYear", &isNumericScalar));
 	 seasonFixedEffect = Rf_asInteger(getListElement(x,"seasonFixedEffect", &isNumericScalar));
+	 keyScaleMModel = Rf_asInteger(getListElement(x,"keyScaleMModel", &isNumericScalar));
        }
        )
 
@@ -417,8 +427,10 @@ SOURCE(
 	 keyMatureMean(),
 	 keyMatureObsVar(),
 	 mortalityModel(),
+	 mortalityModelMeanStructure(),
 	 keyMortalityMean(),
 	 keyMortalityObsVar(),
+	 keyMortalityCovariate(),
 	 keyXtraSd(),
 	 logNMeanAssumption(),
 	 initState(),
@@ -426,7 +438,8 @@ SOURCE(
 	 seasonTimes(),
 	 isFishingSeason(),
 	 seasonFirstYear(),
-	 seasonFixedEffect()
+	 seasonFixedEffect(),
+	 keyScaleMModel()
 	 {}
 	 );
 
@@ -478,8 +491,10 @@ SOURCE(
 	 keyMatureMean(other.keyMatureMean),
 	 keyMatureObsVar(other.keyMatureObsVar),
 	 mortalityModel(other.mortalityModel),
+	 mortalityModelMeanStructure(other.mortalityModelMeanStructure),
 	 keyMortalityMean(other.keyMortalityMean),
 	 keyMortalityObsVar(other.keyMortalityObsVar),
+	 keyMortalityCovariate(other.keyMortalityCovariate),
 	 keyXtraSd(other.keyXtraSd),
 	 logNMeanAssumption(other.logNMeanAssumption),
 	 initState(other.initState),
@@ -487,7 +502,8 @@ SOURCE(
 	 seasonTimes(other.seasonTimes),
 	 isFishingSeason(other.isFishingSeason),
 	 seasonFirstYear(other.seasonFirstYear),
-	 seasonFixedEffect(other.seasonFixedEffect)
+	 seasonFixedEffect(other.seasonFixedEffect),
+	 keyScaleMModel(other.keyScaleMModel)
 	 {}
 	 );
 
@@ -541,7 +557,8 @@ struct paraSet{
   vector<Type> logSdMO;
   vector<Type> logPhiNM; 
   vector<Type> logSdProcLogNM;
-  vector<Type> meanLogNM; 
+  vector<Type> meanLogNM;
+  matrix<Type> Mbeta;
   vector<Type> logSdLogNM;
   vector<Type> logXtraSd;
 
@@ -551,6 +568,7 @@ struct paraSet{
   matrix<Type> seasonMu;
   vector<Type> seasonLogitRho;
   vector<Type> seasonLogSd;
+  vector<Type> scaleMpars;
 
   Type splinePenalty;
 
@@ -607,6 +625,7 @@ struct paraSet{
     logPhiNM(other.logPhiNM),
     logSdProcLogNM(other.logSdProcLogNM),
     meanLogNM(other.meanLogNM),
+     Mbeta(other.Mbeta),
     logSdLogNM(other.logSdLogNM),
     logXtraSd(other.logXtraSd),
      initF(other.initF),
@@ -614,6 +633,7 @@ struct paraSet{
     seasonMu(other.seasonMu),
     seasonLogitRho(other.seasonLogitRho),
     seasonLogSd(other.seasonLogSd),
+     scaleMpars(other.scaleMpars),
     splinePenalty(other.splinePenalty)  {}
 
 });
@@ -667,10 +687,12 @@ SOURCE(
        logPhiNM(),
        logSdProcLogNM(),
        meanLogNM(),
+       Mbeta(),
        logSdLogNM(),
        logXtraSd(),
        initF(),
        initN(),
+       scaleMpars(),
        splinePenalty()  {};
        )
 
@@ -725,6 +747,7 @@ SOURCE(
 	   logPhiNM = asVector<Type>(getListElement(x,"logPhiNM", &Rf_isNumeric)); 
 	   logSdProcLogNM = asVector<Type>(getListElement(x,"logSdProcLogNM", &Rf_isNumeric));
 	   meanLogNM  = asVector<Type>(getListElement(x,"meanLogNM", &Rf_isNumeric)); 
+	   Mbeta = asMatrix<Type>(getListElement(x,"Mbeta", &Rf_isMatrix)); 
 	   logSdLogNM = asVector<Type>(getListElement(x,"logSdLogNM", &Rf_isNumeric));
 	   logXtraSd = asVector<Type>(getListElement(x,"logXtraSd", &Rf_isNumeric));
 	   initF = asVector<Type>(getListElement(x,"initF", &Rf_isNumeric));
@@ -732,7 +755,7 @@ SOURCE(
 	   seasonMu = asMatrix<Type>(getListElement(x,"seasonMu", &Rf_isMatrix));
 	   seasonLogitRho = asVector<Type>(getListElement(x,"seasonLogitRho", &Rf_isNumeric));
 	   seasonLogSd = asVector<Type>(getListElement(x,"seasonLogSd", &Rf_isNumeric));
-
+	   scaleMpars = asVector<Type>(getListElement(x,"scaleMpars", &Rf_isNumeric));
 	   splinePenalty = (Type)Rf_asReal(getListElement(x,"splinePenalty", &isNumericScalar));
 	 }
 	 );

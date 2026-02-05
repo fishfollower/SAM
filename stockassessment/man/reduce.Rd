@@ -4,7 +4,14 @@
 \alias{reduce}
 \title{reduce helper function to reduce data}
 \usage{
-reduce(data, year = NULL, fleet = NULL, age = NULL, conf = NULL)
+reduce(
+  data,
+  year = NULL,
+  fleet = NULL,
+  age = NULL,
+  conf = NULL,
+  onlyobs = FALSE
+)
 }
 \arguments{
 \item{data}{a data object as returned by the function setup.sam.data}

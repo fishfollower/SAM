@@ -2,7 +2,8 @@
 .refpointSMethodEnum <- c("Mean"=0,
                           "Median"=1,
                           "Mode"=2,
-                          "Quantile"=1)
+                          "Quantile"=1,
+                          "LOESS"=3)
 
 .SAM_setPB <- function(pb, value, label=""){
     if (!inherits(pb, "txtProgressBar")) 
@@ -76,11 +77,13 @@
     typePatterns <- list(Mean = "^mean$",
                          Median = "^median$",
                          Mode = "^mode$",
-                         Quantile = "^q0\\.[[:digit:]]+$")
+                         Quantile = "^q0\\.[[:digit:]]+$",
+                         LOESS = "^loess$")
     xvalPatterns <- list(Mean = NA,
                          Median = 0.5,
                          Mode = NA,
-                         Quantile = c("(q)(0\\.[[:digit:]]+)","\\2"))
+                         Quantile = c("(q)(0\\.[[:digit:]]+)","\\2"),
+                         LOESS = 0.2)
     mIndx <- which(sapply(typePatterns, function(p) grepl(p, tolower(x))))
     if(length(mIndx) == 0)
         stop(sprintf("Error in method specification. %s not recognized.",x))
@@ -100,6 +103,9 @@
 
 ##' @importFrom stats model.frame model.matrix terms
 .refpointSCurveFit <- function(F,C,MT){
+    if(MT$methodType == 3){ ## LOESS
+        return(loess(C~F,data.frame(C=C,F=F)))
+    }
     mf <- stats::model.frame(MT$formula, data.frame(F = F))
     X <- stats::model.matrix(MT$formula,mf)    
     if(MT$methodType == 0){       # Mean
@@ -135,6 +141,9 @@
     opt
 }
 
+##' @importFrom stats predict
+##' @method predict rpscurvefit
+##' @export
 predict.rpscurvefit <- function(x,newF,...){
     X <- model.matrix(attr(x,"terms"),data.frame(F=newF))
     MT <- attr(x,"MT")
@@ -313,7 +322,7 @@ predict.rpscurvefit <- function(x,newF,...){
 
 
 #' @importFrom stats runif predict
-.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f", deterministicF = TRUE, randomF = TRUE, knots = 5, tailSummarizer = mean, ncores=1,mc.type="mclapply", ...){
+.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f", deterministicF = TRUE, randomF = TRUE, knots = 5, tailSummarizer = mean, gridSummarizer = median, ncores=1,mc.type="mclapply", ...){
     rfv <- function(n,a,b){
         u <- stats::runif(n)
         v1 <- exp(stats::runif(n,log(ifelse(a==0,0.002,a)), log(b)))
@@ -323,7 +332,7 @@ predict.rpscurvefit <- function(x,newF,...){
     if(randomF){
         Fvals <- sort(c(rep(1e-6,100), rfv(nosim,Frange[1],Frange[2])))
     }else{
-        Fvals <- c(rep(1e-6,100), seq(Frange[1],Frange[2], len = nosim))
+        Fvals <- pmax(1e-6,rep(Frange,each = nosim))
     }
     PRvals <- .perRecruitSR(log(Fvals),
                             fit=fit,
@@ -341,9 +350,14 @@ predict.rpscurvefit <- function(x,newF,...){
                             tailSummarizer = tailSummarizer,
                             ncores=ncores,
                             mc.type=mc.type,
-                            ...)  
+                            ...)
+    if(!randomF){
+        PRvals <- do.call(rbind,lapply(split(PRvals,PRvals$logF),function(x) as.data.frame(lapply(as.list(x),gridSummarizer))))
+    }
+    
 ###### Different for different RP's
     getOneRP <- function(rp){
+        Fvals <- exp(PRvals$logF)
         if(rp$rpType == 1){ ## MSY
             Crit <- exp(PRvals$logYe)
             cutfun <- function(x) x > max(x) * rp$cutoff
@@ -354,7 +368,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 v
             }
             fn <- function(x) -predict(CurveFit,trans(x))
-            startVals <- function() log(Fseq[which.max(pv)])
+            startVals <- function(Fseq,pv) log(Fseq[which.max(pv)])
         }else if(rp$rpType == 2){ ## MSYRange
             Crit <- exp(PRvals$logYe)
             cutfun <- function(x) x > max(x) * rp$cutoff
@@ -384,7 +398,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 p <- predict(CurveFit,as.vector(xx))
                 sum((tail(p,-1) - rep(rp$xVal,each=2) * p[1])^2) - p[1]
             }
-            startVals <- function(){
+            startVals <- function(Fseq,pv){
                 fmsy <- Fseq[which.max(pv)]
                 c2 <- sapply(rp$xVal, function(xx) (pv - xx*max(pv))^2)
                 f0 <- apply(c2,2,function(cc){
@@ -405,7 +419,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 v
             }
             fn <- function(x) -predict(CurveFit,trans(x))
-            startVals <- function() log(Fseq[which.max(pv)])                        
+            startVals <- function(Fseq,pv) log(Fseq[which.max(pv)])                        
         }else if(rp$rpType == 4){ ## xdYPR
             stop("Reference point type not implemented yet")
             ## Need derivative!
@@ -422,7 +436,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 p <- predict(CurveFit,trans(x))
                 sum((p - rp$xVal * p0)^2)
             }
-            startVals <- function() sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
+            startVals <- function(Fseq,pv) sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 5){ ## xSPR
             Crit <- exp(PRvals$logSPR)
             cutfun <- function(x) rep(TRUE,length(x))
@@ -437,7 +451,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 p <- predict(CurveFit,trans(x))
                 sum((p - rp$xVal * p0)^2)
             }
-            startVals <- function() sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
+            startVals <- function(Fseq,pv) sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 6){ ## xB0
             Crit <- exp(PRvals$logSe)
             cutfun <- function(x) rep(TRUE,length(x))
@@ -452,7 +466,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 p <- predict(CurveFit,trans(x))
                 sum((p - rp$xVal * p0)^2)
             }
-            startVals <- function() sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
+            startVals <- function(Fseq,pv) sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 7){ ## MYPYLdiv
             stop("Reference point type not implemented yet")
             ## Arng <- conf$maxAge - conf$minAge + 1
@@ -472,7 +486,7 @@ predict.rpscurvefit <- function(x,newF,...){
             stop("Reference point type not implemented")
         }
         Frng <- range(Fvals[cutfun(Crit)])
-        inRng <- function(x,rng) x > rng[1] & x < rng[2]
+        inRng <- function(x,rng) x >= rng[1] & x <= rng[2]
         indx <- inRng(Fvals,Frng)
         .getCurveRP <- function(k, Fv, Cv, MT){
             MT$positive <- TRUE
@@ -497,19 +511,29 @@ predict.rpscurvefit <- function(x,newF,...){
             attr(CurveFit,"knots") <- k
             CurveFit
         }
-        if(is.na(knots)){            
-            candidateCurves <- lapply(3:20,function(k) .getCurveRP(k, F=Fvals[indx], C=Crit[indx], MT=MT))
-            canAIC <- sapply(candidateCurves, attr, which = "AIC")
-            names(canAIC) <- 3:20
-            CurveFit <- candidateCurves[[which.min(canAIC)]]
-        }else{
+        if(MT$methodType == 3){
             candidateCurves <- list()
             canAIC <- numeric(0)
-            CurveFit <- .getCurveRP(knots, F=Fvals[indx], C=Crit[indx], MT=MT)
+            CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
+        }else{
+            if(is.na(knots)){            
+                candidateCurves <- lapply(3:20,function(k) .getCurveRP(k, F=Fvals[indx], C=Crit[indx], MT=MT))
+                canAIC <- sapply(candidateCurves, attr, which = "AIC")
+                names(canAIC) <- 3:20
+                CurveFit <- candidateCurves[[which.min(canAIC)]]
+            }else{
+                candidateCurves <- list()
+                canAIC <- numeric(0)
+                CurveFit <- .getCurveRP(knots, F=Fvals[indx], C=Crit[indx], MT=MT)
+            }
         }
-        Fseq <- seq(Frng[1],Frng[2],len=200)
+        ##if(randomF){
+            Fseq <- seq(min(Frng),max(Frng),len=200)
+        ##}else{
+          ##  Fseq <- sort(exp(PRvals$logF))
+        ##}
         pv <- predict(CurveFit,Fseq)
-        opt <- nlminb(startVals(), fn)
+        opt <- nlminb(startVals(Fseq,pv), fn)
         res <- trans(opt$par, report = TRUE)
         attr(res,"curve_fit_list") <- candidateCurves
         attr(res,"curve_fit_aiclist") <- canAIC
@@ -518,6 +542,7 @@ predict.rpscurvefit <- function(x,newF,...){
         res
     }
     getDerivedValues <- function(f){
+        Fvals <- exp(PRvals$logF)     
         if(!is.function(MT$derivedSummarizer)){        #Fit
             doOneA <- function(what){
                 Crit <- exp(PRvals[[what]])
@@ -564,13 +589,17 @@ predict.rpscurvefit <- function(x,newF,...){
                     attr(CurveFit,"knots") <- k
                     CurveFit
                 }
-                if(is.na(knots)){            
-                    candidateCurves <- lapply(3:20,function(k) .getCurveD(k, Fv=Fvals[indx], Cv=Crit[indx], MT=MT))
-                    canAIC <- sapply(candidateCurves, attr, which = "AIC")
-                    CurveFit <- candidateCurves[[which.min(canAIC)]]
+                if(MT$methodType == 3){
+                    CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
                 }else{
-                    CurveFit <- .getCurveD(knots, Fv=Fvals[indx], Cv=Crit[indx], MT=MT)
-                }                
+                    if(is.na(knots)){            
+                        candidateCurves <- lapply(3:20,function(k) .getCurveD(k, Fv=Fvals[indx], Cv=Crit[indx], MT=MT))
+                        canAIC <- sapply(candidateCurves, attr, which = "AIC")
+                        CurveFit <- candidateCurves[[which.min(canAIC)]]
+                    }else{
+                        CurveFit <- .getCurveD(knots, Fv=Fvals[indx], Cv=Crit[indx], MT=MT)
+                    }
+                }
                 predict(CurveFit, f)
             }
             return(sapply(c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost"), doOneA))
@@ -747,12 +776,13 @@ stochasticReferencepoints.sam <- function(fit,
                                           constraint = "F=%f",
                                           deterministicF = FALSE,
                                           processNoiseF = FALSE,
-                                          Fsequence = seq(Frange[1],Frange[2], len = 50),
+                                          Fsequence = seq(min(Frange),max(Frange), len = 50),
                                           run = TRUE,
                                           DT = 0,
                                           equilibriumMethod = c("ES","EC","AD"),
                                           ncores = 1,
                                           tailSummarizer = mean,
+                                          gridSummarizer = median,
                                           mc.type = "mclapply",
                                           ...){
 
@@ -945,7 +975,7 @@ stochasticReferencepoints.sam <- function(fit,
         ## if(any(is.na(selYears)))
         ##     stop("selYears has years without data.")
 
-        if(!all(Frange >= 0) && Frange[1] < Frange[2] && length(Frange) ==2)
+        if(!all(Frange >= 0) && ((Frange[1] < Frange[2] && length(Frange) ==2) || !randomF))
             stop("Wrong Frange")
         if(!nosim > 0)
             stop("nosim must be a positive integer")
@@ -965,7 +995,7 @@ stochasticReferencepoints.sam <- function(fit,
         pb <- .SAMpb(min = 0, max = nosim * (nosim_ci + 1 + is.function(derivedSummarizer)*length(rpArgs)))
         incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
 
-        v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint,deterministicF=deterministicF, processNoiseF=processNoiseF, knots=knots, tailSummarizer = tailSummarizer, ncores=ncores,mc.type=mc.type, ...)
+        v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint,deterministicF=deterministicF, processNoiseF=processNoiseF, knots=knots, tailSummarizer = tailSummarizer, gridSummarizer = gridSummarizer, ncores=ncores,mc.type=mc.type, ...)
 
         ## Sample to get CIs
         if(nosim_ci > 0){

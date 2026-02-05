@@ -14,6 +14,9 @@ struct bioResult {
  
   bioResult(Type nll_, matrix<Type> Sigma_GMRF_, matrix<Type> mu_, int nYears_, int nAges_) :
     nll(nll_), Sigma_GMRF(Sigma_GMRF_), mu(mu_), nYears(nYears_), nAges(nAges_) {};
+
+  bioResult() :
+    nll(), Sigma_GMRF(), mu(), nYears(), nAges() {};
   
 
  matrix<Type> getSigmaMarginal(int y){
@@ -314,48 +317,200 @@ SAM_SPECIALIZATION(TMBad::ad_aug nllMO(array<TMBad::ad_aug>&, dataSet<TMBad::ad_
 
 template <class Type>
 Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Type>& forecast, objective_function<Type> *of) SOURCE({
-  if(conf.mortalityModel>=1){
     Type nll=0;
     array<Type> nm=dat.natMor;
-    //nll += nllBioProcess(logNM, par.meanLogNM, conf.keyMortalityMean, par.logPhiNM, par.logSdProcLogNM(0));
-    bioResult<Type> br = nllBioProcess(logNM, par.meanLogNM, conf.keyMortalityMean, par.logPhiNM, par.logSdProcLogNM(0));
-    nll += br.nll;
-    for(int i=0; i<nm.dim[0]; ++i){
-      for(int j=0; j<nm.dim[1]; ++j){
-        if(!isNA(nm(i,j))){
-          nll += -dnorm(log(nm(i,j)),logNM(i,j),exp(par.logSdLogNM(conf.keyMortalityObsVar(j))),true);
-        }
-	dat.natMor(i,j)=exp(logNM(i,j));
+    if(conf.mortalityModel>=1 || conf.mortalityModelMeanStructure >= 0){
+      //array<Type> nm=dat.natMor;
+      //nll += nllBioProcess(logNM, par.meanLogNM, conf.keyMortalityMean, par.logPhiNM, par.logSdProcLogNM(0));
+      vector<int> fakeKeyMM(conf.keyMortalityMean.size());
+      for(int i = 0; i < fakeKeyMM.size(); ++i)
+	fakeKeyMM(i) = i;
+      vector<Type> mlnm(conf.keyMortalityMean.size());
+      mlnm.setZero();
+      /*
+	conf.mortalityModelMeanStructure
+	0: Free parameters by age, combined with keyMortalityMean
+	1: Decreasing parameters by age, combined with keyMortalityMean
+	2: Weibull
+	3: Lorenzen allometric and length-inverse
+       */
+      if(conf.mortalityModelMeanStructure == 0){
+	for(int i = 0; i < fakeKeyMM.size(); ++i)
+	  mlnm(i) = par.meanLogNM(conf.keyMortalityMean(i));
+      }else if(conf.mortalityModelMeanStructure == 1){
+	vector<Type> mmX(par.meanLogNM.size());
+	mmX(par.meanLogNM.size()-1) = par.meanLogNM(par.meanLogNM.size()-1);
+	for(int qq = par.meanLogNM.size()-2; qq >= 0; qq--)
+	  mmX(qq) = mmX(qq+1) + exp(par.meanLogNM(qq));
+	for(int i = 0; i < fakeKeyMM.size(); ++i)
+	  mlnm(i) = mmX(conf.keyMortalityMean(i));
+      }else if(conf.mortalityModelMeanStructure == 2){
+	// Weibull (2 par)
+	// Hazard: p * lambda ^ p * a ^(p-1)
+	// Cumulative hazard: (lambda * a) ^ p
+	// Cumulative / average hazard between age a and a+1: ((a+1)^p-a^p) * lambda^p
+	Type p = 1.0 / (1.0 + exp(par.meanLogNM(0)));
+	Type logLambda = par.meanLogNM(1);
+	for(int i = 0; i < mlnm.size(); ++i){
+	  Type a = conf.minAge + i;
+	  mlnm(i) = logspace_sub_SAM(p*log(a+1),p*log(a+Type(1e-8))) + p * logLambda;
+	}
+      }else if(conf.mortalityModelMeanStructure == 3){
+	// Lorenzen allometric and length-inverse (4 par)
+	Type logMLinf = par.meanLogNM(0);
+	Type K = exp(par.meanLogNM(1));
+	Type a0 = -exp(par.meanLogNM(2));
+	Type c = -exp(par.meanLogNM(3));
+	for(int i = 0; i < mlnm.size(); ++i){
+	  Type a = conf.minAge + i + 0.5;
+	  mlnm(i) = logMLinf + c * logspace_sub_SAM(Type(0.0), -K * (a-a0));
+	}
+      }else if(conf.mortalityModelMeanStructure == 4){
+	// Charnov (2 par)
+	Type logK = par.meanLogNM(0);
+	Type K = exp(par.meanLogNM(0));
+	Type a0 = -exp(par.meanLogNM(1));
+	for(int i = 0; i < mlnm.size(); ++i){
+	  Type a = conf.minAge + i + 0.5;
+	  mlnm(i) = logK + (-1.5) * logspace_sub_SAM(Type(0.0), -K * (a-a0));
+	}
+      }else if(conf.mortalityModelMeanStructure == 5){
+	// Caddy (2 par)
+	Type logMtau = par.meanLogNM(0);
+	Type logB = par.meanLogNM(1);
+	for(int i = 0; i < mlnm.size(); ++i){
+	  Type a = conf.minAge + i + 0.5;
+	  mlnm(i) = logspace_add_SAM(logMtau, logB - log(a+Type(1e-8)));
+	}
+      }else if(conf.mortalityModelMeanStructure == 6){
+	// Siler (5 par)
+	Type logMc = par.meanLogNM(0);
+	Type logMd = par.meanLogNM(1);
+	Type logMs = par.meanLogNM(2);
+	Type bd = exp(par.meanLogNM(3));
+	Type bs = exp(par.meanLogNM(4));
+	for(int i = 0; i < mlnm.size(); ++i){
+	  Type a = conf.minAge + i + 0.5;
+	  mlnm(i) = logspace_add_SAM(logMc, logspace_add_SAM(logMd - bd * a, logMs - bs * a));
+	}
+      }else{
+	Rf_error("Wrong mortalityModelMeanStructure");
       }
-      SIMULATE_F(of){
-	if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
-	  vector<Type> v = logNM.matrix().row(i-1);
-	  vector<Type> p = br.simulate(v,i);
-	
-	  for(int j=0; j<nm.dim[1]; ++j){
-	    logNM(i,j) = p(j);
-	    dat.natMor(i,j)=exp(logNM(i,j));
-	  }
-	}else if((forecast.nYears > 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1))){
-	  for(int j=0; j<nm.dim[1]; ++j){
-	    logNM(i,j) = log(nm(i,j));
-	    dat.natMor(i,j) = nm(i,j);
+      REPORT_F(mlnm,of);
+      bioResult<Type> br;
+      if(conf.mortalityModel >= 1){
+        br = nllBioProcess(logNM, mlnm, fakeKeyMM, par.logPhiNM, par.logSdProcLogNM(0));
+	// bioResult<Type> br = nllBioProcess(logNM, par.meanLogNM, conf.keyMortalityMean, par.logPhiNM, par.logSdProcLogNM(0));
+	nll += br.nll;
+      }
+      array<Type> lX(dat.natMor.dim[0],dat.natMor.dim[1]);
+      lX.setZero();
+      if(dat.Mcovariate.dim[1] > 0){
+	// Proportional hazard covariates
+	Type dt = dat.Mcovariate.dim[1];
+	for(int i = 0; i < lX.dim[0]; ++i){ // Year
+	  for(int j = 0; j < lX.dim[1]; ++j){ // Age
+	    for(int k = 0; k < dat.Mcovariate.dim[2]; ++k){ // Covariate
+	      for(int t = 0; t < dat.Mcovariate.dim[1]; ++t){ // Covariate time point
+		if(!isNAINT(conf.keyMortalityCovariate(j)))
+		  lX(i,j) += par.Mbeta(conf.keyMortalityCovariate(j),k) * dat.Mcovariate(i,t,k) / dt;	
+	      }
+	    }
 	  }
 	}
       }
+      for(int i=0; i<nm.dim[0]; ++i){
+	for(int j=0; j<nm.dim[1]; ++j){
+	  Type eLNM = 0.0;
+	   if(conf.mortalityModel >= 1){
+	     eLNM = logNM(i,j);
+	   }else{
+	     eLNM = mlnm(j);
+	   }
+	  if(!isNA(nm(i,j))){
+	    nll += -dnorm(log(nm(i,j)),eLNM + lX(i,j),exp(par.logSdLogNM(conf.keyMortalityObsVar(j))),true);
+	  }
+	  dat.natMor(i,j)=exp(eLNM + lX(i,j));
+	}
+	SIMULATE_F(of){
+	  if(conf.mortalityModel >= 1){
+	    if((forecast.nYears > 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	      vector<Type> v = logNM.matrix().row(i-1);
+	      vector<Type> p = br.simulate(v,i);
+	
+	      for(int j=0; j<nm.dim[1]; ++j){
+		logNM(i,j) = p(j);
+		dat.natMor(i,j)=exp(logNM(i,j));
+	      }
+	    }else if((forecast.nYears > 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1))){
+	      for(int j=0; j<nm.dim[1]; ++j){
+		logNM(i,j) = log(nm(i,j));
+		dat.natMor(i,j) = nm(i,j);
+	      }
+	    }
+	  }
+	}
+      }
+      array<Type> natMor = dat.natMor;
+      REPORT_F(natMor, of);
+      if(conf.mortalityModel >= 1){
+	ADREPORT_F(logNM,of);	// Needed for R based forecast
+      }
+      int timeSteps = dat.years.size();
+      if(conf.mortalityModel >= 1){
+	vector<Type> lastLogNM = logNM.matrix().row(timeSteps-1);
+	ADREPORT_F(lastLogNM,of);
+	vector<Type> beforeLastLogNM = logNM.matrix().row(timeSteps-2);
+	ADREPORT_F(beforeLastLogNM,of);
+      }
+      //return nll;
     }
-    array<Type> natMor = dat.natMor;
-    REPORT_F(natMor, of);
-    ADREPORT_F(logNM,of);	// Needed for R based forecast
-    int timeSteps = dat.years.size();
-    vector<Type> lastLogNM = logNM.matrix().row(timeSteps-1);
-    ADREPORT_F(lastLogNM,of);
-    vector<Type> beforeLastLogNM = logNM.matrix().row(timeSteps-2);
-    ADREPORT_F(beforeLastLogNM,of);
+    if(conf.keyScaleMModel > 0){
+      vector<Type> m = dat.natMor.matrix().colwise().mean();
+      for(int i=0; i<dat.natMor.dim[0]; ++i){
+	for(int j=0; j<dat.natMor.dim[1]; ++j){
+	  if(conf.keyScaleMModel == 1){ // Scale all M with one number
+	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(0));
+	  }else if(conf.keyScaleMModel == 2){ // Scale each age
+	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(j));
+	  }else if(conf.keyScaleMModel == 3){ // Double Gompertz-Makeham	    
+	    Type lambda = exp(par.scaleMpars(0));
+	    Type a1 = exp(par.scaleMpars(1));
+	    Type a2 = exp(par.scaleMpars(2));
+	    Type b1 = exp(par.scaleMpars(3));
+	    Type b2 = exp(par.scaleMpars(4));
+	    Type ag = (Type)j / (Type)dat.natMor.dim[1];
+	    if(conf.mortalityModel>=1){
+	      dat.natMor(i,j) = dat.natMor(i,j)/nm(i,j) * (a1*exp(-b1*ag) + a2*exp(b2*ag) + lambda);
+	    }else{
+	      dat.natMor(i,j) = dat.natMor(i,j)/m(j) * (a1*exp(-b1*ag) + a2*exp(b2*ag) + lambda);
+	    }
+	  // }else if(conf.keyScaleMModel == 4){ // Double Gompertz-Makeham + covariates
+	  //   Type lambda = exp(par.scaleMpars(0));
+	  //   Type a1 = exp(par.scaleMpars(1));
+	  //   Type a2 = exp(par.scaleMpars(2));
+	  //   Type b1 = exp(par.scaleMpars(3));
+	  //   Type b2 = exp(par.scaleMpars(4));
+	  //   Type ag = (Type)j / (Type)dat.natMor.dim[1];
+	  //   Type hm = m(j);
+	  //   if(conf.mortalityModel>=1){
+	  //     hm = nm(i,j);
+	  //   }
+	  //   Type h0 = (a1*exp(-b1*ag) + a2*exp(b2*ag) + lambda) * dat.natMor(i,j)/hm;
+	  //   Type logPH = 0.0;
+	  //   for(int k = 0; k < dat.Mcovariate.dim[1]; ++k)
+	  //     logPH += par.scaleMpars(5+k) * dat.Mcovariate(i,j);
+	  //   dat.natMor(i,j) =  h0 * exp(logPH);
+	  }
+	}
+      }
+      array<Type> natMor = dat.natMor;
+      REPORT_F(natMor, of);
+    }
+
+    //return Type(0);
     return nll;
-  }
-  return Type(0);
-  })
+    })
 
 
 SAM_SPECIALIZATION(double nllNM(array<double>&, dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, objective_function<double>*));

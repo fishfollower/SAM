@@ -164,13 +164,41 @@ defpar <- function(dat,conf,spinoutyear=10){
 
   ret$logPhiNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(conf$mortalityModel+1)}
   ret$logSdProcLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(1)}
-  ret$meanLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityMean,na.rm=TRUE)+1)}
-  ret$logSdLogNM=if(conf$mortalityModel==0){numeric(0)}else{numeric(max(conf$keyMortalityObsVar,na.rm=TRUE)+1)}
+  ret$meanLogNM=if(conf$mortalityModel==0 && conf$mortalityModelMeanStructure < 0){
+                    numeric(0)
+                }else if(conf$mortalityModelMeanStructure %in% c(0,1)){
+                    numeric(max(conf$keyMortalityMean,na.rm=TRUE)+1)
+                }else if(conf$mortalityModelMeanStructure == 2){## Weibull
+                    numeric(2)
+                }else if(conf$mortalityModelMeanStructure == 3){##Lorenzen
+                    numeric(4)
+                }else if(conf$mortalityModelMeanStructure == 4){##Charnov
+                    numeric(2)
+                }else if(conf$mortalityModelMeanStructure == 5){##Caddy
+                    numeric(2)
+                }else if(conf$mortalityModelMeanStructure == 6){##Siler
+                    numeric(5)
+                }else{
+                    stop("wrong mortality model")
+                }
+  ret$Mbeta = if(conf$mortalityModel==0 && conf$mortalityModelMeanStructure < 0){matrix(0,0,0)}else{matrix(0,max(c(-1,conf$keyMortalityCovariate),na.rm=TRUE)+1,dim(dat$Mcovariate)[3])}
+  ret$logSdLogNM=if(conf$mortalityModel==0 && conf$mortalityModelMeanStructure < 0){numeric(0)}else{numeric(max(c(-1,conf$keyMortalityObsVar),na.rm=TRUE)+1)}
   ret$logXtraSd=if(nrow(conf$keyXtraSd)==0){numeric(0)}else{numeric(length(unique(conf$keyXtraSd[,4])))}
 
 
   ret$initF <- numeric((max(conf$keyLogFsta)+1) * (conf$initState > 0))
   ret$initN <- numeric((conf$maxAge-conf$minAge+1) * (conf$initState > 0))
+
+  ret$scaleMpars <- numeric(0)
+  if(conf$keyScaleMModel == 1){
+      ret$scaleMpars <- numeric(1)
+  }else if(conf$keyScaleMModel == 2){
+      ret$scaleMpars <- numeric(ncol(dat$natMor))
+  }else if(conf$keyScaleMModel == 3){
+      ret$scaleMpars <- numeric(5)
+  }else if(conf$keyScaleMModel == 4){
+      ret$scaleMpars <- numeric(5 + ncol(dat$Mcovariate))
+  }
 
   ret$seasonMu <- matrix(0,length(conf$seasonTimes)-2, max(conf$keyLogFseason)+1)
   if(conf$seasonFixedEffect){
@@ -180,7 +208,7 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$seasonLogitRho <- numeric(max(conf$keyLogFseason)+1)
       ret$seasonLogSd <- numeric(max(conf$keyLogFseason)+1)
   }
-  
+
   ## Reference points
   ret$logFScaleMSY <- 0
   ret$implicitFunctionDelta <- 0

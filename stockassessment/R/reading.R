@@ -314,6 +314,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                            natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL, aux.fleets=NULL,
                            TAC = NULL,
                            RecruitClimate = NULL,
+                           Mcovariate = NULL,
                            keep.all.ages = FALSE,
                            average.sampleTimes.survey = TRUE,
                            fleetnames.remove.space = TRUE){
@@ -326,7 +327,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   name<-NULL
     corList <- list()
   
-  idxCor <- matrix(NA_integer_, nrow=length(fleets)+length(surveys)+ifelse(is.list(residual.fleets),length(residual.fleets),!is.null(residual.fleets)) + ifelse(is.list(sum.residual.fleets),length(sum.residual.fleets),!is.null(sum.residual.fleets)), ncol=nrow(natural.mortality))
+  idxCor <- matrix(NA_integer_, nrow=length(fleets)+length(surveys)+ifelse(is.list(residual.fleets),length(residual.fleets),!is.null(residual.fleets)) + ifelse(is.list(sum.residual.fleets),length(sum.residual.fleets),!is.null(sum.residual.fleets)) + ifelse(is.list(aux.fleets),length(aux.fleets),!is.null(aux.fleets)), ncol=nrow(natural.mortality))
   colnames(idxCor)<-rownames(natural.mortality)
     dat<-data.frame(year=NA_integer_,fleet=NA_integer_,age=NA_integer_,aux=NA_integer_)
     fleetAges <- list()
@@ -503,6 +504,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     if(is.null(RecruitClimate)){
         RecruitClimate <- array(0, dim=c(ydim2,0,0),dimnames=list(ynam2,NULL,NULL))
     }
+    if(is.null(Mcovariate)){
+        Mcovariate <- array(0, dim=c(ydim2,0,0),dimnames=list(ynam2,NULL,NULL))
+    }
 
     
   dat$aux[which(dat$aux<=0)] <- NA_integer_
@@ -649,6 +653,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     attr(dat,'prop.m')<-cutY(prop.m)
     attr(dat,'TAC')<-cutY(TAC)
     attr(dat,'RecruitClimate')<-cutYA(RecruitClimate)
+    attr(dat,'Mcovariate')<-cutYA(Mcovariate)
 
   attr(dat,'land.frac')<-cutYA(land.frac)  
   ft <- as.integer(attr(dat,'type'))
@@ -699,6 +704,7 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     propM=attr(dat,'prop.m'),
     TAC=attr(dat,'TAC'),
     RecruitClimate=attr(dat,'RecruitClimate'),
+    Mcovariate=attr(dat,'Mcovariate'),
     corList=corList,
     sumKey=attr(dat,'sumKey')
   )

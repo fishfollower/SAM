@@ -730,6 +730,7 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       }
       // REPORT_F(obsCov,of);
       REPORT_F(predObs,of);
+      REPORT_F(dat.logobs,of);
       if(reportingLevel >= 0){
 	ADREPORT_F(logssb,of);
 	ADREPORT_F(logerb,of);

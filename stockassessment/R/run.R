@@ -293,6 +293,11 @@ doReporting <- function(obj, opt, ignore.parm.uncertainty){
 ##' @return Updated sam fit
 ##' @export
 getAllDerivedValues <- function(fit){
+    UseMethod("getAllDerivedValues")
+}
+##' @method getAllDerivedValues sam
+##' @export
+getAllDerivedValues.sam <- function(fit){
     if(.checkFullDerived(fit))
         return(fit)
     ddd2 <- as.list(fit$obj$env)[formalArgs(TMB::MakeADFun)[formalArgs(TMB::MakeADFun) != "..."]]
@@ -460,7 +465,10 @@ refit <- function(fit, newConf, startingValues, ...){
         fit2$data$TAC <- matrix(0,nrow=length(fit2$data$years),ncol=0)
 
     if(is.null(fit2$data$RecruitClimate))
-        fit2$data$RecruitClimate <- array(0,dim=c(length(fit2$data$years),0,0))
+        fit2$data$RecruitClimate <- array(0,dim=c(length(fit2$data$years),0,0), dimnames = list(fit2$data$years,NULL,NULL))
+
+      if(is.null(fit2$data$Mcovariate))
+        fit2$data$Mcovariate <- array(0,dim=c(length(fit2$data$years),0,0), dimnames = list(fit2$data$years,NULL,NULL))
 
     
     if(is.null(fit2$data$sampleTimesStart))
