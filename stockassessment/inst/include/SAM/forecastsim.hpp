@@ -40,7 +40,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
     // Simulate F
     // int forecastIndex = CppAD::Integer(forecast.forecastYear(i))-1;
     if(forecast.simFlag(0) == 0){
-      Type timeScale = forecast.forecastCalculatedLogSdCorrection(i);
+      Type timeScale = exp(forecast.forecastCalculatedLogSdCorrection(i));
       if(forecast.fsdTimeScaleModel(i) == forecast.fixedDeviation){
 	logF.col(indx) = (vector<Type>)forecast.forecastCalculatedMedian.col(i);
       }else{
