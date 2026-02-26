@@ -66,7 +66,7 @@ struct stochasticCalculator {
       int ax = a - conf.minAge;
       if(dat.propMat(y,ax) > 0){
 	// Current ERB
-	Type lssbNew = logN(a) + log(mort.ssbSurvival_before(ax,y)) + log(dat.propMat(y,ax)) + log(dat.stockMeanWeight(y,ax));
+	Type lssbNew = logN(a) + mort.ssbLogSurvival_before(ax,y) + log(dat.propMat(y,ax)) + log(dat.stockMeanWeight(y,ax));
 	logThisSSB = logspace_add_SAM(logThisSSB, lssbNew);
       }
     }
@@ -89,13 +89,13 @@ struct stochasticCalculator {
       int ax = a - conf.minAge;
       if(dat.propMat(y,ax) > 0){
 	// Current ERB
-	Type lssbNew = logN(a) + log(mort.ssbSurvival_before(ax,y)) + log(dat.propMat(y,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(y,ax));
+	Type lssbNew = logN(a) + mort.ssbLogSurvival_before(ax,y) + log(dat.propMat(y,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(y,ax));
 	logThisSSB = logspace_add_SAM(logThisSSB, lssbNew);
 	// Y=0 ERB
-	Type lerb0New = logN(a) + log(mort.ssbSurvival_before(ax,0)) + log(dat.propMat(0,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,ax));
+	Type lerb0New = logN(a) + mort.ssbLogSurvival_before(ax,0) + log(dat.propMat(0,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,ax));
 	lerb0 = logspace_add_SAM(lerb0, lerb0New);
 	// Y=0 SSB
-	Type lssb0New = logN(a) + log(mort.ssbSurvival_before(ax,0)) + log(dat.propMat(0,ax)) + log(dat.stockMeanWeight(0,ax));
+	Type lssb0New = logN(a) + mort.ssbLogSurvival_before(ax,0) + log(dat.propMat(0,ax)) + log(dat.stockMeanWeight(0,ax));
 	lssb0 = logspace_add_SAM(lssb0, lssb0New);
       }
     }
@@ -104,7 +104,7 @@ struct stochasticCalculator {
   }
 
   
-  vector<Type> getCumulativeHazard(vector<Type>& logX){
+  vector<Type> getLogCumulativeHazard(vector<Type>& logX){
     int y = dat.propM.rows()-1;
    Type logFbar = logX(0);
     vector<Type> logN = logX.segment(1,logX.size()-1);
@@ -112,8 +112,8 @@ struct stochasticCalculator {
     logF.col(y) += logFbar;
     mort.updateYear(dat,conf,par,logF,logFseason,y);
     vector<Type> res(logN.size());
-    res.setZero();
-    res.segment(conf.minAge, conf.maxAge - conf.minAge + 1) = (vector<Type>)mort.cumulativeHazard.col(y);
+    res.setConstant(R_NegInf);
+    res.segment(conf.minAge, conf.maxAge - conf.minAge + 1) = ((vector<Type>)mort.logCumulativeHazard.col(y)).exp();
     return res;
   }
   
@@ -157,14 +157,14 @@ struct stochasticCalculator {
       break;    
     }
 
-    vector<Type> cumHaz = getCumulativeHazard(logX);
+    vector<Type> lcumHaz = getLogCumulativeHazard(logX);
     for(int j=1; j<logN.size(); ++j){
       // NOTE: cumHaz is zero before conf.minAge
-      predN(j)=logN(j-1) - cumHaz(j-1); //totF(j-1,i-1)-dat.natMor(i-1,j-1); 
+      predN(j)=logN(j-1) - exp(lcumHaz(j-1)); //totF(j-1,i-1)-dat.natMor(i-1,j-1); 
     }
     if(conf.maxAgePlusGroup(0)==1){// plusgroup adjustment if catches need them 
       Type v1 = predN(logN.size()-1); // Already updated above
-      Type v2 = logN(logN.size()-1) - cumHaz(logN.size()-1); //totF(stateDimN-1,i-1) - dat.natMor(i-1,stateDimN-1); // Remaining in plus group from last year
+      Type v2 = logN(logN.size()-1) - exp(lcumHaz(logN.size()-1)); //totF(stateDimN-1,i-1) - dat.natMor(i-1,stateDimN-1); // Remaining in plus group from last year
       predN(logN.size()-1) = logspace_add_SAM(v1,v2);
     }
 
@@ -205,7 +205,7 @@ struct stochasticCalculator {
       for(int f = 0; f < conf.keyLogFsta.dim(0); ++f){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
 	  Type tmp;
-	  Type tmp0 = logN(a) + mort.logFleetSurvival_before(ax,y,f) + log(mort.fleetCumulativeIncidence(ax,y,f));
+	  Type tmp0 = logN(a) + mort.logFleetSurvival_before(ax,y,f) + mort.fleetLogCumulativeIncidence(ax,y,f);
 	  switch(catchType){
 	   case referencepointSet<Type>::totalCatch:
 	     tmp = tmp0 + log(dat.catchMeanWeight(y, ax, f));

@@ -1,5 +1,10 @@
 SAM_DEPENDS(define)
+SAM_DEPENDS(convenience)
 
+#ifdef SAM_NegInf
+#undef SAM_NegInf
+#define SAM_NegInf R_NegInf
+#endif
 
 template<class Type>
 vector<Type> toLogSeasonEffect(vector<Type> x, vector<int> isFishingSeason, vector<double> seasonTimes)SOURCE({
@@ -14,7 +19,7 @@ vector<Type> toLogSeasonEffect(vector<Type> x, vector<int> isFishingSeason, vect
   // r(r.size()-1) = 0.0;
   r -= rs;
   vector<Type> res(isFishingSeason.size());
-  res.setConstant(R_NegInf);
+  res.setConstant(SAM_NegInf);
   int indx = 0;
   for(int i = 0; i < res.size(); ++i)
     if(isFishingSeason(i)){
@@ -74,11 +79,12 @@ template<class Type>
 struct MortalitySet {
   
   // TODO: Switch to log-scale calculations?
-  matrix<Type> cumulativeHazard;		// age x year
-  array<Type> cumulativeHazard_F;		// age x year x fleet
-  matrix<Type> FullYear_cumulativeIncidence_Fishing;		// age x year
-  matrix<Type> FullYear_cumulativeIncidence_Other;		// age x year
-  matrix<Type> FullYear_survival;		// age x year
+  matrix<Type> logCumulativeHazard;		// age x year
+  array<Type> logCumulativeHazard_F;		// age x year x fleet
+  array<Type> logCumulativeHazard_M;		// age x year x cause (M1 + risks)
+  array<Type> FullYear_logCumulativeIncidence_Fishing;		// age x year x fleets
+  array<Type> FullYear_logCumulativeIncidence_Other;		// age x year x cause (M1 + risks)
+  matrix<Type> FullYear_logSurvival;		// age x year
   matrix<Type> Effective_logF;
   matrix<Type> Effective_logM;
   // matrix<Type> totalF;
@@ -86,86 +92,139 @@ struct MortalitySet {
   // array<Type> totalFseason;
   // matrix<Type> totalFCI;
   array<Type> logFleetSurvival_before; // age x year x fleet (including surveys)
-  array<Type> fleetCumulativeIncidence; // age x year x fleet (including surveys)
-  array<Type> otherCumulativeIncidence; // age x year x causes
-  matrix<Type> ssbSurvival_before;	     // age x year
+  array<Type> fleetLogCumulativeIncidence; // age x year x fleet (including surveys)
+  array<Type> otherLogCumulativeIncidence; // age x year x causes (M1 + risks)
+  matrix<Type> ssbLogSurvival_before;	     // age x year
   array<Type> Fseason;			     // seasons x year x (processes+1)
 
   std::vector<Type> activeHazard_breakpoints; // Vector of time points
   vector<int> activeHazard_season; // Key to the fishing season (-1 if none)
   array<int> activeHazard_F;	   // Indicator, 1 if fleet is active (brkpoints x ages x fleets)
-  array<int> activeHazard_M;	// Indicator, 1 if non-fishing hazard is active. (brkpoints x ages x causes)
+  matrix<int> activeHazardMap_risk;	// Indicator, 1 if non-fishing hazard is active. (brkpoints  x causes)
 
-  array<Type> Hazard_breakpoints;	// age x year x activeHazard_breakpoints
-  array<Type> Hazard_F_breakpoints;	// age x year x fleet x activeHazard_breakpoints
-  array<Type> CIF_F_breakpoints;	// age x year x fleet x activeHazard_breakpoints
-  array<Type> CIF_M_breakpoints;	// age x year x causes x activeHazard_breakpoints
+  array<Type> logHazard_breakpoints;	// age x year x activeHazard_breakpoints
+  array<Type> logHazard_F_breakpoints;	// age x year x fleet x activeHazard_breakpoints
+  array<Type> logHazard_M_breakpoints;	// age x year x causes x activeHazard_breakpoints
+  array<Type> logCIF_F_breakpoints;	// age x year x fleet x activeHazard_breakpoints
+  array<Type> logCIF_M_breakpoints;	// age x year x causes x activeHazard_breakpoints
   
   inline MortalitySet():
-    cumulativeHazard(),
-    cumulativeHazard_F(),
-    FullYear_cumulativeIncidence_Fishing(),
-    FullYear_cumulativeIncidence_Other(),
-    FullYear_survival(),
+    logCumulativeHazard(),
+    logCumulativeHazard_F(),
+    logCumulativeHazard_M(),
+    FullYear_logCumulativeIncidence_Fishing(),
+    FullYear_logCumulativeIncidence_Other(),
+    FullYear_logSurvival(),
     Effective_logF(),
     Effective_logM(),
     // totalF(),
     // totalZseason(),
     // totalFseason(),
     logFleetSurvival_before(),
-    fleetCumulativeIncidence(),
-    otherCumulativeIncidence(),
-    ssbSurvival_before(),
+    fleetLogCumulativeIncidence(),
+    otherLogCumulativeIncidence(),
+    ssbLogSurvival_before(),
     Fseason(),
     activeHazard_breakpoints(),
     activeHazard_season(),
     activeHazard_F(),
-    activeHazard_M(),
-    Hazard_breakpoints(),
-    Hazard_F_breakpoints(),
-    CIF_F_breakpoints(),
-    CIF_M_breakpoints()
+    activeHazardMap_risk(),
+    logHazard_breakpoints(),
+    logHazard_F_breakpoints(),
+    logHazard_M_breakpoints(),
+    logCIF_F_breakpoints(),
+    logCIF_M_breakpoints()
   {}
   
   template<class T>
-  inline MortalitySet(const MortalitySet<T> x) : cumulativeHazard(x.cumulativeHazard),
-						 cumulativeHazard_F(x.cumulativeHazard_F),
-						 FullYear_cumulativeIncidence_Fishing(x.FullYear_cumulativeIncidence_Fishing),
-						 FullYear_cumulativeIncidence_Other(x.FullYear_cumulativeIncidence_Other),
-						 FullYear_survival(x.FullYear_survival),
+  inline MortalitySet(const MortalitySet<T> x) : logCumulativeHazard(x.logCumulativeHazard),
+						 logCumulativeHazard_F(x.logCumulativeHazard_F,x.logCumulativeHazard_F.dim),
+						 logCumulativeHazard_M(x.logCumulativeHazard_M,x.logCumulativeHazard_M.dim),
+						 FullYear_logCumulativeIncidence_Fishing(x.FullYear_logCumulativeIncidence_Fishing, x.FullYear_logCumulativeIncidence_Fishing.dim),
+						 FullYear_logCumulativeIncidence_Other(x.FullYear_logCumulativeIncidence_Other, x.FullYear_logCumulativeIncidence_Other.dim),
+						 FullYear_logSurvival(x.FullYear_logSurvival),
 						 Effective_logF(x.Effective_logF),
 						 Effective_logM(x.Effective_logM),
 						 // totalF(x.totalF),
 						 // totalZseason(x.totalZseason),
 						 // totalFseason(x.totalFseason),
-						 logFleetSurvival_before(x.logFleetSurvival_before),
-						 fleetCumulativeIncidence(x.fleetCumulativeIncidence),
-						 otherCumulativeIncidence(x.otherCumulativeIncidence),
-						 ssbSurvival_before(x.ssbSurvival_before),
+						 logFleetSurvival_before(x.logFleetSurvival_before,x.logFleetSurvival_before.dim),
+						 fleetLogCumulativeIncidence(x.fleetLogCumulativeIncidence,x.fleetLogCumulativeIncidence.dim),
+						 otherLogCumulativeIncidence(x.otherLogCumulativeIncidence,x.otherLogCumulativeIncidence.dim),
+						 ssbLogSurvival_before(x.ssbLogSurvival_before),
 						 Fseason(x.Fseason),
 						 activeHazard_breakpoints(x.activeHazard_breakpoints),
 						 activeHazard_season(x.activeHazard_season),
-						 activeHazard_F(x.activeHazard_F),
-						 activeHazard_M(x.activeHazard_M),
-						 Hazard_breakpoints(x.Hazard_breakpoints),
-						 Hazard_F_breakpoints(x.Hazard_breakpoints),
-						 CIF_F_breakpoints(x.CIF_F_breakpoints),
-						 CIF_M_breakpoints(x.CIF_M_breakpoints)
+						 activeHazard_F(x.activeHazard_F,x.activeHazard_F.dim),
+						 activeHazardMap_risk(x.activeHazardMap_risk),
+						 logHazard_breakpoints(x.logHazard_breakpoints,x.logHazard_breakpoints.dim),
+						 logHazard_F_breakpoints(x.logHazard_F_breakpoints,x.logHazard_F_breakpoints.dim),
+						 logHazard_M_breakpoints(x.logHazard_M_breakpoints,x.logHazard_M_breakpoints.dim),
+						 logCIF_F_breakpoints(x.logCIF_F_breakpoints,x.logCIF_F_breakpoints.dim),
+						 logCIF_M_breakpoints(x.logCIF_M_breakpoints,x.logCIF_M_breakpoints.dim)
 						 
   {}
   
   MortalitySet(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason);
 
   void updateSeasons(dataSet<Type>& dat, confSet& conf, array<Type>& logitFseason, int y);
-  void updateHazards(dataSet<Type>& dat, confSet& conf, array<Type>& logF, int y);
+  void updateHazards(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int y);
   // For simulation based forecast
   void updateYear(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason, int y);
 
   Type logSurvival(int a, int y, Type t0, Type t1);
-  Type CIF(int fleet, int a, int y, Type t0, Type t1);
-  Type partialCIF(int fleet, int a, int y, Type t0, Type t1);
+  Type logCIF(int fleet, int a, int y, Type t0, Type t1);
+  Type partialLogCIF(int fleet, int a, int y, Type t0, Type t1);
+  Type logCIFr(int risk, int a, int y, Type t0, Type t1);
+  Type partialLogCIFr(int risk, int a, int y, Type t0, Type t1);
   
 });
+
+
+
+template<class Type>
+SEXP asSEXP(const MortalitySet<Type> &x) SOURCE({
+    const char *resNms[] = {"logCumulativeHazard", "logCumulativeHazard_F", "logCumulativeHazard_M", "FullYear_logCumulativeIncidence_Fishing", "FullYear_logCumulativeIncidence_Other", "FullYear_logSurvival", "Effective_logF", "Effective_logM", "logFleetSurvival_before","fleetLogCumulativeIncidence","otherLogCumulativeIncidence","ssbLogSurvival_before", "Fseason", "activeHazard_breakpoints", "activeHazard_season", "activeHazard_F","activeHazardMap_risk", "logHazard_breakpoints", "logHazard_F_breakpoints", "logHazard_M_breakpoints", "logCIF_F_breakpoints", "logCIF_M_breakpoints", ""}; // Must end with ""
+    SEXP res;
+    PROTECT(res = Rf_mkNamed(VECSXP, resNms));
+    SET_VECTOR_ELT(res, 0, asSEXP(x.logCumulativeHazard));
+    SET_VECTOR_ELT(res, 1, asSEXP(x.logCumulativeHazard_F));
+    SET_VECTOR_ELT(res, 2, asSEXP(x.logCumulativeHazard_M));
+    SET_VECTOR_ELT(res, 3, asSEXP(x.FullYear_logCumulativeIncidence_Fishing));
+    SET_VECTOR_ELT(res, 4, asSEXP(x.FullYear_logCumulativeIncidence_Other));
+    SET_VECTOR_ELT(res, 5, asSEXP(x.FullYear_logSurvival));
+    SET_VECTOR_ELT(res, 6, asSEXP(x.Effective_logF));
+    SET_VECTOR_ELT(res, 7, asSEXP(x.Effective_logM));
+    SET_VECTOR_ELT(res, 8, asSEXP(x.logFleetSurvival_before));
+    SET_VECTOR_ELT(res, 9, asSEXP(x.fleetLogCumulativeIncidence));
+    SET_VECTOR_ELT(res, 10, asSEXP(x.otherLogCumulativeIncidence));
+    SET_VECTOR_ELT(res, 11, asSEXP(x.ssbLogSurvival_before));
+    SET_VECTOR_ELT(res, 12, asSEXP(x.Fseason));
+    vector<Type> tmp(x.activeHazard_breakpoints.size());
+    for(int i = 0; i < tmp.size(); ++i)
+      tmp(i) = x.activeHazard_breakpoints[i];
+    SET_VECTOR_ELT(res, 13, asSEXP(tmp));
+    SET_VECTOR_ELT(res, 14, asSEXP(x.activeHazard_season));
+    SET_VECTOR_ELT(res, 15, asSEXP(x.activeHazard_F));
+    SET_VECTOR_ELT(res, 16, asSEXP(x.activeHazardMap_risk));
+    SET_VECTOR_ELT(res, 17, asSEXP(x.logHazard_breakpoints));
+    SET_VECTOR_ELT(res, 18, asSEXP(x.logHazard_F_breakpoints));
+    SET_VECTOR_ELT(res, 19, asSEXP(x.logHazard_M_breakpoints));
+    SET_VECTOR_ELT(res, 20, asSEXP(x.logCIF_F_breakpoints));
+    SET_VECTOR_ELT(res, 21, asSEXP(x.logCIF_M_breakpoints));
+
+    // Report RiskHazard function over range of input
+    
+    UNPROTECT(1);    
+    return res;
+  })
+
+
+SAM_SPECIALIZATION(SEXP asSEXP(const MortalitySet<double>&));
+SAM_SPECIALIZATION(SEXP asSEXP(const MortalitySet<TMBad::ad_aug>&));
+
+
+
 
 SOURCE(
        template<class Type>
@@ -196,78 +255,115 @@ SOURCE(
 
 SOURCE(
 template<class Type>
-void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, array<Type>& logF,int y){
+void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF,int y){ // Add par and logN
   // Hazard and cumulative incidence per interval
-  int nIntervals = Hazard_breakpoints.dim(2);
-  int nAges = Hazard_breakpoints.dim(0);
-  int nFleet = conf.keyLogFsta.dim(0);	 
+  int nIntervals = logHazard_breakpoints.dim(2);
+  int nAges = logHazard_breakpoints.dim(0);
+  int nFleet = conf.keyLogFsta.dim(0);
+  int nRisk = dat.CompRisk.size() + 1;
+  
 
   vector<Type> tmpCumHaz(nAges);
-  tmpCumHaz.setZero();
+  tmpCumHaz.setConstant(SAM_NegInf);
   matrix<Type> tmpCumHaz_F(nAges,nFleet);
-  tmpCumHaz_F.setZero();
+  tmpCumHaz_F.setConstant(SAM_NegInf);
+  matrix<Type> tmpCumHaz_M(nAges,nRisk);
+  tmpCumHaz_M.setConstant(SAM_NegInf);
 
-  vector<Type> tmpFYCIF_F(nAges);
-  tmpFYCIF_F.setZero();
+  matrix<Type> tmpFYCIF_F(nAges,nFleet);
+  tmpFYCIF_F.setConstant(SAM_NegInf);
 
-  vector<Type> tmpFYCIF_Other(nAges);
-  tmpFYCIF_Other.setZero();
+  matrix<Type> tmpFYCIF_Other(nAges,nRisk);
+  tmpFYCIF_Other.setConstant(SAM_NegInf);
 
+  // logHazard_breakpoints.setConstant(SAM_NegInf);
+  // logHazard_M_breakpoints.setConstant(SAM_NegInf);
+  // logHazard_F_breakpoints.setConstant(SAM_NegInf);
   
   for(int i = 0; i < nIntervals; ++i){
     int s = activeHazard_season(i);
     Type dt = activeHazard_breakpoints[i+1] - activeHazard_breakpoints[i];
     for(int a = 0; a < nAges; ++a){
-      Hazard_breakpoints(a,y,i) = 0.0;      
-      // Natural hazards (only natMor)
-      if(activeHazard_M(i,a,0))
-        Hazard_breakpoints(a,y,i) += dat.natMor(y,a);
-      // Fleets
+      logHazard_breakpoints(a,y,i) = SAM_NegInf;
+      // Natural hazards (natMor + risks)
+      // M1 (always active
+      //if(activeHazard_M(i,a,0)){
+      logHazard_breakpoints(a,y,i) = logspace_add_SAM(logHazard_breakpoints(a,y,i),log(dat.natMor(y,a)));
+      logHazard_M_breakpoints(a,y,0,i) = log(dat.natMor(y,a)); //logspace_add_SAM(logHazard_M_breakpoints(a,y,0,i),log(dat.natMor(y,a)));
+      tmpCumHaz_M(a,0) = logspace_add_SAM(tmpCumHaz_M(a,0),logHazard_M_breakpoints(a,y,0,i) + log(dt));
+      // }
+      // Competing risks
+      if(nRisk > 1){
+	for(int r = 1; r < nRisk; ++r)
+	  if(activeHazardMap_risk(i,r-1) > -1){
+	    int brk = activeHazardMap_risk(i,r-1);
+	    int p = conf.keyCompRisk(r-1,a);
+	    Type logh = SAM_NegInf;
+	    if(p >= 0){
+	      int yx = std::min(y,(int)dat.CompRisk(r-1).X.rows()-1);
+	      logh = logRiskHazard(dat.CompRisk(r-1).X(yx,brk),par.cp_m(p),par.cp_logk(p),par.cp_loga(p),par.cp_logb(p), dat.CompRisk(r-1).Model);
+	    }
+	    logHazard_breakpoints(a,y,i) = logspace_add_SAM(logHazard_breakpoints(a,y,i),logh);
+	    logHazard_M_breakpoints(a,y,r,i) = logh; // logspace_add_SAM(logHazard_M_breakpoints(a,y,r,i),logh);
+	    tmpCumHaz_M(a,r) = logspace_add_SAM(tmpCumHaz_M(a,r), logHazard_M_breakpoints(a,y,r,i) + log(dt));
+	  }
+      }
+	// Fleets
       for(int f = 0; f < nFleet; ++f){
-	Hazard_F_breakpoints(a,y,f,i) = 0.0;
+	logHazard_F_breakpoints(a,y,f,i) = SAM_NegInf;
 	int indx = conf.keyLogFsta(f,a);
 	if(indx > (-1) && activeHazard_F(i,a,f)){
 	  int j = conf.keyLogFseason(f,a);	  
 	  Type logFs = logF(indx,y);
 	  if(s > (-1))
 	    logFs += Fseason(s,y,j+1);
-	  Hazard_breakpoints(a,y,i) += exp(logFs);
-	  Hazard_F_breakpoints(a,y,f,i) += exp(logFs);
-	  tmpCumHaz_F(a,f) += Hazard_F_breakpoints(a,y,f,i) * dt;
+	  logHazard_breakpoints(a,y,i) = logspace_add_SAM(logHazard_breakpoints(a,y,i), logFs);
+	  logHazard_F_breakpoints(a,y,f,i) = logFs; //logspace_add_SAM(logHazard_F_breakpoints(a,y,f,i),logFs);
+	  tmpCumHaz_F(a,f) = logspace_add_SAM(tmpCumHaz_F(a,f), logHazard_F_breakpoints(a,y,f,i) + log(dt));
 	}
       }
-      Type Stmp = exp(-tmpCumHaz(a));
-      tmpCumHaz(a) += Hazard_breakpoints(a,y,i) * dt;
+      Type Stmp = -exp(tmpCumHaz(a));
+      tmpCumHaz(a) = logspace_add_SAM(tmpCumHaz(a),logHazard_breakpoints(a,y,i) + log(dt));
       // Calculate CIF M
-      CIF_M_breakpoints(a,y,0,i) = 0.0;
-      if(activeHazard_M(i,a,0))
-	CIF_M_breakpoints(a,y,0,i) = dat.natMor(y,a) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
-      tmpFYCIF_Other(a) += Stmp * CIF_M_breakpoints(a,y,0,i);
+      logCIF_M_breakpoints(a,y,0,i) = SAM_NegInf;
+      //if(activeHazard_M(i,a,0))
+      for(int r = 0; r < nRisk; ++r){
+	//CIF_M_breakpoints(a,y,r,i) = Hazard_M_breakpoints(a,y,r,i) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
+	logCIF_M_breakpoints(a,y,r,i) = logHazard_M_breakpoints(a,y,r,i) - logHazard_breakpoints(a,y,i) + logspace_sub_SAM(Type(0.0),-exp(logHazard_breakpoints(a,y,i)) * dt);
+	tmpFYCIF_Other(a,r) = logspace_add_SAM(tmpFYCIF_Other(a,r), Stmp + logCIF_M_breakpoints(a,y,r,i));
+      }
       // Calculate CIF F
       for(int f = 0; f < nFleet; ++f){
-	CIF_F_breakpoints(a,y,f,i) = 0.0;
+	logCIF_F_breakpoints(a,y,f,i) = SAM_NegInf;
 	int indx = conf.keyLogFsta(f,a);
 	if(indx > (-1) && activeHazard_F(i,a,f)){
 	  int j = conf.keyLogFseason(f,a);
 	  Type logFs = logF(indx,y);
 	  if(s > (-1))
 	    logFs += Fseason(s,y,j+1);
-	  CIF_F_breakpoints(a,y,f,i) = exp(logFs) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
+	  //CIF_F_breakpoints(a,y,f,i) = exp(logFs) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
+	  logCIF_F_breakpoints(a,y,f,i) = logFs - logHazard_breakpoints(a,y,i) + logspace_sub_SAM(Type(0.0),-exp(logHazard_breakpoints(a,y,i)) * dt);
 	}
-	tmpFYCIF_F(a) += Stmp * CIF_F_breakpoints(a,y,f,i);
+	tmpFYCIF_F(a,f) = logspace_add_SAM(tmpFYCIF_F(a,f), Stmp + logCIF_F_breakpoints(a,y,f,i));
       }
     }
   }
   for(int a = 0; a < nAges; ++a){
-    cumulativeHazard(a,y) = tmpCumHaz(a);
-    FullYear_survival(a,y) = exp(-tmpCumHaz(a));
-    FullYear_cumulativeIncidence_Fishing(a,y) = tmpFYCIF_F(a);
-    FullYear_cumulativeIncidence_Other(a,y) = tmpFYCIF_Other(a);
+    logCumulativeHazard(a,y) = tmpCumHaz(a);
+    FullYear_logSurvival(a,y) = -exp(tmpCumHaz(a));
     for(int f = 0; f < nFleet; ++f)
-      cumulativeHazard_F(a,y,f) = tmpCumHaz_F(a,f);
+      FullYear_logCumulativeIncidence_Fishing(a,y,f) = tmpFYCIF_F(a,f);
+    for(int r = 0; r < nRisk; ++r)
+      FullYear_logCumulativeIncidence_Other(a,y,r) = tmpFYCIF_Other(a,r);
+    for(int f = 0; f < nFleet; ++f)
+      logCumulativeHazard_F(a,y,f) = tmpCumHaz_F(a,f);
+    for(int r = 0; r < nRisk; ++r)
+      logCumulativeHazard_M(a,y,r) = tmpCumHaz_M(a,r);
     // Update effective F and M
-    Type v = FullYear_survival(a,y);
-    Type u = FullYear_cumulativeIncidence_Fishing(a,y);
+    Type v = exp(FullYear_logSurvival(a,y));
+    Type u = exp(FullYear_logCumulativeIncidence_Fishing(a,y,0));
+    for(int f = 1; f < nFleet; ++f)
+      u += exp(FullYear_logCumulativeIncidence_Fishing(a,y,f));
     Effective_logF(a,y) = log(-log(v)) + log(u) - log(1.0 - v);
     Effective_logM(a,y) = log(-log(v)) + log(1.0 - u - v) - log(1.0 - v);
   }
@@ -292,7 +388,7 @@ SOURCE(
 	   Type Astart = std::max(activeHazard_breakpoints[i],t0);
 	   Type Aend =std::min(activeHazard_breakpoints[i+1],t1);
 	   // Hazard is constant, so cumulative hazard is hazard times interval length
-	   logS0 -= Hazard_breakpoints(a,y,i) * (Aend - Astart);
+	   logS0 -= exp(logHazard_breakpoints(a,y,i)) * (Aend - Astart);
 	 }
 	 return logS0;
        }
@@ -300,12 +396,12 @@ SOURCE(
 
 SOURCE(
        template<class Type>
-       Type MortalitySet<Type>::CIF(int fleet, int a, int y, Type t0, Type t1){
+       Type MortalitySet<Type>::logCIF(int fleet, int a, int y, Type t0, Type t1){
 	 // Cumulative incidence between t0 and t1
 
 	 // Loop over hazard intervals (start from probability one of surviving until t0
 	 Type logS0 = 0.0;
-	 Type vCIF = 0.0;
+	 Type vlogCIF = SAM_NegInf;
 	 for(int i = 0; i < (int)activeHazard_breakpoints.size() - 1; ++i){
 	   // Skip interval if it ends before time interval
 	   if(activeHazard_breakpoints[i+1] <= t0)
@@ -322,43 +418,107 @@ SOURCE(
 	   int f1 = fleet+1;
 	   if(fleet < 0){
 	     f0 = 0;
-	     f1 = CIF_F_breakpoints.dim(2);
+	     f1 = logCIF_F_breakpoints.dim(2);
 	   }
 	   for(int f = f0; f < f1; ++f){	     
 	     if(t0 <= activeHazard_breakpoints[i] &&
 		t1 >= activeHazard_breakpoints[i+1]){ // Full interval (pre-calculated)	     
-	       vCIF += exp(logS0) * CIF_F_breakpoints(a,y,fleet,i);
+	       //vCIF += exp(logS0) * CIF_F_breakpoints(a,y,fleet,i);
+	       vlogCIF = logspace_add_SAM(vlogCIF, logS0 + logCIF_F_breakpoints(a,y,fleet,i));
 	     }else{
-	       vCIF += exp(logS0) * Hazard_F_breakpoints(a,y,f,i) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * (Aend-Astart)));
+	       //vCIF += exp(logS0) * Hazard_F_breakpoints(a,y,f,i) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * (Aend-Astart)));
+	       Type tmp = logHazard_F_breakpoints(a,y,f,i) - logHazard_breakpoints(a,y,i) + logspace_sub_SAM(Type(0.0), -exp(logHazard_breakpoints(a,y,i)) * (Aend-Astart));
+	       vlogCIF = logspace_add_SAM(vlogCIF, logS0 + tmp);
 	     }
 	   }	 
 	   // Update survival before next interval: Hazard is constant, so cumulative hazard is hazard times interval length
-	   logS0 -= Hazard_breakpoints(a,y,i) * (Aend - Astart);
+	   logS0 -= exp(logHazard_breakpoints(a,y,i)) * (Aend - Astart);
 	 }
-	 return vCIF;
+	 return vlogCIF;
        }
        )
 
 
 SOURCE(
        template<class Type>
-       Type MortalitySet<Type>::partialCIF(int fleet, int a, int y, Type t0, Type t1){
+       Type MortalitySet<Type>::partialLogCIF(int fleet, int a, int y, Type t0, Type t1){
 	 // Probability of survival until t0 and dying from fishing in (t0,t1)
 	 Type logS0 = this->logSurvival(a,y,(Type)0.0,t0);
-	 Type vCIF = this->CIF(fleet,a,y,t0,t1);
-	 return exp(logS0) * vCIF;
+	 Type vlogCIF = this->logCIF(fleet,a,y,t0,t1);
+	 return logS0 + vlogCIF;
+       }
+       )
+
+
+
+SOURCE(
+       template<class Type>
+       Type MortalitySet<Type>::logCIFr(int risk, int a, int y, Type t0, Type t1){
+	 // Cumulative incidence between t0 and t1
+
+	 // Loop over hazard intervals (start from probability one of surviving until t0
+	 Type logS0 = 0.0;
+	 Type vlogCIF = SAM_NegInf;
+	 for(int i = 0; i < (int)activeHazard_breakpoints.size() - 1; ++i){
+	   // Skip interval if it ends before time interval
+	   if(activeHazard_breakpoints[i+1] <= t0)
+	     continue;
+	   // Break loop if interval starts after time interval
+	   if(activeHazard_breakpoints[i] >= t1)
+	     break;
+	   
+	   // Otherwise, look at overlap between intervals
+	   // Full interval
+	   Type Astart = std::max(activeHazard_breakpoints[i],t0);
+	   Type Aend =std::min(activeHazard_breakpoints[i+1],t1);
+	   int r0 = risk;
+	   int r1 = risk+1;
+	   if(risk < 0){
+	     r0 = 0;
+	     r1 = logCIF_M_breakpoints.dim(2);
+	   }
+	   for(int r = r0; r < r1; ++r){	     
+	     if(t0 <= activeHazard_breakpoints[i] &&
+		t1 >= activeHazard_breakpoints[i+1]){ // Full interval (pre-calculated)	     
+	       //vCIF += exp(logS0) * CIF_M_breakpoints(a,y,r,i);
+	       vlogCIF = logspace_add_SAM(logS0, logCIF_M_breakpoints(a,y,r,i));
+	     }else{
+	       //vCIF += exp(logS0) * Hazard_M_breakpoints(a,y,r,i) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * (Aend-Astart)));
+	       Type tmp = logHazard_M_breakpoints(a,y,r,i) - logHazard_breakpoints(a,y,i) + logspace_sub_SAM(Type(0.0), -exp(logHazard_breakpoints(a,y,i)) * (Aend-Astart));
+	       vlogCIF = logspace_add_SAM(vlogCIF, logS0 + tmp);
+	     }
+	   }	 
+	   // Update survival before next interval: Hazard is constant, so cumulative hazard is hazard times interval length
+	   logS0 -= exp(logHazard_breakpoints(a,y,i)) * (Aend - Astart);
+	 }
+	 return vlogCIF;
        }
        )
 
 
 SOURCE(
+       template<class Type>
+       Type MortalitySet<Type>::partialLogCIFr(int risk, int a, int y, Type t0, Type t1){
+	 // Probability of survival until t0 and dying from fishing in (t0,t1)
+	 Type logS0 = this->logSurvival(a,y,(Type)0.0,t0);
+	 Type vlogCIF = this->logCIFr(risk,a,y,t0,t1);
+	 return logS0 + vlogCIF;
+       }
+       )
+
+
+
+
+
+SOURCE(
 	 template<class Type>
 	 MortalitySet<Type>::MortalitySet(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason) :
-	 cumulativeHazard(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
-	 cumulativeHazard_F(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
-	 FullYear_cumulativeIncidence_Fishing(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
-	 FullYear_cumulativeIncidence_Other(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
-	 FullYear_survival(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 logCumulativeHazard(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 logCumulativeHazard_F(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
+	 logCumulativeHazard_M(conf.keyLogFsta.dim(1), dat.natMor.dim(0), dat.CompRisk.size()+1),
+	 FullYear_logCumulativeIncidence_Fishing(conf.keyLogFsta.dim(1), dat.natMor.dim(0),conf.keyLogFsta.dim(0)),
+	 FullYear_logCumulativeIncidence_Other(conf.keyLogFsta.dim(1), dat.natMor.dim(0),dat.CompRisk.size()+1),
+	 FullYear_logSurvival(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 Effective_logF(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 Effective_logM(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 
@@ -366,42 +526,50 @@ SOURCE(
 	 // totalZseason(conf.seasonTimes.size()-1, conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 // totalFseason(conf.seasonTimes.size()-1, conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 logFleetSurvival_before(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
-	 fleetCumulativeIncidence(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
-	 otherCumulativeIncidence(conf.keyLogFsta.dim(1), dat.natMor.dim(0), 1),
-	 ssbSurvival_before(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
+	 fleetLogCumulativeIncidence(conf.keyLogFsta.dim(1), dat.natMor.dim(0), conf.keyLogFsta.dim(0)),
+	 otherLogCumulativeIncidence(conf.keyLogFsta.dim(1), dat.natMor.dim(0), dat.CompRisk.size()+1),
+	 ssbLogSurvival_before(conf.keyLogFsta.dim(1), dat.natMor.dim(0)),
 	 Fseason(logitFseason.dim(0)+1,logitFseason.dim(1),logitFseason.dim(2)+1),
 	 activeHazard_breakpoints(),	  
 	 activeHazard_season(),
 	 activeHazard_F(),
-	 activeHazard_M(),
-	 Hazard_breakpoints(),
-	 Hazard_F_breakpoints(),
-	 CIF_F_breakpoints(),
-	 CIF_M_breakpoints()
+	 activeHazardMap_risk(),
+	 logHazard_breakpoints(),
+	 logHazard_F_breakpoints(),
+	 logHazard_M_breakpoints(),
+	 logCIF_F_breakpoints(),
+	 logCIF_M_breakpoints()
 
 	 {
 	   int nYear = dat.natMor.dim(0);
-	   cumulativeHazard.setZero();
-	   cumulativeHazard_F.setZero();
-	   FullYear_cumulativeIncidence_Fishing.setZero();
-	   FullYear_cumulativeIncidence_Other.setZero();
-	   FullYear_survival.setZero();
-	   Effective_logF.setConstant(R_NegInf);
-	   Effective_logM.setConstant(R_NegInf);
+	   logCumulativeHazard.setConstant(SAM_NegInf);
+	   logCumulativeHazard_F.setConstant(SAM_NegInf);
+	   logCumulativeHazard_M.setConstant(SAM_NegInf);
+	   FullYear_logCumulativeIncidence_Fishing.setConstant(SAM_NegInf);
+	   FullYear_logCumulativeIncidence_Other.setConstant(SAM_NegInf);
+	   FullYear_logSurvival.setConstant(SAM_NegInf);
+	   Effective_logF.setConstant(SAM_NegInf);
+	   Effective_logM.setConstant(SAM_NegInf);
 	   
 	   Fseason.setZero();
 	   // totalZseason.setZero();
 	   // totalFseason.setZero();
-	   logFleetSurvival_before.setZero();
-	   fleetCumulativeIncidence.setZero();
-	   otherCumulativeIncidence.setZero();
-	   ssbSurvival_before.setZero();
+	   logFleetSurvival_before.setConstant(SAM_NegInf);
+	   fleetLogCumulativeIncidence.setConstant(SAM_NegInf);
+	   otherLogCumulativeIncidence.setConstant(SAM_NegInf);
+	   ssbLogSurvival_before.setConstant(SAM_NegInf);
 
 	   // activeHazard breakpoints
 	   std::vector<Type> ahb_tmp(0);
-	   // Natural mortality is constant from start to end
+	   // Natural mortality M1 is constant from start to end
 	   ahb_tmp.push_back(0.0);
 	   ahb_tmp.push_back(1.0);
+	   // Risks
+	   for(int r = 0; r < dat.CompRisk.size(); ++r){
+	     vector<double> brk = dat.CompRisk(r).breakpoints;
+	     for(int i = 0; i < brk.size(); ++i)
+	       ahb_tmp.push_back(brk(i));
+	   }
 	   // Fleets
 	   for(int f = 0; f < dat.sampleTimesStart.size(); ++f){
 	     // only changes hazards if fleet type is 0
@@ -439,6 +607,27 @@ SOURCE(
 	       }
 	     }
 	   }
+	   int nRisk = dat.CompRisk.size();
+	   activeHazardMap_risk = matrix<int>(nInterval,nRisk);
+	   if(nRisk > 0){
+	     activeHazardMap_risk.setConstant(-1);
+	     // Loop over risks (exclude M1)
+	     for(int r = 0; r < nRisk; ++r){
+	       int lastBrk = 0;
+	       vector<double> brks = dat.CompRisk(r).breakpoints;
+	       for(int i = 0; i < nInterval; ++i){
+		 for(int q = lastBrk; q < brks.size()-1; ++q){ //Since brks are ordered, the hazard interval cannot be lower than the previous
+		   double t0 = brks[q];
+		   double t1 = brks[q+1];		   
+		   if(t0 <= activeHazard_breakpoints[i] &&
+		      t1 >= activeHazard_breakpoints[i+1]){
+		     activeHazardMap_risk(i,r) = q;
+		     break;
+		   }
+		 }
+	       }
+	     }
+	   }
 	   int nFleets = conf.keyLogFsta.dim(0);
 	   int nAges = conf.keyLogFsta.dim(1);
 	   
@@ -463,14 +652,15 @@ SOURCE(
 	     }
 	   }
 	   // Non-fishing hazard. Currently only one that is always active
-	   activeHazard_M = array<int>(nInterval,nAges,1);
-	   activeHazard_M.setConstant(1);
+	   // activeHazard_M = array<int>(nInterval,nAges,1);
+	   // activeHazard_M.setConstant(1);
 
 	   
-	   Hazard_breakpoints = array<Type>(nAges,nYear,nInterval);
-	   Hazard_F_breakpoints = array<Type>(nAges,nYear,nFleets,nInterval);
-	   CIF_F_breakpoints = array<Type>(nAges,nYear,nFleets,nInterval);
-	   CIF_M_breakpoints = array<Type>(nAges,nYear,1,nInterval);
+	   logHazard_breakpoints = array<Type>(nAges,nYear,nInterval);
+	   logHazard_F_breakpoints = array<Type>(nAges,nYear,nFleets,nInterval);
+	   logHazard_M_breakpoints = array<Type>(nAges,nYear,nRisk+1,nInterval);
+	   logCIF_F_breakpoints = array<Type>(nAges,nYear,nFleets,nInterval);
+	   logCIF_M_breakpoints = array<Type>(nAges,nYear,nRisk+1,nInterval);
 	   
 	   for(int y = 0; y < nYear; ++y)
 	     this->updateYear(dat,conf,par,logF,logitFseason,y);
@@ -483,6 +673,7 @@ SOURCE(
        void MortalitySet<Type>::updateYear(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason, int y){
 	 
 	 int nFleet = conf.keyLogFsta.dim(0);
+	 int nRisk = dat.CompRisk.size() + 1;
 	 int nAge = conf.keyLogFsta.dim(1);
 	 int nYear = dat.natMor.dim(0);
 	 // int nSeason = conf.seasonTimes.size()-1;
@@ -492,19 +683,38 @@ SOURCE(
 	 // Update Fseason
 	 this->updateSeasons(dat, conf,logitFseason,y);
 	 // Update hazards
-	 this->updateHazards(dat,conf,logF,y);
+	 this->updateHazards(dat,conf,par, logF,y);
 
 	 // Update everything else
 	 for(int a = 0; a < nAge; ++a){
-	   Type vssb = dat.natMor(y,a) * dat.propM(y,a);
+	   Type vssb = SAM_NegInf; //dat.natMor(y,a) * dat.propM(y,a);
+	   bool didit = false;
+	   for(int r = 0; r < nRisk; ++r){
+	     if(dat.propM(y,a) > 0){
+	       didit = true;
+	       vssb = logspace_add_SAM(vssb, logCumulativeHazard_M(a,y,r) + log(dat.propM(y,a)));
+	     }
+	     otherLogCumulativeIncidence(a,y,r) = this->logCIFr(r, a, y, (Type)0, (Type)1);
+	   }
 	   for(int f = 0; f < nFleet; ++f){
 	     logFleetSurvival_before(a,y,f) = this->logSurvival(a, y, Type(0.0), (Type)dat.sampleTimesStart(f));
-	     fleetCumulativeIncidence(a,y,f) = this->CIF(f, a, y, (Type)dat.sampleTimesStart(f), (Type)dat.sampleTimesEnd(f));
+	     fleetLogCumulativeIncidence(a,y,f) = this->logCIF(f, a, y, (Type)0, (Type)1); //(Type)dat.sampleTimesStart(f), (Type)dat.sampleTimesEnd(f));
 	     int i = conf.keyLogFsta(f,a);
-	     if(i > (-1))
-	       vssb += exp(logF(i,y)) * dat.propF(y,a,f);
+	     if(i > (-1) && dat.propF(y,a,f) > 0){
+	       didit = true;
+	     //   vssb += exp(logF(i,y)) * dat.propF(y,a,f);
+	       vssb = logspace_add_SAM(vssb, logCumulativeHazard_F(a,y,f) + log(dat.propF(y,a,f)));
+	       // vssb += cumulativeHazard_F(a,y,f) * dat.propF(y,a,f);
+	     }
 	   }
-	   ssbSurvival_before(a,y) = exp(-vssb);
+	   int yx = std::min(y, (int)dat.recruitmentTimeOfYear.size()-1);
+	   if(dat.recruitmentTimeOfYear(yx) >= 0 && dat.recruitmentTimeOfYear(yx) <= 1){
+	     ssbLogSurvival_before(a,y) = this->logSurvival(a, y, Type(0.0), dat.recruitmentTimeOfYear(yx));
+	   }else if(!didit){
+	     ssbLogSurvival_before(a,y) = 0;
+	   }else{
+	     ssbLogSurvival_before(a,y) = -exp(vssb);
+	   }
 	 }
 	 return;
        

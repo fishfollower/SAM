@@ -15,24 +15,24 @@ Type empiricalSPR_i(dataSet<Type> &dat, confSet &conf, array<Type>& logN, Mortal
     Type v = 0.0;
     for(int j = 0; j < stateDimN - 1; ++j){
       if(dat.propMat(i,j) > 0){
-	Type lssbNew = logN(j,i+j) + log(mort.ssbSurvival_before(j,i+j)) + log(dat.propMat(i+j,j)) + log(dat.stockMeanWeight(i+j,j));
+	Type lssbNew = logN(j,i+j) + mort.ssbLogSurvival_before(j,i+j) + log(dat.propMat(i+j,j)) + log(dat.stockMeanWeight(i+j,j));
 	v += exp(lssbNew); //logssb = loglogspace_add_SAM(logssb, lssbNew);
       }
     }
     Type lNPlusLast = R_NegInf;
     if(conf.maxAgePlusGroup(0)==1 && stateDimN > 1){
       int j = stateDimN - 1;
-      Type v1 = logN(j-1,i+j-1) - mort.cumulativeHazard(j-1,i+j-1);
-      Type v2 = logN(j,i+j-1) - mort.cumulativeHazard(j,i+j-1);
+      Type v1 = logN(j-1,i+j-1) - exp(mort.logCumulativeHazard(j-1,i+j-1));
+      Type v2 = logN(j,i+j-1) - exp(mort.logCumulativeHazard(j,i+j-1));
       // Proportion of logN plus group that "came from" cohort:
       Type lN = logN(j,i+j) - (v1 - logspace_add(v1,v2));
-      Type lssbNew = lN + log(mort.ssbSurvival_before(j,i+j)) + log(dat.propMat(i+j,j)) + log(dat.stockMeanWeight(i+j,j));
+      Type lssbNew = lN + mort.ssbLogSurvival_before(j,i+j) + log(dat.propMat(i+j,j)) + log(dat.stockMeanWeight(i+j,j));
       //logssb = logspace_add_SAM(logssb, lssbNew);
       v += exp(lssbNew);
       lNPlusLast = lN;
     }else{
       int j = stateDimN - 1;
-      Type lssbNew = logN(j,i+j) + log(mort.ssbSurvival_before(j,i+j)) + log(dat.propMat(i+j,j)) + log(dat.stockMeanWeight(i+j,j));
+      Type lssbNew = logN(j,i+j) + mort.ssbLogSurvival_before(j,i+j) + log(dat.propMat(i+j,j)) + log(dat.stockMeanWeight(i+j,j));
       //logssb = logspace_add_SAM(logssb, lssbNew);
       v += exp(lssbNew);
       lNPlusLast = logN(j,i+j-1);
@@ -40,9 +40,9 @@ Type empiricalSPR_i(dataSet<Type> &dat, confSet &conf, array<Type>& logN, Mortal
     // Loop ahead in time
     for(int q = 1; q < 30; ++q){
       int j = stateDimN - 1;
-      int indx = std::min(i+j-1 + q, (int)mort.cumulativeHazard.cols()-1);
-      lNPlusLast -= mort.cumulativeHazard(j-1,indx-1);
-      Type lssbNew = lNPlusLast + log(mort.ssbSurvival_before(j,indx)) + log(dat.propMat(indx,j)) + log(dat.stockMeanWeight(indx,j));
+      int indx = std::min(i+j-1 + q, (int)mort.logCumulativeHazard.cols()-1);
+      lNPlusLast -= exp(mort.logCumulativeHazard(j-1,indx-1));
+      Type lssbNew = lNPlusLast + mort.ssbLogSurvival_before(j,indx) + log(dat.propMat(indx,j)) + log(dat.stockMeanWeight(indx,j));
       //logssb = logspace_add_SAM(logssb, lssbNew);
       v += exp(lssbNew);
     }
@@ -83,7 +83,7 @@ Type empiricalYPR_i(dataSet<Type> &dat, confSet &conf, array<Type>& logN, Mortal
   for(int j = 0; j < stateDimN - 1; ++j){
     for(int f = 0; f < noFleets; ++f){
       if(dat.fleetTypes(f) == 0){ // Only catch fleets
-	Type logC = logN(j,i+j) + mort.logFleetSurvival_before(j,i+j,f) + log(mort.fleetCumulativeIncidence(j,i+j,f));
+	Type logC = logN(j,i+j) + mort.logFleetSurvival_before(j,i+j,f) + mort.fleetLogCumulativeIncidence(j,i+j,f);
 	if(CT == 0){		// Catch
 	  logC += log(dat.catchMeanWeight(i+j, j, f));
 	}else if(CT == 1){		// Landing
@@ -111,14 +111,14 @@ Type empiricalYPR_i(dataSet<Type> &dat, confSet &conf, array<Type>& logN, Mortal
   int j = stateDimN - 1;
   Type lN = logN(j,i+j);
   if(conf.maxAgePlusGroup(0)==1 && stateDimN > 1){
-    Type v1 = logN(j-1,i+j-1) - mort.cumulativeHazard(j-1,i+j-1);
-    Type v2 = logN(j,i+j-1) - mort.cumulativeHazard(j,i+j-1);
+    Type v1 = logN(j-1,i+j-1) - exp(mort.logCumulativeHazard(j-1,i+j-1));
+    Type v2 = logN(j,i+j-1) - exp(mort.logCumulativeHazard(j,i+j-1));
     // Proportion of logN plus group that "came from" cohort:
     lN -= v1 - logspace_add(v1,v2);
   }
   for(int f = 0; f < noFleets; ++f){
     if(dat.fleetTypes(f) == 0){ // Only catch fleets
-      Type logC = lN + mort.logFleetSurvival_before(j,i+j,f) + log(mort.fleetCumulativeIncidence(j,i+j,f));
+      Type logC = lN + mort.logFleetSurvival_before(j,i+j,f) + mort.fleetLogCumulativeIncidence(j,i+j,f);
       if(CT == 0){		// Catch
 	logC += log(dat.catchMeanWeight(i+j, j, f));
       }else if(CT == 1){		// Landing
@@ -147,10 +147,10 @@ Type empiricalYPR_i(dataSet<Type> &dat, confSet &conf, array<Type>& logN, Mortal
   for(int q = 1; q < 30; ++q){
     int j = stateDimN - 1;
     int indx = std::min(i+j-1 + q, timeSteps-1);
-    lNPlusLast -= mort.cumulativeHazard(j-1,indx-1);
+    lNPlusLast -= exp(mort.logCumulativeHazard(j-1,indx-1));
     for(int f = 0; f < noFleets; ++f){
       if(dat.fleetTypes(f) == 0){ // Only catch fleets
-	Type logC = lNPlusLast + mort.logFleetSurvival_before(j,indx,f) + log(mort.fleetCumulativeIncidence(j,indx,f));
+	Type logC = lNPlusLast + mort.logFleetSurvival_before(j,indx,f) + mort.fleetLogCumulativeIncidence(j,indx,f);
 	if(CT == 0){		// Catch
 	  logC += log(dat.catchMeanWeight(indx, j, f));
 	}else if(CT == 1){		// Landing

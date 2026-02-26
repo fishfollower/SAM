@@ -180,6 +180,7 @@ defcon<-function(dat, level=1){
     ##ret$boundF <- c(NA_real_,NA_real_)
     ret$fecundityScaling <- 1
     ret$recVarScaleDegree <- 0
+    ret$keyCompRisk<-matrix(-1, nrow=length(dat$CompRisk), ncol=nAges)
     return(ret) 
 }
 

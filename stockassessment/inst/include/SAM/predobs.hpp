@@ -89,7 +89,7 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		      //   vv+=logF(conf.keyLogFsta(f-1,a),y);
 		      // }
 		      // N * Survival until start * cumulative incidence
-		      pred = logN(a,y) + mort.logFleetSurvival_before(a,y,f-1) + log(mort.fleetCumulativeIncidence(a,y,f-1));
+		      pred = logN(a,y) + mort.logFleetSurvival_before(a,y,f-1) + mort.fleetLogCumulativeIncidence(a,y,f-1);
 		      scaleIdx=-1;
 		      yy=year;
 		      for(int j=0; j<conf.noScaledYears; ++j){
@@ -209,16 +209,16 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		    case 7:// sum residual fleets 
 		      //pred=logN(a,y)-log(zz)+log(1-exp(-zz));
 		      pred = logN(a,y);
-		      sumF=0;
+		      sumF=R_NegInf;
 		      for(int ff=1; ff<=dat.noFleets; ++ff){
 			if(dat.sumKey(f-1,ff-1)==1){
-			  sumF += mort.fleetCumulativeIncidence(a,y,ff-1);
+			  sumF = logspace_add_SAM(sumF,mort.fleetLogCumulativeIncidence(a,y,ff-1));
 			  // if(conf.keyLogFsta(ff-1,a)>(-1)){
 			  //   sumF+=exp(logF(conf.keyLogFsta(ff-1,a),y));
 			  // }
 			}
 		      }
-		      pred+=log(sumF);
+		      pred+=sumF;
 		      break;
 
 		    case 80:	// Catch/Landing proportion in part of year for total stock
@@ -242,8 +242,8 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 			}
 			for(int aa = aMin - conf.minAge; aa < aMax - conf.minAge; ++aa){
 			  //Type Cttmp = exp(logN(aa,y)) * mort.CIF(flt,aa,y,dat.sampleTimesStart(flt),dat.sampleTimesEnd(flt));
-			  Type Cttmp = exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,flt) + log(mort.fleetCumulativeIncidence(aa,y,flt)));
-			  Type Cstmp = exp(logN(aa,y)) * mort.partialCIF(flt,aa,y, auxData(1), auxData(2));
+			  Type Cttmp = exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,flt) + mort.fleetLogCumulativeIncidence(aa,y,flt));
+			  Type Cstmp = exp(logN(aa,y) + mort.partialLogCIF(flt,aa,y, auxData(1), auxData(2)));
 			  // 0: Catch numbers
 			  if(CppAD::Integer(auxData(3)) == 1){ // 1: Catch weight
 			    Cttmp *= dat.catchMeanWeight(y,aa, flt);

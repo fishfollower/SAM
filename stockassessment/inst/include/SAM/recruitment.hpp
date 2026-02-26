@@ -1456,7 +1456,7 @@ struct Rec_Climate_BevHolt_A : RecruitmentWorker<Type> {
     Type logph = logspace_add(Type(0.0),log(H));
     Type v1 = logf + logssb + logq + logspace_sub_SAM(exp(logph),Type(0.0));
     Type v2 = logph + exp(logph);
-    logf + logssb + logph - logspace_add_SAM(v1,v2);
+    return logf + logssb + logph - logspace_add_SAM(v1,v2);
   }
   
   Type logSe(Type logLambda){    

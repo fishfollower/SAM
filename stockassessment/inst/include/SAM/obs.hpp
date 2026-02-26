@@ -466,8 +466,8 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		    ++element; 
 		    for(int aa=dat.minAgePerFleet(ff); aa<=dat.maxAgePerFleet(ff); ++aa){
 		      //zz = dat.natMor(y,aa-conf.minAge)+totF(aa-conf.minAge,y);
-		      Type ci = mort.fleetCumulativeIncidence(aa-conf.minAge,y,ff);
-		      muMat(aa-dat.minAgePerFleet(f),element)= exp(logN(aa-conf.minAge,y)) * ci; //exp(logN(aa-conf.minAge,y)-log(zz)+log(1-exp(-zz))+logF(conf.keyLogFsta(ff,aa-conf.minAge),y));
+		      Type lci = mort.fleetLogCumulativeIncidence(aa-conf.minAge,y,ff);
+		      muMat(aa-dat.minAgePerFleet(f),element)= exp(logN(aa-conf.minAge,y) + lci); //exp(logN(aa-conf.minAge,y)-log(zz)+log(1-exp(-zz))+logF(conf.keyLogFsta(ff,aa-conf.minAge),y));
 		      muSum(aa-dat.minAgePerFleet(f)) += muMat(aa-dat.minAgePerFleet(f),element);
 		    }
 		    offset=dat.minAgePerFleet(ff)-dat.minAgePerFleet(f);

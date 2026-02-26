@@ -86,6 +86,89 @@ SAM_SPECIALIZATION(struct listArrayFromR<TMBad::ad_aug>);
 
 
 HEADER(
+template<class Type>
+struct CompetingRiskCovariate {
+ 
+  matrix<Type> X;
+  vector<double> breakpoints;
+  int Model;
+
+  CompetingRiskCovariate();
+  CompetingRiskCovariate(SEXP x);
+
+  template<class T>
+  inline CompetingRiskCovariate(const CompetingRiskCovariate<T>& other) :
+    X(other.X),
+    breakpoints(other.breakpoints),
+    Model(other.Model) {}
+  
+}
+       )
+
+
+SOURCE(
+       template<class Type>
+       CompetingRiskCovariate<Type>::CompetingRiskCovariate() : X(), breakpoints(), Model() {};
+
+       )
+
+
+SOURCE(
+       template<class Type>
+       CompetingRiskCovariate<Type>::CompetingRiskCovariate(SEXP x) :
+       X(asMatrix<Type>(getListElement(x,"X", &Rf_isMatrix))),
+       breakpoints(asVector<double>(getListElement(x,"breakpoints", &Rf_isNumeric))),
+       Model(Rf_asInteger(getListElement(x,"Model", &isNumericScalar))){};
+       )
+       
+  
+SAM_SPECIALIZATION(struct CompetingRiskCovariate<double>);
+SAM_SPECIALIZATION(struct CompetingRiskCovariate<TMBad::ad_aug>);
+
+
+HEADER(
+template<class Type>
+struct CompetingRiskList : vector<CompetingRiskCovariate<Type> > {
+
+  CompetingRiskList();
+  CompetingRiskList(int n);
+  CompetingRiskList(SEXP x);
+
+  template<class T>
+  inline CompetingRiskList(const CompetingRiskList<T>& other) : vector<CompetingRiskCovariate<Type> >(other.size()) {
+    for(int i = 0; i < other.size(); ++i)
+      (*this)(i) = CompetingRiskCovariate<Type>(other(i));
+  }
+};
+       )
+
+SOURCE(
+template<class Type>
+CompetingRiskList<Type>::CompetingRiskList() : vector<CompetingRiskCovariate<Type> >() {};
+	 )
+
+SOURCE(
+template<class Type>
+CompetingRiskList<Type>::CompetingRiskList(int n) : vector<CompetingRiskCovariate<Type> >(n) {};
+	 )
+
+SOURCE(
+	 template<class Type>
+	 CompetingRiskList<Type>::CompetingRiskList(SEXP x) : vector<CompetingRiskCovariate<Type> >(Rf_length(x)){ 
+	   //(*this).resize(LENGTH(x));
+	   for(int i=0; i<Rf_length(x); i++){
+	     SEXP sm = VECTOR_ELT(x, i);
+	     (*this)(i) = CompetingRiskCovariate<Type>(sm);
+	   }
+	 }
+	 )
+
+SAM_SPECIALIZATION(struct CompetingRiskList<double>);
+SAM_SPECIALIZATION(struct CompetingRiskList<TMBad::ad_aug>);
+
+
+
+HEADER(
 template <class Type>
 struct dataSet{
   int noFleets;
@@ -117,9 +200,11 @@ struct dataSet{
   array<Type> landMeanWeight;
   array<Type> propF;
   array<Type> propM;
+  vector<Type> recruitmentTimeOfYear;
   array<Type> TAC;
   array<Type> RecruitClimate;
-  array<Type> Mcovariate;  
+  array<Type> Mcovariate;
+  CompetingRiskList<Type> CompRisk;
   listMatrixFromR<Type> corList;
   array<int> sumKey;
 
@@ -157,9 +242,11 @@ struct dataSet{
     landMeanWeight(x.landMeanWeight, x.landMeanWeight.dim), //x.landMeanWeight),
     propF(x.propF, x.propF.dim), //x.propF),
     propM(x.propM, x.propM.dim),
+    recruitmentTimeOfYear(x.recruitmentTimeOfYear),
     TAC(x.TAC, x.TAC.dim),
     RecruitClimate(x.RecruitClimate, x.RecruitClimate.dim),
     Mcovariate(x.Mcovariate,x.Mcovariate.dim),
+    CompRisk(x.CompRisk),
     corList(x.corList),
     sumKey(x.sumKey, x.sumKey.dim)
   {
@@ -195,9 +282,11 @@ SOURCE(
        landMeanWeight(), //x.landMeanWeight),
        propF(), //x.propF),
        propM(),
+       recruitmentTimeOfYear(),
        TAC(),
        RecruitClimate(),
        Mcovariate(),
+       CompRisk(),
        corList(),
        sumKey() {       };
        )
@@ -234,9 +323,11 @@ SOURCE(
       landMeanWeight = asArray<Type>(getListElement(x,"landMeanWeight", &Rf_isArray));
       propF = asArray<Type>(getListElement(x,"propF", &Rf_isArray));
       propM = asArray<Type>(getListElement(x,"propM", &Rf_isArray));
+      recruitmentTimeOfYear = asVector<Type>(getListElement(x,"recruitmentTimeOfYear",  &Rf_isNumeric));
       TAC = asArray<Type>(getListElement(x,"TAC", &Rf_isArray));
       RecruitClimate = asArray<Type>(getListElement(x,"RecruitClimate", &Rf_isArray));
       Mcovariate = asArray<Type>(getListElement(x,"Mcovariate", &Rf_isArray));
+      CompRisk = CompetingRiskList<Type>(getListElement(x,"CompRisk"));
       corList = listMatrixFromR<Type>(getListElement(x,"corList"));
       sumKey = asArray<int>(getListElement(x,"sumKey", &Rf_isArray));
     };
@@ -306,6 +397,7 @@ struct confSet{
   double seasonFirstYear;
   int seasonFixedEffect;
   int keyScaleMModel;
+  matrix<int> keyCompRisk;
   
   confSet();
 
@@ -376,6 +468,7 @@ SOURCE(
 	 seasonFirstYear = Rf_asReal(getListElement(x,"seasonFirstYear", &isNumericScalar));
 	 seasonFixedEffect = Rf_asInteger(getListElement(x,"seasonFixedEffect", &isNumericScalar));
 	 keyScaleMModel = Rf_asInteger(getListElement(x,"keyScaleMModel", &isNumericScalar));
+	 keyCompRisk = asMatrix<int>(getListElement(x,"keyCompRisk", &Rf_isMatrix));
        }
        )
 
@@ -439,7 +532,8 @@ SOURCE(
 	 isFishingSeason(),
 	 seasonFirstYear(),
 	 seasonFixedEffect(),
-	 keyScaleMModel()
+	 keyScaleMModel(),
+	 keyCompRisk()
 	 {}
 	 );
 
@@ -503,7 +597,8 @@ SOURCE(
 	 isFishingSeason(other.isFishingSeason),
 	 seasonFirstYear(other.seasonFirstYear),
 	 seasonFixedEffect(other.seasonFixedEffect),
-	 keyScaleMModel(other.keyScaleMModel)
+	 keyScaleMModel(other.keyScaleMModel),
+	 keyCompRisk(other.keyCompRisk)
 	 {}
 	 );
 
@@ -570,6 +665,11 @@ struct paraSet{
   vector<Type> seasonLogSd;
   vector<Type> scaleMpars;
 
+  vector<Type> cp_m;
+  vector<Type> cp_logk;
+  vector<Type> cp_loga;
+  vector<Type> cp_logb;
+
   Type splinePenalty;
 
   paraSet();
@@ -634,7 +734,11 @@ struct paraSet{
     seasonLogitRho(other.seasonLogitRho),
     seasonLogSd(other.seasonLogSd),
      scaleMpars(other.scaleMpars),
-    splinePenalty(other.splinePenalty)  {}
+     cp_m(other.cp_m),
+     cp_logk(other.cp_logk),
+     cp_loga(other.cp_loga),
+     cp_logb(other.cp_logb),
+     splinePenalty(other.splinePenalty)  {}
 
 });
 
@@ -693,6 +797,10 @@ SOURCE(
        initF(),
        initN(),
        scaleMpars(),
+       cp_m(),
+       cp_logk(),
+       cp_loga(),
+       cp_logb(),
        splinePenalty()  {};
        )
 
@@ -756,6 +864,10 @@ SOURCE(
 	   seasonLogitRho = asVector<Type>(getListElement(x,"seasonLogitRho", &Rf_isNumeric));
 	   seasonLogSd = asVector<Type>(getListElement(x,"seasonLogSd", &Rf_isNumeric));
 	   scaleMpars = asVector<Type>(getListElement(x,"scaleMpars", &Rf_isNumeric));
+	   cp_m = asVector<Type>(getListElement(x,"cp_m", &Rf_isNumeric));
+	   cp_logk = asVector<Type>(getListElement(x,"cp_logk", &Rf_isNumeric));
+	   cp_loga = asVector<Type>(getListElement(x,"cp_loga", &Rf_isNumeric));
+	   cp_logb = asVector<Type>(getListElement(x,"cp_logb", &Rf_isNumeric));
 	   splinePenalty = (Type)Rf_asReal(getListElement(x,"splinePenalty", &isNumericScalar));
 	 }
 	 );

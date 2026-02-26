@@ -155,7 +155,7 @@ namespace ConstrainCalculations {
       if(dat.fleetTypes(f) == 0){
 	for(int a=a0; a<=a1; a++){
 	  if(conf.keyLogFsta(f,a-conf.minAge) > (-1)){
-	    Type lc = logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f)) + log( dat.catchMeanWeight(y, a-conf.minAge, f));
+	    Type lc = logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f) + log( dat.catchMeanWeight(y, a-conf.minAge, f));
 	    logCat = logspace_add_SAM(logCat, lc);
 	    // cat += cc;
 	  }
@@ -186,7 +186,7 @@ namespace ConstrainCalculations {
 	    Type LF = dat.landFrac(y,a-conf.minAge,f);
 	    Type LW = dat.landMeanWeight(y,a-conf.minAge,f);
 	    if(LF > 0 && LW > 0){
-	      Type lc = logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f)) + log(LF) + log(LW);
+	      Type lc = logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f) + log(LF) + log(LW);
 	      logCat = logspace_add_SAM(logCat, lc);
 	    }
 	    // cat += cc;
@@ -207,7 +207,7 @@ namespace ConstrainCalculations {
     int yu = std::min(y,dat.propMat.dim(0));
     for(int a=a0; a<=a1; ++a){
       if(dat.propMat(yu,a-conf.minAge) > 0){
-	Type lssbNew = logN(a-conf.minAge,y) + log(mort.ssbSurvival_before(a-conf.minAge,yu)) + log(dat.propMat(yu,a-conf.minAge)) + log(dat.stockMeanWeight(yu,a-conf.minAge));
+	Type lssbNew = logN(a-conf.minAge,y) + mort.ssbLogSurvival_before(a-conf.minAge,yu) + log(dat.propMat(yu,a-conf.minAge)) + log(dat.stockMeanWeight(yu,a-conf.minAge));
 	logssb = logspace_add_SAM(logssb, lssbNew);
       }
     }
@@ -225,13 +225,13 @@ namespace ConstrainCalculations {
     int yu = std::min(y,dat.propMat.dim(0));
     for(int a=a0; a<=a1; ++a){
       if(dat.propMat(yu,a-conf.minAge) > 0){
-	Type lssbNew = logN(a-conf.minAge,y) + log(mort.ssbSurvival_before(a-conf.minAge,yu)) + log(dat.propMat(yu,a-conf.minAge)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(yu,a-conf.minAge));
+	Type lssbNew = logN(a-conf.minAge,y) + mort.ssbLogSurvival_before(a-conf.minAge,yu) + log(dat.propMat(yu,a-conf.minAge)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(yu,a-conf.minAge));
 	logssb = logspace_add_SAM(logssb, lssbNew);
 		// Y=0 ERB
-	Type lerb0New = logN(a-conf.minAge,0) + log(mort.ssbSurvival_before(a-conf.minAge,0)) + log(dat.propMat(0,a-conf.minAge)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,a-conf.minAge));
+	Type lerb0New = logN(a-conf.minAge,0) + mort.ssbLogSurvival_before(a-conf.minAge,0) + log(dat.propMat(0,a-conf.minAge)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,a-conf.minAge));
 	lerb0 = logspace_add_SAM(lerb0, lerb0New);
 	// Y=0 SSB
-	Type lssb0New = logN(a-conf.minAge,0) + log(mort.ssbSurvival_before(a-conf.minAge,0)) + log(dat.propMat(0,a-conf.minAge)) + log(dat.stockMeanWeight(0,a-conf.minAge));
+	Type lssb0New = logN(a-conf.minAge,0) + mort.ssbLogSurvival_before(a-conf.minAge,0) + log(dat.propMat(0,a-conf.minAge)) + log(dat.stockMeanWeight(0,a-conf.minAge));
 	lssb0 = logspace_add_SAM(lssb0, lssb0New);
       }
     }

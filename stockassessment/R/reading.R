@@ -312,9 +312,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
                            prop.mature=NULL, stock.mean.weight=NULL, catch.mean.weight=NULL, 
                            dis.mean.weight=NULL, land.mean.weight=NULL, 
                            natural.mortality=NULL, prop.f=NULL, prop.m=NULL, land.frac=NULL, recapture=NULL, sum.residual.fleets=NULL, aux.fleets=NULL,
+                           recruitmentTimeOfYear = -1,
                            TAC = NULL,
                            RecruitClimate = NULL,
                            Mcovariate = NULL,
+                           CompRisk = NULL,
                            keep.all.ages = FALSE,
                            average.sampleTimes.survey = TRUE,
                            fleetnames.remove.space = TRUE){
@@ -507,6 +509,9 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     if(is.null(Mcovariate)){
         Mcovariate <- array(0, dim=c(ydim2,0,0),dimnames=list(ynam2,NULL,NULL))
     }
+    if(is.null(CompRisk)){
+        CompRisk <- list()
+    }
 
     
   dat$aux[which(dat$aux<=0)] <- NA_integer_
@@ -651,9 +656,17 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
   attr(dat,'natural.mortality')<-cutY(natural.mortality)
   attr(dat,'prop.f')<-cutYA(prop.f)
     attr(dat,'prop.m')<-cutY(prop.m)
+    rtoy <- rep(recruitmentTimeOfYear,length(newyear))
+    names(rtoy) <- newyear
+    attr(dat,'recruitmentTimeOfYear') <- rtoy
     attr(dat,'TAC')<-cutY(TAC)
     attr(dat,'RecruitClimate')<-cutYA(RecruitClimate)
     attr(dat,'Mcovariate')<-cutYA(Mcovariate)
+    if(length(CompRisk) > 0){
+        attr(dat,'CompRisk') <- lapply(CompRisk,cutY)
+    }else{
+        attr(dat,'CompRisk') <- CompRisk
+    }
 
   attr(dat,'land.frac')<-cutYA(land.frac)  
   ft <- as.integer(attr(dat,'type'))
@@ -702,9 +715,11 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
     landMeanWeight=attr(dat,'land.mean.weight'),
     propF=attr(dat,'prop.f'),
     propM=attr(dat,'prop.m'),
+    recruitmentTimeOfYear = attr(dat,'recruitmentTimeOfYear'),
     TAC=attr(dat,'TAC'),
     RecruitClimate=attr(dat,'RecruitClimate'),
     Mcovariate=attr(dat,'Mcovariate'),
+    CompRisk = attr(dat,'CompRisk'),
     corList=corList,
     sumKey=attr(dat,'sumKey')
   )

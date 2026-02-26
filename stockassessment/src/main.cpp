@@ -50,6 +50,7 @@ extern "C" {
   SEXP roots2coefficients(SEXP roots);
   SEXP roots2ARpar(SEXP roots);
   SEXP logitroots2ARpar(SEXP x);
+  SEXP logRiskHazard(SEXP x, SEXP m, SEXP logk, SEXP loga, SEXP logb, SEXP model);
   
 #define CALLDEF(name,n) {#name, (DL_FUNC) &name, n}
   
@@ -94,9 +95,10 @@ extern "C" {
     CALLDEF(splinebasis_ibcR,2),
     CALLDEF(splinebasis_iibcR,2),
     CALLDEF(recruitmentProperties,2),
-				   CALLDEF(roots2coefficients,1),
-				   CALLDEF(roots2ARpar,1),
-				   CALLDEF(logitroots2ARpar,1),
+    CALLDEF(roots2coefficients,1),
+    CALLDEF(roots2ARpar,1),
+    CALLDEF(logitroots2ARpar,1),
+    CALLDEF(logRiskHazard,6),
     {NULL,NULL,0}
   };
 

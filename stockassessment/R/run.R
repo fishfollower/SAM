@@ -108,6 +108,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
               list(...))
     args$data$reportingLevel <- as.integer(fullDerived)
 
+    
     mapRP <- list(logFScaleMSY = factor(NA),
                   implicitFunctionDelta = factor(NA),
                   ##               logScaleFmsy = factor(NA),
@@ -122,6 +123,17 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                   ##               logScaleFlim = factor(NA),
                   splinePenalty = factor(ifelse(penalizeSpline,1,NA))
                   )
+    if(length(args$data$CompRisk) > 0 && max(conf$keyCompRisk,-1) >= 0){
+        p2r <- sapply(0:max(conf$keyCompRisk),function(i) min(row(conf$keyCompRisk)[conf$keyCompRisk==i]))
+        fixLogK <- sapply(args$data$CompRisk,function(x) x$Model %in% c(2,3))
+        fixLogA <- sapply(args$data$CompRisk,function(x) x$Model %in% c(-1))
+        fixLogB <- sapply(args$data$CompRisk,function(x) x$Model %in% c(1,2,3,4,5))
+        fixM <- sapply(args$data$CompRisk,function(x) x$Model %in% c(4,5))
+        mapRP$cp_m <- factor(ifelse(fixM[p2r],NA,seq_along(fixM[p2r])))
+        mapRP$cp_logk <- factor(ifelse(fixLogK[p2r],NA,seq_along(fixLogK[p2r]))*NA)
+        mapRP$cp_loga <- factor(ifelse(fixLogA[p2r],NA,seq_along(fixLogA[p2r])))
+        mapRP$cp_logb <- factor(ifelse(fixLogB[p2r],NA,seq_along(fixLogB[p2r])))
+    }
     if(is.null(args$map) || !is.list(args$map) || length(args$map) == 0){
         args$map <- mapRP
     }else{
@@ -461,8 +473,11 @@ refit <- function(fit, newConf, startingValues, ...){
     if(is.null(fit2$data$sumKey))
         fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
 
+    if(is.null(fit2$data$recruitmentTimeOfYear))
+        fit2$data$recruitmentTimeOfYear <- rep(-1,length(fit2$data$years))
+    
     if(is.null(fit2$data$TAC))
-        fit2$data$TAC <- matrix(0,nrow=length(fit2$data$years),ncol=0)
+        fit2$data$TAC <- matrix(0,nrow=length(fit2$data$years),ncol=0)    
 
     if(is.null(fit2$data$RecruitClimate))
         fit2$data$RecruitClimate <- array(0,dim=c(length(fit2$data$years),0,0), dimnames = list(fit2$data$years,NULL,NULL))
@@ -470,6 +485,8 @@ refit <- function(fit, newConf, startingValues, ...){
       if(is.null(fit2$data$Mcovariate))
         fit2$data$Mcovariate <- array(0,dim=c(length(fit2$data$years),0,0), dimnames = list(fit2$data$years,NULL,NULL))
 
+    if(is.null(fit2$data$CompRisk))
+        fit2$data$CompRisk <- list()
     
     if(is.null(fit2$data$sampleTimesStart))
         fit2$data$sampleTimesStart <- ifelse(fit2$data$fleetTypes == 0, 0, fit2$data$sampleTimes)

@@ -72,9 +72,11 @@ Type objective_function<Type>::operator() ()
   DATA_ARRAY(landMeanWeight); dataset.landMeanWeight=landMeanWeight; 
   DATA_ARRAY(propF); dataset.propF=propF; 
   DATA_ARRAY(propM); dataset.propM=propM;
+  DATA_VECTOR(recruitmentTimeOfYear); dataset.recruitmentTimeOfYear=recruitmentTimeOfYear;
   DATA_ARRAY(TAC); dataset.TAC=TAC;
   DATA_ARRAY(RecruitClimate); dataset.RecruitClimate=RecruitClimate;
-  DATA_ARRAY(Mcovariate); dataset.Mcovariate=Mcovariate; 
+  DATA_ARRAY(Mcovariate); dataset.Mcovariate=Mcovariate;
+  DATA_STRUCT(CompRisk, CompetingRiskList); dataset.CompRisk=CompRisk;
   DATA_STRUCT(corList,listMatrixFromR); dataset.corList=corList; //Include correlation structures
   DATA_IARRAY(sumKey); dataset.sumKey=sumKey; 
 
@@ -160,6 +162,7 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(seasonFirstYear); confset.seasonFirstYear = asDouble(seasonFirstYear);
   DATA_INTEGER(seasonFixedEffect); confset.seasonFixedEffect = seasonFixedEffect;
   DATA_INTEGER(keyScaleMModel); confset.keyScaleMModel = keyScaleMModel;
+  DATA_IMATRIX(keyCompRisk); confset.keyCompRisk = keyCompRisk;
   DATA_INTEGER(reportingLevel);
 
   paraSet<Type> paraset;
@@ -216,6 +219,10 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(initF); paraset.initF = initF;
   PARAMETER_VECTOR(initN); paraset.initN = initN;
   PARAMETER_VECTOR(scaleMpars); paraset.scaleMpars = scaleMpars;
+  PARAMETER_VECTOR(cp_m); paraset.cp_m = cp_m;
+  PARAMETER_VECTOR(cp_logk); paraset.cp_logk = cp_logk;
+  PARAMETER_VECTOR(cp_loga); paraset.cp_loga = cp_loga;
+  PARAMETER_VECTOR(cp_logb); paraset.cp_logb = cp_logb;
 
   PARAMETER_MATRIX(seasonMu); paraset.seasonMu = seasonMu;
   PARAMETER_VECTOR(seasonLogitRho); paraset.seasonLogitRho = seasonLogitRho;
@@ -330,7 +337,8 @@ Type objective_function<Type>::operator() ()
   // REPORT(mort.Hazard_breakpoints);
   // REPORT(mort.CIF_F_breakpoints);
   // REPORT(mort.CIF_M_breakpoints);
-  
+
+  REPORT(mort);
   
 
   return ans;

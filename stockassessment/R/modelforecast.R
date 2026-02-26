@@ -1,3 +1,13 @@
+
+makePosDef <- function(x, tol = sqrt(.Machine$double.eps)){
+    if(prod(dim(x)) == 0)
+        return(x)
+    s <- svd(x)
+    if(any(s$d < tol))
+        warning(deparse1(substitute(x))," was modified to be positive definite")
+    s$u %*% diag(pmax(s$d,tol),length(s$d)) %*% t(s$v)    
+}
+
 simVAR <- function(ny, nx, mu, rho, Sigma){
     X <- matrix(NA,nx,ny)    
     if(!is.matrix(rho)){
@@ -158,7 +168,7 @@ simVAR <- function(ny, nx, mu, rho, Sigma){
     stop("Wrong specification of relative value. Relative values can only specify a fleet")
 }
 
-.parseForecast <- function(s, FbarRange, fleetTypes, ageRange, useNonLinearityCorrection, isUpper=FALSE){
+.parseForecast <- function(s, FbarRange, fleetTypes, ageRange, useNonLinearityCorrection, isUpper=FALSE){    
     nCF <- sum(fleetTypes == 0)
     ## Split constraints
     sL <- strsplit(s,"[[:space:]]*&+[[:space:]]*")
@@ -709,7 +719,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         FModel[!is.na(constraints)] <- 2
     FModel[!is.na(findMSY)] <- 3
     FModel[!is.na(hcr)] <- 4
-    
+
     nYears <- length(constraints)
     cstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
     ubcstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
@@ -719,8 +729,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     getBound <- function(x){
         ifelse(!grepl("\\|",x),"",gsub("(.+\\|)(.+)","\\2",x))
     }
-    cstr[!is.na(constraints)] <- .parseForecast(removeBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)
-    ubcstr[!is.na(constraints)] <- .parseForecast(getBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection, isUpper = TRUE)
+    if(any(!is.na(constraints))){
+        cstr[!is.na(constraints)] <- .parseForecast(removeBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)
+        ubcstr[!is.na(constraints)] <- .parseForecast(getBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection, isUpper = TRUE)
+    }
     
     ## Use custom selectivity?
     if(is.null(customSel)){
@@ -896,7 +908,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                hcrCurrentSSB = hcrCurrentSSB,
                                Fdeviation = rnorm(nrow(pl$logF)),
                                FdeviationCov = diag(1,nrow(pl$logF),nrow(pl$logF)),
-                               FEstCov = FEstCov,
+                               FEstCov = makePosDef(FEstCov),
                                useModelLastN = useModelLastN,
                                useAssessmentError = useAssessmentError,
                                assessmentErrorDeviation_F = matrix(0,0,0),#assessmentErrorDeviance_F,
@@ -953,6 +965,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         }else{
             stop("year.base not implemented yet more than one year before end of assessment.")           
         }
+        cov <- makePosDef(cov)
         names(est) <- gsub("(^.*[lL]ast)(.+$)","\\2",names(est))
         i0Bio <- which(fit$data$year == yearInsertBio)
         i0F <- which(fit$data$year == yearInsertF)
@@ -972,7 +985,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 cstr[!is.na(re_constraint)] <- .parseForecast(re_constraint[!is.na(re_constraint)], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)                
                 obj2$env$data$forecast$constraints <- cstr
             }
-            sim0 <- 0*est 
+            sim0 <- 0*est            
             if(resampleFirst){
                 sim0 <- rmvnorm(1, mu=0*est, Sigma=cov)
             }
@@ -1014,7 +1027,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 p[indxNM] <- estList0$LogNM
             }
             obj2$env$data$forecast$Fdeviation[] <- dList0$LogF
-            obj2$env$data$forecast$FdeviationCov <- cov[names(est) %in% "LogF",names(est) %in% "LogF"]
+            obj2$env$data$forecast$FdeviationCov <- makePosDef(cov[names(est) %in% "LogF",names(est) %in% "LogF"])
             ## Simulate assessment error
             ny <- length(obj2$env$data$forecast$forecastYear)
             nage <- nrow(pl$logN)

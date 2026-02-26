@@ -169,3 +169,33 @@ Type matrix_trace(matrix<Type>& x)SOURCE({
 
   SAM_SPECIALIZATION(double matrix_trace(matrix<double>&));
 SAM_SPECIALIZATION(TMBad::ad_aug matrix_trace(matrix<TMBad::ad_aug>&));
+
+
+template<class Type>
+Type logRiskHazard(Type x, Type m, Type logk, Type loga, Type logb, int model)SOURCE({
+  // Linear spline: a * (x - m) + (b - a) * pos(x-m)
+  // Note that we force a<0 and b>0
+  //  return -exp(loga) * (x - m) + exp(logspace_add_SAM(loga, logb)) * softmax2(x, Type(0.0), eps);
+    if(model == 0){ // Bathtub
+      Type v1 = -exp(loga) * (x-m) - loga;
+      Type v2 = exp(logb) * (x-m) - logb;
+      return -exp(logk) + logspace_add_SAM(v1, v2);
+    }else if(model == 1){ // Sigmoid
+      return loga - logspace_add_SAM(Type(0.0), -exp(logk) * (x - m));
+    }else if(model == 2){ // Increase hockey
+      return loga + log(0.5) + log((x-m) + sqrt((x-m) * (x-m) + Type(0.1)) );
+    }else if(model == 3){ // Decrease hockey
+      return loga + log(0.5) + log((m-x) + sqrt((m-x) * (m-x) + Type(0.1)) );
+    }else if(model == 4){ // Exp Increase
+      return loga + exp(logk) * x;
+    }else if(model == 5){ // Exp Decrease
+      return loga - exp(logk) * x;
+    }else{
+      Rf_error("Wrong hazard model!");
+    }
+  })
+
+
+SAM_SPECIALIZATION(double logRiskHazard(double,double,double,double,double,int));
+SAM_SPECIALIZATION(TMBad::ad_aug logRiskHazard(TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,int));
+

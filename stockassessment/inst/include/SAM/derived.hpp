@@ -109,7 +109,7 @@ Type ssbi(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<Type> &log
   Type logssb = R_NegInf;
   for(int j=0; j<stateDimN; ++j){
     if(dat.propMat(i,j) > 0){
-      Type lssbNew = logN(j,i) + log(mort.ssbSurvival_before(j,i)) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));
+      Type lssbNew = logN(j,i) + mort.ssbLogSurvival_before(j,i) + log(dat.propMat(i,j)) + log(dat.stockMeanWeight(i,j));
       logssb = logspace_add_SAM(logssb, lssbNew);
     }
   }
@@ -149,9 +149,9 @@ Type erbi(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &lo
       Type logrb0 = R_NegInf;
       for(int j=0; j<stateDimN; ++j){
 	if(dat.propMat(i,j) > 0){
-	  Type lrb0New = logN(j,0) + log(mort.ssbSurvival_before(j,0)) + log(dat.propMat(0,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,j));
+	  Type lrb0New = logN(j,0) + mort.ssbLogSurvival_before(j,0) + log(dat.propMat(0,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,j));
 	  logrb0 = logspace_add_SAM(logrb0, lrb0New);
-	  Type lssbNew = logN(j,i) + log(mort.ssbSurvival_before(j,i)) + log(dat.propMat(i,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(i,j));
+	  Type lssbNew = logN(j,i) + mort.ssbLogSurvival_before(j,i) + log(dat.propMat(i,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(i,j));
 	  logssb = logspace_add_SAM(logssb, lssbNew);
 	}
       }
@@ -195,7 +195,7 @@ matrix<Type> catchFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &logN, a
       for(int f=0; f<noFleets;f++){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
 	  // cat(a-conf.minAge, y) += exp(logN(a-conf.minAge, y)) * mort.fleetCumulativeIncidence(a-conf.minAge,y, f) * dat.catchMeanWeight(y, a-conf.minAge, f);
-	  cat(a-conf.minAge, y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f))) * dat.catchMeanWeight(y, a-conf.minAge, f);
+	  cat(a-conf.minAge, y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f)) * dat.catchMeanWeight(y, a-conf.minAge, f);
 	}
       }
     }
@@ -221,7 +221,7 @@ array<Type> catchByFleetFunAge(dataSet<Type> &dat, confSet &conf, array<Type> &l
       for(int f=0; f<noFleets;f++){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
 	  // cat(a-conf.minAge, y) += exp(logN(a-conf.minAge, y)) * mort.fleetCumulativeIncidence(a-conf.minAge,y, f) * dat.catchMeanWeight(y, a-conf.minAge, f);
-	  cat(a-conf.minAge, y, f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f))) * dat.catchMeanWeight(y, a-conf.minAge, f);
+	  cat(a-conf.minAge, y, f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f)) * dat.catchMeanWeight(y, a-conf.minAge, f);
 	}
       }
     }
@@ -245,7 +245,7 @@ array<Type> catchByFleetFunAgeNum(dataSet<Type> &dat, confSet &conf, array<Type>
       for(int f=0; f<noFleets;f++){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
 	  // cat(a-conf.minAge, y) += exp(logN(a-conf.minAge, y)) * mort.fleetCumulativeIncidence(a-conf.minAge,y, f) * dat.catchMeanWeight(y, a-conf.minAge, f);
-	  cat(a-conf.minAge, y, f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f)));
+	  cat(a-conf.minAge, y, f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f));
 	}
       }
     }
@@ -269,7 +269,7 @@ array<Type> catchByFleetFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
     for(int a=conf.minAge;a<=conf.maxAge;a++){  
       for(int f=0; f<noFleets;f++){
 	if(dat.fleetTypes(f) == 0){ // Only catch fleets
-  	  cat(y,f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + log(mort.fleetCumulativeIncidence(a-conf.minAge,y,f))) * dat.catchMeanWeight(y, a-conf.minAge, f);
+  	  cat(y,f) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f)) * dat.catchMeanWeight(y, a-conf.minAge, f);
 	}
       }
     }
@@ -317,7 +317,7 @@ vector<Type> varLogCatchFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN
       for(int f=0; f<noFleets;f++){
 	if(dat.fleetTypes(f) == 0 && conf.keyVarObs(f,a-conf.minAge) > (-1)){ // Only catch fleets
           Type CW=dat.catchMeanWeight(y,a-conf.minAge,f);
-  	  Type Ca = exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f)) * mort.fleetCumulativeIncidence(a-conf.minAge,y,f);
+  	  Type Ca = exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f));
           cat(y)+=Ca*CW;
           varLogCat(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(f,a-conf.minAge)))*CW*CW*Ca*Ca;
 	}
@@ -350,7 +350,7 @@ vector<Type> landFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array
           LF=dat.landFrac(y,a-conf.minAge,f);
           if(LF<0){LF=0;}
           LWLF=LW*LF;
-	  land(y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f)) * mort.fleetCumulativeIncidence(a-conf.minAge,y,f) * LWLF;
+	  land(y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f)) * LWLF;
 	}
       }
     }
@@ -380,7 +380,7 @@ vector<Type> varLogLandFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN,
           Type LF=dat.landFrac(y,a-conf.minAge,f);
           if(LF<0){LF=0;}
           Type LWLF=LW*LF;
-	  Type Ca = exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f)) * mort.fleetCumulativeIncidence(a-conf.minAge,y,f);
+	  Type Ca = exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f));
           land(y)+=Ca*LWLF;
           varLogLand(y)+=exp(2.0*par.logSdLogObs(conf.keyVarObs(f,a-conf.minAge)))*LWLF*LWLF*Ca*Ca;
 	}
@@ -412,7 +412,7 @@ vector<Type> disFun(dataSet<Type> &dat, confSet &conf, array<Type> &logN, array<
 	  Type DF=1.0 - (dat.landFrac(y,a-conf.minAge, f) - 1e-8);
 	  if(DF<0){DF=0;}
 	  Type DWDF=DW*DF;
-	  dis(y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f)) * mort.fleetCumulativeIncidence(a-conf.minAge,y,f) * DWDF;
+	  dis(y) += exp(logN(a-conf.minAge,y) + mort.logFleetSurvival_before(a-conf.minAge,y,f) + mort.fleetLogCumulativeIncidence(a-conf.minAge,y,f)) * DWDF;
 	}
       }    
     }
@@ -507,9 +507,9 @@ SAM_SPECIALIZATION(vector<TMBad::ad_aug> rFun(array<TMBad::ad_aug>&));
 template<class Type>
 Type fbari(dataSet<Type>& dat, confSet &conf, array<Type> &logF, int i, bool give_log DEFARG(= false))SOURCE({
   Type fbar = 0.0;
-  array<Type> totF=totFFun(dat, conf, logF);
+  vector<Type> totF=totFFun(dat, conf, logF,i,0);
   for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){  
-    fbar+=totF(a-conf.minAge,i);
+    fbar+=totF(a-conf.minAge);
   }
   fbar/=Type(conf.fbarRange(1)-conf.fbarRange(0)+1.0);
   if(give_log)
@@ -576,7 +576,7 @@ SAM_SPECIALIZATION(matrix<TMBad::ad_aug> fbarByFleet(confSet&, array<TMBad::ad_a
 
 template<class Type>
 vector<Type> Effective_fbar(dataSet<Type>& dat, confSet &conf, MortalitySet<Type>& mort, bool give_log DEFARG(= false))SOURCE({
-    int timeSteps=mort.FullYear_survival.cols();
+    int timeSteps=mort.FullYear_logSurvival.cols();
   vector<Type> res(timeSteps);
   res.setZero();
   for(int y=0;y<timeSteps;y++){

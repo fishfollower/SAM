@@ -200,6 +200,21 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$scaleMpars <- numeric(5 + ncol(dat$Mcovariate))
   }
 
+  ## Competing risks
+  if(length(dat$CompRisk) > 0 && max(conf$keyCompRisk,-1) >= 0){
+      crm <- sapply(dat$CompRisk,function(x) mean(x$X))
+      crs <- sapply(dat$CompRisk,function(x) IQR(x$X))
+      ret$cp_m <- sapply(0:max(conf$keyCompRisk),function(i) mean(crm[row(conf$keyCompRisk)[conf$keyCompRisk==i]]))
+      ret$cp_logk <- rep(log(10),length(ret$cp_m))
+      ret$cp_loga <- log(sapply(0:max(conf$keyCompRisk),function(i) 0.01 / mean(crs[row(conf$keyCompRisk)[conf$keyCompRisk==i]])))
+      ret$cp_logb <- ret$cp_loga
+  }else{
+      ret$cp_m <- numeric(0)
+      ret$cp_logk <- numeric(0)
+      ret$cp_loga <- numeric(0)
+      ret$cp_logb <- numeric(0)
+  }
+  
   ret$seasonMu <- matrix(0,length(conf$seasonTimes)-2, max(conf$keyLogFseason)+1)
   if(conf$seasonFixedEffect){
       ret$seasonLogitRho <- numeric(0)
@@ -209,6 +224,8 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$seasonLogSd <- numeric(max(conf$keyLogFseason)+1)
   }
 
+  
+  
   ## Reference points
   ret$logFScaleMSY <- 0
   ret$implicitFunctionDelta <- 0
@@ -223,6 +240,8 @@ defpar <- function(dat,conf,spinoutyear=10){
   ## ret$logScaleFxPercent <- numeric(0)
   ## ret$logScaleFlim <- 0
   ## ret$logScaleFmsyRange <- matrix(0,2,0)
+
+
   ret$splinePenalty <- 0
   
   ## Latent variables
