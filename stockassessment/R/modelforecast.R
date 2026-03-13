@@ -1305,7 +1305,10 @@ backcorrected_modelforecast <- function(fit,
         NN <- fit$conf$maxAge-fit$conf$minAge+1
         sim <- lapply(F0,function(x) x$sim)
         logN <- lapply(sim,function(y) y[,1:NN])
-        logF <- lapply(sim, function(y) y[,-(1:NN)])
+        logF <- lapply(sim, function(y){
+            log(Reduce("+",lapply(split(fit$conf$keyLogFsta,slice.index(fit$conf$keyLogFsta,1)),function(ii){
+                exp(y[,-(1:NN)][,pmax(ii+1,1)]) * matrix(as.numeric(ii>=0),nrow(y),length(ii),byrow=TRUE)
+        })))})
         M <- lapply(F0,function(y) (y$bio_natMor))
         PropMat <- lapply(F0,function(y) (y$bio_propMat))
         SW <- lapply(F0,function(y) (y$bio_stockMeanWeight))
@@ -1343,6 +1346,9 @@ backcorrected_modelforecast <- function(fit,
             eps <- logN[[y+1]]-logPredN0
             logPredN <- logN[[y]] - exp(logF[[y]]+eta) - M[[y]]
             logPredN <- cbind(R,logPredN[,1:(ncol(logPredN)-2)],log(rowSums(exp(logPredN[,-(1:(ncol(logPredN)-2))])))) + eps
+            ## Survival before SSB
+            if((sum(fit$data$propM) + sum(fit$data$propF)) > 0)
+                stop("Backcorrection of SSB targets are only available if SSB is calculated in the beginning of the year")
             rowSums(exp(logPredN) * PropMat[[y+1]] * SW[[y+1]])
         }
         getCatch <- function(eta, y){
