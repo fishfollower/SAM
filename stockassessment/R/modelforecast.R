@@ -1270,20 +1270,35 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
 
 
 
-backcorrected_modelforecast <- function(fit, constraints, ..., Fdefault = 0.1, seed = NULL){
+backcorrected_modelforecast <- function(fit,
+                                        constraints = NULL,
+                                        fscale = NULL,
+                                        catchval = NULL,
+                                        fval = NULL,
+                                        nextssb = NULL,
+                                        landval = NULL,
+                                        nosim = 0,
+                                        ..., Fdefault = 0.1, seed = NULL){
     if(is.null(seed)){
         set.seed(NULL)
         seed <- .Random.seed
     }
+    if(nosim == 0) stop("Back correction is not needed for nosim=0")
+    if(any(!is.null(fscale) | !is.null(catchval) | !is.null(fval) | !is.null(nextssb) | !is.null(landval)))
+        stop("Please use the constraints argument")
 
     ## Helper functions
     if(!all(grepl("^(F|SSB|C)=",constraints)) && !any(!grepl("\\*",constraints)))
-        stop("The back correction is currently only implemented for absolute F, SSB, and C constraints without restrictions.")
+        stop("The back correction is currently only implemented for F, SSB, and C constraints without restrictions.")
+
+    if(grepl("^SSB",tail(constraints,1)))
+        stop("The last constraint cannot be for next years SSB. Please add an arbitrary constraint as the last")
+    
 
     set.seed(seed)
     tmpCon <- rep(sprintf("F=%f",Fdefault),length(constraints))
     ##tmpCon[grepl("^F=.+\\*",constraints)] <- constraints[grepl("^F=.+\\*",constraints)]
-    F0 <- modelforecast(fit,tmpCon,nosim=200)
+    F0 <- modelforecast(fit,tmpCon,nosim=nosim,...)
 
     for(y in seq_along(constraints)){
         ## Extract simulations
@@ -1426,7 +1441,7 @@ backcorrected_modelforecast <- function(fit, constraints, ..., Fdefault = 0.1, s
         }
         tmpCon[y] <- sprintf("F=%f",exp(bc_eta$par) * Fdefault)
         set.seed(seed)
-        F0 <- modelforecast(fit,tmpCon,nosim=200)
+        F0 <- modelforecast(fit,tmpCon,nosim=nosim,...)
     }
     F0    
 }
