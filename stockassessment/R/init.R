@@ -195,14 +195,20 @@ defpar <- function(dat,conf,spinoutyear=10){
   }else if(conf$keyScaleMModel == 2){
       ret$scaleMpars <- numeric(ncol(dat$natMor))
   }else if(conf$keyScaleMModel == 3){
-      ret$scaleMpars <- numeric(5)
+      ret$scaleMpars <- c(rep(log(0.1/(ncol(dat$natMor)-1)),ncol(dat$natMor)-1),0.1)
   }else if(conf$keyScaleMModel == 4){
+      ret$scaleMpars <- numeric(5)
+  }else if(conf$keyScaleMModel == 5){
       ret$scaleMpars <- numeric(5 + ncol(dat$Mcovariate))
   }
 
   ## Competing risks
   if(length(dat$CompRisk) > 0 && max(conf$keyCompRisk,-1) >= 0){
-      crm <- sapply(dat$CompRisk,function(x) mean(x$X))
+      crm <- sapply(dat$CompRisk,function(x){
+          if(is.na(x$mMin) || is.na(x$mMax))
+              return(mean(x$X))
+          0
+      })
       crs <- sapply(dat$CompRisk,function(x) IQR(x$X))
       ret$cp_m <- sapply(0:max(conf$keyCompRisk),function(i) mean(crm[row(conf$keyCompRisk)[conf$keyCompRisk==i]]))
       ret$cp_logk <- rep(log(10),length(ret$cp_m))

@@ -125,9 +125,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
                   )
     if(length(args$data$CompRisk) > 0 && max(conf$keyCompRisk,-1) >= 0){
         p2r <- sapply(0:max(conf$keyCompRisk),function(i) min(row(conf$keyCompRisk)[conf$keyCompRisk==i]))
-        fixLogK <- sapply(args$data$CompRisk,function(x) x$Model %in% c(2,3))
-        fixLogA <- sapply(args$data$CompRisk,function(x) x$Model %in% c(-1))
-        fixLogB <- sapply(args$data$CompRisk,function(x) x$Model %in% c(1,2,3,4,5))
+        fixLogK <- sapply(args$data$CompRisk,function(x) x$Model %in% c(0,1,2,3,4,5))
+        fixLogA <- sapply(args$data$CompRisk,function(x) x$Model %in% c(-1,2))
+        fixLogB <- sapply(args$data$CompRisk,function(x) x$Model %in% c(3))
         fixM <- sapply(args$data$CompRisk,function(x) x$Model %in% c(4,5))
         mapRP$cp_m <- factor(ifelse(fixM[p2r],NA,seq_along(fixM[p2r])))
         mapRP$cp_logk <- factor(ifelse(fixLogK[p2r],NA,seq_along(fixLogK[p2r]))*NA)

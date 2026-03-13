@@ -301,7 +301,10 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, paraSe
 	    Type logh = SAM_NegInf;
 	    if(p >= 0){
 	      int yx = std::min(y,(int)dat.CompRisk(r-1).X.rows()-1);
-	      logh = logRiskHazard(dat.CompRisk(r-1).X(yx,brk),par.cp_m(p),par.cp_logk(p),par.cp_loga(p),par.cp_logb(p), dat.CompRisk(r-1).Model);
+	      Type mUse = par.cp_m(p);
+	      if(!(R_IsNA(dat.CompRisk(r-1).mMin) || R_IsNA(dat.CompRisk(r-1).mMax)))
+	        mUse = toInterval((Type)par.cp_m(p), (Type)dat.CompRisk(r-1).mMin, (Type)dat.CompRisk(r-1).mMax, Type(1.0));
+	      logh = logRiskHazard(dat.CompRisk(r-1).X(yx,brk),mUse,par.cp_loga(p),par.cp_logb(p), dat.CompRisk(r-1).Model);
 	    }
 	    logHazard_breakpoints(a,y,i) = logspace_add_SAM(logHazard_breakpoints(a,y,i),logh);
 	    logHazard_M_breakpoints(a,y,r,i) = logh; // logspace_add_SAM(logHazard_M_breakpoints(a,y,r,i),logh);
@@ -338,11 +341,11 @@ void MortalitySet<Type>::updateHazards(dataSet<Type>& dat, confSet& conf, paraSe
 	int indx = conf.keyLogFsta(f,a);
 	if(indx > (-1) && activeHazard_F(i,a,f)){
 	  int j = conf.keyLogFseason(f,a);
-	  Type logFs = logF(indx,y);
-	  if(s > (-1))
-	    logFs += Fseason(s,y,j+1);
+	  // Type logFs = logF(indx,y);
+	  // if(s > (-1))
+	  //   logFs += Fseason(s,y,j+1);
 	  //CIF_F_breakpoints(a,y,f,i) = exp(logFs) / Hazard_breakpoints(a,y,i) * (1.0 - exp(-Hazard_breakpoints(a,y,i) * dt));
-	  logCIF_F_breakpoints(a,y,f,i) = logFs - logHazard_breakpoints(a,y,i) + logspace_sub_SAM(Type(0.0),-exp(logHazard_breakpoints(a,y,i)) * dt);
+	  logCIF_F_breakpoints(a,y,f,i) = logHazard_F_breakpoints(a,y,f,i) - logHazard_breakpoints(a,y,i) + logspace_sub_SAM(Type(0.0),-exp(logHazard_breakpoints(a,y,i)) * dt);
 	}
 	tmpFYCIF_F(a,f) = logspace_add_SAM(tmpFYCIF_F(a,f), Stmp + logCIF_F_breakpoints(a,y,f,i));
       }

@@ -42,7 +42,7 @@ extern "C" {
     for(int i = 0; i < n; ++i){
       p_r[i] = logRiskHazard<double>(p_x[i % n1],
 				     p_m[i % n2],
-				     p_logk[i % n3],
+				     //p_logk[i % n3],
 				     p_loga[i % n4],
 				     p_logb[i % n5],
 				     p_mod[i % n6]);

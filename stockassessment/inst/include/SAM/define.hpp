@@ -91,6 +91,8 @@ struct CompetingRiskCovariate {
  
   matrix<Type> X;
   vector<double> breakpoints;
+  double mMin;
+  double mMax;
   int Model;
 
   CompetingRiskCovariate();
@@ -100,6 +102,8 @@ struct CompetingRiskCovariate {
   inline CompetingRiskCovariate(const CompetingRiskCovariate<T>& other) :
     X(other.X),
     breakpoints(other.breakpoints),
+    mMin(other.mMin),
+    mMax(other.mMax),
     Model(other.Model) {}
   
 }
@@ -108,7 +112,7 @@ struct CompetingRiskCovariate {
 
 SOURCE(
        template<class Type>
-       CompetingRiskCovariate<Type>::CompetingRiskCovariate() : X(), breakpoints(), Model() {};
+       CompetingRiskCovariate<Type>::CompetingRiskCovariate() : X(), breakpoints(), mMin(), mMax(), Model() {};
 
        )
 
@@ -118,6 +122,8 @@ SOURCE(
        CompetingRiskCovariate<Type>::CompetingRiskCovariate(SEXP x) :
        X(asMatrix<Type>(getListElement(x,"X", &Rf_isMatrix))),
        breakpoints(asVector<double>(getListElement(x,"breakpoints", &Rf_isNumeric))),
+       mMin(Rf_asReal(getListElement(x,"mMin", &isNumericScalar))),
+       mMax(Rf_asReal(getListElement(x,"mMax", &isNumericScalar))),
        Model(Rf_asInteger(getListElement(x,"Model", &isNumericScalar))){};
        )
        

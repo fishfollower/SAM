@@ -473,7 +473,14 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(0));
 	  }else if(conf.keyScaleMModel == 2){ // Scale each age
 	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(j));
-	  }else if(conf.keyScaleMModel == 3){ // Double Gompertz-Makeham	    
+	  }else if(conf.keyScaleMModel == 3){ // Decreasing scale each age
+	    // Inefficient quick attempt
+	    Type ss = par.scaleMpars(par.scaleMpars.size()-1);
+	    for(int qq = dat.natMor.dim[1]-2; qq >= j; --qq){
+	      ss += exp(par.scaleMpars(qq));
+	    }
+	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + ss);	    
+	  }else if(conf.keyScaleMModel == 4){ // Double Gompertz-Makeham	    
 	    Type lambda = exp(par.scaleMpars(0));
 	    Type a1 = exp(par.scaleMpars(1));
 	    Type a2 = exp(par.scaleMpars(2));

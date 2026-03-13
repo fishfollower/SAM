@@ -172,30 +172,39 @@ SAM_SPECIALIZATION(TMBad::ad_aug matrix_trace(matrix<TMBad::ad_aug>&));
 
 
 template<class Type>
-Type logRiskHazard(Type x, Type m, Type logk, Type loga, Type logb, int model)SOURCE({
+Type logRiskHazard(Type x, Type m, Type loga, Type logb, int model)SOURCE({
   // Linear spline: a * (x - m) + (b - a) * pos(x-m)
   // Note that we force a<0 and b>0
   //  return -exp(loga) * (x - m) + exp(logspace_add_SAM(loga, logb)) * softmax2(x, Type(0.0), eps);
+    Type eps = 0.00001;
     if(model == 0){ // Bathtub
-      Type v1 = -exp(loga) * (x-m) - loga;
-      Type v2 = exp(logb) * (x-m) - logb;
-      return -exp(logk) + logspace_add_SAM(v1, v2);
+      // Type v1 = -exp(loga) * (x-m) - loga;
+      // Type v2 = exp(logb) * (x-m) - logb;
+      // return -exp(logk) + logspace_add_SAM(v1, v2);
+      Type x1 = -exp(loga) * (x - m) + exp(logspace_add_SAM(loga, logb)) * softmax2(x-m, Type(0.0), eps);
+      Type dtp0 = 0.5* sqrt(exp(3*loga+logb)*eps - 2.*exp(2*loga+2*logb)*eps + exp(loga+3*logb)*eps)/exp(loga+logb);
+      // if loga > logb, the dtp is dtp0; if loga < logb, dtp is -dtp0
+      Type sgn = 2.0 / (1.0 + exp(-100.0 * (loga - logb))) - 1.0;
+      Type tp = (dtp0) * sgn + m;
+      Type d = -exp(loga) * (tp - m) + exp(logspace_add_SAM(loga, logb)) * softmax2(tp-m, Type(0.0), eps);
+      Type r = x1 - d;
+      return log(softmax2(r, Type(0.0), Type(0.00001)));
     }else if(model == 1){ // Sigmoid
-      return loga - logspace_add_SAM(Type(0.0), -exp(logk) * (x - m));
+      return loga - logspace_add_SAM(Type(0.0), -exp(logb) * (x - m));
     }else if(model == 2){ // Increase hockey
-      return loga + log(0.5) + log((x-m) + sqrt((x-m) * (x-m) + Type(0.1)) );
+      return logb + log( softmax2(x-m, Type(0.0), eps) );      
     }else if(model == 3){ // Decrease hockey
-      return loga + log(0.5) + log((m-x) + sqrt((m-x) * (m-x) + Type(0.1)) );
+      return log(-exp(loga) * (x - m) + exp(loga) * softmax2(x-m, Type(0.0), eps));
     }else if(model == 4){ // Exp Increase
-      return loga + exp(logk) * x;
+      return loga + exp(logb) * x;
     }else if(model == 5){ // Exp Decrease
-      return loga - exp(logk) * x;
+      return loga - exp(logb) * x;
     }else{
       Rf_error("Wrong hazard model!");
     }
   })
 
 
-SAM_SPECIALIZATION(double logRiskHazard(double,double,double,double,double,int));
-SAM_SPECIALIZATION(TMBad::ad_aug logRiskHazard(TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,int));
+SAM_SPECIALIZATION(double logRiskHazard(double,double,double,double,int));
+SAM_SPECIALIZATION(TMBad::ad_aug logRiskHazard(TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,TMBad::ad_aug,int));
 

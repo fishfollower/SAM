@@ -138,7 +138,8 @@ defcon<-function(dat, level=1){
     ret$fbarRange <- c(min(which(cumsum(pp)>=0.25)), length(pp)-min(which(cumsum(rev(pp))>=0.25))+1)+(minAge-1)
     ret$fbarRange <- ifelse(is.finite(ret$fbarRange), ret$fbarRange, c(ret$minAge,ret$maxAge))
     ret$keyBiomassTreat <- ifelse(dat$fleetTypes==3, 0, -1)
-    ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN","Dirichlet"))
+    ##ret$obsLikelihoodFlag <- factor(rep("LN",nFleets),levels=c("LN","ALN","Dirichlet"))
+    ret$obsLikelihoodFlag <- factor(ifelse(dat$fleetTypes %in% c(80,90,92),"ALN","LN"),levels=c("LN","ALN","Dirichlet"))
     ret$fixVarToWeight <- rep(0,nFleets)
     ret$fracMixF <- 0
     ret$fracMixN <- rep(0,nAges)

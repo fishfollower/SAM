@@ -1080,6 +1080,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                    bio_catchMeanWeight = t(sapply(simvals,function(x) (x$bio_catchMeanWeight[ii,]))),
                                    bio_natMor = t(sapply(simvals,function(x) (x$bio_natMor[ii,]))),
                                    bio_propMat = t(sapply(simvals,function(x) (x$bio_propMat[ii,]))),
+                                   logHazard_F_breakpoints = simplify2array(lapply(simvals,function(x) (x$logHazard_F_breakpoints[,ii,,,drop=FALSE]))),
+                                   logHazard_M_breakpoints =  simplify2array(lapply(simvals,function(x) (x$logHazard_M_breakpoints[,ii,,,drop=FALSE]))),
                                    year=y)
             rownames(simlist[[i+1]]$catchatage) <- seq(fit$conf$minAge,fit$conf$maxAge,1)
         }
@@ -1264,4 +1266,167 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
         return(simlist)    
     }
+}
+
+
+
+backcorrected_modelforecast <- function(fit, constraints, ..., Fdefault = 0.1, seed = NULL){
+    if(is.null(seed)){
+        set.seed(NULL)
+        seed <- .Random.seed
+    }
+
+    ## Helper functions
+    if(!all(grepl("^(F|SSB|C)=",constraints)) && !any(!grepl("\\*",constraints)))
+        stop("The back correction is currently only implemented for absolute F, SSB, and C constraints without restrictions.")
+
+    set.seed(seed)
+    tmpCon <- rep(sprintf("F=%f",Fdefault),length(constraints))
+    ##tmpCon[grepl("^F=.+\\*",constraints)] <- constraints[grepl("^F=.+\\*",constraints)]
+    F0 <- modelforecast(fit,tmpCon,nosim=200)
+
+    for(y in seq_along(constraints)){
+        ## Extract simulations
+        NN <- fit$conf$maxAge-fit$conf$minAge+1
+        sim <- lapply(F0,function(x) x$sim)
+        logN <- lapply(sim,function(y) y[,1:NN])
+        logF <- lapply(sim, function(y) y[,-(1:NN)])
+        M <- lapply(F0,function(y) (y$bio_natMor))
+        PropMat <- lapply(F0,function(y) (y$bio_propMat))
+        SW <- lapply(F0,function(y) (y$bio_stockMeanWeight))
+        CW <- lapply(F0,function(y) (y$bio_catchMeanWeight))
+        logHazard_M_breakpoints <- lapply(F0, function(y) y$logHazard_M_breakpoints)
+        logHazard_F_breakpoints <- lapply(F0, function(y) y$logHazard_F_breakpoints)
+        activeHazard_F <- fit$rep$mort$activeHazard_F
+        activeHazard_breakpoints <- fit$rep$mort$activeHazard_breakpoints
+        sampleTimesStart <- fit$data$sampleTimesStart
+        sampleTimesEnd <- fit$data$sampleTimesEnd
+        activeHazardMap_risk <- fit$rep$mort$activeHazardMap_risk
+
+        logspace_add <- function(logx,logy){
+            r <- pmax(logx,logy)
+            ii <- is.finite(r)
+            r[ii] <- pmax(logx[ii],logy[ii]) + log1p(exp(-abs(logx[ii]-logy[ii])))
+            r
+        }
+        logspace_sum <- function(logx){
+            if(length(logx)<=1) return(logx)
+            if(length(logx)==2) return(logspace_add(logx[1],logx[2]))
+            Mx <- max(logx)
+            Mx + log(sum(exp(logx-Mx)))
+        }
+        logspace_1m <- function(logx) log1p(-exp(logx))
+        logspace_1p <- function(logx) log1p(exp(logx))
+        getFbar <- function(eta,y){
+            fr <- fit$conf$fbarRange - fit$conf$minAge + 1
+            rowMeans(exp(logF[[y]][,fr[1]:fr[2]] + eta))    
+        }
+        getNextSSB <- function(eta,y){
+            R <- logN[[y+1]][,1]
+            logPredN0 <-  logN[[y]] - exp(logF[[y]]) - M[[y]]
+            logPredN0 <- cbind(R,logPredN0[,1:(ncol(logPredN0)-2)],log(rowSums(exp(logPredN0[,-(1:(ncol(logPredN0)-2))]))))
+            eps <- logN[[y+1]]-logPredN0
+            logPredN <- logN[[y]] - exp(logF[[y]]+eta) - M[[y]]
+            logPredN <- cbind(R,logPredN[,1:(ncol(logPredN)-2)],log(rowSums(exp(logPredN[,-(1:(ncol(logPredN)-2))])))) + eps
+            rowSums(exp(logPredN) * PropMat[[y+1]] * SW[[y+1]])
+        }
+        getCatch <- function(eta, y){
+            ## logN(a,y) + mort.logFleetSurvival_before(a,y,f-1) + mort.fleetLogCumulativeIncidence(a,y,f-1);
+            ## Need to report logHazard_M_breakpoints and logHazard_F_breakpoints
+            ## Apply eta to logHazard_F_breakpoints
+            ## Calculate survival + CIF
+            ## Need non-F hazards + seasonal effect + F
+            doOne <- function(i){
+                lN <- logN[[y]][i,]
+                lHM <- logHazard_M_breakpoints[[y]][,,,,i,drop=FALSE]
+                dim(lHM) <- head(dim(logHazard_M_breakpoints[[y]]),-1)
+                lHF <- logHazard_F_breakpoints[[y]][,,,,i,drop=FALSE] + eta
+                dim(lHF) <- head(dim(logHazard_F_breakpoints[[y]]),-1)
+
+                
+                logHazard_breakpoints <- logspace_add(apply(lHM,c(1,4),logspace_sum), apply(lHF,c(1,4),logspace_sum))
+                logSurvBefore <- matrix(0,nrow(logHazard_breakpoints),dim(lHF)[3])
+                for(f in 1:ncol(logSurvBefore)){
+                    t0 <- 0
+                    t1 <- sampleTimesStart[f]
+                    logS0 <- logSurvBefore[,f]
+                    for(t in head(seq_along(activeHazard_breakpoints),-1)){
+                        ## Skip interval if it ends before time interval
+                        if(activeHazard_breakpoints[t+1] <= t0)
+                            next;
+                        ## Break loop if interval starts after time interval
+                        if(activeHazard_breakpoints[t] >= t1)
+                            break;
+                        ## Otherwise, look at overlap between intervals	   
+                        Astart = pmax(activeHazard_breakpoints[t],t0)
+                        Aend = pmin(activeHazard_breakpoints[t+1],t1)
+                        ## Hazard is constant, so cumulative hazard is hazard times interval length
+                        logS0 = logS0 - exp(logHazard_breakpoints[,t]) * (Aend - Astart)
+                    }
+                    logSurvBefore[,f] <- logS0
+                }
+                logCIF <- matrix(-Inf,nrow(logHazard_breakpoints),dim(lHF)[3])
+                for(f in 1:ncol(logSurvBefore)){
+                    t0 <- sampleTimesStart[f]
+                    t1 <- sampleTimesEnd[f]
+                    logS0 <- numeric(nrow(logCIF))
+                    vlogCIF <- rep(-Inf,nrow(logCIF))
+                    for(t in head(seq_along(activeHazard_breakpoints),-1)){
+                        ## Skip interval if it ends before time interval
+                        if(activeHazard_breakpoints[t+1] <= t0)
+                            next;
+                        ## Break loop if interval starts after time interval
+                        if(activeHazard_breakpoints[t] >= t1)
+                            break;
+                        ## Otherwise, look at overlap between intervals	   
+                        ## Full interval
+                        Astart = pmax(activeHazard_breakpoints[t],t0)
+                        Aend = pmin(activeHazard_breakpoints[t+1],t1)
+                        lCIF_F_brk <- lHF[,1,f,t] - logHazard_breakpoints[,t] + logspace_1m(-exp(logHazard_breakpoints[,t])*(Aend-Astart))
+                        tmp <- logS0 + lCIF_F_brk
+                        vlogCIF = logspace_add(vlogCIF, tmp)
+                        logS0 <- logS0 - exp(logHazard_breakpoints[,t])*(Aend-Astart)
+                    }
+                    logCIF[,f] <- vlogCIF
+                }
+                ## Output catch, sum of all fleets
+                ## logN(a,y) + mort.logFleetSurvival_before(a,y,f-1) + mort.fleetLogCumulativeIncidence(a,y,f-1);
+                exp(logspace_sum(lN + logSurvBefore + logCIF + log(CW[[y]][i,])))            
+            }
+            sapply(seq_len(nrow(logN[[y]])),doOne)
+        }
+
+        cstr <- constraints[y]
+
+        Target <- as.numeric(gsub("(.+=)([^\\*]+)(\\*?)","\\2",cstr))
+        isRel <- grepl("\\*",cstr)
+        if(grepl("^F=",cstr)){
+            ## F constraint
+            if(isRel){
+                bc_eta <- nlminb(0, function(ee) (median(getFbar(ee,y+1))/median(getFbar(0,y))-Target)^2)
+            }else{
+                bc_eta <- nlminb(0, function(ee) (median(getFbar(ee,y+1))-Target)^2)
+            }
+        }else if(grepl("^SSB=",cstr)){
+            ## SSB constraint
+            if(isRel){
+                bc_eta <- nlminb(0, function(ee) (median(getNextSSB(ee,y+1))/getNextSSB(getFbar(0,y))-Target)^2)
+            }else{
+                bc_eta <- nlminb(0, function(ee) (median(getNextSSB(ee,y+1))-Target)^2)
+            }
+        }else if(grepl("^C=",cstr)){
+            ## Catch constraint
+            if(isRel){
+                bc_eta <- nlminb(0, function(ee) (median(getCatch(ee,y+1))/getCatch(getFbar(0,y))-Target)^2)
+            }else{
+                bc_eta <- nlminb(0, function(ee) (median(getCatch(ee,y+1))-Target)^2)
+            }
+        }else{
+            stop("The constraint cannot currently be back corrected")
+        }
+        tmpCon[y] <- sprintf("F=%f",exp(bc_eta$par) * Fdefault)
+        set.seed(seed)
+        F0 <- modelforecast(fit,tmpCon,nosim=200)
+    }
+    F0    
 }

@@ -495,8 +495,35 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	    
 	      switch(conf.obsLikelihoodFlag(f)){
 	      case 0: // (LN) log-Normal distribution
+		// for(int idxV=0; idxV<currentVar.size(); ++idxV){
+		//   if(isNA(dat.weight(idxfrom+idxV))){
+		//     sqrtW(idxV)=Type(1.0);
+		//     int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
+		//     if(conf.predVarObsLink(f,a)>(-1)){
+		//       sqrtW(idxV) = sqrt(obs_fun::findLinkV(par.logSdLogObs(conf.keyVarObs(f,a))+(exp(par.predVarObs(conf.predVarObsLink(f,a))) -Type(1))*predObs(idxfrom+idxV),0)/currentVar(idxV));
+		//     }
+		//     for(int idxXtraSd=0; idxXtraSd<(conf.keyXtraSd).rows(); ++idxXtraSd){
+		//       int realfleet=f+1;
+		//       int realyear=y+CppAD::Integer(min(dat.years));
+		//       int realage=dat.aux(idxfrom+idxV,2);		    
+		//       vector<int> fyac=conf.keyXtraSd.row(idxXtraSd);
+		//       if((realfleet==fyac(0))&&(realyear==fyac(1))&&(realage==fyac(2))){
+		// 	sqrtW(idxV)=exp(par.logXtraSd(fyac(3)));
+		// 	break;
+		//       }
+		//     }
+		//   }else{
+		//     if(conf.fixVarToWeight(f)==1){
+		//       sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
+		//     }else{
+		//       sqrtW(idxV)=sqrt(Type(1)/dat.weight(idxfrom+idxV));
+		//     }
+		//   }
+		// Attempt to combine all kinds of variance scaling:
 		for(int idxV=0; idxV<currentVar.size(); ++idxV){
-		  if(isNA(dat.weight(idxfrom+idxV))){
+		  if(conf.fixVarToWeight(f)==1 && !isNA(dat.weight(idxfrom+idxV))){
+		    sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
+		  }else{
 		    sqrtW(idxV)=Type(1.0);
 		    int a = dat.aux(idxfrom+idxV,2)-conf.minAge;
 		    if(conf.predVarObsLink(f,a)>(-1)){
@@ -508,17 +535,14 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		      int realage=dat.aux(idxfrom+idxV,2);		    
 		      vector<int> fyac=conf.keyXtraSd.row(idxXtraSd);
 		      if((realfleet==fyac(0))&&(realyear==fyac(1))&&(realage==fyac(2))){
-			sqrtW(idxV)=exp(par.logXtraSd(fyac(3)));
+			sqrtW(idxV)*=exp(par.logXtraSd(fyac(3)));
 			break;
 		      }
 		    }
-		  }else{
-		    if(conf.fixVarToWeight(f)==1){
-		      sqrtW(idxV)=sqrt(dat.weight(idxfrom+idxV)/currentVar(idxV));
-		    }else{
+		    if(!isNA(dat.weight(idxfrom+idxV))){
 		      sqrtW(idxV)=sqrt(Type(1)/dat.weight(idxfrom+idxV));
 		    }
-		  }
+		  }		  
 		}
 		if(isNAINT(dat.idxCor(f,y))){
 		  nll += nllVec(f)((dat.logobs.segment(idxfrom,idxlength)-predObs.segment(idxfrom,idxlength))/sqrtW,keep.segment(idxfrom,idxlength));
@@ -718,6 +742,12 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	matrix<Type> bio_natMor = dat.natMor.matrix();
 	REPORT_F(bio_natMor,of);
 
+	// REPORT hazards
+	array<Type> logHazard_M_breakpoints = mort.logHazard_M_breakpoints;
+	REPORT_F(logHazard_M_breakpoints,of);
+	array<Type> logHazard_F_breakpoints = mort.logHazard_F_breakpoints;
+	REPORT_F(logHazard_F_breakpoints,of);
+	
 	// REPORT ssb fbar
 	REPORT_F(logssb,of);
 	REPORT_F(logfbar,of);
