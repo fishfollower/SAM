@@ -1431,14 +1431,14 @@ backcorrected_modelforecast <- function(fit,
         }else if(grepl("^SSB=",cstr)){
             ## SSB constraint
             if(isRel){
-                bc_eta <- nlminb(0, function(ee) (median(getNextSSB(ee,y+1))/getNextSSB(getFbar(0,y))-Target)^2)
+                bc_eta <- nlminb(0, function(ee) (median(getNextSSB(ee,y+1))/median(getNextSSB(getFbar(0,y)))-Target)^2)
             }else{
                 bc_eta <- nlminb(0, function(ee) (median(getNextSSB(ee,y+1))-Target)^2)
             }
         }else if(grepl("^C=",cstr)){
             ## Catch constraint
             if(isRel){
-                bc_eta <- nlminb(0, function(ee) (median(getCatch(ee,y+1))/getCatch(getFbar(0,y))-Target)^2)
+                 bc_eta <- nlminb(0, function(ee) (median(getCatch(ee,y+1))/median(getCatch(0,y))-Target)^2)
             }else{
                 bc_eta <- nlminb(0, function(ee) (median(getCatch(ee,y+1))-Target)^2)
             }

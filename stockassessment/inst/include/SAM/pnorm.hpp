@@ -364,12 +364,14 @@ namespace pnorm_atomic {
   SAM_SPECIALIZATION(atomic::tiny_ad::variable<2, 2, double> pnorm1_1x(atomic::tiny_ad::variable<2, 2, double>,atomic::tiny_ad::variable<2, 2, double>,atomic::tiny_ad::variable<2, 2, double>));
   SAM_SPECIALIZATION(atomic::tiny_ad::variable<3, 2, double> pnorm1_1x(atomic::tiny_ad::variable<3, 2, double>,atomic::tiny_ad::variable<3, 2, double>,atomic::tiny_ad::variable<3, 2, double>));
   SAM_SPECIALIZATION(atomic::tiny_ad::variable<4, 2, double> pnorm1_1x(atomic::tiny_ad::variable<4, 2, double>,atomic::tiny_ad::variable<4, 2, double>,atomic::tiny_ad::variable<4, 2, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<5, 2, double> pnorm1_1x(atomic::tiny_ad::variable<5, 2, double>,atomic::tiny_ad::variable<5, 2, double>,atomic::tiny_ad::variable<5, 2, double>));
 
     
   SAM_SPECIALIZATION(atomic::tiny_ad::variable<1, 3, double> pnorm1_1x(atomic::tiny_ad::variable<1, 3, double>,atomic::tiny_ad::variable<1, 3, double>,atomic::tiny_ad::variable<1, 3, double>));
   SAM_SPECIALIZATION(atomic::tiny_ad::variable<2, 3, double> pnorm1_1x(atomic::tiny_ad::variable<2, 3, double>,atomic::tiny_ad::variable<2, 3, double>,atomic::tiny_ad::variable<2, 3, double>));
   SAM_SPECIALIZATION(atomic::tiny_ad::variable<3, 3, double> pnorm1_1x(atomic::tiny_ad::variable<3, 3, double>,atomic::tiny_ad::variable<3, 3, double>,atomic::tiny_ad::variable<3, 3, double>));
   SAM_SPECIALIZATION(atomic::tiny_ad::variable<4, 3, double> pnorm1_1x(atomic::tiny_ad::variable<4, 3, double>,atomic::tiny_ad::variable<4, 3, double>,atomic::tiny_ad::variable<4, 3, double>));
+  SAM_SPECIALIZATION(atomic::tiny_ad::variable<5, 3, double> pnorm1_1x(atomic::tiny_ad::variable<5, 3, double>,atomic::tiny_ad::variable<5, 3, double>,atomic::tiny_ad::variable<5, 3, double>));  
 
 #ifndef WITH_SAM_LIB
   TMB_BIND_ATOMIC(pnorm1_2x,100,pnorm1_1x(x[0], x[1], x[2]))  

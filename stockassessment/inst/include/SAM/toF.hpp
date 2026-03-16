@@ -563,7 +563,7 @@ namespace ConstrainCalculations {
   	  return logL;
 
   	}else if(cstr.cstr == ConstraintType::Constrain_KeepRelF){
-
+	  
 	  SAM_ASSERT(cstr.fleet >= 0,"Keep relative Fbar can only be used for fleets, not total");
 	  SAM_ASSERT(cstr.relative >= 0 && cstr.fleet != cstr.relative, "Keep relative can only be used relative to other fleets in same year");	  
   	  return (fleetLogFbar(cstr.fleet) - fleetLogFbar(cstr.relative));
