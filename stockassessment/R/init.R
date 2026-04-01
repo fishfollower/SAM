@@ -192,13 +192,15 @@ defpar <- function(dat,conf,spinoutyear=10){
   ret$scaleMpars <- numeric(0)
   if(conf$keyScaleMModel == 1){
       ret$scaleMpars <- numeric(1)
-  }else if(conf$keyScaleMModel == 2){
-      ret$scaleMpars <- numeric(ncol(dat$natMor))
+  if(conf$keyScaleMModel == 2){
+      ret$scaleMpars <- numeric(1)
   }else if(conf$keyScaleMModel == 3){
-      ret$scaleMpars <- c(rep(log(0.1/(ncol(dat$natMor)-1)),ncol(dat$natMor)-1),0.1)
+      ret$scaleMpars <- numeric(ncol(dat$natMor))
   }else if(conf$keyScaleMModel == 4){
-      ret$scaleMpars <- numeric(5)
+      ret$scaleMpars <- c(rep(log(0.1/(ncol(dat$natMor)-1)),ncol(dat$natMor)-1),0.1)
   }else if(conf$keyScaleMModel == 5){
+      ret$scaleMpars <- numeric(5)
+  }else if(conf$keyScaleMModel == 6){
       ret$scaleMpars <- numeric(5 + ncol(dat$Mcovariate))
   }
 

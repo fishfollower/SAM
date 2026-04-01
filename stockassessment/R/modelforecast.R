@@ -1270,7 +1270,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
 
 
 
-backcorrected_modelforecast <- function(fit,
+backcorrected_modelforecast.sam <- function(fit,
                                         constraints = NULL,
                                         fscale = NULL,
                                         catchval = NULL,

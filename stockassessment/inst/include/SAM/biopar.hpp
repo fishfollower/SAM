@@ -103,7 +103,8 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
     }
     matrix<Type> Wc(n,n); Wc.setZero();
     matrix<Type> Wd(n,n); Wd.setZero();
-    matrix<Type> Wp(n,n); Wp.setZero();    
+    matrix<Type> Wp(n,n); Wp.setZero();
+    matrix<Type> Wr(n,n); Wr.setZero();
     for(int i=0; i<n; ++i){
       for(int j=0; j<n; ++j){
 	if((c(i)==c(j))&&(abs(r(i)-r(j))==1)){
@@ -114,10 +115,16 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
        	  Wd(i,j)=1;
 	  Wd(i,i)-=1;
 	}
-	if(logPhi.size()==3){
+	if(logPhi.size()>=3){
           if ((c(i)==(ncol-1)) && (c(j)==(ncol-1)) && (abs(r(i)-r(j))==1) ){
             Wp(i,j)=1;
 	    Wp(i,i)-=1;
+	  }
+	}
+	if(logPhi.size()==4){
+          if ((c(i)==(0)) && (c(j)==(0)) && (abs(r(i)-r(j))==1) ){
+            Wr(i,j)=1;
+	    Wr(i,i)-=1;
 	  }
 	}
 
@@ -135,13 +142,33 @@ bioResult<Type> nllBioProcess(array<Type> P, vector<Type> meanVec, vector<int> k
     matrix<Type> I(Wc.rows(),Wc.cols());
     I.setIdentity();
     matrix<Type> Q=I-phi(0)*Wc-phi(1)*Wd;
-    if(logPhi.size()==3){
+    if(logPhi.size()>=3){
       Q-=phi(2)*Wp;
     }
+    if(logPhi.size()==4){
+      Q-=phi(3)*Wr;
+    }
+
+   
+    // array<Type> sP(nrow,ncol);
+    // for(int i=0; i<nrow; ++i){
+    //   for(int j=0; j<ncol; ++j){
+    // 	sP = exp(logSdP(keyVarVec(j)));
+    //   }
+    // }
 
     matrix<Type> Sigma_GMRF = atomic::matinv(Q) * exp(2.0*logSdP);
-
+  
+    // matrix<Type> Sigma_GMRF = atomic::matinv(Q); // * exp(2.0*logSdP);
+    // vector<Type> allSd = sP.vec();
+    // for(int i = 0; i < Sigma_GMRF.rows(); ++i)
+    //   for(int j = 0; j < Sigma_GMRF.rows(); ++j)
+    // 	Sigma_GMRF(i,j) = Sigma_GMRF(i,j) * sP(i) * sP(j);
+    
+    
+    
     Type nll = density::SCALE(density::GMRF(asSparseMatrix(Q)),exp(logSdP))((P-mP).vec());
+    //Type nll = density::VECSCALE(density::GMRF(asSparseMatrix(Q)),sP.vec())((P-mP).vec());
 
     bioResult<Type> res(nll, Sigma_GMRF, mP.matrix(), P.dim[0], P.dim[1]);
 
@@ -471,16 +498,18 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	for(int j=0; j<dat.natMor.dim[1]; ++j){
 	  if(conf.keyScaleMModel == 1){ // Scale all M with one number
 	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(0));
-	  }else if(conf.keyScaleMModel == 2){ // Scale each age
+	  if(conf.keyScaleMModel == 2){ // Scale all M with one number, additively
+	    dat.natMor(i,j) = dat.natMor(i,j) + exp(par.scaleMpars(0));
+	  }else if(conf.keyScaleMModel == 3){ // Scale each age
 	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(j));
-	  }else if(conf.keyScaleMModel == 3){ // Decreasing scale each age
+	  }else if(conf.keyScaleMModel == 4){ // Decreasing scale each age
 	    // Inefficient quick attempt
 	    Type ss = par.scaleMpars(par.scaleMpars.size()-1);
 	    for(int qq = dat.natMor.dim[1]-2; qq >= j; --qq){
 	      ss += exp(par.scaleMpars(qq));
 	    }
 	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + ss);	    
-	  }else if(conf.keyScaleMModel == 4){ // Double Gompertz-Makeham	    
+	  }else if(conf.keyScaleMModel == 5){ // Double Gompertz-Makeham	    
 	    Type lambda = exp(par.scaleMpars(0));
 	    Type a1 = exp(par.scaleMpars(1));
 	    Type a2 = exp(par.scaleMpars(2));

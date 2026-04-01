@@ -23,19 +23,23 @@ matrix<Type> setupVarCovMatrix(int dim, int offset, vector<int> rhoMap, vector<T
 
     Type rho0 = Type(0.5);
     vector<Type> xvec(dim);
+    xvec.setZero();
     xvec(0)=Type(0);
     int maxrm=-1;
     if(rhoVec.size()>0){
-      for(int i=1; i<xvec.size(); i++) { 
-	if(rhoMap(i-1+offset)>=0)
-	  xvec(i) = xvec(i-1)+rhoVec(rhoMap(i-1+offset)); 
-	if(rhoMap(i-1+offset)>maxrm) maxrm=rhoMap(i-1+offset);
+      for(int i=1; i<xvec.size(); i++) {
+	if(rhoMap(i-1+offset) < 0){
+	  xvec(i) = xvec(i-1)+4.0;	
+	}else{	  
+	  xvec(i) = xvec(i-1)+rhoVec(rhoMap(i-1+offset));	
+	  if(rhoMap(i-1+offset)>maxrm) maxrm=rhoMap(i-1+offset);
+	}
       } 
     }
    
     for(int i=0; i<dim; i++)
       for(int j=0; j<dim; j++){
-	if(i!=j && maxrm>=0){	
+	if(i!=j && maxrm>=0){
 	  Type dist = fabs(xvec(i)-xvec(j));
 	  ret(i,j)=pow( rho0,dist)*sdVec( sdMap(i+offset) )*sdVec( sdMap(j+offset));
 	} else if(i==j) ret(i,j) = sdVec( sdMap(i+offset) )*sdVec( sdMap(j+offset));
