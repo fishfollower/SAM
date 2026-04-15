@@ -107,6 +107,12 @@ struct MortalitySet {
   array<Type> logHazard_M_breakpoints;	// age x year x causes x activeHazard_breakpoints
   array<Type> logCIF_F_breakpoints;	// age x year x fleet x activeHazard_breakpoints
   array<Type> logCIF_M_breakpoints;	// age x year x causes x activeHazard_breakpoints
+
+  int minAge;
+  int maxAge;
+
+  int minYear;
+  int maxYear;
   
   inline MortalitySet():
     logCumulativeHazard(),
@@ -133,7 +139,11 @@ struct MortalitySet {
     logHazard_F_breakpoints(),
     logHazard_M_breakpoints(),
     logCIF_F_breakpoints(),
-    logCIF_M_breakpoints()
+    logCIF_M_breakpoints(),
+    minAge(),
+    maxAge(),
+    minYear(),
+    maxYear()
   {}
   
   template<class T>
@@ -161,7 +171,11 @@ struct MortalitySet {
 						 logHazard_F_breakpoints(x.logHazard_F_breakpoints,x.logHazard_F_breakpoints.dim),
 						 logHazard_M_breakpoints(x.logHazard_M_breakpoints,x.logHazard_M_breakpoints.dim),
 						 logCIF_F_breakpoints(x.logCIF_F_breakpoints,x.logCIF_F_breakpoints.dim),
-						 logCIF_M_breakpoints(x.logCIF_M_breakpoints,x.logCIF_M_breakpoints.dim)
+    logCIF_M_breakpoints(x.logCIF_M_breakpoints,x.logCIF_M_breakpoints.dim),
+    minAge(x.minAge),
+    maxAge(x.maxAge),
+    minYear(x.minYear),
+    maxYear(x.maxYear)
 						 
   {}
   
@@ -177,6 +191,14 @@ struct MortalitySet {
   Type partialLogCIF(int fleet, int a, int y, Type t0, Type t1);
   Type logCIFr(int risk, int a, int y, Type t0, Type t1);
   Type partialLogCIFr(int risk, int a, int y, Type t0, Type t1);
+
+  Type logTemporaryLifeExpectancy(int y, double a0, double a1);
+  Type logYearsLostFishing(int fleet, int y, double a0, double a1);
+  Type logYearsLostOther(int risk, int y, double a0, double a1);
+
+  array<Type> logLifeTableDistribution(int nage);
+  vector<Type> logLifeTableDistribution_ages(int nage);
+  
   
 });
 
@@ -399,6 +421,248 @@ SOURCE(
 
 SOURCE(
        template<class Type>
+       vector<Type> MortalitySet<Type>::logLifeTableDistribution_ages(int nage){
+	 vector<Type> lifetabledist_ages(nage);
+	 lifetabledist_ages.setZero();
+	 for(int ai = 0; ai < nage; ++ai){
+	   Type aa = minAge + ai * (maxAge+1 - minAge) / Type(nage - 1);
+	   lifetabledist_ages(ai) = aa;
+	 }
+	 return lifetabledist_ages;
+       })
+
+SOURCE(
+       template<class Type>
+       array<Type> MortalitySet<Type>::logLifeTableDistribution(int nage){
+	 array<Type> lifetabledist(logCIF_F_breakpoints.dim(2)+logCIF_M_breakpoints.dim(2)+1,nage,maxYear-minYear+1);
+	 lifetabledist.setConstant(R_NaReal);
+	 // Fill ages for x-axis
+	 vector<Type> lifetabledist_ages = logLifeTableDistribution_ages(nage);
+	 // loop over years
+	 for(int y = 0; y < lifetabledist.dim(2); ++y){
+	   // Re-set probabilities
+	   Type logS0 = 0;
+	   vector<Type> vlogCIFf(logCIF_F_breakpoints.dim(2));
+	   vlogCIFf.setConstant(R_NegInf);
+	   vector<Type> vlogCIFr(logCIF_M_breakpoints.dim(2));
+	   vlogCIFr.setConstant(R_NegInf);	
+	   // loop over ages
+	   lifetabledist(0,0,y) = logS0;
+	   for(int f = 0; f < logCIF_F_breakpoints.dim(2); ++f)
+	     lifetabledist(f+1,0,y) = vlogCIFf(f);
+	   for(int r = 0; r < logCIF_M_breakpoints.dim(2); ++r)
+	     lifetabledist(r+1+logCIF_F_breakpoints.dim(2),0,y) = vlogCIFr(r);
+	   for(int ai = 1; ai < lifetabledist.dim(1); ++ai){
+	     Type a0 = lifetabledist_ages(ai-1);
+	     Type a1 = lifetabledist_ages(ai);
+	     int a00 = std::floor(asDouble(a0));
+	     Type t0a0 = a0-a00;
+	     int a11 = std::floor(asDouble(a1));
+	     Type t1a1 = a1 - a11;
+	     Type lyl = R_NegInf;
+	     for(int a = a00; a <= a11; ++a){
+	       Type t0 = 0.0;
+	       Type t1 = 1.0;
+	       if(a == a00)
+		 t0 = t0a0;
+	       if(a == a11)
+		 t1 = t1a1;
+	       int j = std::min(std::max(a-minAge,0), maxAge-minAge);		// Cohort age index
+	       int k = std::min(y, maxYear-minYear);	// Cohort year index
+	       for(int i = 0; i < (int)activeHazard_breakpoints.size() - 1; ++i){
+		 // Skip interval if it ends before time interval
+		 if(activeHazard_breakpoints[i+1] <= t0)
+		   continue;
+		 // Break loop if interval starts after time interval
+		 if(activeHazard_breakpoints[i] >= t1)
+		   break;
+		 // Otherwise, look at overlap between intervals	   
+		 Type Astart = std::max(activeHazard_breakpoints[i],t0);
+		 Type Aend =std::min(activeHazard_breakpoints[i+1],t1);
+		 Type lmu = logHazard_breakpoints(j,k,i);
+		 vector<Type> vCIFbeforef = vlogCIFf;
+		 vector<Type> vCIFbeforer = vlogCIFr;		 
+		 for(int f = 0; f < logCIF_F_breakpoints.dim(2); ++f){			   
+		   Type tmp = logHazard_F_breakpoints(j,k,f,i) - logHazard_breakpoints(j,k,i) + logspace_sub_SAM(Type(0.0), -exp(logHazard_breakpoints(j,k,i)) * (Aend-Astart));
+		   vlogCIFf(f) = logspace_add_SAM(vlogCIFf(f), logS0 + tmp);
+		 }
+		 for(int r = 0; r < logCIF_M_breakpoints.dim(2); ++r){			   
+		   Type tmp = logHazard_M_breakpoints(j,k,r,i) - logHazard_breakpoints(j,k,i) + logspace_sub_SAM(Type(0.0), -exp(logHazard_breakpoints(j,k,i)) * (Aend-Astart));
+		   vlogCIFr(r) = logspace_add_SAM(vlogCIFr(r), logS0 + tmp);
+		 }	    
+		 logS0 -= exp(logHazard_breakpoints(j,k,i)) * (Aend - Astart);
+	       }
+	     }
+	     //Insert survival
+	     lifetabledist(0,ai,y) = logS0;
+	     for(int f = 0; f < logCIF_F_breakpoints.dim(2); ++f)
+	       lifetabledist(f+1,ai,y) = vlogCIFf(f);
+	     for(int r = 0; r < logCIF_M_breakpoints.dim(2); ++r)
+	       lifetabledist(r+1+logCIF_F_breakpoints.dim(2),ai,y) = vlogCIFr(r);	     	   
+	   }
+	 }
+	 return lifetabledist;	     	 
+       }
+       )
+
+
+
+SOURCE(
+       template<class Type>
+       Type MortalitySet<Type>::logTemporaryLifeExpectancy(int y, double a0, double a1){
+	 // Loop over hazard intervals
+	 int a00 = std::floor(a0);
+	 Type t0a0 = a0-a00;
+	 int a11 = std::floor(a1);
+	 Type t1a1 = a1 - a11;
+	 Type loglifeExp = R_NegInf;	
+	 Type logS0 = 0.0;
+	 for(int a = a00; a <= a11; ++a){
+	   Type t0 = 0.0;
+	   Type t1 = 1.0;
+	   if(a == a00)
+	     t0 = t0a0;
+	   if(a == a11)
+	     t1 = t1a1;
+	   int j = std::min(std::max(a-minAge,0), maxAge-minAge);		// Cohort age index
+	   int k = std::min(y, maxYear-minYear);	// Cohort year index
+	   for(int i = 0; i < (int)activeHazard_breakpoints.size() - 1; ++i){
+	     // Skip interval if it ends before time interval
+	     if(activeHazard_breakpoints[i+1] <= t0)
+	       continue;
+	     // Break loop if interval starts after time interval
+	     if(activeHazard_breakpoints[i] >= t1)
+	       break;
+	     // Otherwise, look at overlap between intervals	   
+	     Type Astart = std::max(activeHazard_breakpoints[i],t0);
+	     Type Aend =std::min(activeHazard_breakpoints[i+1],t1);
+	     Type lmu = logHazard_breakpoints(j,k,i);
+	     if(a < minAge){
+	       for(int f = 0; f < logCIF_F_breakpoints.dim(2); ++f)
+		 lmu = logspace_sub_SAM(lmu,logHazard_F_breakpoints(j,k,f,i));
+	     }
+	     // Hazard is constant, so cumulative hazard is hazard times interval length
+	     Type letmp = logS0 - lmu + logspace_sub_SAM(Type(0.0), -exp(lmu) * (Aend-Astart));
+	     loglifeExp = logspace_add_SAM(loglifeExp,letmp);
+	     logS0 -= exp(lmu) * (Aend - Astart);
+	   }
+	 }
+	 return loglifeExp;
+       }
+       )
+
+SOURCE(
+       template<class Type>
+       Type MortalitySet<Type>::logYearsLostFishing(int fleet, int y, double a0, double a1){
+	 int a00 = std::floor(a0);
+	 Type t0a0 = a0-a00;
+	 int a11 = std::floor(a1);
+	 Type t1a1 = a1 - a11;
+	 Type lyl = R_NegInf;
+	 Type logS0 = 0;
+	 Type vlogCIF = R_NegInf;
+	 for(int a = a00; a <= a11; ++a){
+	   Type t0 = 0.0;
+	   Type t1 = 1.0;
+	   if(a == a00)
+	     t0 = t0a0;
+	   if(a == a11)
+	     t1 = t1a1;
+	   int j = std::min(std::max(a-minAge,0), maxAge-minAge);		// Cohort age index
+	   int k = std::min(y, maxYear-minYear);	// Cohort year index
+	   for(int i = 0; i < (int)activeHazard_breakpoints.size() - 1; ++i){
+	     // Skip interval if it ends before time interval
+	     if(activeHazard_breakpoints[i+1] <= t0)
+	       continue;
+	     // Break loop if interval starts after time interval
+	     if(activeHazard_breakpoints[i] >= t1)
+	       break;
+	     // Otherwise, look at overlap between intervals	   
+	     Type Astart = std::max(activeHazard_breakpoints[i],t0);
+	     Type Aend =std::min(activeHazard_breakpoints[i+1],t1);
+	     Type lmu = logHazard_breakpoints(j,k,i);
+	     Type vCIFbefore = vlogCIF;
+	     int f0 = fleet;
+	     int f1 = fleet+1;
+	     if(fleet < 0){
+	       f0 = 0;
+	       f1 = logCIF_F_breakpoints.dim(2);
+	     }
+	     Type lmuj = R_NegInf;	     
+	     for(int f = f0; f < f1; ++f){	     
+	       lmuj = logspace_add_SAM(lmuj,logHazard_F_breakpoints(j,k,f,i));
+	       Type tmp = logHazard_F_breakpoints(j,k,f,i) - logHazard_breakpoints(j,k,i) + logspace_sub_SAM(Type(0.0), -exp(logHazard_breakpoints(j,k,i)) * (Aend-Astart));
+	       vlogCIF = logspace_add_SAM(vlogCIF, logS0 + tmp);
+	     }
+	     Type lyltmp1 = log(Aend - Astart) + vCIFbefore;
+	     Type lyltmp2 = logS0 + lmuj - lmu + logspace_sub_SAM(log(Aend - Astart), -lmu + logspace_sub_SAM(Type(0.0), -exp(lmu) * (Aend - Astart)));
+	     lyl = logspace_add_SAM(lyl, logspace_add_SAM(lyltmp1,lyltmp2));
+	     logS0 -= exp(logHazard_breakpoints(j,k,i)) * (Aend - Astart);
+	   }
+	 }
+       	 return lyl;	     
+       }
+       )
+
+
+
+SOURCE(
+       template<class Type>
+       Type MortalitySet<Type>::logYearsLostOther(int risk, int y, double a0, double a1){
+	 int a00 = std::floor(a0);
+	 Type t0a0 = a0-a00;
+	 int a11 = std::floor(a1);
+	 Type t1a1 = a1 - a11;
+	 Type lyl = R_NegInf;
+	 Type logS0 = 0;
+	 Type vlogCIF = R_NegInf;
+	 for(int a = a00; a <= a11; ++a){
+	   Type t0 = 0.0;
+	   Type t1 = 1.0;
+	   if(a == a00)
+	     t0 = t0a0;
+	   if(a == a11)
+	     t1 = t1a1;
+	   int j = std::min(std::max(a-minAge,0), maxAge-minAge);		// Cohort age index
+	   int k = std::min(y, maxYear-minYear);	// Cohort year index
+	   for(int i = 0; i < (int)activeHazard_breakpoints.size() - 1; ++i){
+	     // Skip interval if it ends before time interval
+	     if(activeHazard_breakpoints[i+1] <= t0)
+	       continue;
+	     // Break loop if interval starts after time interval
+	     if(activeHazard_breakpoints[i] >= t1)
+	       break;
+	     // Otherwise, look at overlap between intervals	   
+	     Type Astart = std::max(activeHazard_breakpoints[i],t0);
+	     Type Aend =std::min(activeHazard_breakpoints[i+1],t1);
+	     Type lmu = logHazard_breakpoints(j,k,i);
+	     Type vCIFbefore = vlogCIF;
+	     int r0 = risk;
+	     int r1 = risk+1;
+	     if(risk < 0){
+	       r0 = 0;
+	       r1 = logCIF_M_breakpoints.dim(2);
+	     }
+	     Type lmuj = R_NegInf;
+	     for(int r = r0; r < r1; ++r){	
+	       lmuj = logspace_add_SAM(lmuj,logHazard_M_breakpoints(j,k,r,i));
+	       Type tmp = logHazard_M_breakpoints(j,k,r,i) - logHazard_breakpoints(j,k,i) + logspace_sub_SAM(Type(0.0), -exp(logHazard_breakpoints(j,k,i)) * (Aend-Astart));
+	       vlogCIF = logspace_add_SAM(vlogCIF, logS0 + tmp);
+	     }
+	     Type lyltmp1 = log(Aend - Astart) + vCIFbefore;
+	     Type lyltmp2 = logS0 + lmuj - lmu + logspace_sub_SAM(log(Aend - Astart), -lmu + logspace_sub_SAM(Type(0.0), -exp(lmu) * (Aend - Astart)));
+	     lyl = logspace_add_SAM(lyl, logspace_add_SAM(lyltmp1,lyltmp2));
+	     logS0 -= exp(logHazard_breakpoints(j,k,i)) * (Aend - Astart);
+	   }
+	 }
+       	 return lyl;	     
+       }
+       )
+
+
+
+SOURCE(
+       template<class Type>
        Type MortalitySet<Type>::logCIF(int fleet, int a, int y, Type t0, Type t1){
 	 // Cumulative incidence between t0 and t1
 
@@ -541,7 +805,11 @@ SOURCE(
 	 logHazard_F_breakpoints(),
 	 logHazard_M_breakpoints(),
 	 logCIF_F_breakpoints(),
-	 logCIF_M_breakpoints()
+	 logCIF_M_breakpoints(),
+	 minAge(conf.minAge),
+	 maxAge(conf.maxAge),
+	 minYear((int)asDouble(dat.years(0))),
+	 maxYear((int)asDouble(dat.years(dat.years.size()-1)))
 
 	 {
 	   int nYear = dat.natMor.dim(0);

@@ -1135,10 +1135,12 @@ struct EquilibriumRecycler_Stochastic_Worker {
     //// Life years lost
     array<Type> logF = logFSel;
     logF.col(newDat.natMor.dim(0)-1) += logFbar;
-    Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
+    //    Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
+    Type logLifeExpectancy = logspace_add_SAM(calc.mort.logTemporaryLifeExpectancy((int)newDat.natMor.dim(0)-1, (double)conf.minAge, 10 * conf.maxAge),log((Type)conf.minAge));
 
     //// Life expectancy
-    Type logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
+    //Type logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
+    Type logYLTF = calc.mort.logYearsLostFishing(-1,(int)newDat.natMor.dim(0)-1, (double)conf.minAge, (double)conf.maxAge);
       
     //// dSR0
     Type dSR0 = calc.dSR((Type)SAM_NegInf);
@@ -1324,11 +1326,15 @@ struct EquilibriumRecycler_Stochastic_Worker {
     //// Life years lost
     array<Type> logF = logFSel;
     logF.col(newDat.natMor.dim(0)-1) += logFbar;
-    Type E_logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
+    // Type E_logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
+    Type E_logLifeExpectancy = logspace_add_SAM(calc.mort.logTemporaryLifeExpectancy((int)newDat.natMor.dim(0)-1, (double)conf.minAge, 10 * conf.maxAge),log((Type)conf.minAge));
 
+    
     //// Life expectancy
-    Type E_logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
-
+    // Type E_logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
+    Type E_logYLTF = calc.mort.logYearsLostFishing(-1,(int)newDat.natMor.dim(0)-1, (double)conf.minAge, (double)conf.maxAge);
+      
+ 
     //// dSR0
     Type dSR0 = calc.dSR((Type)SAM_NegInf);
     

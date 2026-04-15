@@ -53,20 +53,24 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
       mort.updateYear(dat, conf, par, logF, logitFseason,indx);
     }
     // Simulate N
-    if(forecast.simFlag(1) == 0 && (!forecast.useModelLastN || i > 0)){
-      vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort,indx);
-      vector<Type> Nscale(logN.rows());
-      Nscale.setConstant((Type)1.0);
-      if(forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.useIID){
-	Nscale(0) = sqrt(forecast.logRecruitmentVar(CppAD::Integer(forecast.forecastYear(indx))-1)) / sqrt(nvar(0,0));
-	predN(0) = forecast.logRecruitmentMedian(CppAD::Integer(forecast.forecastYear(indx))-1);
+    if(forecast.simFlag(1) == 0){// && (!forecast.useModelLastN || i > 0)){
+      if(i == 0 && forecast.useModelLastN){
+	
+      }else{
+	vector<Type> predN = predNFun(dat,conf,par,logN,logF,recruit,mort,indx);
+	vector<Type> Nscale(logN.rows());
+	Nscale.setConstant((Type)1.0);
+	if(forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.useIID){
+	  Nscale(0) = sqrt(forecast.logRecruitmentVar(CppAD::Integer(forecast.forecastYear(indx))-1)) / sqrt(nvar(0,0));
+	  predN(0) = forecast.logRecruitmentMedian(CppAD::Integer(forecast.forecastYear(indx))-1);
+	}
+	// logN.col(indx) = predN + neg_log_densityN.simulate();// * Nscale;
+	vector<Type> noiseN = neg_log_densityN.simulate() * Nscale;
+	logN.col(indx) = predN + noiseN;
+	if(conf.minAge == 0 &&
+	   forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.asRecModel)
+	  logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,mort,indx)(0) + noiseN(0);
       }
-      // logN.col(indx) = predN + neg_log_densityN.simulate();// * Nscale;
-      vector<Type> noiseN = neg_log_densityN.simulate() * Nscale;
-      logN.col(indx) = predN + noiseN;
-      if(conf.minAge == 0 &&
-	 forecast.recModel(CppAD::Integer(forecast.forecastYear(indx))-1) == forecast.asRecModel)
-	logN(0,indx) = predNFun(dat,conf,par,logN,logF,recruit,mort,indx)(0) + noiseN(0);
     }
   }
   return;

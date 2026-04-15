@@ -108,8 +108,10 @@ PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& c
   }
   double logYPR = log(sum(cat) + SAM_Zero);//
 
-  double logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
-  double logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (double)conf.minAge + SAM_Zero);
+  // double logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
+  // double logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (double)conf.minAge + SAM_Zero);
+  double logYLTF = mort.logYearsLostFishing(-1,newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge);
+  double logLifeExpectancy = logspace_add_SAM(mort.logTemporaryLifeExpectancy(newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge), log((double)conf.minAge));
   //vector<double> ssb = ssbFun(newDat, conf, logN, logF, mort);
   vector<double> ssb = erbFun(newDat, conf, par, logN, logF, mort);
   double logSPR = log(sum(ssb) + SAM_Zero); //log(sum(ssb)); log(sum(ssb) + (T)exp(-12.0));

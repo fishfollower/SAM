@@ -1256,8 +1256,8 @@ namespace RecruitmentConvenience {
 
   
   template<class Type>
-  Type ClimateHazard(Type v, Type m, Type a, Type b){
-    return linspline(v, m, a, b);
+  Type ClimateHazard(Type v, Type m, Type loga, Type logb){
+    return linspline(v, m, -exp(loga), exp(logb));
   }
 
 // Recruitment function 600
@@ -1288,8 +1288,8 @@ struct Rec_Climate_RBH_A : RecruitmentWorker<Type> {
 	int1 += (exp(logr + logssb) + exp(logp)) * dt;
 	  for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate
 	    Type m = pC(3 * i);
-	    Type a = exp(pC(3 * i + 1));	    
-	    Type b = exp(pC(3 * i + 2));
+	    Type a = (pC(3 * i + 1));	    
+	    Type b = (pC(3 * i + 2));
 	    //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
 	    Type xx = RecruitClimate(k,j,i) - m;
 	    //Type hx = b * xx * xx;//b * 0.5 * (xx + sqrt(xx*xx + 0.001));
@@ -1304,8 +1304,8 @@ struct Rec_Climate_RBH_A : RecruitmentWorker<Type> {
     Type H = 0.0;
     for(int i = 0; i < RecruitClimate.dim[2]; ++i){
       Type m = pC(3 * i);
-      Type a = exp(pC(3 * i + 1));	    
-      Type b = exp(pC(3 * i + 2));
+      Type a = (pC(3 * i + 1));	    
+      Type b = (pC(3 * i + 2));
       //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
       Type xx = RecruitClimate(k,0,i) - m;
       H += ClimateHazard(xx, m, a, b);;
@@ -1367,8 +1367,8 @@ struct Rec_Climate_Ricker_A : RecruitmentWorker<Type> {
       for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time
 	  for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate	 
 	    Type m = pC(3 * i);
-	    Type a = exp(pC(3 * i + 1));	    
-	    Type b = exp(pC(3 * i + 2));
+	    Type a = (pC(3 * i + 1));	    
+	    Type b = (pC(3 * i + 2));
 	    Type xx = RecruitClimate(k,j,i) - m;
 	    Type hx = ClimateHazard(xx, m, a, b);
 	    int1 += hx * dt;
@@ -1379,8 +1379,8 @@ struct Rec_Climate_Ricker_A : RecruitmentWorker<Type> {
     Type H = 0.0;
     for(int i = 0; i < RecruitClimate.dim[2]; ++i){
       Type m = pC(3 * i);
-      Type a = exp(pC(3 * i + 1));	    
-      Type b = exp(pC(3 * i + 2));
+      Type a = (pC(3 * i + 1));	    
+      Type b = (pC(3 * i + 2));
       Type xx = RecruitClimate(k,0,i) - m;
       H += ClimateHazard(xx, m, a, b);
     }
@@ -1431,8 +1431,8 @@ struct Rec_Climate_BevHolt_A : RecruitmentWorker<Type> {
       for(int j = 0; j < RecruitClimate.dim[1]; ++j){ // Time
 	for(int i = 0; i < RecruitClimate.dim[2]; ++i){ // Covariate
 	  Type m = pC(3 * i);
-	  Type a = exp(pC(3 * i + 1));	    
-	  Type b = exp(pC(3 * i + 2));
+	  Type a = (pC(3 * i + 1));	    
+	  Type b = (pC(3 * i + 2));
 	  //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
 	  Type xx = RecruitClimate(k,j,i) - m;
 	  //Type hx = b * xx * xx;//b * 0.5 * (xx + sqrt(xx*xx + 0.001));
@@ -1447,8 +1447,8 @@ struct Rec_Climate_BevHolt_A : RecruitmentWorker<Type> {
     Type H = 0.0;
     for(int i = 0; i < RecruitClimate.dim[2]; ++i){
       Type m = pC(3 * i);
-      Type a = exp(pC(3 * i + 1));	    
-      Type b = exp(pC(3 * i + 2));
+      Type a = (pC(3 * i + 1));	    
+      Type b = (pC(3 * i + 2));
       //Type hx = exp(pC(2 * i)) * (RecruitClimate(k,j,i) - pC(2 * i + 1)) * (RecruitClimate(k,j,i) - pC(2 * i + 1));
       Type xx = RecruitClimate(k,0,i) - m;
       H += ClimateHazard(xx, m, a, b);

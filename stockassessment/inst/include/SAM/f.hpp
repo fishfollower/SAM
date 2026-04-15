@@ -169,7 +169,7 @@ Type nllF(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       vector<Type> predF;
       vector<Type> TACp(stateDimF);
       TACp.setZero();
-      if((dat.TAC.rows() > 0) && (i < dat.TAC.rows())){
+      if((dat.TAC.cols() > 0) && (dat.TAC.rows() > 0) && (i < dat.TAC.rows())){
 	TACp = FB_TAC((vector<Type>)logF.col(i-1),(vector<Type>)logN.col(i), (vector<Type>)dat.TAC.matrix().row(std::min(i-1,dat.catchMeanWeight.dim(0)-1)), (vector<Type>)dat.TAC.matrix().row(std::min(i,dat.catchMeanWeight.dim(0)-1)),(vector<Type>)dat.natMor.matrix().row(i),(vector<Type>)dat.catchMeanWeight.matrix().row(std::min(i,dat.catchMeanWeight.dim(0)-1)));
       }
       PEN.col(i) = TACp;

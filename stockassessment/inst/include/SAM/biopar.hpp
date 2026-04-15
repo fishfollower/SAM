@@ -496,9 +496,9 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
       vector<Type> m = dat.natMor.matrix().colwise().mean();
       for(int i=0; i<dat.natMor.dim[0]; ++i){
 	for(int j=0; j<dat.natMor.dim[1]; ++j){
-	  if(conf.keyScaleMModel == 1){ // Scale all M with one number
-	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(0));
-	  if(conf.keyScaleMModel == 2){ // Scale all M with one number, additively
+	  if(conf.keyScaleMModel == 1){ // Scale (increase) all M with one number
+	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + exp(par.scaleMpars(0)));
+	  }else if(conf.keyScaleMModel == 2){ // Scale all M with one number, additively
 	    dat.natMor(i,j) = dat.natMor(i,j) + exp(par.scaleMpars(0));
 	  }else if(conf.keyScaleMModel == 3){ // Scale each age
 	    dat.natMor(i,j) = exp(log(dat.natMor(i,j)) + par.scaleMpars(j));
@@ -547,7 +547,7 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
     //return Type(0);
     return nll;
     })
-
+  
 
 SAM_SPECIALIZATION(double nllNM(array<double>&, dataSet<double>&, confSet&, paraSet<double>&, forecastSet<double>&, objective_function<double>*));
 SAM_SPECIALIZATION(TMBad::ad_aug nllNM(array<TMBad::ad_aug>&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, forecastSet<TMBad::ad_aug>&, objective_function<TMBad::ad_aug>*));

@@ -146,8 +146,8 @@ HEADER(
 	   }
 	   Type logYPR = log(sum(cat) + SAM_Zero);//
 
-	   Type logYLTF = log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
-	   Type logLifeExpectancy = log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
+	   Type logYLTF = mort.logYearsLostFishing(-1,newDat.natMor.dim(0)-1,conf.minAge, conf.maxAge); //log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
+	   Type logLifeExpectancy = logspace_add_SAM(mort.logTemporaryLifeExpectancy(newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge),log((Type)conf.minAge));//log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
 
 	   // Calculate spawners
 	   vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);

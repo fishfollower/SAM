@@ -368,31 +368,48 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
       vector<Type> weekContrib = scaleWeekFun(par, dat, logP);
       int noYearsLAI = yearsPFun(conf,dat);
 
+     
+      
       if(reportingLevel > 0){
-	NOT_SIMULATE_F(of){  
-	  vector<Type> logLifeExpectancy = log(lifeexpectancy(dat, conf, logF));
-	  matrix<Type> logLifeExpectancyAge = lifeexpectancyAge(dat, conf, logF).array().log().matrix();
-	  vector<Type> logLifeExpectancyRec = log(lifeexpectancyRec(dat, conf, logF));
-	  ADREPORT_F(logLifeExpectancy,of);
-	  ADREPORT_F(logLifeExpectancyRec,of);
-	  ADREPORT_F(logLifeExpectancyAge,of);
+	NOT_SIMULATE_F(of){
+
+
+	  vector<Type> logLifeExpectancy = loglifeexpectancy(mort);
+	  matrix<Type> logLifeExpectancyAge = loglifeexpectancyAge(mort);
+	  vector<Type> logLifeExpectancyRec = loglifeexpectancyRec(mort);
 	  REPORT_F(logLifeExpectancy,of);
 	  REPORT_F(logLifeExpectancyRec,of);
 	  REPORT_F(logLifeExpectancyAge,of);
-
       
-	  vector<Type> logYLTF = log(yearsLostFishing(dat, conf, logF));
-	  matrix<Type> logYLTFf = yearsLostFishingFleet(dat, conf, logF).array().log().matrix();
-	  vector<Type> logYLTM = log(yearsLostOther(dat, conf, logF));
-	  vector<Type> logYNL = log(temporaryLifeExpectancy(dat, conf, logF));
-	  ADREPORT_F(logYLTF, of);
-	  ADREPORT_F(logYLTFf, of);
-	  ADREPORT_F(logYLTM, of);
-	  ADREPORT_F(logYNL, of);	
+	  vector<Type> logYLTF = logYearsLostFishing(mort);
+	  matrix<Type> logYLTFf = logYearsLostFishingFleet(mort);
+	  vector<Type> logYLTM = logYearsLostOther(mort);
+	  matrix<Type> logYLTMr = logYearsLostOtherRisk(mort);
+	  vector<Type> logYNL = logTemporaryLifeExpectancy(mort);
 	  REPORT_F(logYLTF, of);
 	  REPORT_F(logYLTFf, of);
 	  REPORT_F(logYLTM, of);
+	  REPORT_F(logYLTMr, of);
 	  REPORT_F(logYNL, of);	
+
+	  // Life table distribution of survivors and death by cause of death
+	  int nage = 2000;
+	  array<Type> lifetabledist = mort.logLifeTableDistribution(nage);
+	  vector<Type> lifetabledist_ages = mort.logLifeTableDistribution_ages(nage);
+	  REPORT_F(lifetabledist,of);
+	  REPORT_F(lifetabledist_ages,of);
+
+	  
+	  ADREPORT_F(logLifeExpectancy,of);
+	  ADREPORT_F(logLifeExpectancyRec,of);
+	  ADREPORT_F(logLifeExpectancyAge,of);
+
+      
+	  ADREPORT_F(logYLTF, of);
+	  ADREPORT_F(logYLTFf, of);
+	  ADREPORT_F(logYLTM, of);
+	  ADREPORT_F(logYLTMr, of);
+	  ADREPORT_F(logYNL, of);	
 	  vector<Type> logrmax = log(rmax(dat,conf,par,recruit));
 	  vector<Type> logGenerationLength = log(generationLength(dat,conf,par));
 	  ADREPORT_F(logrmax, of);
@@ -411,8 +428,6 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  ADREPORT_F(logEmpiricalSPR,of);
 	  vector<Type> logEmpiricalYPR = empiricalYPR(dat, conf, logN, mort, 0, true);
 	  ADREPORT_F(logEmpiricalYPR,of);
-
-	  
 	}
       }
 

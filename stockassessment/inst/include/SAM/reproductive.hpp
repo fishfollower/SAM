@@ -16,7 +16,7 @@ namespace reproductive_fun {
     tripletList.reserve(nAges + (nAges-1));
     // Fecundity in first row
     for(int i = 0; i < nAges; ++i){
-      Type f = max_dSR * (dat.stockMeanWeight(y,i)) * (dat.propMat(y,i));
+      Type f = max_dSR * exp(exp(par.logFecundityScaling) * log(dat.stockMeanWeight(y,i))) * (dat.propMat(y,i));
       tripletList.push_back(T(0,i,f));
     }
     // Survival from age class i-1 to i in absence of fishing
@@ -97,7 +97,8 @@ namespace reproductive_fun {
     Type loglx = 0.0;
     for(int i = 0; i < nAges; ++i){
       loglx -= dat.natMor(y,i);
-      Type f = max_dSR * (dat.stockMeanWeight(y,i)) * (dat.propMat(y,i));
+      // Note: erb is relative to first ssb, but that will cancel out here.
+      Type f = max_dSR * exp(exp(par.logFecundityScaling) * log(dat.stockMeanWeight(y,i))) * (dat.propMat(y,i));
       R0 += exp(loglx) * f;
       Gx += exp(loglx) * f * Type(i + conf.minAge);
     }  

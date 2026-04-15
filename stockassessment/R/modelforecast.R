@@ -559,6 +559,7 @@ modelforecast.sam <- function(fit,
                               useNonLinearityCorrection = (nosim > 0 && !deterministicF),
                               ncores = 1,
                               mc.type = "mclapply",
+                              useRecPool = FALSE,
                               overwriteBioProcessModel = FALSE,
                               useManagementLag = FALSE,
                               assessmentErrorMean_F = 0,
@@ -762,9 +763,15 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }else{
         rectab <- rectable(fit)
         recpool <- rectab[rownames(rectab)%in%rec.years,1]
-        recModel <- rep(1,nYears)
-        logRecruitmentMedian <- rep(log(median(recpool)),nYears)
-        logRecruitmentVar <- rep(stats::var(log(recpool)),nYears)
+        if(useRecPool){
+            recModel <- rep(1,nYears)
+            logRecruitmentMedian <- sample(log(recpool),nYears,replace=TRUE)
+            logRecruitmentVar <- rep((1e-6)^2,nYears)
+        }else{
+            recModel <- rep(1,nYears)
+            logRecruitmentMedian <- rep(log(median(recpool)),nYears)
+            logRecruitmentVar <- rep(stats::var(log(recpool)),nYears)
+        }
     }
 
     ## Get F process time scale model
@@ -988,6 +995,13 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
             sim0 <- 0*est            
             if(resampleFirst){
                 sim0 <- rmvnorm(1, mu=0*est, Sigma=cov)
+            }
+            if(useRecPool){
+                cat("Using recruitment pool","\n")
+                obj2$env$data$forecast$logRecruitmentMedian <- sample(log(recpool),nYears,replace=TRUE)
+                cat("\t",paste(obj2$env$data$forecast$logRecruitmentMedian,collapse=", "),"\n")
+                obj2$env$data$forecast$logRecruitmentVar <- rep((1e-5)^2,nYears)
+                ##obj2$retape() ## Is this needed??
             }
             dList0 <- split(as.vector(sim0), names(est))
             estList0 <- split(as.vector(sim0+est), names(est))
