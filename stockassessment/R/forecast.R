@@ -533,7 +533,6 @@ forecast <- function(fit,
             sim <- simtmp
         }
 
-        ## <<<<<<< HEAD !!!Conflict block 1; From master - NOT FULLY MERGED!!!
         if(!is.na(catchval.exact[i+1])){
             simtmp<-sim
             funk<-function(k){
@@ -717,16 +716,21 @@ forecast <- function(fit,
         }
 
         if(useNMmodel){
-            landsim<-sapply(1:nrow(sim), function(k){      
-                thisy <- which(rnNM==y);
-                thisnm <-matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,];
-                catchFrac(sim[k,], nm=thisnm, w=lw, frac=lf)
-            }
-            )
+          landsim <- sapply(1:nrow(sim), function(k){      
+            thisy <- which(rnNM==y);
+            thisnm <- matrix(exp(simLogNM[k,]),nrow=nrow(opar$logNM))[thisy,];
+            catchFrac(sim[k,], nm=thisnm, w=lw, frac=lf)
+          })
+          catchatagesim <- sapply(1:nrow(sim), function(k){
+            thisy <- which(rnNM == y)
+            thisnm <- matrix(exp(simLogNM[k, ]), nrow = nrow(opar$logNM))[thisy,]
+            catchatage(sim[k, ], nm = thisnm)
+          })
         }else{
-            landsim<-apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
+          landsim <- apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
+          catchatagesim <- apply(sim, 1, catchatage, nm=thisnm)
         }
-        catchatagesim <- apply(sim, 1, catchatage, nm=nm)
+
         if(useSWmodel | useMOmodel | useNMmodel){
             ssbswmoi<-function(k){
                 if(useSWmodel){    
@@ -765,14 +769,12 @@ forecast <- function(fit,
         }
         ## simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, catch=catchsim, ssb=ssbsim, rec=recsim,
         ##                        cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, year=y)
-        ## =======   !!!From multi -- NOT FULLY MERGED!!!
         fbarbyfleetsim <- apply(sim, 1, fbarbyfleet)
         ## catchsim <- apply(sim, 1, catch, nm=nm, cw=cw)
         ## ssbsim <- apply(sim, 1, ssb, nm=nm, sw=sw, mo=mo, pm=pm, pf=pf)
         ## recsim <- exp(sim[,1])
         catchbysim <- apply(sim, 1, function(x)attr(catch(x, nm=nm, cw=cw), "byFleet"))
         simlist[[i+1]] <- list(sim=sim, fbar=fbarsim, fbarbyfleet = fbarbyfleetsim, catch=catchsim, ssb=ssbsim, rec=recsim, cwF=cwFsim, catchatage=catchatagesim, land=landsim, fbarL=fbarLsim, tsb=tsbsim, catchby=catchbysim,  year=y)
-        ## >>>>>>> multi   !!!End of conflict block 2 -- NOT FULLY MERGED!!!
     }
     attr(simlist, "fit")<-fit
 

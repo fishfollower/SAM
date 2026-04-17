@@ -25,11 +25,3 @@ Encoding: UTF-8
 URL: https://github.com/fishfollower/SAM
 LazyData: TRUE
 BugReports: https://github.com/fishfollower/SAM/issues
-RemoteType: github
-RemoteHost: https://api.github.com
-RemoteRepo: SAM
-RemoteUsername: fishfollower
-RemoteRef: master
-RemoteSha: 9efca734e6bd8bb37bfe23177bf0cd4c1fe6571d
-RemoteSubdir: stockassessment
-RoxygenNote: 7.2.3
