@@ -284,20 +284,23 @@ faytable.sam <- function(fit, fleet=which(fit$data$fleetTypes==0), ...){
 ##' @param fleet the fleet number(s) to return catch summed for (default is to return the sum of all residual fleets).  
 ##' @details ...
 ##' @export
-caytable <- function(fit, fleet=which(fit$data$fleetTypes==0)){
-   getfleet <- function(f){
-     idx <- fit$conf$keyLogFsta[f,]+2    
-     F <- cbind(NA,exp(t(fit$pl$logF)))[,idx]
-     F[is.na(F)] <- 0
-     M <- fit$data$natMor
-     N <- exp(t(fit$pl$logN))
-     F/(F+M)*N*(1-exp(-F-M))
-   }
-   ret <- Reduce("+",lapply(fleet,getfleet)) 
-   colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
-   rownames(ret) <- fit$data$years
-   return(ret)
+caytable<-function (fit, fleet = which(fit$data$fleetTypes == 0),useNMmodel = (fit$conf$mortalityModel >= 1)) 
+{
+  getfleet <- function(f) {
+    idx <- fit$conf$keyLogFsta[f, ] + 2
+    F <- cbind(NA, exp(t(fit$pl$logF)))[, idx]
+    F[is.na(F)] <- 0
+    if (useNMmodel) M <- exp(fit$pl$logNM[1:dim(fit$pl$logN)[2],])
+    else M <- fit$data$natMor
+    N <- exp(t(fit$pl$logN))
+    F/(F + M) * N * (1 - exp(-F - M))
+  }
+  ret <- Reduce("+", lapply(fleet, getfleet))
+  colnames(ret) <- fit$conf$minAge:fit$conf$maxAge
+  rownames(ret) <- fit$data$years
+  return(ret)
 }
+
 
 ##' parameter table 
 ##' @param  fit ... 
