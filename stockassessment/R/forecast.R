@@ -728,7 +728,7 @@ forecast <- function(fit,
           })
         }else{
           landsim <- apply(sim, 1, catchFrac, nm=nm, w=lw, frac=lf)
-          catchatagesim <- apply(sim, 1, catchatage, nm=thisnm)
+          catchatagesim <- apply(sim, 1, catchatage, nm=nm)
         }
 
         if(useSWmodel | useMOmodel | useNMmodel){
