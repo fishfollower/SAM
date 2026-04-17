@@ -41,6 +41,7 @@ rmvnorm <- function(n = 1, mu, Sigma){
 ##' @param label optional label to appear in short table
 ##' @param overwriteSelYears if a vector of years is specified, then the average selectivity of those years is used (not recommended)
 ##' @param deterministic option to turn all process noise off (not recommended, as it will likely cause bias)
+##' @param recpersim geometric mean of recruitment per simulated replicate is taken rather than recruitment from point-estimate of the assessment. Needs deterministic to be set to TRUE.
 ##' @param processNoiseF option to turn off process noise in F
 ##' @param customWeights a vector of same length as number of age groups giving custom weights (currently only used for weighted average of F calculation)
 ##' @param customSel supply a custom selection vector that will then be used as fixed selection in all years after the final assessment year (not recommended)
@@ -74,7 +75,7 @@ forecast <- function(fit,
                      year.base=max(fit$data$years),
                      ave.years=max(fit$data$years)+(-4:0),
                      rec.years=max(fit$data$years)+(-9:0),
-                     label=NULL, overwriteSelYears=NULL, deterministic=FALSE,
+                     label=NULL, overwriteSelYears=NULL, deterministic=FALSE,recpersim=FALSE,
                      processNoiseF=TRUE,  customWeights=NULL, customSel=NULL, 
                      lagR=FALSE, splitLD=FALSE, addTSB=FALSE, useSWmodel=(fit$conf$stockWeightModel>=1), useCWmodel=(fit$conf$catchWeightModel>=1), 
                      useMOmodel=(fit$conf$matureModel>=1), useNMmodel=(fit$conf$mortalityModel>=1), 
@@ -83,7 +84,13 @@ forecast <- function(fit,
                      cf.cv.keep.fv=NULL, 
                      cf.keep.fv.offset=NULL, 
                      estimate=median){
-  
+    require(MASS)
+    require(Matrix)
+    require(TMB)
+    if(recpersim){
+        deterministic <- TRUE
+        warnings("deterministic has been set to TRUE since recpersim was set to TRUE")
+    }
    
   # store input data
   forecast_args                    <- c(mget(ls(environment(), sorted=F)), match.call(expand.dots=F)$...) 
@@ -382,11 +389,47 @@ forecast <- function(fit,
     if(year.base<(max(fit$data$years)-1)){
         stop("State not saved, so cannot proceed from this year")
     }
-    if(deterministic)cov<-cov*0
+    if(deterministic &!recpersim)
+        cov<-cov*0
+    
     sim<-rmvnorm(nosim, mu=est, Sigma=cov)
 
+    if(deterministic & recpersim){
+        require(MASS)
+        sdrep <- sdreport(fit$obj,getJointPrecision=T)
+        sigma <- as.matrix(solve(sdrep$jointPrecision))
+        mu    <- c(sdrep$par.fixed,sdrep$par.random)
+
+        simrec<-rmvnorm(nosim, mu=mu,
+                            Sigma=sigma)
+        colnames(simrec) <- rownames(sigma)
+        rownames(simrec) <- 1:nosim
+
+        stock.n <- array(NA,
+                        dim=c(length(fit$conf$minAge:fit$conf$maxAge),length(fit$data$years),nosim),
+                        dimnames=list(
+                                age=fit$conf$minAge:fit$conf$maxAge,
+                                year=fit$data$years,
+                                iter=1:nosim))
+
+        harvest <- array(NA,
+                        dim=c(nrow(defpar(fit$data,fit$conf)$logF),length(fit$data$years),nosim),
+                        dimnames=list(
+                                age=(fit$conf$minAge:fit$conf$maxAge)[1:nrow(defpar(fit$data,fit$conf)$logF)],
+                                year=fit$data$years,
+                                iter=1:nosim))
+
+        for(isim in 1:nosim){
+            stock.n[,,isim] <- simrec[isim,which(colnames(simrec)=="logN")]
+            harvest[,,isim] <- simrec[isim,which(colnames(simrec)=="logF")]
+        }
+        sim     <- cbind(t(stock.n[,dim(stock.n)[2],]),t(harvest[,dim(harvest)[2],]))
+        recpool <- exp(t(stock.n[1,colnames(stock.n)%in%rec.years,]))
+    }
+
+
     if(is.null(overwriteSelYears) & is.null(customSel))  
-        if(!isTRUE(all.equal(unname(est),unname(getState(getN(est),getF(est))))))
+        if(!isTRUE(all.equal(est,getState(getN(est),getF(est)))))
             stop("Sorry somthing is wrong here (check code for getN, getF, and getState)")  
     doAve <- function(x){
         if(length(dim(x))==2){
@@ -441,15 +484,23 @@ forecast <- function(fit,
                           function(s){
                               yidx<-which(rnNM==as.integer(y))   
                               thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(opar$logNM))[yidx,]
-                              step(sim[s,], nm=thisnm, recpool=recpool, scale=1, inyear=(i==0))
+                              thisrecpool <- recpool
+                              if(recpersim)
+                                thisrecpool <- recpool[s,]
+                              step(sim[s,], nm=thisnm, recpool=thisrecpool, scale=1, inyear=(i==0))
                           }
                           ))      
         }else{
-            sim <- t(apply(sim, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0)))) 
+            sim <- t(sapply(1:nrow(sim),function(s){
+                            thisrecpool <- recpool
+                            if(recpersim)
+                                thisrecpool <- recpool[s,]
+                            step(sim[s,], nm=nm, recpool=thisrecpool, scale=1, inyear=(i==0))})) 
+                    
         }
         if(i!=0){  
             cof <- coef(fit)
-            if(deterministic){procVar<-procVar*0}
+            if(deterministic &!recpersim){procVar<-procVar*0}
             if(!is.null(overwriteSelYears)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
             if(!is.null(customSel)){nn<-length(fit$conf$keyLogFsta[1,]); procVar[-c(1:nn),-c(1:nn)] <- 0}
             if(all(fit$conf$corFlag <3)){
@@ -592,14 +643,22 @@ forecast <- function(fit,
                                      function(s){
                                          yidx<-which(rnNM==as.integer(y))   
                                          thisnm<-matrix(exp(simLogNM[s,]),nrow=nrow(opar$logNM))[yidx,]
-                                         step(simtmp[s,], nm=thisnm, recpool=recpool, scale=1, inyear=(i==0))
+                                         thisrecpool <- recpool
+                                         if(recpersim)
+                                            thisrecpool <- recpool[s,]
+                                         step(simtmp[s,], nm=thisnm, recpool=thisrecpool, scale=1, inyear=(i==0))
                                      }
                                      ))      
                 }else{
-                    simsim <- t(apply(simtmp, 1, function(s)step(s, nm=nm, recpool=recpool, scale=1, inyear=(i==0)))) 
+                    simsim <- t(sapply(1:nrow(simtmp),function(s){
+                                thisrecpool <- recpool
+                                if(recpersim)
+                                thisrecpool <- recpool[s,]
+                                step(simtmp[s,], nm=nm, recpool=thisrecpool, scale=1, inyear=(i==0))})) 
+                        
                 }
                 if(i!=0){
-                    if(deterministic)procVar<-procVar*0  
+                    if(deterministic & !recpersim)procVar<-procVar*0  
                     simsim <- simsim + rmvnorm(nosim, mu=rep(0,nrow(procVar)), Sigma=procVar)
                 }
                 if(useSWmodel | useMOmodel | useNMmodel){
@@ -827,8 +886,7 @@ forecast <- function(fit,
     }
     if(sum(fit$data$fleetTypes == 0) == 1) {
         fbarby <- fbar
-    }
-    else{
+    }else{
         fbarby <- round(do.call(rbind, lapply(simlist, function(xx) as.vector(apply(xx$fbarbyfleet, 1, collect)))),3)
     }
     ##   tab <- cbind(fbar, rec, ssb, catch)
@@ -858,4 +916,3 @@ forecast <- function(fit,
         return(simlist)
     }
 }
-
