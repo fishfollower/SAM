@@ -144,7 +144,7 @@ as.FLStock.sam <- function(fit, unit.w = "kg", name = "", desc = "", predicted =
                       plusgroup = ifelse(fit$conf$maxAgePlusGroup[1],fit$conf$maxAge,NA),
                       minyear = min(fit$data$years),
                       maxyear = max(fit$data$years),
-                      minfbar = fit$conf$fbarRange[2],
+                      minfbar = fit$conf$fbarRange[1],
                       maxfbar = fit$conf$fbarRange[2]
                       ) # Named numeric vector containing the quant and year ranges, the plusgroup and the quant range that the average fishing mortality should be calculated over (‘numeric’)
             )
