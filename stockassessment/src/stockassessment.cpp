@@ -282,16 +282,13 @@ Type objective_function<Type>::operator() ()
   }
   ans += nllSplinePenalty(dataset, confset, paraset, this);
 
-
   ans += nllSW(logSW, dataset, confset, paraset, forecast, this);
   ans += nllCW(logCW, dataset, confset, paraset, forecast, this);
   ans += nllMO(logitMO, dataset, confset, paraset, forecast, this);
   ans += nllNM(logNM, dataset, confset, paraset, forecast, this);
-
   // Prepare Laplace trajectory forecast
   MortalitySet<Type> mort(dataset, confset, paraset, logF, logitFseason);
 
- 
   forecast.calculateForecast(logF,logN,logitFseason, dataset, confset, paraset, recruit, mort);
 
   ans += nllP(confset, paraset, logP, keep, this);
@@ -305,7 +302,6 @@ Type objective_function<Type>::operator() ()
       mort = MortalitySet<Type>(dataset, confset, paraset, logF, logitFseason);
     }
   }
-
   ans += nllN(dataset, confset, paraset, forecast, logN, logF, recruit, mort, keep, this);
   forecastSimulation(dataset, confset, paraset, forecast, logN, logF, logitFseason, recruit,mort, this);
 
@@ -318,10 +314,8 @@ Type objective_function<Type>::operator() ()
 
   ans += nllObs(dataset, confset, paraset, forecast, logN, logF, logP, logitFseason, recruit, mort, keep,reportingLevel, this);
 
-  
   //reportDeterministicReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
   reportReferencePoints(dataset, confset, paraset, logN, logF, recruit, referencepoints, this);
-  
   // REPORT(mort.cumulativeHazard);
   // REPORT(mort.cumulativeHazard_F);
   // REPORT(mort.logFleetSurvival_before);
@@ -339,7 +333,6 @@ Type objective_function<Type>::operator() ()
   // REPORT(mort.CIF_M_breakpoints);
 
   REPORT(mort);
-  
 
   return ans;
 }

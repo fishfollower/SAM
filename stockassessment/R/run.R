@@ -157,7 +157,6 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     }
 
     obj <- do.call(MakeADFun,args)
-    
     ddd <- args
     if(rm.unidentified){
         ##gr <- obj$gr()
@@ -201,7 +200,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
   ##     he <- obj$he
     ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=eval.max, iter.max=iter.max, rel.tol=rel.tol),lower=lower2,upper=upper2)
-  
+
     he <- function(par){ optimHess(par, obj$fn, obj$gr) }
     ## }
     for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
