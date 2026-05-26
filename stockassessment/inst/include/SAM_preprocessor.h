@@ -86,3 +86,13 @@
 #ifndef logspace_sub_SAM
 #define logspace_sub_SAM logspace_sub2
 #endif
+
+
+
+#ifdef DATA_INTEGER
+#undef DATA_INTEGER
+#endif
+
+#define DATA_INTEGER(name) int name(asVector<Rint>(     \
+getListElement(TMB_OBJECTIVE_PTR -> data,               \
+#name, &isNumericScalar))[0]);

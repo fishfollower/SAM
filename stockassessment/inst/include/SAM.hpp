@@ -4,6 +4,7 @@
 
 // #include "tiny_adflex.hpp"
 #include "SAM_preprocessor.h"
+#include "SAM/Rint.hpp"
 #include "SAM/logspace.hpp"
 #include "SAM/newton.hpp"
 #include "SAM/pnorm.hpp"
