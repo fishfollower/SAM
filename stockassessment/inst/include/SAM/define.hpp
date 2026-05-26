@@ -1,4 +1,3 @@
-SAM_DEPENDS(Rint)
 
 //This function returns a vector with matrices based on a list of matrices from R
 HEADER(
