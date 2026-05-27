@@ -702,7 +702,7 @@ namespace ConstrainCalculations {
 	  pen = ub_cstr.settings(11);
 	ad tmp = softmax2(transF + v - trgt, (ad)0.0,(ad)0.00001);
 	ub_kappa += pen * tmp * tmp;	  
-      }      
+      }
       return kappa + ub_kappa;
     }
    

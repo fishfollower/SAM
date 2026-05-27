@@ -732,7 +732,11 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }
     if(any(!is.na(constraints))){
         cstr[!is.na(constraints)] <- .parseForecast(removeBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)
-        ubcstr[!is.na(constraints)] <- .parseForecast(getBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection, isUpper = TRUE)
+        ub <- getBound(constraints[!is.na(constraints)])
+        has_ub <- which(nchar(ub) > 0)
+        if(length(has_ub) > 0){
+            ubcstr[!is.na(constraints)][has_ub] <- .parseForecast(ub[has_ub], fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection, isUpper = TRUE)
+        }
     }
     
     ## Use custom selectivity?
