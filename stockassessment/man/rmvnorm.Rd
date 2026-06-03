@@ -4,7 +4,7 @@
 \alias{rmvnorm}
 \title{rmvnorm helper function to draw multivariate normal samples}
 \usage{
-rmvnorm(n = 1, mu, Sigma, pivot = FALSE)
+rmvnorm(n = 1, mu, Sigma, pivot = FALSE, L)
 }
 \arguments{
 \item{n}{the number of samples.}

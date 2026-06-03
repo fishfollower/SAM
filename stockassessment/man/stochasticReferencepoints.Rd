@@ -26,12 +26,13 @@ stochasticReferencepoints(fit, referencepoints, ...)
   constraint = "F=\%f",
   deterministicF = FALSE,
   processNoiseF = FALSE,
-  Fsequence = seq(Frange[1], Frange[2], len = 50),
+  Fsequence = seq(min(Frange), max(Frange), len = 50),
   run = TRUE,
   DT = 0,
   equilibriumMethod = c("ES", "EC", "AD"),
   ncores = 1,
   tailSummarizer = mean,
+  gridSummarizer = median,
   mc.type = "mclapply",
   ...
 )

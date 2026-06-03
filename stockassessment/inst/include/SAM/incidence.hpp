@@ -162,7 +162,7 @@ struct MortalitySet {
 						 fleetLogCumulativeIncidence(x.fleetLogCumulativeIncidence,x.fleetLogCumulativeIncidence.dim),
 						 otherLogCumulativeIncidence(x.otherLogCumulativeIncidence,x.otherLogCumulativeIncidence.dim),
 						 ssbLogSurvival_before(x.ssbLogSurvival_before),
-						 Fseason(x.Fseason),
+						 Fseason(x.Fseason, x.Fseason.dim),
 						 activeHazard_breakpoints(x.activeHazard_breakpoints),
 						 activeHazard_season(x.activeHazard_season),
 						 activeHazard_F(x.activeHazard_F,x.activeHazard_F.dim),
@@ -178,6 +178,53 @@ struct MortalitySet {
     maxYear(x.maxYear)
 						 
   {}
+
+
+    inline MortalitySet& operator=(const MortalitySet<Type>& x) {
+    if (this == &x) return *this;
+    logCumulativeHazard = x.logCumulativeHazard;
+    logCumulativeHazard_F.initZeroArray(x.logCumulativeHazard_F.dim);
+    logCumulativeHazard_F = x.logCumulativeHazard_F;
+    logCumulativeHazard_M.initZeroArray(x.logCumulativeHazard_M.dim);
+    logCumulativeHazard_M = x.logCumulativeHazard_M;
+    FullYear_logCumulativeIncidence_Fishing.initZeroArray(x.FullYear_logCumulativeIncidence_Fishing.dim);
+    FullYear_logCumulativeIncidence_Fishing = x.FullYear_logCumulativeIncidence_Fishing;
+    FullYear_logCumulativeIncidence_Other.initZeroArray(x.FullYear_logCumulativeIncidence_Other.dim);
+    FullYear_logCumulativeIncidence_Other = x.FullYear_logCumulativeIncidence_Other;
+    FullYear_logSurvival = x.FullYear_logSurvival;
+    Effective_logF = x.Effective_logF;
+    Effective_logM = x.Effective_logM;
+    logFleetSurvival_before.initZeroArray(x.logFleetSurvival_before.dim);
+    logFleetSurvival_before = x.logFleetSurvival_before;
+    fleetLogCumulativeIncidence.initZeroArray(x.fleetLogCumulativeIncidence.dim);
+    fleetLogCumulativeIncidence = x.fleetLogCumulativeIncidence;
+    otherLogCumulativeIncidence.initZeroArray(x.otherLogCumulativeIncidence.dim);
+    otherLogCumulativeIncidence = x.otherLogCumulativeIncidence;
+    ssbLogSurvival_before = x.ssbLogSurvival_before;
+    Fseason.initZeroArray(x.Fseason.dim);
+    Fseason = x.Fseason;
+    activeHazard_breakpoints = x.activeHazard_breakpoints;
+    activeHazard_season = x.activeHazard_season;
+    activeHazard_F.initZeroArray(x.activeHazard_F.dim);
+    activeHazard_F = x.activeHazard_F;
+    activeHazardMap_risk = x.activeHazardMap_risk;
+    logHazard_breakpoints.initZeroArray(x.logHazard_breakpoints.dim);
+    logHazard_breakpoints = x.logHazard_breakpoints;
+    logHazard_F_breakpoints.initZeroArray(x.logHazard_F_breakpoints.dim);
+    logHazard_F_breakpoints = x.logHazard_F_breakpoints;
+    logHazard_M_breakpoints.initZeroArray(x.logHazard_M_breakpoints.dim);
+    logHazard_M_breakpoints = x.logHazard_M_breakpoints;
+    logCIF_F_breakpoints.initZeroArray(x.logCIF_F_breakpoints.dim);
+    logCIF_F_breakpoints = x.logCIF_F_breakpoints;
+    logCIF_M_breakpoints.initZeroArray(x.logCIF_M_breakpoints.dim);
+    logCIF_M_breakpoints = x.logCIF_M_breakpoints;
+    minAge = x.minAge;
+    maxAge = x.maxAge;
+    minYear = x.minYear;
+    maxYear = x.maxYear;
+    return *this;
+  }
+
   
   MortalitySet(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, array<Type>& logitFseason);
 

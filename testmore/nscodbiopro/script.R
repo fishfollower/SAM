@@ -52,10 +52,12 @@ conf$keyCatchWeightObsVar[1,]<-rep(0,6)
 
 conf$matureModel<-1
 conf$keyMatureMean<-0:5
+conf$keyMatureObsVar[] <- 0
 
 conf$mortalityModel<-1
 conf$keyMortalityMean<-0:5
 conf$keyMortalityObsVar<-rep(0,6)
+conf$mortalityModelMeanStructure <- 0
 
 par<-defpar(dat,conf)
 fit1<-sam.fit(dat,conf,par)

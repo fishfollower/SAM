@@ -1098,6 +1098,7 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
                        polyborder = do.call("rgb",c(as.list(col2rgb("black")[,1]),list(alpha=0.3))),
                        polylty = 3,
                        polylwd = 1,
+                       yearrange = range(fit$data$years),
                        xlim, ylim, add=FALSE, CIlevel = 0.95, addCurve = TRUE, ...){
     X <- summary(fit)
     RB <- erbtable(fit)
@@ -1112,7 +1113,8 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
     Snam<-colnames(X)[4]
     if(is.na(fit$conf$fecundityScaling) || fit$conf$fecundityScaling != 1)
         Snam <- "Effective reproductive biomass"
-    y<-rownames(X)
+    y<-rownames(X)[idxR]
+    ii <- y >= min(yearrange) & y <= max(yearrange)
     makeCIpolygon <- function(i){
         mu <- c(log(S)[i],log(R)[i])
         Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
@@ -1124,20 +1126,20 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
         r <- ellipse::ellipse(Sig,centre=mu, level = CIlevel)
         list(x = exp(r[,1]), y = exp(r[,2]), col = polycol,border=NA)
     }    
-    pols <- lapply(seq_along(idxR), makeCIpolygon)
+    pols <- lapply(seq_along(idxR)[ii], makeCIpolygon)
     if(any(sapply(pols, function(x) is.na(x$col))))
         warning("Some recruitment pairs had non-finite elements in their covariance matrix")
     if(!add){
-      if (missing(xlim)) xlim=range(0,S, unlist(lapply(pols,function(x)x$x)))
-      if (missing(ylim)) ylim=range(0,R, unlist(lapply(pols,function(x)x$y)))
-      plot(S,R, xlab=Snam, ylab=Rnam, type="n", col=linecol, xlim=xlim, ylim=ylim)
+      if (missing(xlim)) xlim=range(0,S[ii], unlist(lapply(pols,function(x)x$x)))
+      if (missing(ylim)) ylim=range(0,R[ii], unlist(lapply(pols,function(x)x$y)))
+      plot(S[ii],R[ii], xlab=Snam, ylab=Rnam, type="n", col=linecol, xlim=xlim, ylim=ylim)
     }
     invisible(lapply(pols,function(pp) do.call(polygon,pp)))
     invisible(lapply(pols,function(pp) lines(pp$x,pp$y,col=polyborder,lwd=polylwd,lty=polylty)))
     if(addCurve)
         suppressWarnings({addRecruitmentCurve(fit)})
-    lines(S,R, col = linecol, type = linetype, ...)
-    if (years) text(S,R, labels=y[idxR], cex=.7, col=textcol )
+    lines(S[ii],R[ii], col = linecol, type = linetype, ...)
+    if (years) text(S[ii],R[ii], labels=y[idxR[ii]], cex=.7, col=textcol )
 }
 
 ##' Plots fit to data 
@@ -1680,4 +1682,79 @@ predstdplot = function(fit, fleet ,age = NULL,type = "log",ylim = NULL,
   }else{
     mtext(paste0("Age: ", age),line = -3,cex = 1)
   }
+}
+
+
+
+
+##' Plots the recruits per spawner as a function of spawners
+##' @param fit the object returned from sam.fit
+##' @param ... extra arguments to plot
+##' @importFrom graphics text
+##' @export
+rpsplot<-function(fit, ...){
+    UseMethod("rpsplot")
+}
+##' @rdname rpsplot
+##' @method rpsplot sam
+##' @param textcol color of years on plot
+##' @param years the plotting symbols are the years
+##' @param linetype type for the plot (default line)
+##' @param linecol color of lines between points
+##' @param polycol Inner color of error ellipses
+##' @param polyborder Border color of error ellipses
+##' @param polylty Border line type of error ellipses
+##' @param polylwd Border line width of error ellipses
+##' @param xlim bounds for x-axis
+##' @param ylim bounds for y-axis
+##' @param add false if a new plot should be created
+##' @param CIlevel Confidence level for error ellipses on stock-recruitment pairs
+##' @param addCurve Call addRecruitmentCurve?
+##' @export
+rpsplot.sam <- function(fit, textcol="red", years=TRUE,
+                       linetype="l",
+                       linecol="black",
+                       polycol = do.call("rgb",c(as.list(col2rgb("black")[,1]),list(alpha=.1))),
+                       polyborder = do.call("rgb",c(as.list(col2rgb("black")[,1]),list(alpha=0.3))),
+                       polylty = 3,
+                       polylwd = 1,
+                       xlim, ylim, add=FALSE, CIlevel = 0.95, addCurve = TRUE, ...){
+    X <- summary(fit)
+    RB <- erbtable(fit)
+    n<-nrow(X)
+    lag <- fit$conf$minAge
+    idxR <- (lag+1):n
+    idxS <- 1:(n-lag)
+    R<-X[idxR,1]
+    ##S<-X[idxS,4]
+    S<-RB[idxS,1]
+    Rnam<-colnames(X)[1]
+    Snam<-colnames(X)[4]
+    if(is.na(fit$conf$fecundityScaling) || fit$conf$fecundityScaling != 1)
+        Snam <- "Effective reproductive biomass"
+    y<-rownames(X)
+    makeCIpolygon <- function(i){
+        mu <- c(log(S)[i],log(R)[i] - log(S)[i])
+        G <- cbind(c(1,0),c(1,-1))
+        Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
+                                  c(idxS[i], n + idxR[i])]
+        Cor <- cov2cor(Sig)
+        if(!all(is.finite(Cor))){
+            return(list(x=mu[1],y=mu[2],col=NA,border=NA))
+        }
+        r <- ellipse::ellipse(Sig,centre=mu, level = CIlevel)
+        list(x = exp(r[,1]), y = exp(r[,2]), col = polycol,border=NA)
+    }    
+    pols <- lapply(seq_along(idxR), makeCIpolygon)
+    if(any(sapply(pols, function(x) is.na(x$col))))
+        warning("Some recruitment pairs had non-finite elements in their covariance matrix")
+    if(!add){
+      if (missing(xlim)) xlim=range(0,S, unlist(lapply(pols,function(x)x$x)))
+      if (missing(ylim)) ylim=range(0,R/S, unlist(lapply(pols,function(x)x$y)))
+      plot(S,R, xlab=Snam, ylab="RPS", type="n", col=linecol, xlim=xlim, ylim=ylim)
+    }
+    invisible(lapply(pols,function(pp) do.call(polygon,pp)))
+    invisible(lapply(pols,function(pp) lines(pp$x,pp$y,col=polyborder,lwd=polylwd,lty=polylty)))
+    lines(S,R/S, col = linecol, type = linetype, ...)
+    if (years) text(S,R/S, labels=y[idxR], cex=.7, col=textcol )
 }

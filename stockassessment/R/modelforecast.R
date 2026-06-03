@@ -124,14 +124,15 @@ simVAR <- function(ny, nx, mu, rho, Sigma){
 
 
 .forecastDefault <- function(){
-    ## list(specification = "DEFAULT_NOT_TO_BE_USED",
-    ##      Amin = NA_real_,
-    ##      Amax = NA_real_,
-    ##      fleet = NA_real_,
-    ##      relative = 0,
-    ##      cstr = as.numeric(99),
-    ##      target = NA_real_)
-    list()
+    list(specification = "DEFAULT_NOT_TO_BE_USED",
+         Amin = NA_real_,
+         Amax = NA_real_,
+         fleet = NA_real_,
+         relative = 0,
+         cstr = as.numeric(99),
+         target = NA_real_,
+         settings = numeric(0),
+         useNonLinearityCorrection = FALSE)
 }
 
 .parseRel <- function(type,s){
@@ -722,8 +723,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     FModel[!is.na(hcr)] <- 4
 
     nYears <- length(constraints)
-    cstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
-    ubcstr <- replicate(nYears, .forecastDefault(), simplify = FALSE)
+    cstr <- replicate(nYears, list(.forecastDefault()), simplify = FALSE)
+    ubcstr <- replicate(nYears, list(.forecastDefault()), simplify = FALSE)
     removeBound <- function(x){
         gsub("([^|]+)(\\|.+)","\\1",x)
     }
@@ -1162,7 +1163,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
         ## Done with reporting
         ##incpb()
-        if(progress)
+        if(exists("pb"))
             close(pb)
         return(simlist)
     }else{

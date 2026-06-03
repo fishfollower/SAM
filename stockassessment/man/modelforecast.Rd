@@ -44,6 +44,7 @@ modelforecast(fit, ...)
   useNonLinearityCorrection = (nosim > 0 && !deterministicF),
   ncores = 1,
   mc.type = "mclapply",
+  useRecPool = FALSE,
   overwriteBioProcessModel = FALSE,
   useManagementLag = FALSE,
   assessmentErrorMean_F = 0,

@@ -21,6 +21,7 @@ deterministicReferencepoints(fit, referencepoints, ...)
   equilibriumMethod = c("AD", "EC"),
   nosim_ci = 200,
   ncores = 1,
+  addSequence = FALSE,
   ...
 )
 }

@@ -20,9 +20,11 @@ setup.sam.data(
   recapture = NULL,
   sum.residual.fleets = NULL,
   aux.fleets = NULL,
+  recruitmentTimeOfYear = -1,
   TAC = NULL,
   RecruitClimate = NULL,
   Mcovariate = NULL,
+  CompRisk = NULL,
   keep.all.ages = FALSE,
   average.sampleTimes.survey = TRUE,
   fleetnames.remove.space = TRUE

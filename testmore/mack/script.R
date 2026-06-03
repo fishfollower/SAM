@@ -36,7 +36,7 @@ dat<-setup.sam.data(surveys=surveys,
 conf<-defcon(dat)
 conf$fbarRange <- c(4,8)
 conf$corFlag <- 2
-conf$fixVarToWeight<-1
+conf$fixVarToWeight[]<-1
 
 par<-defpar(dat,conf)
 fit<-sam.fit(dat,conf,par)
