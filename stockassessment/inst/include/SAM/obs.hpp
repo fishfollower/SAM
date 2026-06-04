@@ -751,10 +751,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	vector<Type> logEmpiricalYPR_D = empiricalYPR(dat, conf, logN, mort, 2, true);
 	REPORT_F(logEmpiricalYPR_D,of);
 
-	// REPORT biopar
+	// REPORT biopar 
 	matrix<Type> bio_stockMeanWeights = dat.stockMeanWeight.matrix();
 	REPORT_F(bio_stockMeanWeights,of);
-	matrix<Type> bio_catchMeanWeights = dat.catchMeanWeight.matrix();
+	array<Type> bio_catchMeanWeights = dat.catchMeanWeight;
 	REPORT_F(bio_catchMeanWeights,of);
 	matrix<Type> bio_propMat = dat.propMat.matrix();
 	REPORT_F(bio_propMat,of);
