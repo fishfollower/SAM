@@ -16,7 +16,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
   // Only for forecast simulation
   if(forecast.nYears == 0 || !(isDouble<Type>::value) || !(of->do_simulate))
     return;
-
+  GetRNGstate();
   // MortalitySet<Type> mort2(mort);
   // General setup
   // int stateDimF=logF.dim[0];
@@ -73,6 +73,7 @@ void forecastSimulation(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, f
       }
     }
   }
+  PutRNGstate();
   return;
 })
 

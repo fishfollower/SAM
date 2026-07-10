@@ -403,6 +403,8 @@ struct confSet{
   int seasonFixedEffect;
   int keyScaleMModel;
   matrix<int> keyCompRisk;
+  vector<int> keySpawningQuality;
+  vector<int> keyWsigma;
   
   confSet();
 
@@ -474,6 +476,8 @@ SOURCE(
 	 seasonFixedEffect = Rf_asInteger(getListElement(x,"seasonFixedEffect", &isNumericScalar));
 	 keyScaleMModel = Rf_asInteger(getListElement(x,"keyScaleMModel", &isNumericScalar));
 	 keyCompRisk = asMatrix<int>(getListElement(x,"keyCompRisk", &Rf_isMatrix));
+	 keySpawningQuality = asVector<int>(getListElement(x,"keySpawningQuality", &Rf_isNumeric));
+	 keyWsigma = asVector<int>(getListElement(x,"keyWsigma", &Rf_isNumeric));
        }
        )
 
@@ -538,7 +542,9 @@ SOURCE(
 	 seasonFirstYear(),
 	 seasonFixedEffect(),
 	 keyScaleMModel(),
-	 keyCompRisk()
+	 keyCompRisk(),
+	 keySpawningQuality(),
+	 keyWsigma()
 	 {}
 	 );
 
@@ -603,7 +609,9 @@ SOURCE(
 	 seasonFirstYear(other.seasonFirstYear),
 	 seasonFixedEffect(other.seasonFixedEffect),
 	 keyScaleMModel(other.keyScaleMModel),
-	 keyCompRisk(other.keyCompRisk)
+	 keyCompRisk(other.keyCompRisk),
+	 keySpawningQuality(other.keySpawningQuality),
+	 keyWsigma(other.keyWsigma)
 	 {}
 	 );
 
@@ -640,6 +648,8 @@ struct paraSet{
   vector<Type> predVarObs;
   vector<Type> recVarScalePar;
   Type logFecundityScaling;
+  vector<Type> logSpawningQuality;
+  vector<Type> Wsigma;
   Type logFScaleMSY;
   Type implicitFunctionDelta;
 
@@ -713,6 +723,8 @@ struct paraSet{
      predVarObs(other.predVarObs),
      recVarScalePar(other.recVarScalePar),
      logFecundityScaling(other.logFecundityScaling),
+     logSpawningQuality(other.logSpawningQuality),
+     Wsigma(other.Wsigma),
     logFScaleMSY(other.logFScaleMSY),
     implicitFunctionDelta(other.implicitFunctionDelta),
     logPhiSW(other.logPhiSW), 
@@ -779,6 +791,8 @@ SOURCE(
        predVarObs(),
        recVarScalePar(),
        logFecundityScaling(),
+       logSpawningQuality(),
+       Wsigma(),
        logFScaleMSY(),
        implicitFunctionDelta(),
        logPhiSW(), 
@@ -842,6 +856,8 @@ SOURCE(
 	   predVarObs = asVector<Type>(getListElement(x,"predVarObs", &Rf_isNumeric));	   
 	   recVarScalePar = asVector<Type>(getListElement(x,"recVarScalePar", &Rf_isNumeric));
 	     logFecundityScaling = (Type)Rf_asReal(getListElement(x,"logFecundityScaling", &isNumericScalar));
+	      logSpawningQuality = asVector<Type>(getListElement(x,"logSpawningQuality", &Rf_isNumeric));
+	       Wsigma = asVector<Type>(getListElement(x,"Wsigma", &Rf_isNumeric));
 	   logFScaleMSY = (Type)Rf_asReal(getListElement(x,"logFScaleMSY", &isNumericScalar));
 	   implicitFunctionDelta = (Type)Rf_asReal(getListElement(x,"implicitFunctionDelta", &isNumericScalar));
 

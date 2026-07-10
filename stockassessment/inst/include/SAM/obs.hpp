@@ -415,10 +415,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	  ADREPORT_F(logrmax, of);
 	  ADREPORT_F(logGenerationLength, of);
  
-	  vector<Type> logYPR = yieldPerRecruit(dat,conf,par,logF, true);
-	  vector<Type> logSPR = spawnersPerRecruit(dat,conf,par,logF, true);
-	  vector<Type> logSe = equilibriumBiomass(dat,conf,par,logF, true);
-	  vector<Type> logB0 = B0(dat,conf,par,logF, true);
+	  vector<Type> logYPR = yieldPerRecruit(dat,conf,par, logN, logF, true);
+	  vector<Type> logSPR = spawnersPerRecruit(dat,conf,par, logN,logF, true);
+	  vector<Type> logSe = equilibriumBiomass(dat,conf,par, logN,logF, true);
+	  vector<Type> logB0 = B0(dat,conf,par, logN,logF, true);
 	  ADREPORT_F(logYPR, of);
 	  ADREPORT_F(logSPR, of);
 	  ADREPORT_F(logSe, of);
@@ -572,7 +572,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 			forecast.forecastYear(y) > 0 &&
 			forecast.simFlag(2)==0 &&
 			y >= dat.noYears)){
+		      GetRNGstate();
 		      dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + (nllVec(f).simulate()*sqrtW);
+		      PutRNGstate();
 		    }
 		  }
 		}else{
@@ -593,7 +595,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 			forecast.forecastYear(y) > 0 &&
 			forecast.simFlag(2)==0 &&
 			y >= dat.noYears)){
+		      GetRNGstate();
 		      dat.logobs.segment(idxfrom,idxlength) = predObs.segment(idxfrom,idxlength) + thisnll.simulate()*sqrtW;
+		      PutRNGstate();
 		    }
 		  }
 		}
@@ -615,7 +619,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		      y >= dat.noYears)){
 		    vector<Type> logProb(idxlength);
 		    logProb.setZero();
+		    GetRNGstate();
 		    logProb.segment(0,idxlength-1) = obs_fun::addLogratio(((vector<Type>)predObs.segment(idxfrom,idxlength))) + nllVec(f).simulate();
+		    PutRNGstate();
 		    Type logDenom = obs_fun::logExpSum(logProb);
 		    logProb -= logDenom;
 		    Type logTotal = rnorm(log(obs_fun::log2expsum((vector<Type>)predObs.segment(idxfrom,idxlength))),
@@ -644,7 +650,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		      forecast.forecastYear(y) > 0 &&
 		      forecast.simFlag(2)==0 &&
 		      y >= dat.noYears)){
+		    GetRNGstate();
 		    dat.logobs(i) = rnbinom(predObs(i)*recapturePhiVec(i)/(Type(1.0)-recapturePhiVec(i)),recapturePhiVec(i));
+		    PutRNGstate();
 		  }
 		}
 	      }
@@ -677,7 +685,9 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		      forecast.forecastYear(y) > 0 &&
 		      forecast.simFlag(2)==0 &&
 		      y >= dat.noYears)){
+		    GetRNGstate();
 		    dat.logobs(i) = rnorm(predObs(i),sd);
+		    PutRNGstate();
 		  }
 		}
 	      }
@@ -712,8 +722,10 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 		// for(int i = 0; i < logXuse.size(); ++i)
 		MVMIX_t<Type> thisNll = nllVec(f);
 		nll += thisNll((vector<Type>)(logXuse - logPuse), K2);
-		SIMULATE_F(of){	      
+		SIMULATE_F(of){
+		  GetRNGstate();
 		  dat.logobs.segment(dat.idx1(f,y),dat.idx2(f,y)-dat.idx1(f,y)+1) = logPuse + thisNll.simulate();
+		  PutRNGstate();
 		}
 	      }else if(conf.obsLikelihoodFlag(f) == 2){ // Dirichlet
 		Type log_alpha = par.logSdLogObs(conf.keyVarObs(f,0));
@@ -766,6 +778,11 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(logHazard_M_breakpoints,of);
 	array<Type> logHazard_F_breakpoints = mort.logHazard_F_breakpoints;
 	REPORT_F(logHazard_F_breakpoints,of);
+	array<Type> Fseason = mort.Fseason;
+	REPORT_F(Fseason,of);
+	matrix<Type> Effective_logF = mort.Effective_logF;
+	REPORT_F(Effective_logF,of);
+
 	
 	// REPORT ssb fbar
 	REPORT_F(logssb,of);

@@ -188,7 +188,7 @@ stockRecruitmentStartingValues <- function(fit, stockRecruitmentModelCode, const
 ##' @importFrom stats quantile
 ##' @importFrom utils head tail
 ##' @export
-bc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
+bc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE,qk=TRUE){
     if(is.null(knots)){
         nik <- df-length(Boundary.knots)-intercept
         if(nik < 0){
@@ -196,7 +196,11 @@ bc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = 
             nik <- 0
         }
         if(nik > 0)
-            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
+            if(qk){
+                knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2), na.rm=TRUE),-1),-1)
+            }else{
+                knots <- utils::tail(utils::head(seq(min(x),max(x),length.out = nik+2),-1),-1)
+            }
     }
     Aknots <- sort(c(knots,Boundary.knots))
     v <- .Call(C_splinebasis_bcR,x,Aknots)
@@ -237,7 +241,7 @@ makepredictcall.bc <- function (var, call){
 ##' @importFrom stats quantile
 ##' @importFrom utils head tail
 ##' @export
-ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
+ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE,qk=TRUE){
     if(any(!is.finite(x)))
         warning("Non finite data")
     if(is.null(knots)){
@@ -246,8 +250,13 @@ ibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept =
             warning(gettextf("'df' was too small; have used %d",length(Boundary.knots)-intercept))
             nik <- 0
         }
-        if(nik > 0)
-            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2), na.rm=TRUE),-1),-1)
+        if(nik > 0){
+            if(qk){
+                knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2), na.rm=TRUE),-1),-1)
+            }else{
+                knots <- utils::tail(utils::head(seq(min(x),max(x),length.out = nik+2),-1),-1)
+            }
+        }
     }
     Aknots <- sort(c(knots,Boundary.knots))
     v <- .Call(C_splinebasis_ibcR,x,Aknots)
@@ -288,7 +297,7 @@ makepredictcall.ibc <- function (var, call){
 ##' @importFrom stats quantile
 ##' @importFrom utils head tail
 ##' @export
-iibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE){
+iibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept = FALSE, qk=TRUE){
     if(is.null(knots)){
         nik <- df-length(Boundary.knots)-intercept
         if(nik < 0){
@@ -296,7 +305,11 @@ iibc <- function(x, df = 3L, knots = NULL, Boundary.knots = range(x), intercept 
             nik <- 0
         }
         if(nik > 0)
-            knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2)),-1),-1)
+            if(qk){
+                knots <- utils::tail(utils::head(stats::quantile(x,seq(0,1,len=nik+2), na.rm=TRUE),-1),-1)
+            }else{
+                knots <- utils::tail(utils::head(seq(min(x),max(x),length.out = nik+2),-1),-1)
+            }
     }
     Aknots <- sort(c(knots,Boundary.knots))
     v <- .Call(C_splinebasis_iibcR,x,Aknots)

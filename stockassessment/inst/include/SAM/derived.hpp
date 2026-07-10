@@ -142,24 +142,68 @@ template <class Type>
 Type erbi(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, array<Type> &logN, array<Type> &logF, MortalitySet<Type>& mort, int i, bool give_log DEFARG(= false))SOURCE({
     Type logssb0 = ssbi(dat,conf,logN,logF,mort,0,true);
     int stateDimN=logN.dim[0];
-    Type logssb = R_NegInf;
-    if(i == 0){
-      logssb = logssb0;
-    }else{
-      Type logrb0 = R_NegInf;
-      for(int j=0; j<stateDimN; ++j){
-	if(dat.propMat(i,j) > 0){
-	  Type lrb0New = logN(j,0) + mort.ssbLogSurvival_before(j,0) + log(dat.propMat(0,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,j));
-	  logrb0 = logspace_add_SAM(logrb0, lrb0New);
-	  Type lssbNew = logN(j,i) + mort.ssbLogSurvival_before(j,i) + log(dat.propMat(i,j)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(i,j));
-	  logssb = logspace_add_SAM(logssb, lssbNew);
-	}
-      }
-      logssb = logssb - logrb0 + logssb0;
+    vector<Type> fullLogSpawningQuality(stateDimN);
+    fullLogSpawningQuality.setZero();
+    Type flsqSum = 0.0;
+    for(int j = 0; j < stateDimN; ++j){
+      if(conf.keySpawningQuality(j) > (-1)){
+	fullLogSpawningQuality(j) = exp(par.logSpawningQuality(conf.keySpawningQuality(j)));
+      }      
     }
+    
+    Type logerb = R_NegInf;
+    if(i == 0){
+      logerb = logssb0;
+    }else{
+      Type logerb0 = R_NegInf;
+       for(int j=0; j<stateDimN; ++j){
+     	Type log_bSW0 = exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,j));
+	Type log_bSWi = exp(par.logFecundityScaling) * log(dat.stockMeanWeight(i,j));
+	if(conf.keyWsigma(j) > (-1)){
+	  // NOTE: in this case, force scaling > 1
+	  // NOTE: this will go wrong if any conf.keyWsigma(j) == -1! Should fix...
+	  Type logb = logspace_add_SAM(par.logFecundityScaling,Type(0.0));
+	  
+	  // log_bSW0 = exp(logb) * log(dat.stockMeanWeight(0,j));
+	  // log_bSWi = exp(logb) * log(dat.stockMeanWeight(i,j));
+	  Type logSig2 = (2.0 * par.Wsigma(conf.keyWsigma(j))) + 2.0 * log(j+1); // Linearly increasing CV= (alpha * (Age-maxage))^2 // coefficient of variation
+	  Type W0 = dat.stockMeanWeight(0,j);
+	  Type Wi = dat.stockMeanWeight(i,j);
+	  Type W0R = dat.stockMeanWeight(0,0);
+	  Type WiR = dat.stockMeanWeight(i,0);
+	  Type logv0 = log(0.5) + logb + logspace_sub_SAM(logb,Type(0.0)) + logSig2;
+	  Type logvi = log(0.5) + logb + logspace_sub_SAM(logb,Type(0.0)) + logSig2;
+	  // Scale correction to age 0
+	  Type logv0R = log(0.5) + logb + par.logFecundityScaling + exp(logb) * log(W0R) + logSig2;
+	  Type logviR = log(0.5) + logb + par.logFecundityScaling + exp(logb) * log(WiR) + logSig2;
+	  // Need to add one more W for b>1
+	  log_bSW0 += log(dat.stockMeanWeight(0,j)) + logspace_add_SAM(Type(0.0),logv0);
+	  //logspace_add_SAM(exp(logb) * log(W0), logv0);// + exp(logb) * log(W0R) - logspace_add_SAM(exp(logb) * log(W0R), logv0R);
+	  log_bSWi += log(dat.stockMeanWeight(i,j)) + logspace_add_SAM(Type(0.0),logvi);
+	  //logspace_add_SAM(exp(logb) * log(Wi), logvi);// + exp(logb) * log(WiR) - logspace_add_SAM(exp(logb) * log(WiR),
+	}	
+	if(dat.propMat(0,j) > 0){
+	  Type lerb0New = logN(j,0) + mort.ssbLogSurvival_before(j,0) + log(dat.propMat(0,j)) + log_bSW0;       
+	  // Plus group correction (use quality scaling only for plus group??)
+	  // if(j == stateDimN-1)
+	  //   lerb0New += exp(par.logFecundityScaling) * exp(par.logFecundityPlus);
+	  // Spawning quality parameter
+	  lerb0New += fullLogSpawningQuality(j);
+	  logerb0 = logspace_add_SAM(logerb0, lerb0New);
+	}
+	if(dat.propMat(i,j) > 0){
+	  Type lerbNew = logN(j,i) + mort.ssbLogSurvival_before(j,i) + log(dat.propMat(i,j)) + log_bSWi;
+	  // if(j == stateDimN-1)
+	  //   lerbNew += exp(par.logFecundityScaling) * exp(par.logFecundityPlus);
+	  lerbNew += fullLogSpawningQuality(j);
+	  logerb = logspace_add_SAM(logerb, lerbNew);
+	}
+       }
+       logerb += logssb0 - logerb0; // Equal to ssb for year 0
+    }      
     if(give_log)
-      return logssb;
-    return exp(logssb);
+      return logerb;
+    return exp(logerb);
   })
 
 SAM_SPECIALIZATION(double erbi(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, MortalitySet<double>&, int, bool));

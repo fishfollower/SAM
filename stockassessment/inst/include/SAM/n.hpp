@@ -72,8 +72,10 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
       nll+= neg_log_densityN(logN.col(0)-par.initN) ;//density::MVNORM(diagonalMatrix(Type(0.1),stateDimN))(logN.col(0)-par.initN); //neg_log_densityN(logN.col(0)-par.initN); // N-Process likelihood 
       SIMULATE_F(of){
 	if(conf.simFlag(1)==0){
+	  GetRNGstate();
 	  Type logR = logN(0,0);
 	  logN.col(0) = par.initN + neg_log_densityN.simulate(); //SCALE(N01(par.initN),1.0); // + neg_log_densityN.simulate();
+	  PutRNGstate();
 	  if(conf.simKeepRec)
 	    logN(0,0) = logR;
 	}
@@ -142,8 +144,10 @@ Type nllN(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<Typ
 	  if(conf.simFlag(1)==0){
 	    // Do pre-forecast simulation here
 	    if(forecast.nYears == 0 || forecast.forecastYear(i) == 0){
-	      Type logR = logN(0,i);	 
+	      Type logR = logN(0,i);
+	      GetRNGstate();
 	      vector<Type> noiseN = exp(logVarScale) * neg_log_densityN.simulate();
+	      PutRNGstate();
 	      logN.col(i) = predN + noiseN;
 	      // Handle recruitment if minAge == 0, assuming propMat(-,0)=0
 	      if(conf.minAge == 0){

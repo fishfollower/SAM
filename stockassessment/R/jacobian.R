@@ -55,6 +55,10 @@ grad <- function(func, x,
 }
 
 svd_solve <- function(x){
+    if(any(!is.finite(x))){
+        warning("Non finite values in ",deparse1(substitute(x)),". Replaced with zero for svd_solve.")
+        x[!is.finite(x)] <- 0
+    }
     ss <- svd(x)
     ss$v %*% diag(1/ss$d, length(ss$d), length(ss$d)) %*% t(ss$u)
 }

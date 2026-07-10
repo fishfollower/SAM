@@ -1119,7 +1119,7 @@ srplot.sam <- function(fit, textcol="red", years=TRUE,
         mu <- c(log(S)[i],log(R)[i])
         Sig <- fit$sdr$covSRpairs[c(idxS[i], n + idxR[i]),
                                   c(idxS[i], n + idxR[i])]
-        Cor <- cov2cor(Sig)
+        Cor <- cov2cor(makePosDef(Sig))
         if(!all(is.finite(Cor))){
             return(list(x=mu[1],y=mu[2],col=NA,border=NA))
         }
@@ -1755,6 +1755,8 @@ rpsplot.sam <- function(fit, textcol="red", years=TRUE,
     }
     invisible(lapply(pols,function(pp) do.call(polygon,pp)))
     invisible(lapply(pols,function(pp) lines(pp$x,pp$y,col=polyborder,lwd=polylwd,lty=polylty)))
+    if(addCurve)
+        suppressWarnings({addRecruitmentCurve(fit,rps=TRUE)})
     lines(S,R/S, col = linecol, type = linetype, ...)
     if (years) text(S,R/S, labels=y[idxR], cex=.7, col=textcol )
 }

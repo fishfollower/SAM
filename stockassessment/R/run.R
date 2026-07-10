@@ -238,6 +238,9 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     nms <- setdiff(names(frmls),names(call))
     call[nms] <- frmls[nms]
     attr(ret,"call") <- call[names(call) != "..."]
+    envir <- as.environment(c(as.list(environment(),parent.frame(1L))))
+    ## parent.env
+    attr(ret,"envir") <- envir ##parent.frame(1L)
     class(ret)<-"sam"
 
     return(ret)
@@ -445,7 +448,7 @@ rerun<-function(fit){
 ##' @param ... Arguments passed to sam.fit
 ##' @importFrom methods is
 ##' @return A new sam fit
-refit <- function(fit, newConf, startingValues, ...){
+refit <- function(fit, newConf, startingValues, useDefPar = FALSE, ...){
     
     update.structure <- function(.Data, template){
         do.call(structure, c(list(.Data = rep(.Data, length.out = length(template))),
@@ -549,16 +552,21 @@ refit <- function(fit, newConf, startingValues, ...){
     if(length(fit$conf$maxAgePlusGroup)==1 && length(fit$conf$maxAgePlusGroup) != length(fit2$conf$maxAgePlusGroup)){
         fit2$conf$maxAgePlusGroup[] <- 0
         fit2$conf$maxAgePlusGroup[fit2$data$maxAgePerFleet==fit2$conf$maxAge] <- fit$conf$maxAgePlusGroup[1]
-        }   
-  
+    }
+    fit2$conf$keyMatureObsVar <- rep(ifelse(fit2$conf$matureModel == 0, NA, 0), length(fit2$conf$keyMatureMean))
+    if(fit2$conf$mortalityModel > 0 && fit2$conf$mortalityModelMeanStructure < 0)
+        fit2$conf$mortalityModelMeanStructure <- 0
+    
     ## Update parameters
     dp <- defpar(fit2$data,fit2$conf)
     usingOldPar <- rep(FALSE,length(dp))
     names(usingOldPar) <- names(dp)
-    for(i in intersect(names(dp),names(fit2$pl))){
-        if(length(dp[[i]]) == length(fit2$pl[[i]])){
-            dp[[i]][] <- fit2$pl[[i]][]
-            usingOldPar[i] <- TRUE
+    if(!useDefPar){
+        for(i in intersect(names(dp),names(fit2$pl))){
+            if(length(dp[[i]]) == length(fit2$pl[[i]])){
+                dp[[i]][] <- fit2$pl[[i]][]
+                usingOldPar[i] <- TRUE
+            }
         }
     }
     if(!missing(startingValues)){
@@ -572,7 +580,10 @@ refit <- function(fit, newConf, startingValues, ...){
     }
 
     ## Update map
+    ##args <- lapply(as.list(attr(fit,"call")[-1]),eval)
     args <- list(...)
+    ## if(length(dl) > 0)
+    ##     args[names(dl)] <- dl
     if(is.null(args$map)){
         map <- list()
     }else{
@@ -594,7 +605,11 @@ refit <- function(fit, newConf, startingValues, ...){
     args$conf <- fit2$conf
     args$parameters <- dp    
     ##fitNew <- sam.fit(fit2$data, fit2$conf, dp, map = map, ...)
-    fitNew <- do.call(sam.fit, args)
+    fitNew <- try({do.call(sam.fit, args)})
+    if(methods::is(fitNew,"try-error") && !useDefPar){
+        warning("Issues with fitting using old parameters. Re-trying with defaults.")
+        return(refit(fit, newConf, startingValues, useDefPar = TRUE, ...))
+    }
     if(methods::is(fitNew,"sam")){
         ld <- abs(as.numeric(logLik(fit2)) - as.numeric(logLik(fitNew)))
         if(ld > 1e-4)

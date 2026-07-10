@@ -702,41 +702,42 @@ void reportReferencePoints(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par
     return;
 
   using namespace referencepoints_helper;
-  newton::newton_config cfg = referencepoints.cfg;
+  newton::newton_config cfg = referencepoints.cfg;  
   // cfg.simplify = false; 	// Needed for logspace_add
 
   std::shared_ptr<EquilibriumRecycler<Type> > p_er_t;
   std::shared_ptr<EquilibriumRecycler<ad> > p_er_a;
   // Assume all are the same
-  referencepointSet<Type> rps0 = referencepoints(0);
+  referencepointSet<Type> rps0 = referencepoints(0);  
   rps0.setLogSelectivity(logF,conf);
+  rps0.logNFY = (vector<Type>)logN.col(0);
   vector<Type> ls = rps0.getLogSelectivity();
   Type logfbar0 = rps0.logFbar(logF,conf) - log(0.5);
   typename referencepointSet<Type>::StochasticType stochasticType = rps0.stochasticType;
   if(stochasticType == referencepointSet<Type>::Deterministic){ // Median on natural scale
-    std::shared_ptr<EquilibriumRecycler_Deterministic<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Deterministic<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.nYears, (int)rps0.catchType);    
+    std::shared_ptr<EquilibriumRecycler_Deterministic<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Deterministic<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.nYears, (int)rps0.catchType, (vector<Type>)logN.col(0));    
     p_er_t = tmp2;
-    std::shared_ptr<EquilibriumRecycler_Deterministic<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Deterministic<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.nYears, (int)rps0.catchType);
+    std::shared_ptr<EquilibriumRecycler_Deterministic<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Deterministic<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.nYears, (int)rps0.catchType, (vector<ad>)logN.col(0));
     p_er_a = tmp3;
   }else if(stochasticType == referencepointSet<Type>::Stochastic_Median){ // Median on natural scale 
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Median<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Median<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT);    
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Median<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Median<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<Type>)logN.col(0));    
     p_er_t = tmp2;
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Median<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Median<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT);
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Median<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Median<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<ad>)logN.col(0));
     p_er_a = tmp3;
   }else if(stochasticType == referencepointSet<Type>::Stochastic_Mean){ // Mean on natural scale
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Mean<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Mean<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT);    
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mean<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Mean<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<Type>)logN.col(0));    
     p_er_t = tmp2;
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Mean<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Mean<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT);
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mean<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Mean<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<ad>)logN.col(0));
     p_er_a = tmp3;
   }else if(stochasticType == referencepointSet<Type>::Stochastic_Mode){ // Mode on natural scale
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Mode<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Mode<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT);    
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mode<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Mode<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<Type>)logN.col(0));    
     p_er_t = tmp2;
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Mode<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Mode<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT);
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Mode<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Mode<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<ad>)logN.col(0));
     p_er_a = tmp3;
   }else if(stochasticType == referencepointSet<Type>::Stochastic_Quantile){ // Quantile on natural scale
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Quantile<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Quantile<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, rps0.q);    
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Quantile<Type> > tmp2 = std::make_shared<EquilibriumRecycler_Stochastic_Quantile<Type> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<Type>)logN.col(0), rps0.q);    
     p_er_t = tmp2;
-    std::shared_ptr<EquilibriumRecycler_Stochastic_Quantile<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Quantile<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, rps0.q);
+    std::shared_ptr<EquilibriumRecycler_Stochastic_Quantile<ad>> tmp3 = std::make_shared<EquilibriumRecycler_Stochastic_Quantile<ad> >(logfbar0, dat, conf, par, ls, rps0.aveYears, rps0.logN0, rps0.nYears, (int)rps0.catchType, rps0.DT, (vector<ad>)logN.col(0), rps0.q);
     p_er_a = tmp3;
   }
   // Report reference points

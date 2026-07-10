@@ -21,11 +21,44 @@ HEADER(
 	 vector<Type> logSel;	
 	 int nYears;
 	 int CT;
+	 vector<Type> logNFY;
 
   
 	 dataSet<Type> newDat;
 	 array<Type> logFSel;
 	 array<Type> logitFseason;
+
+
+	 template<class T>
+	 inline EquilibriumRecycler_Deterministic_Worker(const EquilibriumRecycler_Deterministic_Worker<T> x) :
+	   logFbar0(x.logFbar0),
+	   conf(x.conf),
+	   par(x.par),
+	   logSel(x.logSel),
+	   nYears(x.nYears),
+	   CT(x.CT),
+	   logNFY(x.logNFY),
+	   newDat(x.newDat),
+	   logFSel(x.logFSel,x.logFSel.dim),
+	   logitFseason(x.logitFseason,x.logitFseason.dim) {}
+	 
+	
+	 inline EquilibriumRecycler_Deterministic_Worker& operator=(const EquilibriumRecycler_Deterministic_Worker<Type>& x) {
+	     if (this == &x) return *this;
+	     logFbar0 = x.logFbar0;
+	     conf = x.conf;
+	     par = x.par;
+	     logSel = x.logSel;
+	     nYears = x.nYears;
+	     CT = x.CT;
+	     logNFY = x.logNFY;
+	     newDat = x.newDat;
+	     logFSel.initZeroArray(x.logFSel.dim);
+	     logFSel = x.logFSel;
+	     logitFseason.initZeroArray(x.logitFseason.dim);
+	     logitFseason = x.logitFseason;	     
+	     return *this;
+	 }
 
 	 EquilibriumRecycler_Deterministic_Worker() : logFbar0(),
 						      conf(),
@@ -33,9 +66,11 @@ HEADER(
 						      logSel(),
 						      nYears(),
 						      CT(),
+						      logNFY(),
 						      newDat(),
 						      logitFseason() {}
-    
+
+	 
 	 template<class T>
 	 EquilibriumRecycler_Deterministic_Worker(T logFbar0_,
 						  dataSet<T> dat,
@@ -44,13 +79,15 @@ HEADER(
 						  vector<T> logSel_,
 						  vector<int> aveYears,
 						  int nYears_,
-						  int CT_) :
+						  int CT_,
+						  vector<T> logNFY_) :
 	   logFbar0(logFbar0_),
 	   conf(conf_),
 	   par(par_),
 	   logSel(logSel_),
 	   nYears(nYears_),
 	   CT(CT_),
+	   logNFY(logNFY_),
 	   newDat(dat),
 	   logitFseason() {
 	   // Setup
@@ -116,7 +153,9 @@ HEADER(
 	   int nAge = conf.maxAge - conf.minAge + 1;
 	   array<Type> logN(nAge, nYears);
 	   logN.setConstant(R_NegInf);
+	   //logN.col(0) = logNFY; // This is wrong! It should be a per-recruit calculation...
 	   logN(0,0) = 0.0;
+	   
 
 	   MortalitySet<Type> mort(newDat, conf, par, logF, logitFseason);
   
@@ -124,6 +163,7 @@ HEADER(
 	   for(int i = 1; i < nYears; ++i){
 	     logN.col(i) = predNFun(newDat, conf, par, logN, logF, rec0, mort, i);
 	     //logN(0,i) = R_NegInf;
+	     // 
 	   }
  
 	   // Calculate yield
@@ -144,14 +184,15 @@ HEADER(
 	     Rf_error("Unknown reference point catch type.");
 	     break;
 	   }
+
 	   Type logYPR = log(sum(cat) + SAM_Zero);//
 
 	   Type logYLTF = mort.logYearsLostFishing(-1,newDat.natMor.dim(0)-1,conf.minAge, conf.maxAge); //log(yearsLostFishing_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, conf.maxAge) + SAM_Zero);
 	   Type logLifeExpectancy = logspace_add_SAM(mort.logTemporaryLifeExpectancy(newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge),log((Type)conf.minAge));//log(temporaryLifeExpectancy_i(newDat, conf, logF, newDat.natMor.dim(0)-1, conf.minAge, 10 * conf.maxAge) + (Type)conf.minAge + SAM_Zero);
 
-	   // Calculate spawners
+	   // Calculate (effective) spawners
 	   vector<Type> ssb = ssbFun(newDat, conf, logN, logF, mort);
-	   // vector<Type> ssbb = erbFun(newDat, conf, par, logN, logF, mort);
+
 	   Type logSPR = log(sum(ssb) + SAM_Zero);
 
 	   ////////////////////////////////////////////////////////////////////////////////
@@ -235,7 +276,8 @@ struct EquilibriumRecycler_Deterministic : EquilibriumRecycler<Type> {
 					vector<Type> logSel,
 					vector<int> aveYears,
 					int nYears,
-					int CT);
+				    int CT,
+				    vector<Type> logNFY);
   PERREC_t<Type> operator()(Type logFbar);
 };
        )
@@ -254,7 +296,8 @@ SOURCE(
 											  vector<Type> logSel,
 											  vector<int> aveYears,
 											  int nYears,
-											  int CT) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,nYears,CT) {};
+										  int CT,
+										  vector<Type> logNFY) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,nYears,CT,logNFY) {};
        )
 
 
@@ -281,14 +324,14 @@ SAM_SPECIALIZATION(struct EquilibriumRecycler_Deterministic<TMBad::ad_aug>);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Type>
-PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int>& aveYears, int nYears DEFARG(= 300), int CT DEFARG(= 0))SOURCE({
- EquilibriumRecycler_Deterministic_Worker<Type> wrk(logFbar,dat,conf,par,logSel,aveYears,nYears,CT);
+PERREC_t<Type> perRecruit_D(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int>& aveYears, vector<Type>& logNFY, int nYears DEFARG(= 300), int CT DEFARG(= 0))SOURCE({
+    EquilibriumRecycler_Deterministic_Worker<Type> wrk(logFbar,dat,conf,par,logSel,aveYears,nYears,CT,logNFY);
  return wrk(logFbar);
    
   });
 
-SAM_SPECIALIZATION(PERREC_t<double> perRecruit_D(const double&, dataSet<double>&, confSet&, paraSet<double>&, vector<double>&, vector<int>&, int, int));
-SAM_SPECIALIZATION(PERREC_t<TMBad::ad_aug> perRecruit_D(const TMBad::ad_aug&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<int>&, int, int));
+SAM_SPECIALIZATION(PERREC_t<double> perRecruit_D(const double&, dataSet<double>&, confSet&, paraSet<double>&, vector<double>&, vector<int>&, vector<double>&, int, int));
+SAM_SPECIALIZATION(PERREC_t<TMBad::ad_aug> perRecruit_D(const TMBad::ad_aug&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<int>&, vector<TMBad::ad_aug>&, int, int));
 
 ////////// Convenience functions to get Yield per recruit and derivative //////////
 
@@ -321,7 +364,7 @@ struct Funct_YPR {
     vector<Type> ls = rp.getLogSelectivity();
     // vector<T> ls(ls0);
     // PERREC_t<T> r = perRecruit_D(logFbar(0), d2, conf, p2, ls, rp.aveYears, rp.nYears, rp.catchType);
-    PERREC_t<Type> r = perRecruit_D(logFbar(0), dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
+    PERREC_t<Type> r = perRecruit_D(logFbar(0), dat, conf, par, ls, rp.aveYears, rp.logNFY, rp.nYears, rp.catchType);
     return exp(r.logYPR);
   }  
 };
@@ -351,7 +394,7 @@ SAM_SPECIALIZATION(TMBad::ad_aug dYPR(TMBad::ad_aug, dataSet<TMBad::ad_aug>&, co
 template<class Type>
 Type yieldPerRecruit_i(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, referencepointSet<Type>& rp, bool give_log DEFARG(= false))SOURCE({
   vector<Type> ls = rp.getLogSelectivity();
-  PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
+  PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.logNFY, rp.nYears, rp.catchType);
   if(give_log)
     return r.logYPR;
   return exp(r.logYPR);
@@ -363,34 +406,34 @@ SAM_SPECIALIZATION(TMBad::ad_aug yieldPerRecruit_i(const TMBad::ad_aug&, dataSet
 
 // For calculations about assessment period for one year
 template<class Type>
-Type yieldPerRecruit_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
+Type yieldPerRecruit_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
   // Make referencepointSet
-  referencepointSet<Type> rp(nYears, CT, i, logF, conf);
+    referencepointSet<Type> rp(nYears, CT, i, logF, conf, (vector<Type>)logN.col(0));
   //rp.setLogSelectivity(logF,conf);
   Type logFbar = rp.logFbar(logF, conf);  
   return yieldPerRecruit_i(logFbar, dat, conf, par, rp, give_log);
   })
 
   
-SAM_SPECIALIZATION(double yieldPerRecruit_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, int, int, int, bool));
-SAM_SPECIALIZATION(TMBad::ad_aug yieldPerRecruit_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
+SAM_SPECIALIZATION(double yieldPerRecruit_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, int, int, int, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug yieldPerRecruit_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
 
 // }
 // #endif
 
 template<class Type>
-vector<Type> yieldPerRecruit(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
+vector<Type> yieldPerRecruit(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
   vector<Type> r(dat.catchMeanWeight.dim(0));
   r.setZero();
   for(int i = 0; i < r.size(); ++i){
-    r(i) = yieldPerRecruit_i(dat, conf, par, logF, i, 0, 300, give_log);
+    r(i) = yieldPerRecruit_i(dat, conf, par, logN, logF, i, 0, 300, give_log);
   }
   return r;
   })
 
 
-  SAM_SPECIALIZATION(vector<double> yieldPerRecruit(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, bool));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> yieldPerRecruit(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, bool));
+  SAM_SPECIALIZATION(vector<double> yieldPerRecruit(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, bool));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> yieldPerRecruit(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, bool));
   
 
 ////////// Convenience functions to get Spawners per recruit and derivative //////////
@@ -402,7 +445,7 @@ SAM_SPECIALIZATION(vector<TMBad::ad_aug> yieldPerRecruit(dataSet<TMBad::ad_aug>&
 template<class Type>
 Type spawnersPerRecruit_i(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, referencepointSet<Type>& rp, bool give_log DEFARG(= false))SOURCE({
   vector<Type> ls = rp.getLogSelectivity();
-  PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
+  PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.logNFY, rp.nYears, rp.catchType);
   if(give_log)
     return r.logSPR;
   return exp(r.logSPR);
@@ -413,42 +456,42 @@ SAM_SPECIALIZATION(TMBad::ad_aug spawnersPerRecruit_i(const TMBad::ad_aug&, data
 
 // For calculations about assessment period for one year
 template<class Type>
-Type spawnersPerRecruit_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
+Type spawnersPerRecruit_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
   // Make referencepointSet
-  referencepointSet<Type> rp(nYears, CT, i, logF, conf);
+    referencepointSet<Type> rp(nYears, CT, i, logF, conf, (vector<Type>)logN.col(0));
   Type logFbar = rp.logFbar(logF, conf);
   return spawnersPerRecruit_i(logFbar, dat, conf, par, rp, give_log);
   });
 
-SAM_SPECIALIZATION(double spawnersPerRecruit_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, int, int, int, bool));
-SAM_SPECIALIZATION(TMBad::ad_aug spawnersPerRecruit_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
+SAM_SPECIALIZATION(double spawnersPerRecruit_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, int, int, int, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug spawnersPerRecruit_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
 
 // }
 // #endif
 
 template<class Type>
-vector<Type> spawnersPerRecruit(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
+vector<Type> spawnersPerRecruit(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
   vector<Type> r(dat.catchMeanWeight.dim(0));
   r.setZero();
   for(int i = 0; i < r.size(); ++i)
-    r(i) = spawnersPerRecruit_i(dat, conf, par, logF, i, 0, 300, give_log);
+    r(i) = spawnersPerRecruit_i(dat, conf, par, logN, logF, i, 0, 300, give_log);
   return r;
   });
 
-SAM_SPECIALIZATION(vector<double> spawnersPerRecruit(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, bool));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> spawnersPerRecruit(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, bool));
+SAM_SPECIALIZATION(vector<double> spawnersPerRecruit(dataSet<double>&, confSet&, paraSet<double>&, array<double>&,array<double>&, bool));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> spawnersPerRecruit(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&, bool));
 
 // For calculations about assessment period for one year
 template<class Type>
-Type SPR0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
+Type SPR0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
   // Make referencepointSet
-  referencepointSet<Type> rp(nYears, CT, i, logF, conf);
+    referencepointSet<Type> rp(nYears, CT, i, logF, conf, (vector<Type>)logN.col(0));
   Type logFbar = R_NegInf; //rp.logFbar(logF, conf);
   return spawnersPerRecruit_i(logFbar, dat, conf, par, rp, give_log);
   })
 
-SAM_SPECIALIZATION(double SPR0_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&,  int, int, int, bool));
-SAM_SPECIALIZATION(TMBad::ad_aug SPR0_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
+SAM_SPECIALIZATION(double SPR0_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&,  int, int, int, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug SPR0_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
 
 ////////// Convenience functions to get equilibrium biomass //////////
 
@@ -459,44 +502,44 @@ SAM_SPECIALIZATION(TMBad::ad_aug SPR0_i(dataSet<TMBad::ad_aug>&, confSet&, paraS
 template<class Type>
 Type equilibriumBiomass_i(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, referencepointSet<Type>& rp, bool give_log DEFARG(= false))SOURCE({
   vector<Type> ls = rp.getLogSelectivity();
-  PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
+  PERREC_t<Type> r =  perRecruit_D(logFbar, dat, conf, par, ls, rp.aveYears, rp.logNFY, rp.nYears, rp.catchType);
   if(give_log)
     return r.logSe;
   return exp(r.logSe);
   })
 
-SAM_SPECIALIZATION(double equilibriumBiomass_i(const double&, dataSet<double>&, confSet&, paraSet<double>&, referencepointSet<double>&, bool));
+  SAM_SPECIALIZATION(double equilibriumBiomass_i(const double&, dataSet<double>&, confSet&, paraSet<double>&, referencepointSet<double>&, bool));
 SAM_SPECIALIZATION(TMBad::ad_aug equilibriumBiomass_i(const TMBad::ad_aug&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, referencepointSet<TMBad::ad_aug>&, bool));
 
 
 // For calculations about assessment period for one year
 template<class Type>
-Type equilibriumBiomass_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
+Type equilibriumBiomass_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
   // Make referencepointSet
-  referencepointSet<Type> rp(nYears, CT, i, logF, conf);
+    referencepointSet<Type> rp(nYears, CT, i, logF, conf, (vector<Type>)logN.col(0));
   Type logFbar = rp.logFbar(logF, conf);
   return equilibriumBiomass_i(logFbar, dat, conf, par, rp, give_log);
   })
 
 
-SAM_SPECIALIZATION(double equilibriumBiomass_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, int, int, int, bool));
-SAM_SPECIALIZATION(TMBad::ad_aug equilibriumBiomass_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
+SAM_SPECIALIZATION(double equilibriumBiomass_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, int, int, int, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug equilibriumBiomass_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
 
 // }
 // #endif
 
 template<class Type>
-vector<Type> equilibriumBiomass(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
+vector<Type> equilibriumBiomass(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
   vector<Type> r(dat.catchMeanWeight.dim(0));
   r.setZero();
   for(int i = 0; i < r.size(); ++i)
-    r(i) = equilibriumBiomass_i(dat, conf, par, logF, i, 0, 300, give_log);
+    r(i) = equilibriumBiomass_i(dat, conf, par, logN, logF, i, 0, 300, give_log);
   return r;
   })
 
 
-SAM_SPECIALIZATION(vector<double> equilibriumBiomass(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, bool));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> equilibriumBiomass(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, bool));
+SAM_SPECIALIZATION(vector<double> equilibriumBiomass(dataSet<double>&, confSet&, paraSet<double>&, array<double>&,array<double>&, bool));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> equilibriumBiomass(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&, bool));
 
 
 ////////// Convenience functions to get equilibrium biomass //////////
@@ -508,7 +551,7 @@ SAM_SPECIALIZATION(vector<TMBad::ad_aug> equilibriumBiomass(dataSet<TMBad::ad_au
 template<class Type>
 Type B0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, referencepointSet<Type>& rp, bool give_log DEFARG(= false))SOURCE({
   vector<Type> ls = rp.getLogSelectivity();
-  PERREC_t<Type> r =  perRecruit_D(Type(R_NegInf), dat, conf, par, ls, rp.aveYears, rp.nYears, rp.catchType);
+  PERREC_t<Type> r =  perRecruit_D(Type(R_NegInf), dat, conf, par, ls, rp.aveYears, rp.logNFY, rp.nYears, rp.catchType);
   if(give_log)
     return r.logSe;
   return exp(r.logSe);
@@ -516,34 +559,35 @@ Type B0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, referencepointS
 
 
   SAM_SPECIALIZATION(double B0_i(dataSet<double>&, confSet&, paraSet<double>&, referencepointSet<double>&, bool));
-  SAM_SPECIALIZATION(TMBad::ad_aug B0_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, referencepointSet<TMBad::ad_aug>&, bool));
+SAM_SPECIALIZATION(TMBad::ad_aug B0_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, referencepointSet<TMBad::ad_aug>&, bool));
 
 
 // For calculations about assessment period for one year
 template<class Type>
-Type B0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
+Type B0_i(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN, array<Type>& logF, int i, int CT, int nYears, bool give_log DEFARG(= false))SOURCE({
   // Make referencepointSet
-  referencepointSet<Type> rp(nYears, CT, i, logF, conf);
+    referencepointSet<Type> rp(nYears, CT, i, logF, conf, (vector<Type>)logN.col(0));
   return B0_i(dat, conf, par, rp, give_log);
   })
 
 
-SAM_SPECIALIZATION(double B0_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, int, int, int, bool));
-  SAM_SPECIALIZATION(TMBad::ad_aug B0_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, int, int, int, bool));
+SAM_SPECIALIZATION(double B0_i(dataSet<double>&, confSet&, paraSet<double>&, array<double>&,array<double>&, int, int, int, bool));
+  SAM_SPECIALIZATION(TMBad::ad_aug B0_i(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&, int, int, int, bool));
 
 // }
 // #endif
 
 template<class Type>
-vector<Type> B0(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
+vector<Type> B0(dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, array<Type>& logN,array<Type>& logF, bool give_log DEFARG(= false))SOURCE({
   vector<Type> r(dat.catchMeanWeight.dim(0));
   r.setZero();
   for(int i = 0; i < r.size(); ++i)
-    r(i) = B0_i(dat, conf, par, logF, i, 0, 300, give_log);
+    r(i) = B0_i(dat, conf, par, logN, logF, i, 0, 300, give_log);
   return r;
   })
 
-  SAM_SPECIALIZATION(vector<double> B0(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, bool));
-SAM_SPECIALIZATION(vector<TMBad::ad_aug> B0(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&, bool));
+  SAM_SPECIALIZATION(vector<double> B0(dataSet<double>&, confSet&, paraSet<double>&, array<double>&, array<double>&, bool));
+SAM_SPECIALIZATION(vector<TMBad::ad_aug> B0(dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, array<TMBad::ad_aug>&,array<TMBad::ad_aug>&, bool));
 
 
+  

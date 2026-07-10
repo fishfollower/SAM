@@ -26,10 +26,10 @@ extern "C" {
   SEXP getSetGlobalPtr(SEXP ptr);
   SEXP TMBconfig(SEXP envir, SEXP cmd);  
   
-  SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT);
-  SEXP perRecruitSR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit);
-  SEXP perRecruitSR_Calc(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP DT);
-  SEXP MakePtr_perRecruitSR_Calc(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP DT);
+  SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP logNFY, SEXP nYears, SEXP CT);
+  SEXP perRecruitSR(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP logNFY, SEXP nYears, SEXP CT, SEXP logNinit);
+  SEXP perRecruitSR_Calc(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP logNFY, SEXP DT);
+  SEXP MakePtr_perRecruitSR_Calc(SEXP logFbar, SEXP dat, SEXP conf, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP logNFY, SEXP DT);
   SEXP EvalPtr_perRecruitSR_Calc(SEXP r_ptr, SEXP logFbar, SEXP outType, SEXP Ntail, SEXP q);
   SEXP stockRecruitmentModelR(SEXP ssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
   SEXP logSRR(SEXP logssb, SEXP rec_pars, SEXP code, SEXP constRecBreaks, SEXP year, SEXP lastR);
@@ -74,10 +74,10 @@ extern "C" {
 				   {"getSetGlobalPtr",     (DL_FUNC) &getFramework,        1},
 				   {"TMBconfig",           (DL_FUNC) &TMBconfig,           2},
       
-    CALLDEF(perRecruitR,7),
-    CALLDEF(perRecruitSR,8),
-    CALLDEF(perRecruitSR_Calc,9),
-    CALLDEF(MakePtr_perRecruitSR_Calc,9),
+    CALLDEF(perRecruitR,8),
+    CALLDEF(perRecruitSR,9),
+    CALLDEF(perRecruitSR_Calc,10),
+    CALLDEF(MakePtr_perRecruitSR_Calc,10),
     CALLDEF(EvalPtr_perRecruitSR_Calc,5),
     CALLDEF(stockRecruitmentModelR,6),
     CALLDEF(logSRR,6),

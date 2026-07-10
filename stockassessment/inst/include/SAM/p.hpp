@@ -56,7 +56,9 @@ Type nllP(confSet &conf, paraSet<Type> &par, array<Type> &logP, data_indicator<v
     nll+=neg_log_densityP(logP.col(i)-logP.col(i-1)); // P-Process likelihood
     SIMULATE_F(of){
       if(conf.simFlag(1)==0){
+	GetRNGstate();
         logP.col(i)=logP.col(i-1)+neg_log_densityP.simulate();
+	PutRNGstate();
       }
     }
   }

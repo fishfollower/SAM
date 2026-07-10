@@ -54,7 +54,11 @@ struct forecastSet {
   vector<Type> logRecruitmentMedian;
   vector<Type> logRecruitmentVar;
   vector<FSdTimeScaleModel> fsdTimeScaleModel;
-  vector<int> simFlag;
+	 vector<int> simFlag;
+	 int forceAvg_SW;
+	 int forceAvg_CW;
+	 int forceAvg_MO;
+	 int forceAvg_NM;
   vector<Type> hcrConf;
   int hcrCurrentSSB;
   int hcrUseERB;
@@ -105,6 +109,10 @@ struct forecastSet {
 						logRecruitmentVar(x.logRecruitmentVar),
 						fsdTimeScaleModel(x.fsdTimeScaleModel),
 						simFlag(x.simFlag),
+						forceAvg_SW(x.forceAvg_SW),
+						forceAvg_CW(x.forceAvg_CW),
+						forceAvg_MO(x.forceAvg_MO),
+						forceAvg_NM(x.forceAvg_NM),
 						hcrConf(x.hcrConf),
 						hcrCurrentSSB(x.hcrCurrentSSB),
 						Fdeviation(x.Fdeviation),
@@ -356,10 +364,14 @@ SOURCE(
 		  recModel(),
 		  logRecruitmentMedian(),
 		  logRecruitmentVar(),
-		  fsdTimeScaleModel(),
-		  simFlag(),
-		  hcrConf(),
-		  hcrCurrentSSB(),
+	 fsdTimeScaleModel(),
+	 simFlag(),
+	 forceAvg_SW(),
+	 forceAvg_CW(),
+	 forceAvg_MO(),
+	 forceAvg_NM(),
+	 hcrConf(),
+	 hcrCurrentSSB(),
 	 hcrUseERB(),
 	 Fdeviation(),
 	 FdeviationCov(),
@@ -403,7 +415,11 @@ SOURCE(
 	     logRecruitmentMedian = vector<Type>(0);
 	     logRecruitmentVar = vector<Type>(0);
 	     fsdTimeScaleModel = vector<FSdTimeScaleModel>(0);
-	     simFlag = vector<int>(0);
+	     simFlag = vector<int>(0);	     
+	     forceAvg_SW = 0;
+	     forceAvg_CW = 0;
+	     forceAvg_MO = 0;
+	     forceAvg_NM = 0;
 	     hcrConf = vector<Type>(0);
 	     hcrCurrentSSB = 0;
 	     hcrUseERB = 0;
@@ -468,7 +484,11 @@ SOURCE(
 	     fsdTimeScaleModel = vector<FSdTimeScaleModel>(fsdTimeScaleModelTmp.size());
 	     for(int i = 0; i < fsdTimeScaleModel.size(); ++i)
 	       fsdTimeScaleModel(i) = static_cast<FSdTimeScaleModel>(fsdTimeScaleModelTmp(i));
-	     simFlag = asVector<int>(getListElement(x,"simFlag"));
+	     simFlag = asVector<int>(getListElement(x,"simFlag"));   
+	     forceAvg_SW = (int)*REAL(getListElement(x,"forceAvg_SW"));
+	     forceAvg_CW = (int)*REAL(getListElement(x,"forceAvg_CW"));
+	     forceAvg_MO = (int)*REAL(getListElement(x,"forceAvg_MO"));
+	     forceAvg_NM = (int)*REAL(getListElement(x,"forceAvg_NM"));
 	     hcrConf = asVector<Type>(getListElement(x,"hcrConf"));
 	     hcrCurrentSSB = Rf_asInteger(getListElement(x,"hcrCurrentSSB"));
 	     hcrUseERB = Rf_asInteger(getListElement(x,"hcrUseERB"));
@@ -510,17 +530,34 @@ void prepareForForecast(forecastSet<Type>& forecast, dataSet<Type>& dat, confSet
     int nFYears = forecast.nYears - (dat.noYears - forecast.preYears);
     int nMYears = dat.noYears;
     vector<int> aveYears = forecast.aveYears;
-  // propMat 
-  extendArray(dat.propMat, nMYears, nFYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, true);
+    // NOTE: to use biopar, extend the number of years in dat.XX to the entire forecast. If not extended and forceAvg_XX = 0, then the long term mean is used. If not extended and forceAvg_XX = 1, then an average over recent years is used
+  // propMat
+    if(forecast.forceAvg_MO){
+      extendArray(dat.propMat, nMYears, nFYears, aveYears, true);
+    }else{
+      extendArray(dat.propMat, nMYears, nFYears, aveYears, par.meanLogitMO, conf.keyMatureMean, 1, true);
+    }
   REPORT_F(dat.propMat, of);
   // stockMeanWeight
-  extendArray(dat.stockMeanWeight, nMYears, nFYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, true);
+  if(forecast.forceAvg_SW){
+    extendArray(dat.stockMeanWeight, nMYears, nFYears, aveYears, true);
+  }else{
+    extendArray(dat.stockMeanWeight, nMYears, nFYears, aveYears, par.meanLogSW, conf.keyStockWeightMean, 0, true);
+  }
   REPORT_F(dat.stockMeanWeight, of);
   // catchMeanWeight
-  extendArray(dat.catchMeanWeight, nMYears, nFYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, true);
+  if(forecast.forceAvg_CW){
+    extendArray(dat.catchMeanWeight, nMYears, nFYears, aveYears, true);
+  }else{
+    extendArray(dat.catchMeanWeight, nMYears, nFYears, aveYears, par.meanLogCW, conf.keyCatchWeightMean, 0, true);
+  }
   REPORT_F(dat.catchMeanWeight, of);
   // natMor
-  extendArray(dat.natMor, nMYears, nFYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, true);
+  if(forecast.forceAvg_NM){
+    extendArray(dat.natMor, nMYears, nFYears, aveYears, true);
+  }else{
+    extendArray(dat.natMor, nMYears, nFYears, aveYears, par.meanLogNM, conf.keyMortalityMean, 0, true);
+  }
   REPORT_F(dat.natMor, of);
   // landFrac (No biopar process)
   extendArray(dat.landFrac, nMYears, nFYears, aveYears, true);

@@ -471,7 +471,7 @@ namespace ConstrainCalculations {
 	  BforHCR = exp(getLogTSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
 	}else if(biomassType == 2){ // % of B0
 	  BforHCR = exp(getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));
-	  ad b0 = B0_i(dat,conf,par,hLogF2,y-compareLag,0,100);
+	  ad b0 = B0_i(dat,conf,par,logN2,hLogF2,y-compareLag,0,100);
 	  Btrigger *= b0;
 	  // }else if(biomassType == 3){ // % of Bmsy
 	  //   BforHCR = exp(getLogSSB(dat, conf, logN2, hLogF2, mort, y-compareLag, bioA0, bioA1));

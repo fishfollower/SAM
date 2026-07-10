@@ -100,44 +100,305 @@
       list(...))        
 }
 
-
+removeIntercept <- function(object){
+    f <- update(object,~(.)-1)
+    if(is(object,"terms")){
+        attributes(f) <- attributes(object)
+        attr(f,"intercept") <- 0
+    }
+    return(f)    
+}
 ##' @importFrom stats model.frame model.matrix terms
 .refpointSCurveFit <- function(F,C,MT){
+    if(MT$useLogF)
+        F <- log(F)
     if(MT$methodType == 3){ ## LOESS
         return(loess(C~F,data.frame(C=C,F=F)))
     }
-    mf <- stats::model.frame(MT$formula, data.frame(F = F))
-    X <- stats::model.matrix(MT$formula,mf)    
+    if(MT$penalize){
+        if(!require(RTMB))
+            stop("Penalization requires RTMB")
+        if(!require(RTMBconvenience))
+            stop("Penalization requires RTMBconvenice, available at github.com/calbertsen/RTMBconvenience")
+        ## Update formula to give knots
+        txt <- as.character(MT$formula)[2]
+        splType <- gsub("^([^\\(]+)(\\([[:space:]]*F[[:space:]]*,)([[:space:]]*[[:digit:]]+[[:space:]]*)(\\)$)","\\1",txt)
+        Nknots <- as.integer(gsub("^([^\\(]+)(\\([[:space:]]*F[[:space:]]*,)([[:space:]]*[[:digit:]]+[[:space:]]*)(\\)$)","\\3",txt))
+        MT$formula <- formula(paste(c("~",sprintf("%s(F,knots=c(%s),Boundary.knots=c(%s,%s),qk=TRUE)",splType,paste(unique(head(tail(seq(min(F),max(F),length.out=Nknots),-1),-1)),collapse=","),min(F),max(F))),collapse = " "))        
+        ##MT$formula <- formula(paste(c("~",sprintf("splines::bs(F,knots=c(%s))",paste(seq(min(F),max(F),length.out=Nknots),collapse=","))),collapse = " "))        
+    }
+    mf <- stats::model.frame(MT$formula, data.frame(F = F,C=C),na.action=stats::na.pass)
+    ## mf <- as.data.frame(lapply(mf0, function(x){
+    ##     x[!is.finite(x)] <- 0
+    ##     x
+    ## }))
+    ## attributes(mf) <- attributes(mf0)
+    X <- stats::model.matrix(MT$formula,mf)
+    Xni <- stats::model.matrix(removeIntercept(terms(mf)),mf)
+    X[!is.finite(X)] <- 0
+    ## Xsd <- stats::model.matrix(~ibc(F,3),data.frame(F=F))
     if(MT$methodType == 0){       # Mean
-        Loss <- function(Obs,Pred) (Obs-Pred)^2
+        Loss <- function(Obs,Pred) ((Obs-Pred))^2 #+ log(Sd)
     }else if(MT$methodType == 1){       # Quantiles
-        rho <- function(x,q) x * (q - (x<0))
-        Loss <- function(Obs,Pred) rho(Obs-Pred, MT$xVal)    
+        if(MT$penalize){
+            rho <- function(x,q) RTMBconvenience::quantreg_loss(x,q)
+        }else{
+            rho <- function(x,q) x * (q - (x<0))
+        }
+        Loss <- function(Obs,Pred) rho((Obs-Pred), MT$xVal) #+ log(Sd)    
     }else if(MT$methodType == 2){       # Mode
         stop("method not implemented yet")
     }
-    fn <- function(par){
-        beta <- par[1:(ncol(X))]
-        if(MT$monotone == "d" || MT$monotone == "pd"){
-            beta[-1] <- -exp(beta[-1])
-        }else if(MT$monotone == "i"){
-            beta[-1] <- exp(beta[-1])
-        }
-        X2 <- X
-        pM <- X2 %*% beta
-        if(!is.na(MT$positive)){
-            if(MT$positive){
-                pM <- exp(pM)
-            }else{
-                pM <- -exp(pM)
-            }
-        }
-        sum(Loss(C,pM[]))
+    if(is.na(MT$positive)){
+        Cuse <- C
+    }else if(MT$positive){
+        Cuse <- log(C)
+    }else{
+        Cuse <- (log(-C))
     }
-    opt <- stats::nlminb(numeric(ncol(X)), fn, control = list(iter.max=10000,eval.max=10000))
+    p0 <- RTMBconvenience::undim(svd_solve(t(X) %*% X) %*% t(X) %*% Cuse)
+    ## Vuse <- log((Cuse-X %*% p0)^2)
+    ## p0sd <- RTMBconvenience::undim(svd_solve(t(Xsd) %*% Xsd) %*% t(Xsd) %*% Vuse)    
+    if(MT$penalize){
+        cat("Fitting penalized GAM-like spline...\n")
+        ## Get S matrix (assume first col of X is an intercept)
+        S <- local({
+            eps <- 1e-4
+            grid  <- seq(min(F), max(F), length.out = 1000)
+            dx <- diff(grid[1:2])
+            X0 <- stats::model.matrix(removeIntercept(terms(mf)),data.frame(F=grid))#[,-1,drop=FALSE]
+            X0[!is.finite(X0)] <- 0
+            Xp <- stats::model.matrix(removeIntercept(terms(mf)),data.frame(F=grid+eps))#[,-1,drop=FALSE]
+            Xp[!is.finite(Xp)] <- 0
+            Xm <- stats::model.matrix(removeIntercept(terms(mf)),data.frame(F=grid-eps))#[,-1,drop=FALSE]
+            Xm[!is.finite(Xm)] <- 0
+            ## Central diffrerences
+            X2 <- (Xp - 2 * X0 + Xm) / eps^2
+            ## Num int
+            t(X2) %*% X2 * dx
+        })
+        XtX <- t(Xni) %*% Xni
+        ## Outer estimation of smoothing penalty using generalized cross validation criteria       
+        if(MT$RTMB){
+            fnOut <- function(par){
+                l <- exp(par$logl)   
+                ## mu <- par$mu
+                ## Inner estimation of p given mu and penalty
+                fn <- MakeTape(function(pIn){
+                    l <- exp(pIn[1])
+                    p <- pIn[seq_along(p0)+1]
+                    ##pSd <- pIn[seq_along(p0sd)+1 + length(p)]
+                    if(MT$monotone == "d" || MT$monotone == "pd"){
+                        p <- -exp(p[-1])
+                    }else if(MT$monotone == "i"){
+                        p <- exp(p[-1])
+                    }
+                    pred <- (RTMBconvenience::undim((RTMB::matrix(X,nrow(X),ncol(X)) %*% p))) ##c(AD(mu),p))))
+                    ##predSd <- exp(RTMBconvenience::undim((RTMB::matrix(Xsd,nrow(Xsd),ncol(Xsd)) %*% pSd)))
+                    jac <- 0
+                    ## if(!is.na(MT$positive)){
+                    ##     if(MT$positive){
+                    ##         pred <- exp(pred)
+                    ##         jac <- log(C)
+                    ##     }else{
+                    ##         pred <- -exp(pred)
+                    ##         jac <- log(-C)
+                    ##     }
+                    ## }
+                    ## if(MT$monotone == "n"){
+                    pen <- (RTMBconvenience::undim(t(p[-1]) %*% RTMB::matrix(S,nrow(S),ncol(S)) %*% p[-1]))
+                    ## }else{
+                    ##     pen <- (undim(t(p[-(1]) %*% RTMB::matrix(S[-1,-1],nrow(S)-1,ncol(S)-1) %*% p[-1]))
+                    ## }
+                    sum(Loss((Cuse),pred)) + l * pen
+                },c(0,p0*0))
+                fnnewt <- fn$newton(2:(length(p0)+1), trace=0,on_failure_return_nan=FALSE,sparse=TRUE, simplify=TRUE,maxit=10000,on_failure_give_warning=FALSE)
+                ## numeric(ncol(X)+1)
+                beta0 <- c(fnnewt(par$logl)) ## Does not include logl
+                beta <- beta0[seq_along(p0)]
+                REPORT(beta) ## Needs to be reported before transformations!
+                ##betaSd <- beta0[seq_along(p0sd) + length(p0)]
+                nll <- fn(c(par$logl,beta0))
+                REPORT(nll)
+                jac <- 0
+                if(MT$monotone == "d" || MT$monotone == "pd"){
+                    beta[-1] <- -exp(beta[-1])
+                    jac <- log(C)
+                }else if(MT$monotone == "i"){
+                    beta[-1] <- exp(beta[-1])
+                    jac <- log(-C)
+                }
+                pred <- RTMBconvenience::undim((RTMB::matrix(X,nrow(X),ncol(X)) %*% beta))
+                ##predSd <- exp(RTMBconvenience::undim((RTMB::matrix(Xsd,nrow(Xsd),ncol(Xsd)) %*% betaSd)))
+                ## if(!is.na(MT$positive)){
+                ##         if(MT$positive){
+                ##             pred <- exp(pred)
+                ##         }else{
+                ##             pred <- -exp(pred)
+                ##         }
+                ## }
+                if(MT$monotone == "n"){               
+                    A   <- solve(XtX + l * S, XtX)
+                }else{
+                    A <- solve(XtX[-1,-1] + l * S[-1,-1], XtX[-1,-1])
+                }
+                edf <- sum(diag(A))   # = trace(H)
+                F <- sum(diag(A %*% A)) / length(C)
+                ## REPORT(betaSd)
+                ##spl <- cbind(seq(0,1,len=1000),RTMB::matrix(basis_fun(seq(0,1,len=1000),knots),nrow=1000) %*% beta + par$mu)
+                ##REPORT(spl)
+                REPORT(edf)            
+                ## length(C) * sum((C-pred)^2) / (length(C) - edf)^2
+                G <- length(C) * sum(Loss(Cuse,pred)) / (length(C) - MT$rho * edf)^2
+                MT$gamma * G + (1 - MT$gamma) * F
+            }
+            ## if(is.na(MT$positive)){
+            ##     mu0 <- mean(C)
+            ## }else if(MT$positive){
+            ##     mu0 <- log(mean(range((C))))
+            ## }else{
+            ##     mu0 <- log(mean(range((-C)))) 
+            ## }
+            par0 <- list(logl=0)#,mu=mu0 * 0)
+            obj <- RTMB::MakeADFun(fnOut,par0)
+            ll <- (-20:20)
+            vv <- sapply(ll, obj$fn)          
+            ## Grid search
+            ## Check gradient
+            gg <- obj$gr(ll[which.min(vv)])
+            if(!is.finite(gg)){
+                opt0 <- nlminb(ll[which.min(vv)],obj$fn)
+            }else{
+                opt0 <- nlminb(ll[which.min(vv)],obj$fn,obj$gr,control=list(eval.max=10000,iter.max=10000,trace=0))
+                opt0 <- nlminb(opt0$par,obj$fn,obj$gr,obj$he,control=list(eval.max=10000,iter.max=10000,trace=0))
+            }
+            ## opt0 <- nlminb(obj$par,obj$fn,obj$gr, obj$he)
+            rp <- obj$report(opt0$par)
+            opt <- opt0
+            opt$par <- rp$beta
+            ## opt$parSd <- rp$betaSd
+            ##opt$spl <- rp$spl
+            opt$edf <- rp$edf
+            opt$objective <- opt0$objective
+            opt$p0 <- p0
+            attr(opt,"orig") <- opt0
+            opt$gridSearch <- cbind(F=ll,Cuse=vv)
+        }else{
+            fnOut <- function(par){
+                l <- exp(par[1])   
+                ## mu <- par$mu
+                ## Inner estimation of p given mu and penalty
+                fn <- function(pIn){
+                    p <- pIn[seq_along(p0)]
+                    ## pSd <- pIn[seq_along(p0sd)+length(p0)]
+                    ## l <- exp(pIn[1])
+                    if(MT$monotone == "d" || MT$monotone == "pd"){
+                        p <- -exp(p[-1])
+                    }else if(MT$monotone == "i"){
+                        p <- exp(p[-1])
+                    }
+                    pred <- RTMBconvenience::undim(X %*% p) ##c(AD(mu),p))))
+                    ## predSd <- exp(RTMBconvenience::undim(Xsd %*% pSd))
+                    ## jac <- 0
+                    ## if(!is.na(MT$positive)){
+                    ##     if(MT$positive){
+                    ##         pred <- exp(pred)
+                    ##         jac <- log(C)
+                    ##     }else{
+                    ##         pred <- -exp(pred)
+                    ##         jac <- log(-C)
+                    ##     }
+                    ## }
+                    ## if(MT$monotone == "n"){
+                    pen <- (RTMBconvenience::undim(t(p[-1]) %*% RTMB::matrix(S,nrow(S),ncol(S)) %*% p[-1]))
+                    ## }else{
+                    ##     pen <- (undim(t(p[-(1]) %*% RTMB::matrix(S[-1,-1],nrow(S)-1,ncol(S)-1) %*% p[-1]))
+                    ## }
+                    sum(Loss((Cuse),pred)) + l * pen
+                }
+                optIn <- nlminb(c(p0),fn,control=list(eval.max=10000,iter.max=10000,trace=1))
+                beta0 <- optIn$par
+                beta <- beta0[seq_along(p0)]
+                betaNonTransformed <- beta
+                ## betaSd <- beta0[seq_along(p0sd)+length(p0)]
+                nll <- optIn$objective                
+                if(MT$monotone == "d" || MT$monotone == "pd"){
+                    beta[-1] <- -exp(beta[-1])
+                }else if(MT$monotone == "i"){
+                    beta[-1] <- exp(beta[-1])
+                }
+                pred <- as.vector(X %*% beta)
+                ## predSd <- exp(RTMBconvenience::undim(Xsd %*% betaSd))
+                ## if(!is.na(MT$positive)){
+                ##         if(MT$positive){
+                ##             pred <- exp(pred)
+                ##         }else{
+                ##             pred <- -exp(pred)
+                ##         }
+                ## }
+                if(MT$monotone == "n"){               
+                    A   <- solve(XtX + l * S, XtX)
+                }else{
+                    A <- solve(XtX[-1,-1] + l * S[-1,-1], XtX[-1,-1])
+                }
+                edf <- sum(diag(A))   # = trace(H)
+                F <- sum(diag(A %*% A)) / length(C)                
+                ## length(C) * sum((C-pred)^2) / (length(C) - edf)^2
+                ## r <- length(C) * sum(Loss(Cuse,pred,predSd)) / (length(C) - edf)^2
+                G <- length(C) * sum(Loss(Cuse,pred)) / (length(C) - MT$rho * edf)^2
+                r <- (MT$gamma * G + (1 - MT$gamma) * F)
+                attr(r,"edf") <- edf
+                attr(r,"beta") <- betaNonTransformed
+                ## attr(r,"betaSd") <- betaSd
+                attr(r,"nll") <- nll
+                r
+            }
+            ## Grid search
+            ll <- (-5:30)
+            vv <- sapply(ll, fnOut)
+            opt0 <- nlminb(ll[which.min(vv)],fnOut,control=list(eval.max=10000,iter.max=10000,trace=1))
+            ##opt0 <- nlminb(0, fnOut)
+            opt <- opt0
+            vx <- fnOut(opt$par)
+            opt$par <- attr(vx,"beta")
+            ## opt$parSd<- attr(vx,"betaSd")
+            ##opt$spl <- rp$spl
+            opt$edf <- attr(vx,"edf")
+            opt$objective <- opt0$objective
+            opt$p0 <- p0
+            attr(opt,"orig") <- opt0
+        }
+    }else{
+        cat("Fitting spline...\n")
+        fn <- function(par){
+            beta <- par[1:(ncol(X))]
+            ## betaSd <- par[1:ncol(Xsd) + (ncol(X))]
+            if(MT$monotone == "d" || MT$monotone == "pd"){
+                beta[-1] <- -exp(beta[-1])
+            }else if(MT$monotone == "i"){
+                beta[-1] <- exp(beta[-1])
+            }
+            X2 <- X
+            pM <- X2 %*% beta
+            ## predSd <- exp((Xsd %*% betaSd))
+            ## if(!is.na(MT$positive)){
+            ##     if(MT$positive){
+            ##         pM <- exp(pM)
+            ##     }else{
+            ##         pM <- -exp(pM)
+            ##     }
+            ## }
+            sum(Loss(Cuse,pM[]))
+        }
+        opt <- stats::nlminb(numeric(ncol(X)), fn, control = list(iter.max=10000,eval.max=10000,trace=0))
+        opt$parAll <- opt$par
+        opt$par <- opt$parAll[1:ncol(X)]
+        ##opt$parSd <- opt$parAll[1:ncol(Xsd) + ncol(X)]
+    }
+    cat("Done fitting spline...\n")
     attr(opt,"terms") <- stats::terms(mf)
     attr(opt,"MT") <- MT
-     class(opt) <- "rpscurvefit"
+    class(opt) <- "rpscurvefit"
     opt
 }
 
@@ -145,8 +406,10 @@
 ##' @method predict rpscurvefit
 ##' @export
 predict.rpscurvefit <- function(x,newF,...){
-    X <- model.matrix(attr(x,"terms"),data.frame(F=newF))
     MT <- attr(x,"MT")
+    if(MT$useLogF)
+        newF <- log(newF)
+    X <- model.matrix(attr(x,"terms"),data.frame(F=newF))
     par <- x$par
     beta <- par[1:ncol(X)]
     if(MT$monotone == "d"){
@@ -163,6 +426,10 @@ predict.rpscurvefit <- function(x,newF,...){
         }
     }
     as.numeric(pM)  
+}
+
+predict.rpsnocurve <- function(x,newF,...){
+    rep(NA,length(newF))
 }
 
 .getDoSim <- function(logf1, fit, nYears, aveYears, selYears, pl, logCustomSel = NULL, constraint = "F=%f", deterministicF = TRUE,...){
@@ -203,6 +470,7 @@ predict.rpscurvefit <- function(x,newF,...){
           nYears = ifelse(nYears==0,150,nYears),
           CT = ct,
           logNinit = logNinit,
+          logNFY = log(ntable(fit)[1,]),
           DT = DT
           )
 }
@@ -222,6 +490,7 @@ predict.rpscurvefit <- function(x,newF,...){
           nYears = ifelse(nYears==0,150,nYears),
           CT = ct,
           logNinit = logNinit,
+          logNFY = log(ntable(fit)[1,]),
           DT = DT
           )
 }
@@ -321,8 +590,10 @@ predict.rpscurvefit <- function(x,newF,...){
 }
 
 
+## TODO:
+## [ ] Restructure to do curves for all values in the beginning and only once, save them in regression, and use them to get RPs and derived values
 #' @importFrom stats runif predict
-.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f", deterministicF = TRUE, randomF = TRUE, knots = 5, tailSummarizer = mean, gridSummarizer = median, ncores=1,mc.type="mclapply", ...){
+.refpointSFitCriteria <- function(rpArgs, pl, MT, fit, nosim, Frange, aveYears, selYears, nYears, catchType, nTail = 1,doSim=NULL,incpb=NULL,label="",constraint="F=%f", deterministicF = TRUE, randomF = TRUE, knots = 5, tailSummarizer = mean, gridSummarizer = median, ncores=1,mc.type="mclapply",defaultSpline="ibc", ...){
     rfv <- function(n,a,b){
         u <- stats::runif(n)
         v1 <- exp(stats::runif(n,log(ifelse(a==0,0.002,a)), log(b)))
@@ -330,8 +601,10 @@ predict.rpscurvefit <- function(x,newF,...){
         ifelse(u < 0.25, v1, v2)
     }
     if(randomF){
-        Fvals <- sort(c(rep(1e-6,100), rfv(nosim,Frange[1],Frange[2])))
+        ##Fvals <- sort(c(rep(1e-6,100), rfv(nosim,Frange[1],Frange[2])))
+        Fvals <- sort(rfv(nosim,Frange[1],Frange[2]))
     }else{
+        ##Fvals <- pmax(1e-6,rep(Frange,each = nosim))
         Fvals <- pmax(1e-6,rep(Frange,each = nosim))
     }
     PRvals <- .perRecruitSR(log(Fvals),
@@ -351,27 +624,100 @@ predict.rpscurvefit <- function(x,newF,...){
                             ncores=ncores,
                             mc.type=mc.type,
                             ...)
+    ## Fit curves
     if(!randomF){
         PRvals <- do.call(rbind,lapply(split(PRvals,PRvals$logF),function(x) as.data.frame(lapply(as.list(x),gridSummarizer))))
+        ## PRcurves <- 
+    }else{
+        cat("\nFitting curves...\n")
+        doOneCurve <- function(what){
+            cat(what,"\n")
+            Crit <- exp(PRvals[[what]])
+            if(all(is.na(Crit))){
+                r <- NA
+                class(r) <- "rpsnocurve"
+                return(r)
+            }
+            cutfun <- function(x) x > max(x) * 0#rp$cutoff
+            Frng <- range(Fvals[cutfun(Crit)])
+            inRng <- function(x,rng) x > rng[1] & x < rng[2]
+            ##indx <- inRng(Fvals,Frng)
+            indx <- seq_along(Fvals)
+            .getCurve <- function(k, Fv, Cv, MT){
+                MT$positive <- TRUE
+                MT$monotone <- "n"
+                MT$formula <- as.formula(bquote(~.(defaultSpline)(F,.(k))))
+                if(!MT$penalize){
+                    if(what %in% c("logSPR","logSe","logLifeExpectancy")){
+                        MT$formula <- as.formula(bquote(~iibc(F,.(k))))
+                        MT$monotone <- "d"
+                    }else if(what %in% c("logYearsLost")){
+                        MT$formula <- as.formula(bquote(~iibc(F,.(k))))
+                        MT$monotone <- "i"
+                    }
+                }else{
+                    MT$formula <- as.formula(bquote(~.(defaultSpline)(F,.(k))))                   
+                    ## MT$formula <- as.formula(bquote(~splines::bs(F,.(k))))
+                }
+                CurveFit <- .refpointSCurveFit(Fv, Cv, MT)
+                if(MT$methodType == 1){
+                    logLik <- length(Fv)*(log(MT$xVal*(1-MT$xVal)) - 1 - log(CurveFit$objective/length(Fv)))
+                    npar <- length(CurveFit$par)
+                }else if(MT$methodType == 0){
+                    logLik <- -CurveFit$objective
+                    npar <- length(CurveFit$par)
+                }else{
+                    logLik <- NA
+                    npar <- NA
+                }
+                attr(CurveFit,"AIC") <- -2 * logLik  + 2 * npar
+                attr(CurveFit,"knots") <- k
+                CurveFit
+            }
+            if(MT$methodType == 3){
+                CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
+            }else{
+                if(is.na(knots)){            
+                    candidateCurves <- lapply(3:20,function(k) .getCurve(k, Fv=Fvals[indx], Cv=Crit[indx], MT=MT))
+                    canAIC <- sapply(candidateCurves, attr, which = "AIC")
+                    cat(canAIC)
+                    CurveFit <- candidateCurves[[which.min(canAIC)]]
+                }else{
+                    CurveFit <- .getCurve(knots, Fv=Fvals[indx], Cv=Crit[indx], MT=MT)
+                }
+            }
+            CurveFit
+        }
+        PRcurves <- lapply(c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost"), doOneCurve)
+        names(PRcurves) <- c("YPR","SPR","Se","Re","Ye","LifeExpectancy","YearsLost")
+        Fseq <- pmax(1e-5,seq(min(Frange),max(Frange),len=1000))
+        cat("Calculate regressions...\n")
+        regressions <- c(list(F=Fseq),lapply(PRcurves,function(x) predict(x,Fseq)))
     }
     
 ###### Different for different RP's
     getOneRP <- function(rp){
         Fvals <- exp(PRvals$logF)
         if(rp$rpType == 1){ ## MSY
-            Crit <- exp(PRvals$logYe)
-            cutfun <- function(x) x > max(x) * rp$cutoff
+            ## Crit <- exp(PRvals$logYe)
+            ## cutfun <- function(x) x > max(x) * rp$cutoff
             trans <- function(x, report=FALSE, ...){
                 v <- exp(x)
                 if(report)
                     names(v) <- "MSY"
                 v
             }
-            fn <- function(x) -predict(CurveFit,trans(x))
-            startVals <- function(Fseq,pv) log(Fseq[which.max(pv)])
+            fn <- function(x){
+                Ye <- predict(PRcurves$Ye, trans(x))
+                -log(Ye)
+            }
+            startVals <- function(Fseq){
+                pv <- regressions$Ye
+                log(Fseq[which.max(pv)])
+            }
         }else if(rp$rpType == 2){ ## MSYRange
-            Crit <- exp(PRvals$logYe)
-            cutfun <- function(x) x > max(x) * rp$cutoff
+            ## Crit <- exp(PRvals$logYe)
+            ## cutfun <- function(x) x > max(x) * rp$cutoff
             trans <- function(x, report=FALSE, ...){
                 dots <- list(...)
                 if("keepMSY" %in% names(dots)){
@@ -395,10 +741,11 @@ predict.rpscurvefit <- function(x,newF,...){
             }
             fn <- function(x){
                 xx <- trans(x, keepMSY=TRUE)
-                p <- predict(CurveFit,as.vector(xx))
+                logYe <- log(predict(PRcurve$Ye,as.vector(xx)))
                 sum((tail(p,-1) - rep(rp$xVal,each=2) * p[1])^2) - p[1]
             }
-            startVals <- function(Fseq,pv){
+            startVals <- function(Fseq){
+                pv <- regressions$Ye
                 fmsy <- Fseq[which.max(pv)]
                 c2 <- sapply(rp$xVal, function(xx) (pv - xx*max(pv))^2)
                 f0 <- apply(c2,2,function(cc){
@@ -410,6 +757,7 @@ predict.rpscurvefit <- function(x,newF,...){
                 c(log(fmsy),f0)
             }
         }else if(rp$rpType == 3){ ## Max
+            stop("Not ready")
             Crit <- exp(PRvals$logYPR)
             cutfun <- function(x) rep(TRUE,length(x))
             trans <- function(x, report=FALSE, ...){
@@ -438,6 +786,7 @@ predict.rpscurvefit <- function(x,newF,...){
             }
             startVals <- function(Fseq,pv) sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 5){ ## xSPR
+            stop("Not ready")
             Crit <- exp(PRvals$logSPR)
             cutfun <- function(x) rep(TRUE,length(x))
             trans <- function(x, report=FALSE, ...){
@@ -453,6 +802,7 @@ predict.rpscurvefit <- function(x,newF,...){
             }
             startVals <- function(Fseq,pv) sapply(rp$xVal, function(xv) log(Fseq[which.min((pv - xv * pv[1])^2)]))
         }else if(rp$rpType == 6){ ## xB0
+            stop("Not ready")
             Crit <- exp(PRvals$logSe)
             cutfun <- function(x) rep(TRUE,length(x))
             trans <- function(x, report=FALSE, ...){
@@ -485,124 +835,19 @@ predict.rpscurvefit <- function(x,newF,...){
         }else{
             stop("Reference point type not implemented")
         }
-        Frng <- range(Fvals[cutfun(Crit)])
-        inRng <- function(x,rng) x >= rng[1] & x <= rng[2]
-        indx <- inRng(Fvals,Frng)
-        .getCurveRP <- function(k, Fv, Cv, MT){
-            MT$positive <- TRUE
-            MT$monotone <- "n"
-            MT$formula <- as.formula(bquote(~ibc(F,.(k))))
-            if(rp$rpType %in% c(5,6)){
-                MT$formula <- as.formula(bquote(~iibc(F,.(k))))
-                MT$monotone <- "d"
-            }
-            CurveFit <- .refpointSCurveFit(Fv, Cv, MT)
-            if(MT$methodType == 1){
-                logLik <- length(Fv)*(log(MT$xVal*(1-MT$xVal)) - 1 - log(CurveFit$objective/length(Fv)))
-                npar <- length(CurveFit$par)
-            }else if(MT$methodType == 0){
-                logLik <- -CurveFit$objective
-                npar <- length(CurveFit$par)
-            }else{
-                logLik <- NA
-                npar <- NA
-            }
-            attr(CurveFit,"AIC") <- -2 * logLik  + 2 * npar
-            attr(CurveFit,"knots") <- k
-            CurveFit
-        }
-        if(MT$methodType == 3){
-            candidateCurves <- list()
-            canAIC <- numeric(0)
-            CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
-        }else{
-            if(is.na(knots)){            
-                candidateCurves <- lapply(3:20,function(k) .getCurveRP(k, F=Fvals[indx], C=Crit[indx], MT=MT))
-                canAIC <- sapply(candidateCurves, attr, which = "AIC")
-                names(canAIC) <- 3:20
-                CurveFit <- candidateCurves[[which.min(canAIC)]]
-            }else{
-                candidateCurves <- list()
-                canAIC <- numeric(0)
-                CurveFit <- .getCurveRP(knots, F=Fvals[indx], C=Crit[indx], MT=MT)
-            }
-        }
-        ##if(randomF){
-            Fseq <- seq(min(Frng),max(Frng),len=200)
-        ##}else{
-          ##  Fseq <- sort(exp(PRvals$logF))
-        ##}
-        pv <- predict(CurveFit,Fseq)
-        opt <- nlminb(startVals(Fseq,pv), fn)
+        opt <- nlminb(startVals(regressions$F), fn,control=list(iter.max=10000,eval.max=10000))
         res <- trans(opt$par, report = TRUE)
-        attr(res,"curve_fit_list") <- candidateCurves
-        attr(res,"curve_fit_aiclist") <- canAIC
-        attr(res,"curve_fit_opt") <- CurveFit
-        attr(res,"curve_fit") <- cbind(F=Fseq,Criteria=pv)
+        ## attr(res,"curve_fit_list") <- candidateCurves
+        ## attr(res,"curve_fit_aiclist") <- canAIC
+        ## attr(res,"curve_fit_opt") <- CurveFit
+        ## attr(res,"curve_fit") <- cbind(F=Fseq,Criteria=pv)
         res
     }
     getDerivedValues <- function(f){
-        Fvals <- exp(PRvals$logF)     
         if(!is.function(MT$derivedSummarizer)){        #Fit
-            doOneA <- function(what){
-                Crit <- exp(PRvals[[what]])
-                if(all(is.na(Crit)))
-                    return(NA)
-                cutfun <- function(x) x > max(x) * 0#rp$cutoff
-                Frng <- range(Fvals[cutfun(Crit)])
-                inRng <- function(x,rng) x > rng[1] & x < rng[2]
-                indx <- inRng(Fvals,Frng)
-                ## MT$positive <- TRUE
-                ## MT$monotone <- "n"
-                ## MT$formula <- ~ibc(F,knots)
-                ## if(what %in% c("logSPR","logSe","logLifeExpectancy")){
-                ##     MT$formula <- ~iibc(F,knots)
-                ##     MT$monotone <- "d"
-                ## }else if(what %in% c("logYearsLost")){
-                ##     MT$formula <- ~iibc(F,knots)
-                ##     MT$monotone <- "i"
-                ## }
-                ## CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
-                .getCurveD <- function(k, Fv, Cv, MT){
-                    MT$positive <- TRUE
-                    MT$monotone <- "n"
-                    MT$formula <- as.formula(bquote(~ibc(F,.(k))))
-                    if(what %in% c("logSPR","logSe","logLifeExpectancy")){
-                        MT$formula <- as.formula(bquote(~iibc(F,.(k))))
-                        MT$monotone <- "d"
-                    }else if(what %in% c("logYearsLost")){
-                        MT$formula <- as.formula(bquote(~iibc(F,.(k))))
-                        MT$monotone <- "i"
-                    }
-                    CurveFit <- .refpointSCurveFit(Fv, Cv, MT)
-                    if(MT$methodType == 1){
-                        logLik <- length(Fv)*(log(MT$xVal*(1-MT$xVal)) - 1 - log(CurveFit$objective/length(Fv)))
-                        npar <- length(CurveFit$par)
-                    }else if(MT$methodType == 0){
-                        logLik <- -CurveFit$objective
-                        npar <- length(CurveFit$par)
-                    }else{
-                        logLik <- NA
-                        npar <- NA
-                    }
-                    attr(CurveFit,"AIC") <- -2 * logLik  + 2 * npar
-                    attr(CurveFit,"knots") <- k
-                    CurveFit
-                }
-                if(MT$methodType == 3){
-                    CurveFit <- .refpointSCurveFit(Fvals[indx], Crit[indx], MT)
-                }else{
-                    if(is.na(knots)){            
-                        candidateCurves <- lapply(3:20,function(k) .getCurveD(k, Fv=Fvals[indx], Cv=Crit[indx], MT=MT))
-                        canAIC <- sapply(candidateCurves, attr, which = "AIC")
-                        CurveFit <- candidateCurves[[which.min(canAIC)]]
-                    }else{
-                        CurveFit <- .getCurveD(knots, Fv=Fvals[indx], Cv=Crit[indx], MT=MT)
-                    }
-                }
-                predict(CurveFit, f)
-            }
-            return(sapply(c("logYPR","logSPR","logSe","logRe","logYe","logLifeExpectancy","logYearsLost"), doOneA))
+            v <- sapply(PRcurves[c("YPR","SPR","Se","Re","Ye","LifeExpectancy","YearsLost")], function(x) predict(x, f))
+            names(v) <- paste0("log",names(v))
+            return(v)
         }else if(is.function(MT$derivedSummarizer)){  #Simulate
             return(sapply(lapply(as.list(.perRecruitSR(rep(log(f),nosim),
                                                          fit=fit,
@@ -643,10 +888,12 @@ predict.rpscurvefit <- function(x,newF,...){
          ## GraphVals = GraphVals,
          Fvals = Fvals,
          PRvals = PRvals,
-         Curves = Curves,
-         CurveFits = CurveFits,
-         CurveFitsList = CurveFitsList,
-         CurveFitsAIC = CurveFitsAIC)
+         Curves = PRcurves,
+         regressions = regressions
+         ## CurveFits = CurveFits,
+         ## CurveFitsList = CurveFitsList,
+         ## CurveFitsAIC = CurveFitsAIC
+         )
 }
 
 ## .refpointSGrid <- function(rp, pl, MT, fit){
@@ -770,7 +1017,13 @@ stochasticReferencepoints.sam <- function(fit,
                                           newton.control = list(),
                                           seed = .timeToSeed(),
                                           knots = NA,
-                                          nosim_ci = 200,
+                                          penalizeSpline = TRUE,
+                                          defaultSpline = "ibc",
+                                          logFspline = FALSE,
+                                          splineGamma = ifelse(nosim < 100,0.2,0.3),
+                                          splineRho = ifelse(nosim < 100,1.3,2),
+                                          useRTMB = TRUE,
+                                          nosim_ci = 0,
                                           derivedSummarizer = NA,
                                           nTail = 1,
                                           constraint = "F=%f",
@@ -959,7 +1212,7 @@ stochasticReferencepoints.sam <- function(fit,
         on.exit(set.seed(oldSeed))
         set.seed(seed)
 
-        MT <- .refpointSMethodParser(method, formula = NA, derivedSummarizer=derivedSummarizer, positive = TRUE)
+        MT <- .refpointSMethodParser(method, formula = NA, derivedSummarizer=derivedSummarizer, positive = TRUE, penalize = penalizeSpline, useLogF = logFspline, RTMB = useRTMB, gamma = splineGamma, rho = splineRho)
 
         catchType <- pmatch(catchType,c("catch","landing","discard"))-1
         if(is.na(catchType))
@@ -995,7 +1248,7 @@ stochasticReferencepoints.sam <- function(fit,
         pb <- .SAMpb(min = 0, max = nosim * (nosim_ci + 1 + is.function(derivedSummarizer)*length(rpArgs)))
         incpb <- function(label="") .SAM_setPB(pb, pb$getVal()+1,label)
 
-        v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint,deterministicF=deterministicF, processNoiseF=processNoiseF, knots=knots, tailSummarizer = tailSummarizer, gridSummarizer = gridSummarizer, ncores=ncores,mc.type=mc.type, ...)
+        v0 <- .refpointSFitCriteria(rpArgs, pl=fit$pl, MT=MT, fit=fit, nosim=nosim, Frange=Frange, aveYears=aveYears, selYears=selYears, nYears=nYears, catchType=catchType, nTail=nTail,incpb=incpb,doSim=doSim,label="Estimation:",constraint=constraint,deterministicF=deterministicF, processNoiseF=processNoiseF, knots=knots, tailSummarizer = tailSummarizer, gridSummarizer = gridSummarizer, ncores=ncores,mc.type=mc.type, defaultSpline=defaultSpline, ...)
 
         ## Sample to get CIs
         if(nosim_ci > 0){
@@ -1076,10 +1329,10 @@ stochasticReferencepoints.sam <- function(fit,
                                   Recruitment = exp(v0$PRvals$logRe),
                                   YearsLost = exp(v0$PRvals$logYearsLost),
                                   LifeExpectancy = exp(v0$PRvals$logLifeExpectancy)),
-                    regression = v0$Curves,
-                    curve_opt = v0$CurveFits,
-                    curve_list = v0$CurveFitsList,
-                    curve_aics = v0$CurveFitsAIC,
+                    regression = v0$regressions,
+                    curve_opt = v0$Curves ,
+                    ## curve_list = v0$CurveFitsList,
+                    ## curve_aics = v0$CurveFitsAIC,
                     ## opt = NA,
                     ## ssdr = sdr,
                     fbarlabel = substitute(bar(F)[X - Y], list(X = fit$conf$fbarRange[1], Y = fit$conf$fbarRange[2])),

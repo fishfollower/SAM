@@ -106,6 +106,7 @@ namespace RecruitmentConvenience {
 			 ConstantMean = 3,
 			 RBH = 4,
 			 RBHx = 5,
+			 BevHolt1 = 6,
 			 LogisticHockeyStick = 60,
 			 HockeyStick = 61,
 			 LogAR1 = 62,
@@ -748,6 +749,14 @@ namespace RecruitmentConvenience {
   };
 
 
+#define TO_REC_1PAR(NAME)						\
+  template<class Type>							\
+  struct Rec_##NAME : RecruitmentNumeric<Type>  {			\
+    Rec_##NAME(Type p1) :						\
+    RecruitmentNumeric<Type>(std::make_shared<RF_##NAME##_t>(p1)) {};	\
+  };
+
+  
 #define TO_REC_2PAR(NAME)						\
   template<class Type>							\
   struct Rec_##NAME : RecruitmentNumeric<Type>  {			\
@@ -872,6 +881,37 @@ namespace RecruitmentConvenience {
   
   TO_REC_7PAR(RBHx);
 
+
+
+ // Recruitment function 6
+  // Beverton-Holt with one parameter
+  struct RF_BevHolt1_t : RecruitmentFunctor {
+    // Needs more work! Could take the slope as constRecBreak and estimate beta?
+    // Fixed steepness
+    // Fixed SPR(0)
+    ad logR0;			// exp(p)-1
+    ad logH;
+    ad logSPR0;
+    
+
+    RF_BevHolt1_t(ad lr, ad lh, ad ls) :
+      logR0(lr), logH(lh), logSPR0(ls) {}
+    
+    ad operator()(const ad& logssb){
+      ad logS0 = logR0 + logSPR0;
+      ad v1 = log(4.0) + logH + logR0 + logssb;
+      ad v2 = logS0 + logspace_sub_SAM(ad(0.0),logH);
+      ad v3 = logssb + logspace_sub_SAM(log(5) + logH, ad(0.0));
+      return v1 - logspace_add_SAM(v2,v3);
+    }
+
+    USING_RECFUN;
+  
+  };
+  
+  TO_REC_3PAR(BevHolt1);
+
+  
   
   
 
@@ -1719,7 +1759,12 @@ Recruitment<Type> makeRecruitmentFunction( dataSet<Type>& dat,  confSet& conf,  
       if(par.rec_pars.size() != 7)
 	Rf_error("The combined power-Ricker-Beverton-Holt recruitment must have seven parameters.");
       r = Recruitment<Type>("Combined power-Ricker-Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_RBHx<Type> >(par.rec_pars(0), par.rec_pars(1), par.rec_pars(2), par.rec_pars(3), par.rec_pars(4), par.rec_pars(5), par.rec_pars(6)));
-      
+
+    }else if(rm == RecruitmentConvenience::RecruitmentModel::BevHolt1){
+      if(par.rec_pars.size() != 1 || conf.constRecBreaks.size() < 2)
+	Rf_error("The one-parameter Beverton Holt recruitment must have one parameter and two constRecBreaks.");
+      r = Recruitment<Type>("one-parameter Beverton-Holt",std::make_shared<RecruitmentConvenience::Rec_BevHolt1<Type> >(par.rec_pars(0), conf.constRecBreaks(0),conf.constRecBreaks(1)));
+
     }else if(rm == RecruitmentConvenience::RecruitmentModel::LogisticHockeyStick){
       if(par.rec_pars.size() != 3)
 	Rf_error("The logistic hockey stick recruitment should have three parameters.");

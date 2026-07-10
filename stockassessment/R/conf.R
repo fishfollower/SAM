@@ -182,6 +182,8 @@ defcon<-function(dat, level=1){
     ret$fecundityScaling <- 1
     ret$recVarScaleDegree <- 0
     ret$keyCompRisk<-matrix(-1, nrow=length(dat$CompRisk), ncol=nAges)
+    ret$keySpawningQuality <- rep(-1,nAges)
+    ret$keyWsigma <- rep(-1,nAges)
     return(ret) 
 }
 

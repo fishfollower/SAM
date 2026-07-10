@@ -87,7 +87,9 @@ namespace f_fun {
 
       SIMULATE_F(of){
 	if(conf.simFlag(0)==0){
+	  GetRNGstate();
 	  vector<Type> uu = nldens.simulate();
+	  PutRNGstate();
 	  Type sumUZero = 0;
 	  for(int j=0; j<stateDimF-1; ++j){
 	    logU(y,j)=rhoU*logU(y-1,j) +uu(j)+ par.sepFalpha(j);
@@ -102,7 +104,9 @@ namespace f_fun {
       nll += -dnorm(logV(y),rhoV* logV(y-1) - par.sepFalpha(par.sepFalpha.size()-1) ,sdV(0),true);
       SIMULATE_F(of){
 	if(conf.simFlag(0)==0){
-	  logV(y)=rhoV*logV(y-1)+ rnorm( Type(0) , sdV(0))+ par.sepFalpha(par.sepFalpha.size()-1); 
+	  GetRNGstate();	 
+	  logV(y)=rhoV*logV(y-1)+ rnorm( Type(0) , sdV(0))+ par.sepFalpha(par.sepFalpha.size()-1);
+	  PutRNGstate();
 	  for(int j=0; j<stateDimF; ++j){
 	    logF(j,y) =  logF(j,y)+ logV(y) ;
 	  }

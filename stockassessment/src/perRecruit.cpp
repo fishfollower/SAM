@@ -11,7 +11,8 @@
 
 
 // NOTE: This function does not simulate biopars or logitFseason
-PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& conf, paraSet<double>& par, vector<double>& logSel, vector<int> aveYears, int nYears, int CT, vector<double> logNinit){
+// NOTE: Need to use logNFY in the beginning to get correct ERB!
+PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& conf, paraSet<double>& par, vector<double>& logSel, vector<int> aveYears, int nYears, int CT, vector<double> logNinit, vector<double> logNFY){
   if(nYears < 0)
     Rf_error("nYears must be non-negative.");
   if(aveYears.size() == 0)
@@ -72,7 +73,7 @@ PERREC_t<double> perRecruit_Sim(double logFbar, dataSet<double>& dat, confSet& c
   
   // Make logN array - start with one recruit
   int nAge = conf.maxAge - conf.minAge + 1;
-  array<double> logN(nAge, nYears);
+  array<double> logN(nAge, nYears+1);
   logN.setConstant(R_NegInf);
   logN(0,0) = 0.0;
   
@@ -367,10 +368,11 @@ extern "C" {
   }
 
 
-  SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT){
+  SEXP perRecruitR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP logNFY, SEXP nYears, SEXP CT){
     dataSet<double> d0(tmbdat);
     confSet c0(tmbdat);
     paraSet<double> p0(pl);
+    vector<double> lnfy0 = asVector<double>(logNFY);
     vector<double> s0 = asVector<double>(sel);
     vector<double> ls0(s0.size());
     for(int i = 0; i < ls0.size(); ++i)
@@ -380,7 +382,7 @@ extern "C" {
     int nY0 = Rf_asInteger(nYears);
     // int RC0 = Rf_asInteger(RC);
     int CT0 = Rf_asInteger(CT);
-    PERREC_t<double> y = perRecruit_D<double>(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0);
+    PERREC_t<double> y = perRecruit_D<double>(logFbar0, d0, c0, p0, ls0, a0, lnfy0, nY0, CT0);
     // const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "dSR0", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     // SEXP res;
     // PROTECT(res = Rf_mkNamed(VECSXP, resNms));
@@ -398,10 +400,11 @@ extern "C" {
 
     // UNPROTECT(1);    
     // return res;
+ 
     return asSEXP(y);
   }
 
-  SEXP perRecruitSR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit){
+  SEXP perRecruitSR(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP logNFY){
     dataSet<double> d0(tmbdat);
     confSet c0(tmbdat);
     paraSet<double> p0(pl);
@@ -415,8 +418,9 @@ extern "C" {
     // int RC0 = Rf_asInteger(RC);
     int CT0 = Rf_asInteger(CT);
     vector<double> logNinit0 = asVector<double>(logNinit);
+    vector<double> logNFY0 = asVector<double>(logNFY);
     GetRNGstate();
-    PERREC_t<double> y = perRecruit_Sim(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0, logNinit0);
+    PERREC_t<double> y = perRecruit_Sim(logFbar0, d0, c0, p0, ls0, a0, nY0, CT0, logNinit0, logNFY0);
     PutRNGstate();
     // const char *resNms[] = {"logF", "logYPR", "logSPR", "logSe", "logRe", "logYe", "dSR0", "logLifeExpectancy", "logYearsLost","logDiscYe","logDiscYPR", ""}; // Must end with ""
     // SEXP res;
@@ -441,7 +445,7 @@ extern "C" {
 
 
   
-  SEXP perRecruitSR_Calc(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP DT){
+  SEXP perRecruitSR_Calc(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP DT, SEXP logNFY){
     dataSet<double> d0(tmbdat);
     confSet c0(tmbdat);
     paraSet<double> p0(pl);
@@ -456,7 +460,8 @@ extern "C" {
     int CT0 = Rf_asInteger(CT);
     int DT0 = Rf_asInteger(DT);
     vector<double> logNinit0 = asVector<double>(logNinit);
-    STOCHASTIC_PERREC_t<double> y = perRecruit_S(logFbar0, d0, c0, p0, ls0, a0, logNinit0, nY0, CT0, DT0);   
+    vector<double> logNFY0 = asVector<double>(logNFY);
+    STOCHASTIC_PERREC_t<double> y = perRecruit_S(logFbar0, d0, c0, p0, ls0, a0, logNinit0,logNFY0, nY0, CT0, DT0);   
     return asSEXP(y);
 
   }
@@ -478,7 +483,7 @@ extern "C" {
   
 
   
-  SEXP MakePtr_perRecruitSR_Calc(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP DT){
+  SEXP MakePtr_perRecruitSR_Calc(SEXP logFbar, SEXP tmbdat, SEXP pl, SEXP sel, SEXP aveYears, SEXP nYears, SEXP CT, SEXP logNinit, SEXP DT, SEXP logNFY){
     dataSet<double> d0(tmbdat);
     confSet c0(tmbdat);
     paraSet<double> p0(pl);
@@ -493,8 +498,9 @@ extern "C" {
     int CT0 = Rf_asInteger(CT);
     int DT0 = Rf_asInteger(DT);
     vector<double> logNinit0 = asVector<double>(logNinit);
+     vector<double> logNFY0 = asVector<double>(logNFY);
     //STOCHASTIC_PERREC_t<double> y = perRecruit_S(logFbar0, d0, c0, p0, ls0, a0, logNinit0, nY0, CT0, DT0);
-    EquilibriumRecycler_Stochastic_Worker<double>* c_ptr = new EquilibriumRecycler_Stochastic_Worker<double>(logFbar0,d0,c0,p0,ls0,a0,logNinit0, nY0, CT0, DT0);
+     EquilibriumRecycler_Stochastic_Worker<double>* c_ptr = new EquilibriumRecycler_Stochastic_Worker<double>(logFbar0,d0,c0,p0,ls0,a0,logNinit0, nY0, CT0, DT0, logNFY0);
     SEXP r_ptr = R_MakeExternalPtr(c_ptr, Rf_install("SAM_Stochastic_Equilibrium_Worker"), R_NilValue);
     PROTECT(r_ptr);
     R_RegisterCFinalizerEx(r_ptr, finalize_ESW_Ptr, TRUE);

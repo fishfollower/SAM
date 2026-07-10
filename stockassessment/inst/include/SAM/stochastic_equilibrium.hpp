@@ -18,21 +18,23 @@ struct stochasticCalculator {
   int CT;
   MortalitySet<Type> mort;
   // Type logFbar;
-  Recruitment<Type> recruit;  
+  vector<Type> logNFY;
+  Recruitment<Type> recruit;
   // vector<Type> logSel;
 
-  stochasticCalculator() : dat(), conf(), par(),logFSel(), logFseason(), CT(), mort(), recruit() {};
+  stochasticCalculator() : dat(), conf(), par(),logFSel(), logFseason(), CT(), mort(), logNFY(), recruit() {};
   
   stochasticCalculator( dataSet<Type> dat,
 			confSet conf,
 			paraSet<Type> par,
 			array<Type> logFSel_,
 			array<Type> logFseason_,
-			int CT_
+			int CT_,
+			vector<Type> logNFY_
 			// Type logFbar,
 			// vector<Type>& logSel
 			) :
-    dat(dat), conf(conf), par(par), logFSel(logFSel_, logFSel_.dim), logFseason(logFseason_,logFseason_.dim), CT(CT_), mort(dat,conf,par,logFSel,logFseason) {
+    dat(dat), conf(conf), par(par), logFSel(logFSel_, logFSel_.dim), logFseason(logFseason_,logFseason_.dim), CT(CT_), mort(dat,conf,par,logFSel,logFseason), logNFY(logNFY_) {
     recruit = makeRecruitmentFunction(dat,conf,par);
   }
   
@@ -92,10 +94,10 @@ struct stochasticCalculator {
 	Type lssbNew = logN(a) + mort.ssbLogSurvival_before(ax,y) + log(dat.propMat(y,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(y,ax));
 	logThisSSB = logspace_add_SAM(logThisSSB, lssbNew);
 	// Y=0 ERB
-	Type lerb0New = logN(a) + mort.ssbLogSurvival_before(ax,0) + log(dat.propMat(0,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,ax));
+	Type lerb0New = logNFY(a) + mort.ssbLogSurvival_before(ax,0) + log(dat.propMat(0,ax)) + exp(par.logFecundityScaling) * log(dat.stockMeanWeight(0,ax));
 	lerb0 = logspace_add_SAM(lerb0, lerb0New);
 	// Y=0 SSB
-	Type lssb0New = logN(a) + mort.ssbLogSurvival_before(ax,0) + log(dat.propMat(0,ax)) + log(dat.stockMeanWeight(0,ax));
+	Type lssb0New = logNFY(a) + mort.ssbLogSurvival_before(ax,0) + log(dat.propMat(0,ax)) + log(dat.stockMeanWeight(0,ax));
 	lssb0 = logspace_add_SAM(lssb0, lssb0New);
       }
     }
@@ -612,6 +614,7 @@ struct EquilibriumRecycler_Stochastic_Worker {
   int nYears;
   int CT;
   int DT; //0: AD, 1: Numeric, 2: simplified numeric
+  vector<Type> logFY;
   
   dataSet<Type> newDat;
   array<Type> logFSel;
@@ -659,6 +662,7 @@ struct EquilibriumRecycler_Stochastic_Worker {
 					    nYears(),
 					    CT(),
 					    DT(),
+					    logFY(),
 					    newDat(),
 					    logitFseason(),
 					    calc(),
@@ -677,7 +681,8 @@ struct EquilibriumRecycler_Stochastic_Worker {
 					vector<T> logN0_,
 					int nYears_,
 					int CT_,
-					int DT_) :
+					int DT_,
+					vector<Type> logFY_) :
     logFbar0(logFbar0_),
     conf(conf_),
     par(par_),
@@ -686,6 +691,7 @@ struct EquilibriumRecycler_Stochastic_Worker {
     nYears(nYears_),
     CT(CT_),
     DT(DT_),
+    logFY(logFY_),
     newDat(dat),
     logitFseason(),
     calc(),
@@ -769,7 +775,7 @@ struct EquilibriumRecycler_Stochastic_Worker {
 
     //MortalitySet<Type> mort(newDat, conf, par, logF, logitFseason);
 
-    calc = stochasticCalculator<Type>(newDat, conf, par, logFSel, logitFseason, CT);
+    calc = stochasticCalculator<Type>(newDat, conf, par, logFSel, logitFseason, CT, logFY);
 
     // Initialize
     // Going from age 0 to age conf.maxAge with Fbar as the first element
@@ -1400,7 +1406,8 @@ struct EquilibriumRecycler_Stochastic_Median : EquilibriumRecycler<Type> {
 					vector<Type> logN0,
 					int nYears,
 					int CT,
-					int DT);
+					int DT,
+					vector<Type> logFY);
   PERREC_t<Type> operator()(Type logFbar);
 };
        )
@@ -1421,7 +1428,8 @@ SOURCE(
 											  vector<Type> logN0,
 											  int nYears,
 											  int CT,
-											  int DT) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT) {};
+											  int DT,
+											  vector<Type> logFY) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT, logFY) {};
        )
 
 
@@ -1475,7 +1483,8 @@ struct EquilibriumRecycler_Stochastic_Mean : EquilibriumRecycler<Type> {
 					vector<Type> logN0,
 					int nYears,
 				      int CT,
-				      int DT);
+				      int DT,
+					vector<Type> logFY);
   PERREC_t<Type> operator()(Type logFbar);
 };
        )
@@ -1496,7 +1505,8 @@ SOURCE(
 											  vector<Type> logN0,
 											  int nYears,
 										      int CT,
-										      int DT) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT) {};
+										      int DT,
+										      vector<Type> logFY) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT,logFY) {};
        )
 
 
@@ -1550,7 +1560,8 @@ struct EquilibriumRecycler_Stochastic_Mode : EquilibriumRecycler<Type> {
 					vector<Type> logN0,
 					int nYears,
 				      int CT,
-				      int DT);
+				      int DT,
+					vector<Type> logFY);
   PERREC_t<Type> operator()(Type logFbar);
 };
        )
@@ -1571,7 +1582,8 @@ SOURCE(
 											  vector<Type> logN0,
 											  int nYears,
 										      int CT,
-										      int DT) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT) {};
+										      int DT,
+										      vector<Type> logFY) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT,logFY) {};
        )
 
 
@@ -1628,6 +1640,7 @@ struct EquilibriumRecycler_Stochastic_Quantile : EquilibriumRecycler<Type> {
 					int nYears,
 					  int CT,
 					  int DT,
+					  vector<Type> logFY,
 					  Type q);
   PERREC_t<Type> operator()(Type logFbar);
 };
@@ -1650,7 +1663,8 @@ SOURCE(
 											  int nYears,
 											      int CT,
 											      int DT,
-											      Type q) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT), q(q) {};
+											      vector<Type> logFY,
+											      Type q) : EquilibriumRecycler<Type>(), wrk(logFbar0, dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT,logFY), q(q) {};
        )
 
 
@@ -1690,14 +1704,14 @@ SAM_SPECIALIZATION(struct EquilibriumRecycler_Stochastic_Quantile<TMBad::ad_aug>
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Type>
-STOCHASTIC_PERREC_t<Type> perRecruit_S(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int>& aveYears, vector<Type>& logN0, int nYears DEFARG(= 300), int CT DEFARG(= 0), int DT DEFARG(= 0))SOURCE({
+STOCHASTIC_PERREC_t<Type> perRecruit_S(const Type& logFbar, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, vector<Type>& logSel, vector<int>& aveYears, vector<Type>& logN0, vector<Type>& logNY, int nYears DEFARG(= 300), int CT DEFARG(= 0), int DT DEFARG(= 0))SOURCE({
 
-    EquilibriumRecycler_Stochastic_Worker<Type> wrk(logFbar,dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT);
+    EquilibriumRecycler_Stochastic_Worker<Type> wrk(logFbar,dat,conf,par,logSel,aveYears,logN0,nYears,CT,DT,logNY);
     return wrk(logFbar);
 
   }
   )
 
 
-  SAM_SPECIALIZATION(STOCHASTIC_PERREC_t<double> perRecruit_S(const double&, dataSet<double>&, confSet&, paraSet<double>&, vector<double>&, vector<int>&, vector<double>&, int, int, int));
-SAM_SPECIALIZATION(STOCHASTIC_PERREC_t<TMBad::ad_aug> perRecruit_S(const TMBad::ad_aug&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<int>&, vector<TMBad::ad_aug>&, int, int, int));
+  SAM_SPECIALIZATION(STOCHASTIC_PERREC_t<double> perRecruit_S(const double&, dataSet<double>&, confSet&, paraSet<double>&, vector<double>&, vector<int>&, vector<double>&,vector<double>&, int, int, int));
+SAM_SPECIALIZATION(STOCHASTIC_PERREC_t<TMBad::ad_aug> perRecruit_S(const TMBad::ad_aug&, dataSet<TMBad::ad_aug>&, confSet&, paraSet<TMBad::ad_aug>&, vector<TMBad::ad_aug>&, vector<int>&, vector<TMBad::ad_aug>&,vector<TMBad::ad_aug>&, int, int, int));

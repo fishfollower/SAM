@@ -29,6 +29,7 @@ struct referencepointSet {
   vector<Type> logF0;		// Starting value for optimization
   vector<Type> logSel;
   vector<Type> logN0;
+  vector<Type> logNFY;
   StochasticType stochasticType;
   int DT;
   Type q;
@@ -44,12 +45,13 @@ struct referencepointSet {
     logF0(),
     logSel(),
     logN0(),
+    logNFY(),
     stochasticType(),
     DT(),
     q()
   {}    
 
-  referencepointSet(int nYears_, int CT, int i, array<Type> logF, confSet conf);
+  referencepointSet(int nYears_, int CT, int i, array<Type> logF, confSet conf, vector<Type> logNFY);
   
   referencepointSet(SEXP x);
 
@@ -65,6 +67,7 @@ struct referencepointSet {
     logF0(other.logF0),
     logSel(other.logSel),
     logN0(other.logN0),
+    logNFY(other.logNFY),
     stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>((int)other.stochasticType)),
     DT(other.DT),
     q(other.q)
@@ -84,8 +87,9 @@ SOURCE(
 						    int CT,
 						    int i,
 						    array<Type> logF,
-						    confSet conf) :
-	 nYears(nYears_), rpType(-99), aveYears(1), selYears(1), logCustomSel(0), xVal(0), catchType(static_cast<typename referencepointSet<Type>::CatchType>(CT)), logF0(0), logSel(0), logN0(0), stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>(0)), DT(0), q(R_NaReal) {
+						    confSet conf,
+						    vector<Type> logNFY_) :
+	 nYears(nYears_), rpType(-99), aveYears(1), selYears(1), logCustomSel(0), xVal(0), catchType(static_cast<typename referencepointSet<Type>::CatchType>(CT)), logF0(0), logSel(0), logN0(0),logNFY(logNFY_), stochasticType(static_cast<typename referencepointSet<Type>::StochasticType>(0)), DT(0), q(R_NaReal) {
 	   aveYears(0) = i;
 	   selYears(0) = i;
 	   setLogSelectivity(logF,conf);
@@ -144,6 +148,11 @@ SOURCE(
 	     logN0 = asVector<Type>(getListElement(x,"logN0"));
 	   }else{
 	     logN0 = vector<Type>(0);
+	   }
+	    if(!Rf_isNull(getListElement(x,"logNFY"))){
+	     logNFY = asVector<Type>(getListElement(x,"logNFY"));
+	   }else{
+	     logNFY = vector<Type>(0);
 	   }
 	   
 	   if(!Rf_isNull(getListElement(x,"stochasticType"))){

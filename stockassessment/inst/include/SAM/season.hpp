@@ -27,14 +27,17 @@ Type nllSeason(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSe
 	    for(int i = 1; i < timeSteps; ++i){
 	      Type pred = mu + b * (logitFseason(s,i-1,p) - mu);
 	      nll -= dnorm(logitFseason(s, i, p), pred, sd, true);
-	      if(!(forecast.nYears > 0 && forecast.forecastYear(i) > 0)){
-		// if(forecast.nYears == 0){
-		SIMULATE_F(of){
-		  if(conf.simFlag(0)==0){
-		    // Do pre-forecast simulation here
-		    logitFseason(s,i,p) = rnorm(pred, exp(par.seasonLogSd(p)));
-		  }
-		}	  
+	      // Simulate everything here!
+	      // if(!(forecast.nYears > 0 && forecast.forecastYear(i) > 0)){
+	      // if(forecast.nYears == 0){
+	      SIMULATE_F(of){
+		if((forecast.nYears == 0 && conf.simFlag(0)==0) || (forecast.nYears > 0 && forecast.forecastYear(i) > 0 && forecast.simFlag(0) == 0)){
+		  // Do pre-forecast simulation here
+		  GetRNGstate();
+		  logitFseason(s,i,p) = rnorm(pred, exp(par.seasonLogSd(p)));
+		  PutRNGstate();
+		}
+	      }	  
 	      // }else if(forecast.nYears > 0 && forecast.forecastYear(i) > 0){
 	      //   SIMULATE_F(of){
 	      //     if(conf.simFlag(0)==0){
@@ -42,7 +45,7 @@ Type nllSeason(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSe
 	      // 	logitFseason(s,i,p) = rnorm(1, pred, exp(par.seasonLogSd(s,p)))(0);
 	      //     }
 	      //   }
-	      }
+	      // }
 	    }
 	  }
 	}

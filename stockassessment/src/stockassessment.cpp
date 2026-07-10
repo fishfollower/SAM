@@ -163,6 +163,8 @@ Type objective_function<Type>::operator() ()
   DATA_INTEGER(seasonFixedEffect); confset.seasonFixedEffect = seasonFixedEffect;
   DATA_INTEGER(keyScaleMModel); confset.keyScaleMModel = keyScaleMModel;
   DATA_IMATRIX(keyCompRisk); confset.keyCompRisk = keyCompRisk;
+  DATA_IVECTOR(keySpawningQuality); confset.keySpawningQuality = keySpawningQuality;
+  DATA_IVECTOR(keyWsigma); confset.keyWsigma = keyWsigma;
   DATA_INTEGER(reportingLevel);
 
   paraSet<Type> paraset;
@@ -197,6 +199,8 @@ Type objective_function<Type>::operator() ()
   PARAMETER_VECTOR(predVarObs); paraset.predVarObs=predVarObs;
   PARAMETER_VECTOR(recVarScalePar); paraset.recVarScalePar=recVarScalePar;
   PARAMETER(logFecundityScaling); paraset.logFecundityScaling=logFecundityScaling;
+  PARAMETER_VECTOR(logSpawningQuality); paraset.logSpawningQuality=logSpawningQuality;
+  PARAMETER_VECTOR(Wsigma); paraset.Wsigma=Wsigma;
   
   PARAMETER_VECTOR(logPhiSW); paraset.logPhiSW=logPhiSW;
   PARAMETER_VECTOR(logSdProcLogSW); paraset.logSdProcLogSW=logSdProcLogSW;
@@ -267,6 +271,7 @@ Type objective_function<Type>::operator() ()
   for(int i=0;i<nobs;i++){
     if(isNA(dataset.logobs(i))){
       dataset.logobs(i)=missing(idxmis++);
+      // Add prior if forecasting ??
     }    
   }
 

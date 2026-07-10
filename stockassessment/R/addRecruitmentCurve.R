@@ -61,6 +61,7 @@ addRecruitmentCurve.sam <- function(fit,
                     pilty = 2,
                     year = NA_real_,
                     lastR = NA_real_,
+                    rps = FALSE,
                     ...){
        X <- summary(fit)
        R <- X[, 1]
@@ -98,12 +99,20 @@ addRecruitmentCurve.sam <- function(fit,
                if(length(fit$pl$recVarScalePar) > 1)
                    lv <- lv + fit$pl$recVarScalePar[2] * val
                pisig <- pisig * exp(lv)
+           }           
+           if(rps){
+               res <- exp(val - logssb)
+               attr(res,"ci_low") <- exp(val - 2 * valsd - logssb)
+               attr(res,"ci_high") <- exp(val + 2 * valsd - logssb)
+               attr(res,"pi_low") <- exp(val - 2 * pisig - logssb)
+               attr(res,"pi_high") <- exp(val + 2 * pisig - logssb)
+           }else{
+               res <- exp(val)
+               attr(res,"ci_low") <- exp(val - 2 * valsd)
+               attr(res,"ci_high") <- exp(val + 2 * valsd)
+               attr(res,"pi_low") <- exp(val - 2 * pisig)
+               attr(res,"pi_high") <- exp(val + 2 * pisig)
            }
-           res <- exp(val)
-           attr(res,"ci_low") <- exp(val - 2 * valsd)
-           attr(res,"ci_high") <- exp(val + 2 * valsd)
-           attr(res,"pi_low") <- exp(val - 2 * pisig)
-           attr(res,"pi_high") <- exp(val + 2 * pisig)
            return(res)
        }
        

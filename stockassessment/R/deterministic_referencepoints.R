@@ -57,7 +57,8 @@ recruitmentProperties <- function(fit){
                         tmbdat = fit$obj$env$data,
                         pl = pl,
                         sel = sel,
-                        aveYears = aveYears,
+                        aveYears = as.numeric(aveYears),
+                        logNFY = log(ntable(fit)[1,]),
                         nYears = ifelse(nYears==0,150,nYears),
                         CT = ct
                         ))
@@ -737,7 +738,7 @@ recruitmentProperties <- function(fit){
             return(c(paste(x,c("(Lower)","(Upper)"))))
         return(x)
     }))
-    outputOrder <- match(rpRename, rwnms)
+    outputOrder <- match(rpRename, rwnms) - length(Fsequence)
     if(is(ssdr,"refR")){
         toCI <- function(pattern){
             ii <- grepl(pattern,names(ssdr$pointEst))
@@ -941,7 +942,7 @@ deterministicReferencepoints.sam <- function(fit,
 
     ## Parse input reference points
     rpArgs <- Reduce(.refpointMerger,
-                     lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=numeric(0),stochasticType=0,q=NA_real_),
+                     lapply(referencepoints, .refpointParser, nYears = nYears, aveYears = aveYears, selYears = selYears, logCustomSel = numeric(0), catchType = catchType - 1,logN0=numeric(0),stochasticType=0,q=NA_real_, logNFY=log(ntable(fit)[1,])),
                      list())
 
     ## Add starting values    
@@ -956,6 +957,7 @@ deterministicReferencepoints.sam <- function(fit,
                 catchType = catchType - 1,
                 logF0 = log(Fsequence),
                 logN0=numeric(0),
+                logNFY=log(ntable(fit)[1,]),
                 stochasticType=0,
                 q=NA_real_)
     if(addSequence)
@@ -993,7 +995,7 @@ deterministicReferencepoints.sam <- function(fit,
     }
     ## Make tables        
     res <- .refpointOutput(ssdr,rpArgs, fit, biasCorrect, aveYearsIn, selYearsIn,
-                           c(), #Fsequence,
+                           if(addSequence){Fsequence}else{c()}, #Fsequence,
                            referencepoints)
     attr(res,"equilibriumMethod") <- equilibriumMethod
     attr(res,"aveYears") <-  aveYearsIn

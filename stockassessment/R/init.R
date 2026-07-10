@@ -38,6 +38,8 @@ defpar <- function(dat,conf,spinoutyear=10){
       ret$rec_pars <- c(0,-10,-10, log(100))
   }else if(conf$stockRecruitmentModelCode==5){ # combined power-Ricker-Beverton-Holt
       ret$rec_pars <- c(0,-10,-10, log(100),0,0,0)
+  }else if(conf$stockRecruitmentModelCode==6){ # one-parameter Beverton-Holt
+      ret$rec_pars <- c(0)
   }else if(conf$stockRecruitmentModelCode==60){ # logistic Hockey stick
       ret$rec_pars <- c(log(1),C + log(F+M) - log(F) -log(1 - exp(-F -M)),0)
       ## if(!is.na(conf$hockeyStickCurve))
@@ -144,7 +146,9 @@ defpar <- function(dat,conf,spinoutyear=10){
                   }else{numeric(0)}
 
   ret$recVarScalePar <- numeric(conf$recVarScaleDegree)
-  ret$logFecundityScaling <- ifelse(is.na(conf$fecundityScaling),0,log(conf$fecundityScaling))
+  ret$logFecundityScaling <- ifelse(is.na(conf$fecundityScaling),0,log(conf$fecundityScaling)) + ifelse(any(conf$keyWsigma > -1),log(0.18),0)
+  ret$logSpawningQuality <- numeric(ifelse(length(conf$keySpawningQuality)==0,0,max(conf$keySpawningQuality)+1))
+  ret$Wsigma <- numeric(ifelse(length(conf$keyWsigma)==0,0,max(conf$keyWsigma)+1)) - 5 ## Needs to be one parameter less than needed to scale by average
 
   ret$logPhiSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(conf$stockWeightModel+1)}
   ret$logSdProcLogSW=if(conf$stockWeightModel==0){numeric(0)}else{numeric(1)}

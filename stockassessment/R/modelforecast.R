@@ -2,10 +2,17 @@
 makePosDef <- function(x, tol = sqrt(.Machine$double.eps)){
     if(prod(dim(x)) == 0)
         return(x)
-    s <- svd(x)
-    if(any(s$d < tol))
+    if(any(!is.finite(x)))
+        x[!is.finite(x)] <- 0
+    ## s <- svd(x)
+    x <- (x %*% t(x)) / 2
+    e <- eigen(x, symmetric=TRUE)
+    ## if(any(s$d < tol))
+    if(any(e$values < tol))
         warning(deparse1(substitute(x))," was modified to be positive definite")
-    s$u %*% diag(pmax(s$d,tol),length(s$d)) %*% t(s$v)    
+    ## s$u %*% diag(pmax(s$d,max(abs(s$d)) * tol),length(s$d)) %*% t(s$v)
+    r <- e$vectors %*% diag(pmax(e$values,max(abs(e$values)) * tol),length(e$values)) %*% t(e$vectors)
+    (r %*% t(r)) / 2
 }
 
 simVAR <- function(ny, nx, mu, rho, Sigma){
@@ -532,7 +539,7 @@ modelforecast.sam <- function(fit,
                               nextssb = NULL,
                               landval = NULL,
                               nosim = 0,
-                              year.base = max(fit$data$years),
+                              year.base = "lastCatchYear", #max(fit$data$years),
                               ave.years = max(fit$data$years)+(-9:0),
                               rec.years = c(), #max(fit$data$years)+(-9:0),
                               rec.fixval = numeric(0),
@@ -561,7 +568,7 @@ modelforecast.sam <- function(fit,
                               ncores = 1,
                               mc.type = "mclapply",
                               useRecPool = FALSE,
-                              overwriteBioProcessModel = FALSE,
+                              ## overwriteBioProcessModel = FALSE,
                               useManagementLag = FALSE,
                               assessmentErrorMean_F = 0,
                               assessmentErrorRho_F = 0,
@@ -581,7 +588,15 @@ modelforecast.sam <- function(fit,
                               assessmentErrorMean_CW = 0,
                               assessmentErrorRho_CW = 0,
                               assessmentErrorSigma_CW = 0,
-                              implementationErrorRho_F = 0,
+                              implementationErrorRho_F = 0,                              
+                              forceAvg_SW = FALSE,
+                              forceAvg_CW = FALSE,
+                              forceAvg_MO = FALSE,
+                              forceAvg_NM = FALSE,
+                              custom_SW = NULL,
+                              custom_CW = NULL,
+                              custom_MO = NULL,
+                              custom_NM = NULL,
                               ...
                               ){
     ## Check for hcr, findMSY, hcrConf, hcrCurrentSSB
@@ -820,30 +835,75 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     pl$logN <- cbind(pl$logN,matrix(pl$logN[,ncol(pl$logN)],nrow(pl$logN),postYears))
     ## useModelBio <- TRUE
     ## if(useModelBio){
-    splitArray <- function(a){
-        nr <- dim(a)[1]; nc <- dim(a)[2]; na <- dim(a)[3]
-        lapply(split(a,rep(seq_len(na),each=nr*nc)), matrix, nrow = nr, ncol = nc)
+
+    hasCustomBio <- !c(is.null(custom_SW),is.null(custom_CW),is.null(custom_MO),is.null(custom_NM))
+    simBio <- all(!hasCustomBio)
+    if(any(hasCustomBio) && !all(hasCustomBio))
+        warning("No biological parameters will be simulated if custom values are given for at least one")
+    nAges <- fit$conf$maxAge - fit$conf$minAge + 1
+    multiStockassessment_abind <- function (..., along) {
+        v <- list(...)
+        allDims <- lapply(v, dim)
+        nDims <- unique(unlist(lapply(allDims, length)))
+        if (length(nDims) > 1) 
+            stop("Number of dimensions does not match")
+        if (missing(along)) 
+            along <- nDims
+        useDims <- unique(do.call("rbind", allDims)[, -along, drop = FALSE])[1, 
+                                                                             ]
+        if (sum(!duplicated((do.call("rbind", allDims)[, -along, 
+                                                       drop = FALSE]))) > 1) 
+            warning("Dimensions does not match")
+        r <- do.call("c", lapply(v, function(x) asplit(x, along = along, 
+                                                       useDims = useDims)))
+        if (all(useDims == 1)) {
+            finalDims <- integer(length(useDims) + 1)
+            finalDims[along] <- length(r)
+            finalDims[-along] <- useDims
+            return(array(unlist(r), finalDims))
+        }
+        simplify2array(r)
     }
-    extendBio <- function(x) rbind(x,matrix(x[nrow(x),],postYears,ncol(x), byrow = TRUE))
-    if(nrow(pl$logitMO) > 0){            
-        pl$logitMO <- extendBio(pl$logitMO)
+    if(simBio){
+         splitArray <- function(a){
+            nr <- dim(a)[1]; nc <- dim(a)[2]; na <- dim(a)[3]
+            lapply(split(a,rep(seq_len(na),each=nr*nc)), matrix, nrow = nr, ncol = nc)
+        }
+        extendBio <- function(x) rbind(x,matrix(x[nrow(x),],postYears,ncol(x), byrow = TRUE))
+        if(nrow(pl$logitMO) > 0){            
+            pl$logitMO <- extendBio(pl$logitMO)
+            args$data$propMat <- rbind(args$data$propMat,matrix(NA_real_,postYears, nAges))
+        }
+        if(nrow(pl$logNM) > 0 && !forceAvg_NM){            
+            pl$logNM <- extendBio(pl$logNM)
+            args$data$natMor <- rbind(args$data$natMor,matrix(NA_real_,postYears, nAges))
+        }
+        if(nrow(pl$logSW) > 0 && !forceAvg_SW){            
+            pl$logSW <- extendBio(pl$logSW)
+            args$data$stockMeanWeight <- rbind(args$data$stockMeanWeight,matrix(NA_real_,postYears, nAges))
+        }
+        if(dim(pl$logCW)[1] > 0 && !forceAvg_CW){           
+            pl$logCW <- simplify2array(lapply(splitArray(pl$logCW), extendBio))
+            args$data$catchMeanWeight <- aperm(multiStockassessment_abind(args$data$catchMeanWeight,array(NA,dim=c(postYears + length(fit$data$years) - dim(fit$data$catchMeanWeight)[1],dim(args$data$catchMeanWeight)[2:3])),along=1),c(3,1,2))
+        }
     }else{
-                                        #warning(sprintf("No MO random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
-    }
-    if(nrow(pl$logNM) > 0){            
-        pl$logNM <- extendBio(pl$logNM)
-    }else{
-                                        #warning(sprintf("No NM random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
-    }
-    if(nrow(pl$logSW) > 0){            
-        pl$logSW <- extendBio(pl$logSW)
-    }else{
-                                        #warning(sprintf("No SW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
-    }
-    if(dim(pl$logCW)[1] > 0){            
-        pl$logCW <- simplify2array(lapply(splitArray(pl$logCW), extendBio))
-    }else{
-                                        #warning(sprintf("No CW random effects. Using data average over %s.",paste(ave.yearsIn,collapse=", ")))
+        if(!is.null(custom_SW)){
+            nval <- matrix(custom_SW,postYears, nAges, byrow=TRUE)
+            args$data$stockMeanWeight <- rbind(args$data$stockMeanWeight,nval)
+        }
+        if(!is.null(custom_MO)){
+            nval <- matrix(custom_MO,postYears, nAges, byrow=TRUE)
+            args$data$propMat <- rbind(args$data$propMat,nval)
+        }
+        if(!is.null(custom_NM)){
+            nval <- matrix(custom_NM,postYears, nAges, byrow=TRUE)
+            args$data$natMor <- rbind(args$data$natMor,nval)
+        }
+        if(!is.null(custom_CW)){
+            nval <- aperm(array(custom_CW,dim = c(nAges,postYears + length(fit$data$years) - dim(fit$data$catchMeanWeight)[1], dim(args$data$catchMeanWeight)[3])),c(2,1,3))
+            args$data$catchMeanWeight <- aperm(multiStockassessment_abind(args$data$catchMeanWeight,nval,along=1),c(3,1,2))
+        }
+        
     }
     ## }
     d0 <- dim(pl$logitFseason)
@@ -875,7 +935,28 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         args$data$idx2 <- outer(suf, yy, Vectorize(mmfun,c("f","y")), ff=max)
         args$data$idxCor <- cbind(args$data$idxCor,matrix(NA_real_,nrow(args$data$idxCor),nrow(newAux)))
         args$data$weight <- c(args$data$weight, rep(NA_real_,nrow(newAux)))
+        args$data$TAC <- do.call(rbind,list(args$data$TAC,matrix(NA,nYears,ncol(args$data$TAC))))            
+        arc <- aperm(args$data$RecruitClimate,c(3,2,1))
+        if(length(arc) == 0){
+            args$data$RecruitClimate <- array(0,dim=c(dim(arc)[3]+nYears,0,0))
+        }else{
+            arcL <- lapply(split(arc,slice.index(arc,3)),function(x) array(x,c(1,length(x),1)))
+            args$data$RecruitClimate <- aperm(do.call(abind,c(arcL,replicate(nYears,arcL[[length(arcL)]],simplify=FALSE))),c(3,2,1))
+        }
+        rownames(args$data$TAC) <- rownames(args$data$RecruitClimate) <- yy
+        ## Biopar obs
+        if(fit$conf$stockWeightModel > 0)
+            args$data$stockMeanWeight <- rbind(args$data$stockMeanWeight,NA_real_)
+        if(fit$conf$matureModel > 0)
+            args$data$propMat <- rbind(args$data$propMat,NA_real_)
+        if(fit$conf$mortalityModel > 0)
+            args$data$natMor <- rbind(args$data$natMor,NA_real_)
+        if(fit$conf$catchWeightModel > 0)
+            args$data$catchMeanWeight <- aperm(multiStockassessment:::abind(args$data$catchMeanWeight,array(NA,dim=c(1,dim(args$data$catchMeanWeight)[2:3])),along=1),c(3,1,2))
     }
+
+    ## Patch missing
+    args$parameters$missing <- pl$missing <- numeric(sum(is.na(args$data$logobs)))
     
     if(useFHessian){
         if(year.base==max(fit$data$years)){## || (year.base==(max(fit$data$years)-1) && useModelLastN)){
@@ -915,7 +996,11 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                logRecruitmentVar = as.numeric(logRecruitmentVar),
                                fsdTimeScaleModel = as.numeric(fsdTimeScaleModel),
                                ## logF, logN, obs, biopar
-                               simFlag = c(0,0,0,as.numeric(overwriteBioProcessModel)),
+                               simFlag = c(0,0,0,!simBio),
+                               forceAvg_SW = as.numeric(forceAvg_SW),
+                               forceAvg_CW = as.numeric(forceAvg_CW),
+                               forceAvg_MO = as.numeric(forceAvg_MO),
+                               forceAvg_NM = as.numeric(forceAvg_NM),
                                hcrConf = hcrConf,
                                hcrCurrentSSB = hcrCurrentSSB,
                                Fdeviation = rnorm(nrow(pl$logF)),
@@ -1063,8 +1148,10 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 obj2$env$data$forecast$assessmentErrorDeviation_SW = simVAR(ny,nage,assessmentErrorMean_SW,assessmentErrorRho_SW,toMatr(assessmentErrorSigma_SW,nage))
                 obj2$env$data$forecast$assessmentErrorDeviation_CW = simplify2array(replicate(nflt,simVAR(ny,nage,assessmentErrorMean_CW,assessmentErrorRho_CW,toMatr(assessmentErrorSigma_CW,nage)),FALSE))
             }
-            ##obj2$retape()              
-            v <- obj2$simulate(par = p)
+            ##obj2$retape()
+            set.seed(NULL)
+            v <- obj2$simulate(par = p,complete=TRUE)
+            set.seed(NULL)
             attr(v,"re_constraint") <- re_constraint
             attr(v,"obj") <- obj2
             sniii <<- sniii+1
@@ -1096,11 +1183,12 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                    logEmpiricalYPR_L  = sapply(simvals,function(x) (x$logEmpiricalYPR_L[ii])),
                                    logEmpiricalYPR_D  = sapply(simvals,function(x) (x$logEmpiricalYPR_D[ii])),
                                    bio_stockMeanWeight = t(sapply(simvals,function(x) (x$bio_stockMeanWeight[ii,]))),
-                                   bio_catchMeanWeight = t(sapply(simvals,function(x) (x$bio_catchMeanWeight[ii,]))),
+                                   bio_catchMeanWeight = t(sapply(simvals,function(x) (x$bio_catchMeanWeight[ii,,]))),
                                    bio_natMor = t(sapply(simvals,function(x) (x$bio_natMor[ii,]))),
                                    bio_propMat = t(sapply(simvals,function(x) (x$bio_propMat[ii,]))),
                                    logHazard_F_breakpoints = simplify2array(lapply(simvals,function(x) (x$logHazard_F_breakpoints[,ii,,,drop=FALSE]))),
                                    logHazard_M_breakpoints =  simplify2array(lapply(simvals,function(x) (x$logHazard_M_breakpoints[,ii,,,drop=FALSE]))),
+                                   obs = sapply(simvals,function(x) exp(x$logobs[x$aux[,1]==y])),
                                    year=y)
             rownames(simlist[[i+1]]$catchatage) <- seq(fit$conf$minAge,fit$conf$maxAge,1)
         }
@@ -1157,7 +1245,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist, "caytable")<-caytable        
         attr(simlist, "catchby")<-cbftable
         attr(simlist, "fbarby")<-fbftable
-        attr(simlist, "nosim") <- nosim
+        attr(simlist, "nosim") <- nosim        
+        attr(simlist,"args") <- args
         class(simlist) <- "samforecast"
         attr(simlist,"estimateLabel") <- estimateLabel
         attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
@@ -1169,7 +1258,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     }else{
         invisible(obj$fn(fit$opt$par))
         ## Get results
-        sdr <- TMB::sdreport(obj, fit$opt$par, svd_solve(fit$sdrep$cov.fixed),
+        sdr <- TMB::sdreport(obj, fit$opt$par, fit$opt$he,
                              bias.correct= biasCorrect,
                              skip.delta.method = biasCorrect,
                              bias.correct.control = list(sd = TRUE,
@@ -1280,6 +1369,9 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         attr(simlist, "fbarby")<-fbftable
         attr(simlist, "fulltab") <- fullTable
         attr(simlist,"nosim") <- 0
+        attr(simlist,"sdreport") <- sdr
+        attr(simlist,"report") <- rp
+        attr(simlist,"args") <- args
         class(simlist) <- "samforecast"
         attr(simlist,"estimateLabel") <- estimateLabel
         attr(simlist,"useNonLinearityCorrection") <- useNonLinearityCorrection
