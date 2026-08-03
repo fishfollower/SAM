@@ -220,7 +220,8 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	}
 	SIMULATE_F(of){
 	  array<Type> obs_stockMeanWeight(dat.stockMeanWeight,dat.stockMeanWeight.dim);
-	  if((forecast.nYears > 0 && forecast.forceAvg_SW == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	  int fi = std::min(i,(int)forecast.forecastYear.size()-1);	 
+	  if((forecast.nYears > 0 && forecast.forceAvg_SW == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	    vector<Type> v = logSW.matrix().row(i-1);
 	    vector<Type> p = br.simulate(v,i,of);
 	    for(int j=0; j<sw.dim[1]; ++j){
@@ -228,7 +229,7 @@ Type nllSW(array<Type> &logSW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	      dat.stockMeanWeight(i,j)=exp(logSW(i,j));
 	      obs_stockMeanWeight(i,j) = exp(rnorm(log(dat.stockMeanWeight(i,j)),exp(par.logSdLogSW(conf.keyStockWeightObsVar(j)))));
 	    }
-	  }else if((forecast.nYears > 0 && forecast.forceAvg_SW == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1))){
+	  }else if((forecast.nYears > 0 && forecast.forceAvg_SW == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1))){
 	    for(int j=0; j<sw.dim[1]; ++j){
 	      if(i < logSW.rows())
 		logSW(i,j) = log(sw(i,j));
@@ -277,7 +278,8 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	}
 	SIMULATE_F(of){
 	  array<Type> obs_catchMeanWeight(dat.catchMeanWeight,dat.catchMeanWeight.dim);
-	  if((forecast.nYears > 0 && forecast.forceAvg_CW == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	  int fi = std::min(i,(int)forecast.forecastYear.size()-1);	 
+if((forecast.nYears > 0 && forecast.forceAvg_CW == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	    vector<Type> v = logCW.col(k).matrix().row(i-1);
 	    vector<Type> p = br.simulate(v,i,of);
 	    for(int j=0; j<cw.dim[1]; ++j){
@@ -285,7 +287,7 @@ Type nllCW(array<Type> &logCW, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	      dat.catchMeanWeight(i,j,k)=exp(logCW(i,j,k));
 	      obs_catchMeanWeight(i,j,k) = exp(rnorm(log(dat.catchMeanWeight(i,j,k)),exp(par.logSdLogCW(conf.keyCatchWeightObsVar(j)))));
 	    }
-	  }else if((forecast.nYears > 0 && forecast.forceAvg_CW == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1))){
+	  }else if((forecast.nYears > 0 && forecast.forceAvg_CW == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1))){
 	    for(int j=0; j<cw.dim[1]; ++j){
 	      logCW(i,j,k) = log(cw(i,j,k));
 	      dat.catchMeanWeight(i,j,k) = cw(i,j,k);
@@ -344,7 +346,8 @@ template <class Type>
       }
       SIMULATE_F(of){
 	array<Type> obs_propMat(dat.propMat,dat.propMat.dim);
-	if((forecast.nYears > 0 && forecast.forceAvg_MO == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	int fi = std::min(i,(int)forecast.forecastYear.size()-1);	 
+	if((forecast.nYears > 0 && forecast.forceAvg_MO == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	  vector<Type> v = logitMO.matrix().row(i-1);
 	  vector<Type> p = br.simulate(v,i,of);
 	  for(int j=0; j<mo.dim[1]; ++j){
@@ -355,7 +358,7 @@ template <class Type>
 	    Type b = (Type(1)-dat.propMat(i,j))*prec;       //v=mu*(1-mu)/(1+precision)
 	    obs_propMat(i,j) = rbeta(a,b);
 	  }
-	}else if((forecast.nYears > 0 && forecast.forceAvg_MO == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1))){
+	}else if((forecast.nYears > 0 && forecast.forceAvg_MO == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1))){
 	    for(int j=0; j<mo.dim[1]; ++j){
 	      logitMO(i,j) = logit(mo(i,j));
 	      dat.propMat(i,j) = invlogit(logitMO(i,j));
@@ -505,8 +508,9 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 	}
 	SIMULATE_F(of){
 	  array<Type> obs_natMor(dat.natMor,dat.natMor.dim);
-	  if(conf.mortalityModel >= 1){
-	    if((forecast.nYears > 0 && forecast.forceAvg_NM == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1)) || (conf.simFlag(3)==0 && i > 0)){
+	  int fi = std::min(i,(int)forecast.forecastYear.size()-1);	 
+if(conf.mortalityModel >= 1){
+	    if((forecast.nYears > 0 && forecast.forceAvg_NM == 0 && forecast.simFlag(3) == 0 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1)) || (conf.simFlag(3)==0 && i > 0)){
 	      vector<Type> v = logNM.matrix().row(i-1);
 	      vector<Type> p = br.simulate(v,i,of);
 	
@@ -515,7 +519,7 @@ Type nllNM(array<Type> &logNM, dataSet<Type> &dat, confSet &conf, paraSet<Type> 
 		dat.natMor(i,j)=exp(logNM(i,j));
 		obs_natMor(i,j) = exp(rnorm(log(dat.natMor(i,j)), exp(par.logSdLogNM(conf.keyMortalityObsVar(j)))));
 	      }
-	    }else if((forecast.nYears > 0  && forecast.forceAvg_NM == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(i) >= 1) || forecast.forecastYear(i) > 1))){
+	    }else if((forecast.nYears > 0  && forecast.forceAvg_NM == 0 && forecast.simFlag(3) == 1 && ((!forecast.useModelLastN && forecast.forecastYear(fi) >= 1) || forecast.forecastYear(fi) > 1))){
 	      for(int j=0; j<nm.dim[1]; ++j){
 		logNM(i,j) = log(nm(i,j));
 		dat.natMor(i,j) = nm(i,j);

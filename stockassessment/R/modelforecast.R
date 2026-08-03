@@ -782,6 +782,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         logRecruitmentVar <- rep(NA_real_,nYears)
     }else{
         rectab <- rectable(fit)
+        if(is.character(rec.years))
+            rec.years <- tail(fit$data$years,as.numeric(rec.years))
         recpool <- rectab[rownames(rectab)%in%rec.years,1]
         if(useRecPool){
             recModel <- rep(1,nYears)

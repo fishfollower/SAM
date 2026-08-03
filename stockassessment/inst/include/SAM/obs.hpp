@@ -772,6 +772,16 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	REPORT_F(bio_propMat,of);
 	matrix<Type> bio_natMor = dat.natMor.matrix();
 	REPORT_F(bio_natMor,of);
+	array<Type> bio_propF = dat.propF;
+	REPORT_F(bio_propF,of);
+	matrix<Type> bio_propM = dat.propM.matrix();
+	REPORT_F(bio_propM,of);
+	array<Type> bio_landFrac = dat.landFrac;
+	REPORT_F(bio_landFrac,of);
+	array<Type> bio_disMeanWeight = dat.disMeanWeight;
+	REPORT_F(bio_disMeanWeight,of);
+	array<Type> bio_landMeanWeight = dat.landMeanWeight;
+	REPORT_F(bio_landMeanWeight,of);
 
 	// REPORT hazards
 	array<Type> logHazard_M_breakpoints = mort.logHazard_M_breakpoints;
