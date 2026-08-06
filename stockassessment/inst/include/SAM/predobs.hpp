@@ -146,30 +146,24 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 		        if(conf.keyLogFpar(f-1,a)>(-1)){
 			  pred+=par.logFpar(conf.keyLogFpar(f-1,a));
 		        }
-		      }
-		      if(conf.keyBiomassTreat(f-1)==1){
+		      }else if(conf.keyBiomassTreat(f-1)==1){
 			pred = logCatch+par.logFpar(conf.keyLogFpar(f-1,a));
-		      }
-		      if(conf.keyBiomassTreat(f-1)==2){
+		      } else if(conf.keyBiomassTreat(f-1)==2){
 			pred = logfsb+par.logFpar(conf.keyLogFpar(f-1,a));
 			if(conf.keyQpow(f-1,0)>(-1)){
 			  pred = logfsb*exp(par.logQpow(conf.keyQpow(f-1,0)))+par.logFpar(conf.keyLogFpar(f-1,a));
 			}
-		      }
-		      if(conf.keyBiomassTreat(f-1)==3){
+		      }else if(conf.keyBiomassTreat(f-1)==3){
 			pred = logCatch;
-		      }
-		      if(conf.keyBiomassTreat(f-1)==4){
+		      }else if(conf.keyBiomassTreat(f-1)==4){
 			pred = logLand;
-		      }
-		      if(conf.keyBiomassTreat(f-1)==5){
+		      }else if(conf.keyBiomassTreat(f-1)==5){
 		        Type tsbPred = 0;
 		        for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
 		          tsbPred += exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,f-1))*dat.stockMeanWeight(y,aa);
 		        }
 			pred = log(tsbPred)+par.logFpar(conf.keyLogFpar(f-1,a));
-		      }
-		      if(conf.keyBiomassTreat(f-1)==6){
+		      }else if(conf.keyBiomassTreat(f-1)==6){
 			Type N = 0;
 			for(int aa=a; aa<=(conf.maxAge-conf.minAge); aa++){
 			  // zz = dat.natMor(y,aa);
@@ -181,10 +175,26 @@ Type predOneObs(int fleet,	// obs.aux(i,1)
 			  N += exp(logN(aa,y) + mort.logFleetSurvival_before(aa,y,f-1));
 			}
 			pred = log(N) + par.logFpar(conf.keyLogFpar(f-1,a));
-		      }
-		      if(conf.keyBiomassTreat(f-1)==10){
+		      }else if(conf.keyBiomassTreat(f-1)==10){
 			pred = logfbar+par.logFpar(conf.keyLogFpar(f-1,a));
-		      }		      
+		      }else if(conf.keyBiomassTreat(f-1)==11){
+		      	// Effort observation / index for a fleet and time interval (not yet)
+			// (0) fleet
+			SAM_ASSERT(auxData.size() >= 1,"aux is not large enough for fleet type 3 with keyBiomassTreat 11");
+			int cf = CppAD::Integer(auxData(0));
+			Type logfb = R_NegInf;
+			for(int a=conf.fbarRange(0);a<=conf.fbarRange(1);a++){
+			  int aa = a-conf.minAge;
+			  logfb = logspace_add_SAM(logfb, mort.logCumulativeHazard_F(aa,y,cf));
+			}
+			pred = logfb - (Type)log(conf.fbarRange(1) - conf.fbarRange(0) + 1.0);
+			if(conf.keyQpow(f-1,a)>(-1)){
+			  pred*=exp(par.logQpow(conf.keyQpow(f-1,a))); 
+  		        }
+			pred += par.logFpar(conf.keyLogFpar(f-1,a));
+		      }else{
+			Rf_error("Unknown keyBiomassTreat");
+		      }
 		      break;
   
 		    case 4:

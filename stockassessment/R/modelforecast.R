@@ -1,18 +1,26 @@
 
+
+asplit_msam <- function(x, along = length(dim(x)), useDims = dim(x)[-along]){
+    r <- lapply(split(x, slice.index(x, along)), function(x) array(x, dim = useDims, dimnames = dimnames(x)[-along]))
+    names(r) <- dimnames(x)[[along]]
+    r
+}
+
+
 makePosDef <- function(x, tol = sqrt(.Machine$double.eps)){
     if(prod(dim(x)) == 0)
         return(x)
     if(any(!is.finite(x)))
         x[!is.finite(x)] <- 0
     ## s <- svd(x)
-    x <- (x %*% t(x)) / 2
+    x <- (x + t(x)) / 2
     e <- eigen(x, symmetric=TRUE)
     ## if(any(s$d < tol))
     if(any(e$values < tol))
         warning(deparse1(substitute(x))," was modified to be positive definite")
     ## s$u %*% diag(pmax(s$d,max(abs(s$d)) * tol),length(s$d)) %*% t(s$v)
     r <- e$vectors %*% diag(pmax(e$values,max(abs(e$values)) * tol),length(e$values)) %*% t(e$vectors)
-    (r %*% t(r)) / 2
+    (r + t(r)) / 2
 }
 
 simVAR <- function(ny, nx, mu, rho, Sigma){
@@ -856,7 +864,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         if (sum(!duplicated((do.call("rbind", allDims)[, -along, 
                                                        drop = FALSE]))) > 1) 
             warning("Dimensions does not match")
-        r <- do.call("c", lapply(v, function(x) asplit(x, along = along, 
+        r <- do.call("c", lapply(v, function(x) asplit_msam(x, along = along, 
                                                        useDims = useDims)))
         if (all(useDims == 1)) {
             finalDims <- integer(length(useDims) + 1)
@@ -954,7 +962,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         if(fit$conf$mortalityModel > 0)
             args$data$natMor <- rbind(args$data$natMor,NA_real_)
         if(fit$conf$catchWeightModel > 0)
-            args$data$catchMeanWeight <- aperm(multiStockassessment:::abind(args$data$catchMeanWeight,array(NA,dim=c(1,dim(args$data$catchMeanWeight)[2:3])),along=1),c(3,1,2))
+            args$data$catchMeanWeight <- aperm(multiStockassessment_abind(args$data$catchMeanWeight,array(NA,dim=c(1,dim(args$data$catchMeanWeight)[2:3])),along=1),c(3,1,2))
     }
 
     ## Patch missing

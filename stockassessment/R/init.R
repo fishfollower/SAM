@@ -111,7 +111,7 @@ defpar <- function(dat,conf,spinoutyear=10){
   }
   ret$rec_transphi <- numeric(conf$recruitmentAutocorrelation)
   
-  ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0 || x==4){ ret <- numeric()} else { ret <- numeric(1)+.5}; return(ret)}))
+  ret$itrans_rho=unlist(lapply(as.list(conf$corFlag),function(x){if(x==0 || x==4){ ret <- numeric(0)} else { ret <- numeric(1)+.5}; return(ret)}))
 
   ret$rhop = if(length(conf$keyVarLogP)>0){0.5}else{numeric(0)}
 
