@@ -735,9 +735,10 @@ setup.sam.data <- function(fleets=NULL, surveys=NULL, residual.fleets=NULL,
 ##' @param return.all a logical indicating whether everything from model.RData should be returned in an environment
 ##' @details ...
 ##' @export
-fitfromweb <- function(stockname, character.only=FALSE, return.all = FALSE){
+fitfromweb <- function(stockname, character.only=FALSE, return.all = FALSE, base.url = "stockassessment.org"){
     if (!character.only) stockname <- as.character(substitute(stockname))
-    con <- url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData"))
+    ## con <- url(sub("SN",stockname,"https://stockassessment.org/datadisk/stockassessment/userdirs/user3/SN/run/model.RData"))
+    con <- url(sprintf("https://%s/datadisk/stockassessment/userdirs/user3/%s/run/model.RData",base.url[1],stockname[1]))
     e <- new.env()
     nam <- load(con, e)    
     close(con)

@@ -201,7 +201,6 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
     ## }else{
   opt <- nlminb(obj$par, obj$fn,obj$gr ,control=list(trace=1, eval.max=eval.max, iter.max=iter.max, rel.tol=rel.tol),lower=lower2,upper=upper2)
 
-    he <- function(par){ optimHess(par, obj$fn, obj$gr) }
     ## }
     for(i in seq_len(newtonsteps)) { # Take a few extra newton steps 
         atLBound <- (opt$par < (lower2 + sqrt(.Machine$double.eps)))
@@ -222,7 +221,7 @@ sam.fit <- function(data, conf, parameters, newtonsteps=3, rm.unidentified=FALSE
             break;
         }
     }
-    opt$he <- optimHess(opt$par, obj$fn, obj$gr)
+    opt$he <- stats::optimHess(opt$par, obj$fn, obj$gr)
 
     opt$nlminb_convergence <- opt$convergence
     opt$convergence <- ifelse(max(abs(obj$gr(opt$par)))<1e-4,0,1)
@@ -472,6 +471,12 @@ refit <- function(fit, newConf, startingValues, useDefPar = FALSE, ...){
     if(is.null(fit2$data$idxCor))
         fit2$data$idxCor <- matrix(NA_real_, nrow=fit2$data$noFleets,
                                    ncol=fit2$data$noYears)
+    if(nrow(fit2$data$idxCor) < fit2$data$noFleets){
+        fit2$data$idxCor <- rbind(fit2$data$idxCor,
+                                  matrix(NA_real_, nrow=fit2$data$noFleets-nrow(fit2$data$idxCor),
+                                         ncol=fit2$data$noYears)
+                                  )
+    }
     if(is.null(fit2$data$sumKey))
         fit2$data$sumKey <- matrix(0, nrow=fit2$data$noFleets,ncol=fit2$data$noFleets)
 

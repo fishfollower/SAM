@@ -15,8 +15,8 @@ reduce<-function(data, year=NULL, fleet=NULL, age=NULL, conf=NULL, onlyobs=FALSE
     }else{
         idx <- !do.call(paste, as.data.frame(data$aux[,nam,drop=FALSE])) %in% do.call(paste, as.data.frame(cbind(year=year, fleet=fleet, age=age)))
     }
-    data$aux <- data$aux[idx,]
-    data$auxData <- data$auxData[idx,]
+    data$aux <- data$aux[idx,,drop=FALSE]
+    data$auxData <- data$auxData[idx,,drop=FALSE]
     data$logobs <- data$logobs[idx]
     data$weight <- data$weight[idx]
     suf <- sort(unique(data$aux[,"fleet"])) # sort-unique-fleet
