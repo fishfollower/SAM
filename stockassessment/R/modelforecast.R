@@ -971,7 +971,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     if(useFHessian){
         if(year.base==max(fit$data$years)){## || (year.base==(max(fit$data$years)-1) && useModelLastN)){
             est <- fit$sdrep$estY
-            FEstCov <- fit$sdrep$covYYm1[grepl("^lastLogF$",names(est)),grepl("^lastLogF$",names(est))]
+            FEstCov <- fit$sdrep$covY[grepl("^lastLogF$",names(est)),grepl("^lastLogF$",names(est))]
         }else if(year.base==(max(fit$data$years)-1)){
             est <- fit$sdrep$estYm1
             FEstCov <- fit$sdrep$covYm1[grepl("^beforeLastLogF$",names(est)),grepl("^beforeLastLogF$",names(est))]
