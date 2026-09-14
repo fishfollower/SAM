@@ -882,6 +882,19 @@ Type nllObs(dataSet<Type> &dat, confSet &conf, paraSet<Type> &par, forecastSet<T
 	ADREPORT_F(beforeLastLogN,of);
 	vector<Type> beforeLastLogF = logF.col(timeSteps-2);
 	ADREPORT_F(beforeLastLogF,of);
+
+	if(logitFseason.dim(2) > 0){
+	  matrix<Type> lastLogitFseason(logitFseason.dim(0),logitFseason.dim(2));
+	  lastLogitFseason.setZero();
+	  matrix<Type> beforeLastLogitFseason(logitFseason.dim(0),logitFseason.dim(2));
+	  beforeLastLogitFseason.setZero();
+	  for(int p = 0; p < logitFseason.dim(2); ++p){
+	    lastLogitFseason.col(p) = logitFseason.col(p).col(timeSteps-1);
+	    beforeLastLogitFseason.col(p) = logitFseason.col(p).col(timeSteps-2);
+	  }
+	  ADREPORT_F(lastLogitFseason,of);
+	  ADREPORT_F(beforeLastLogitFseason,of);
+	}
       }
       if(forecast.nYears > 0 && forecast.FModel(forecast.FModel.size()-1) == forecast.findMSY){
 

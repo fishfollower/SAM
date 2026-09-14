@@ -37,6 +37,7 @@
 #undef TMB_EXTERN
 // Redefine
 #define WITH_LIBTMB
+#include <tmb_enable_header_only.hpp>
 #undef  TMB_PRECOMPILE
 #define CSKIP(...) ;
 #define IF_TMB_PRECOMPILE(...)
@@ -74,17 +75,22 @@ using density::MVNORM_t;
 using density::GMRF_t;
 using density::SCALE_t;
 using density::UNSTRUCTURED_CORR_t;
+using Eigen::SparseMatrix;
+using tmbutils::invertSparseMatrix;
+
+TMB_SPEC(matrix<double> tmbutils::invertSparseMatrix(Eigen::SparseMatrix<double> A));
+TMB_SPEC(matrix<TMBad::ad_aug> tmbutils::invertSparseMatrix(Eigen::SparseMatrix<TMBad::ad_aug> A));
 
 #ifndef TMB_ALREADY_PRECOMPILED
 TMB_SPEC(class density::MVNORM_t<double >);
 TMB_SPEC(class density::MVNORM_t<TMBad::ad_aug >);
 
-TMB_SPEC(class density::GMRF_t<double >);
-TMB_SPEC(class density::GMRF_t<TMBad::ad_aug >);
+/* TMB_SPEC(class density::GMRF_t<double >); */
+/* TMB_SPEC(class density::GMRF_t<TMBad::ad_aug >); */
 #endif
 
-TMB_SPEC(class density::SCALE_t<GMRF_t<double > >);
-TMB_SPEC(class density::SCALE_t<GMRF_t<TMBad::ad_aug > >);
+/* TMB_SPEC(class density::SCALE_t<GMRF_t<double > >); */
+/* TMB_SPEC(class density::SCALE_t<GMRF_t<TMBad::ad_aug > >); */
 
 TMB_SPEC(class density::UNSTRUCTURED_CORR_t<double>);
 TMB_SPEC(class density::UNSTRUCTURED_CORR_t<TMBad::ad_aug>);

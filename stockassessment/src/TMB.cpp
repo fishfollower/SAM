@@ -2,4 +2,5 @@
 #define TMB_MAX_ORDER 5
 #endif
 #define TMB_PRECOMPILE
+#include <tmb_enable_precompile.hpp>
 #include "TMB.h"

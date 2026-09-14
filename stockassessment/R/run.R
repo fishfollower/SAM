@@ -263,13 +263,13 @@ doReporting <- function(obj, opt, ignore.parm.uncertainty){
     sdrep <- sdreport(obj,opt$par, opt$he,
                       ignore.parm.uncertainty = ignore.parm.uncertainty)    
     ## Last two states
-    idxL <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"),
+    idxL <- c(which(names(sdrep$value)=="lastLogN"),which(names(sdrep$value)=="lastLogF"),which(names(sdrep$value)=="lastLogitFseason"),
              which(names(sdrep$value)=="lastLogSW"),which(names(sdrep$value)=="lastLogCW"),
              which(names(sdrep$value)=="lastLogitMO"),which(names(sdrep$value)=="lastLogNM"))
     sdrep$estY <- sdrep$value[idxL]
     sdrep$covY <- sdrep$cov[idxL,idxL]
 
-    idxBL <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"),
+    idxBL <- c(which(names(sdrep$value)=="beforeLastLogN"),which(names(sdrep$value)=="beforeLastLogF"),which(names(sdrep$value)=="beforeLastLogitFseason"),
              which(names(sdrep$value)=="beforeLastLogSW"),which(names(sdrep$value)=="beforeLastLogCW"),
              which(names(sdrep$value)=="beforeLastLogitMO"),which(names(sdrep$value)=="beforeLastLogNM"))
     sdrep$estYm1 <- sdrep$value[idxBL]

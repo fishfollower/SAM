@@ -83,6 +83,7 @@ struct forecastSet {
 	 matrix<Type> nvar;
 
 	 matrix<Type> cumEpsilon;
+	 int resamplingFirst;
   
 	 void calculateForecast(array<Type>& logF, array<Type>& logN, array<Type>& logitFseason, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit, MortalitySet<Type>& mort);
 	 void updateForecast(int i, array<Type>& logF, array<Type>& logN, array<Type>& logitFseason, dataSet<Type>& dat, confSet& conf, paraSet<Type>& par, Recruitment<Type>& recruit, MortalitySet<Type>& mort, int sim);
@@ -132,7 +133,8 @@ struct forecastSet {
 						sel(x.sel),
 						selFull(x.selFull),
 						initialFbar(x.initialFbar),
-						cumEpsilon(x.cumEpsilon) {}
+						cumEpsilon(x.cumEpsilon),
+						resamplingFirst(x.resamplingFirst) {}
 
 }
        );
@@ -390,7 +392,8 @@ SOURCE(
 		  sel(),
 		  selFull(),
 	 initialFbar(),
-	 cumEpsilon() {}
+	 cumEpsilon(),
+	 resamplingFirst() {}
 	 )  
 
 SOURCE(
@@ -443,6 +446,7 @@ SOURCE(
 	     selFull = vector<Type>(0);
 	     initialFbar = 0;
 	     cumEpsilon = matrix<Type>(0,0);
+	     resamplingFirst = 0;
 	   }else{
 	     using tmbutils::asArray;
 	     nYears = (int)*REAL(getListElement(x,"nYears"));
@@ -510,6 +514,7 @@ SOURCE(
 	     selFull = vector<Type>(0);
 	     initialFbar = 0;
 	     cumEpsilon = matrix<Type>(0,0);
+	     resamplingFirst = (int)*REAL(getListElement(x,"resamplingFirst"));
 	   }
 	 }
 	 );

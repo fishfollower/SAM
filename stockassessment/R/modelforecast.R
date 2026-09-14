@@ -754,6 +754,9 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
     getBound <- function(x){
         ifelse(!grepl("\\|",x),"",gsub("(.+\\|)(.+)","\\2",x))
     }
+    toLogFbar <- function(logF){
+        log(mean(exp(logF[seq(fit$conf$fbarRange[1],fit$conf$fbarRange[2],1)])))
+    }
     if(any(!is.na(constraints))){
         cstr[!is.na(constraints)] <- .parseForecast(removeBound(constraints[!is.na(constraints)]), fit$conf$fbarRange, fit$data$fleetTypes, c(fit$conf$minAge,fit$conf$maxAge), useNonLinearityCorrection)
         ub <- getBound(constraints[!is.na(constraints)])
@@ -796,7 +799,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         if(useRecPool){
             recModel <- rep(1,nYears)
             logRecruitmentMedian <- sample(log(recpool),nYears,replace=TRUE)
-            logRecruitmentVar <- rep((1e-6)^2,nYears)
+            logRecruitmentVar <- rep((1e-16)^2,nYears)
         }else{
             recModel <- rep(1,nYears)
             logRecruitmentMedian <- rep(log(median(recpool)),nYears)
@@ -1024,7 +1027,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                                assessmentErrorDeviation_Mat = matrix(0,0,0),#assessmentErrorDeviance_Mat,
                                assessmentErrorDeviation_SW = matrix(0,0,0),#assessmentErrorDeviance_CW)
                                assessmentErrorDeviation_CW = matrix(0,0,0),
-                               implementationErrorRho_F = implementationErrorRho_F
+                               implementationErrorRho_F = implementationErrorRho_F,
+                               resamplingFirst = as.numeric(resampleFirst)
                                )
 
     if(any(!is.na(findMSY))){
@@ -1076,6 +1080,8 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
         names(est) <- gsub("(^.*[lL]ast)(.+$)","\\2",names(est))
         i0Bio <- which(fit$data$year == yearInsertBio)
         i0F <- which(fit$data$year == yearInsertF)
+        logfbar0F <- fbartable(fit)[i0F,1]
+        logfbar0Sd <- diff(fbartable(fit)[i0F,2:3])/4
         plMap <- pl
         map <- fit$obj$env$map
         with.map <- intersect(names(plMap), names(map))
@@ -1097,9 +1103,7 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 sim0 <- rmvnorm(1, mu=0*est, Sigma=cov)
             }
             if(useRecPool){
-                cat("Using recruitment pool","\n")
                 obj2$env$data$forecast$logRecruitmentMedian <- sample(log(recpool),nYears,replace=TRUE)
-                cat("\t",paste(obj2$env$data$forecast$logRecruitmentMedian,collapse=", "),"\n")
                 obj2$env$data$forecast$logRecruitmentVar <- rep((1e-5)^2,nYears)
                 ##obj2$retape() ## Is this needed??
             }
@@ -1140,8 +1144,12 @@ constraints[is.na(constraints) & !is.na(nextssb)] <- sprintf("SSB=%f",nextssb[is
                 indxNM <- matrix(which(names(p) %in% "logNM"),ncol=length(estList0$LogNM))[i0Bio,]
                 p[indxNM] <- estList0$LogNM
             }
-            obj2$env$data$forecast$Fdeviation[] <- dList0$LogF
-            obj2$env$data$forecast$FdeviationCov <- makePosDef(cov[names(est) %in% "LogF",names(est) %in% "LogF"])
+             if(any(grepl("logitFseason",names(p)))){
+                indxLFS <- array(which(names(p) %in% "logitFseason"),dim=dim(args$parameters$logitFseason))[,i0F,]
+                p[indxLFS] <- estList0$LogitFseason
+             }            
+            obj2$env$data$forecast$Fdeviation[] <- rnorm(1,0,logfbar0Sd) ##dList0$LogF #- logfbar0F
+            obj2$env$data$forecast$FdeviationCov <- makePosDef(cov[names(est) %in% "LogF",names(est) %in% "LogF"]) * 0 + 1e-8
             ## Simulate assessment error
             ny <- length(obj2$env$data$forecast$forecastYear)
             nage <- nrow(pl$logN)

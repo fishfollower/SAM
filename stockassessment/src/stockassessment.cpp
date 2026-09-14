@@ -337,6 +337,7 @@ Type objective_function<Type>::operator() ()
   // REPORT(mort.CIF_F_breakpoints);
   // REPORT(mort.CIF_M_breakpoints);
 
+ 
   REPORT(mort);
 
   return ans;
