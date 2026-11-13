@@ -4,7 +4,11 @@
 \alias{caytable}
 \title{Catch-at-age in numbers table}
 \usage{
-caytable(fit, fleet = which(fit$data$fleetTypes == 0))
+caytable(
+  fit,
+  fleet = which(fit$data$fleetTypes == 0),
+  useNMmodel = (fit$conf$mortalityModel >= 1)
+)
 }
 \arguments{
 \item{fit}{a fitted object of class 'sam' as returned from sam.fit}

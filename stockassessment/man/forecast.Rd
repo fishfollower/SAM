@@ -31,12 +31,9 @@ forecast(
   useMOmodel = (fit$conf$matureModel >= 1),
   useNMmodel = (fit$conf$mortalityModel >= 1),
   savesim = FALSE,
-  cf.cv.keep.cv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0), nrow =
-    length(catchval)),
-  cf.cv.keep.fv = matrix(NA, ncol = 2 * sum(fit$data$fleetTypes == 0), nrow =
-    length(catchval)),
-  cf.keep.fv.offset = matrix(0, ncol = sum(fit$data$fleetTypes == 0), nrow =
-    length(catchval)),
+  cf.cv.keep.cv = NULL,
+  cf.cv.keep.fv = NULL,
+  cf.keep.fv.offset = NULL,
   estimate = median
 )
 }

@@ -1737,3 +1737,224 @@ residplot<-function(fit,resid=NULL,bubbles=TRUE,palette=hcl.colors(4,palette="Bl
     
     list(bias=bias.p,variance=variance.p,correlation.age=acf.age.p,meanvar=meanvar.p,correlation.time=acf.time.p,normality=shapiro)
 }
+
+##' Compare SAM log numbers-at-age with candidate relative abundance indices
+##'
+##' For every age found in both the model and at least one of the candidate
+##' indices, the mean-centred log numbers from the assessment are plotted
+##' together with the mean-centred log indices, and correlations are computed.
+##'
+##' @param fit a fitted "sam" object (stockassessment package)
+##' @param surveys a list of matrices with rows named by year and columns named
+##'   by age. If the name of the last column ends with "+" (e.g. "3+") it is a
+##'   plus group, compared with the model numbers summed over ages >= that age.
+##' @param fitSurveys if TRUE, the age-based survey indices used in the fit
+##'   (fit$data$logobs for fleets > 1 of survey type) are added to 'surveys',
+##'   named "<fleet name> (fit)". A survey's last age is marked "+" if
+##'   fit$conf$maxAgePlusGroup says so for that fleet. 'surveys' may then be
+##'   NULL or empty.
+##' @param ages optional vector of ages to include, e.g. c(1, 2, "3+").
+##'   Labels are matched exactly, so 3 selects age 3 only and "3+" the plus
+##'   group. NULL (default) includes all ages common to model and surveys.
+##' @param plot if FALSE, only compute (no plots)
+##' @param conf.level confidence level for the correlation intervals and for
+##'   the shaded band around the assessment line. The band is
+##'   centred logN +/- z*sd, with sd from fit$plsd$logN (uncertainty of the
+##'   centring mean ignored). For plus groups the sd of log(sum N) is obtained
+##'   by the delta method assuming independence between ages.
+##' @return (invisibly if plotting) a list of matrices (surveys x ages):
+##'   cor, lower, upper (Fisher-z confidence interval, as in cor.test),
+##'   p.value (test of zero correlation) and n (number of years used).
+##'   NA where a survey does not contain the age or has too few years.
+##'   In the plot legend a "*" marks correlations whose interval excludes 0.
+##' @export
+lognplot <- function(fit, surveys, fitSurveys = FALSE, ages = NULL, plot = TRUE, conf.level = 0.95){
+    if(!inherits(fit, "sam")) stop("'fit' must be a 'sam' object")
+    if(is.null(surveys)) surveys <- list()
+    if(is.matrix(surveys)) surveys <- list(surveys)
+    if(!is.list(surveys)) stop("'surveys' must be a list of matrices")
+    if(fitSurveys) surveys <- c(surveys, samSurveys(fit))
+    if(length(surveys) == 0) stop("no surveys to compare")
+    if(is.null(names(surveys))) names(surveys) <- rep("", length(surveys))
+    noname <- names(surveys) == ""
+    names(surveys)[noname] <- paste0("S", which(noname))
+    for(s in names(surveys)){
+        m <- surveys[[s]]
+        if(!is.matrix(m) || is.null(rownames(m)) || is.null(colnames(m)))
+            stop("survey '", s, "' must be a matrix with row names (years) and column names (ages)")
+    }
+
+    ntab <- stockassessment:::ntable(fit)
+    modelAges <- as.integer(colnames(ntab))
+    modelYears <- rownames(ntab)
+    sdtab <- t(fit$plsd$logN)
+    dimnames(sdtab) <- dimnames(ntab)
+    zq <- qnorm(1 - (1 - conf.level) / 2)
+
+    ## sd of log of the model-side series (delta method for plus groups)
+    modelSD <- function(lab){
+        a <- as.integer(sub("\\+$", "", lab))
+        if(grepl("\\+$", lab)){
+            sel <- modelAges >= a
+            w <- ntab[, sel, drop = FALSE] / rowSums(ntab[, sel, drop = FALSE])
+            sqrt(rowSums((w * sdtab[, sel, drop = FALSE])^2))
+        }else{
+            sdtab[, which(modelAges == a)]
+        }
+    }
+
+    ## model-side series for an age label like "2" or "3+" (NULL if not comparable)
+    modelSeries <- function(lab){
+        plus <- grepl("\\+$", lab)
+        a <- as.integer(sub("\\+$", "", lab))
+        if(plus){
+            if(a > max(modelAges)) return(NULL)
+            rowSums(ntab[, modelAges >= a, drop = FALSE])
+        }else{
+            if(!(a %in% modelAges)) return(NULL)
+            ntab[, which(modelAges == a)]
+        }
+    }
+    clog <- function(x){
+        x[!is.finite(x) | x <= 0] <- NA
+        lx <- log(x)
+        lx - mean(lx, na.rm = TRUE)
+    }
+
+    ## ages (labels) per survey; "+" only meaningful on the last column
+    labs <- lapply(surveys, function(m){
+        cn <- trimws(colnames(m))
+        cn[-length(cn)] <- sub("\\+$", "", cn[-length(cn)])
+        cn
+    })
+    allLabs <- unique(unlist(labs))
+    ok <- vapply(allLabs, function(l) !is.null(modelSeries(l)), logical(1))
+    if(any(!ok)) message("Ages not in the model, skipped: ", paste(allLabs[!ok], collapse = ", "))
+    allLabs <- allLabs[ok]
+    if(length(allLabs) == 0) stop("no ages in common between model and surveys")
+    if(!is.null(ages)){
+        ages <- trimws(as.character(ages))
+        miss <- setdiff(ages, allLabs)
+        if(length(miss)) warning("requested ages not available in both model and surveys: ",
+                                 paste(miss, collapse = ", "))
+        allLabs <- intersect(allLabs, ages)
+        if(length(allLabs) == 0) stop("none of the requested ages are available")
+    }
+    num <- suppressWarnings(as.numeric(sub("\\+$", "", allLabs)))
+    allLabs <- allLabs[order(num, grepl("\\+$", allLabs))]
+
+    cors <- matrix(NA_real_, length(surveys), length(allLabs),
+                   dimnames = list(names(surveys), allLabs))
+    lower <- upper <- pval <- nobs <- cors
+
+    ## colours: black for the assessment, distinct non-grey colours for surveys
+    cols <- c("black", hcl.colors(length(surveys), "Dark 3"))
+    lcex <- if(length(allLabs) > 4) 1 else 1.1
+    if(plot){
+        op <- par(mfrow = n2mfrow(length(allLabs)))
+        on.exit(par(op))
+    }
+
+    for(lab in allLabs){
+        N <- modelSeries(lab)
+        has <- which(vapply(labs, function(l) lab %in% l, logical(1)))
+        yrs <- intersect(modelYears, unique(unlist(lapply(surveys[has], rownames))))
+        if(length(yrs) == 0){
+            if(plot){ plot.new(); title(main = paste("Age", lab, "(no overlapping years)")) }
+            next
+        }
+        esta <- clog(N[yrs])
+        sda <- modelSD(lab)[yrs]
+
+        est <- list()
+        for(i in has){
+            SI <- surveys[[i]]
+            y <- intersect(rownames(SI), modelYears)
+            if(length(y) == 0) next
+            estg <- clog(SI[y, which(labs[[i]] == lab)[1]])
+            est[[as.character(i)]] <- estg
+            cc <- complete.cases(esta[y], estg)
+            nobs[i, lab] <- sum(cc)
+            if(sum(cc) >= 3){
+                ct <- suppressWarnings(cor.test(esta[y][cc], estg[cc], conf.level = conf.level))
+                cors[i, lab] <- ct$estimate
+                pval[i, lab] <- ct$p.value
+                if(!is.null(ct$conf.int)){ ## needs n >= 4
+                    lower[i, lab] <- ct$conf.int[1]
+                    upper[i, lab] <- ct$conf.int[2]
+                }
+            }
+        }
+        if(!plot) next
+
+        lo <- esta - zq * sda
+        hi <- esta + zq * sda
+        yl <- range(c(lo, hi, unlist(est)), na.rm = TRUE)
+        x <- as.numeric(yrs)
+        idx <- as.integer(names(est))
+        largs <- list("topright", lty = c(1, rep(2, length(idx))), pch = c(1, idx + 1),
+                      col = cols[c(1, idx + 1)], bg = "white", cex = lcex,
+                      legend = c(sprintf("assessment (%g%% CI)", 100 * conf.level),
+                                 sprintf("%s : %.2f [%.2f, %.2f]%s", names(surveys)[idx], cors[idx, lab],
+                                         lower[idx, lab], upper[idx, lab],
+                                         ifelse(!is.na(lower[idx, lab]) &
+                                                (lower[idx, lab] > 0 | upper[idx, lab] < 0), "*", ""))))
+        ## measure the legend height as a fraction f of the plot region, then
+        ## raise the upper y-limit so the legend sits above all the data
+        ## (with default 4% axis padding: D' = D / (1.04 - 1.08 f), plus a small gap)
+        plot.new()
+        plot.window(xlim = range(x), ylim = yl)
+        lsize <- function(nc){ la <- largs; la$ncol <- nc; do.call(legend, c(la, plot = FALSE))$rect }
+        r1 <- lsize(1)
+        largs$ncol <- 1
+        if(length(largs$legend) > 3){ ## two columns if that fits and is less tall
+            r2 <- lsize(2)
+            if(r2$w < 0.95 * diff(par("usr")[1:2])) { largs$ncol <- 2; r1 <- r2 }
+        }
+        f <- min(r1$h / diff(par("usr")[3:4]), 0.85)
+        yl[2] <- yl[1] + 1.03 * diff(yl) / (1.04 - 1.08 * f)
+        plot.window(xlim = range(x), ylim = yl)
+        box(); axis(1); axis(2)
+        title(main = paste("Age", lab), xlab = "Year", ylab = "Centred log N")
+        ok <- !is.na(lo) & !is.na(hi)
+        polygon(c(x[ok], rev(x[ok])), c(lo[ok], rev(hi[ok])), col = "grey85", border = NA)
+        lines(x, esta, type = "b")
+        for(k in names(est)){
+            i <- as.integer(k)
+            points(as.numeric(names(est[[k]])), est[[k]], type = "b", lty = 2, pch = i + 1, col = cols[i + 1])
+        }
+        abline(h = 0)
+        do.call(legend, largs)
+    }
+    res <- list(cor = cors, lower = lower, upper = upper, p.value = pval, n = nobs)
+    if(plot) invisible(res) else res
+}
+
+##' Extract the age-based survey indices used in a SAM fit
+##'
+##' @param fit a fitted "sam" object
+##' @return a named list of matrices (years x ages) of exp(logobs) for each
+##'   survey fleet (fleet > 1 with fleet type 2). The last age is labelled
+##'   "a+" if the fleet's last age is a plus group (fit$conf$maxAgePlusGroup).
+samSurveys <- function(fit){
+    d <- fit$data
+    fleetNames <- attr(d, "fleetNames")
+    if(is.null(fleetNames)) fleetNames <- paste("Fleet", seq_len(d$noFleets))
+    plusGroup <- rep_len(fit$conf$maxAgePlusGroup, d$noFleets)
+    fleets <- which(seq_len(d$noFleets) > 1 & d$fleetTypes == 2)
+    out <- list()
+    for(f in fleets){
+        sel <- d$aux[, "fleet"] == f
+        yr <- d$aux[sel, "year"]
+        ag <- d$aux[sel, "age"]
+        years <- sort(unique(yr))
+        ages <- sort(unique(ag))
+        m <- matrix(NA_real_, length(years), length(ages),
+                    dimnames = list(years, ages))
+        m[cbind(match(yr, years), match(ag, ages))] <- exp(d$logobs[sel])
+        if(plusGroup[f] == 1 && max(ages) == d$maxAgePerFleet[f])
+            colnames(m)[ncol(m)] <- paste0(colnames(m)[ncol(m)], "+")
+        out[[paste0(fleetNames[f], " (fit)")]] <- m
+    }
+    out
+}
